@@ -8,6 +8,7 @@ import (
 	"github.com/XiaoleC05/oxelia51-backend/internal/database"
 	"github.com/XiaoleC05/oxelia51-backend/internal/handler"
 
+	"github.com/XiaoleC05/oxelia51-backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,6 +34,12 @@ func main() {
 	// 认证相关路由
 	r.POST("/api/auth/register", auth.Register)
 	r.POST("/api/auth/login", auth.Login)
+	// 受保护的路由组（需要 JWT 认证）
+	protected := r.Group("/api")
+	protected.Use(middleware.AuthMiddleware(cfg))
+	{
+		protected.GET("/users/me", auth.Me)
+	}
 
 	// 5. 启动服务
 	addr := ":" + cfg.ServerPort

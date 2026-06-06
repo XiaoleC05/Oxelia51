@@ -124,3 +124,39 @@ func (h *AuthHandler) generateJWT(user model.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(h.cfg.JWTSecret))
 }
+
+// Me 获取当前登录用户信息 GET /api/users/me (受保护)
+func (h *AuthHandler) Me(c *gin.Context) {
+	// 1. 从 Gin 上下文中获取中间件存入的 userID
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
+		return
+	}
+
+	// JWT 中的数字默认会被解析为 float64，需要做类型断言和转换
+	userIDFloat, ok := userIDVal.(float64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "用户ID格式错误"})
+		return
+	}
+	userID := int64(userIDFloat)
+
+	// 2. 查数据库获取最新用户信息
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	var user model.User
+	err := h.db.QueryRow(ctx,
+		`SELECT id, username, email, role, created_at, updated_at
+		 FROM users WHERE id = $1`,
+		userID,
+	).Scan(&user.ID, &user.Username, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
