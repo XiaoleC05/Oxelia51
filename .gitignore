@@ -1,0 +1,31 @@
+# 开发者私人目录（不跟踪、不公开）
+developer/
+
+# AI 规则文件（不公开）
+.trae/
+
+# 环境变量（含敏感信息）
+.env
+.env.local
+.env.production
+
+# IDE
+.idea/
+.vscode/
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+build/
+
+#docker配置
+docker-compose.yml
+
+# 文档
+docs/
