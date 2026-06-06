@@ -29,3 +29,5 @@ docker-compose.yml
 
 # 文档
 docs/
+
+backend/server.exe
