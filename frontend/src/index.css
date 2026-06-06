@@ -109,3 +109,28 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+input {
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 16px;
+}
+
+button {
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: var(--text-h);
+}
