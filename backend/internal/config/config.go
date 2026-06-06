@@ -14,9 +14,11 @@ type Config struct {
 	DBPassword string
 	DBName     string
 	ServerPort string
+	JWTSecret  string // 新增：JWT 签名密钥
 }
 
 func Load() *Config {
+
 	godotenv.Load()
 
 	return &Config{
@@ -26,6 +28,7 @@ func Load() *Config {
 		DBPassword: getEnv("DB_PASSWORD", ""),
 		DBName:     getEnv("DB_NAME", "oxelia51"),
 		ServerPort: getEnv("SERVER_PORT", "8080"),
+		JWTSecret:  getEnv("JWT_SECRET", "change-me-in-production"),
 	}
 }
 

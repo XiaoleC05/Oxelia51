@@ -22,4 +22,3 @@ func Connect(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	log.Println("数据库连接成功")
 	return pool, nil
 }
-

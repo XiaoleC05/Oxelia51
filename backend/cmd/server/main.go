@@ -29,6 +29,10 @@ func main() {
 	// 4. 注册路由
 	h := handler.NewHealthHandler(pool)
 	r.GET("/api/health", h.Health)
+	auth := handler.NewAuthHandler(pool, cfg)
+	// 认证相关路由
+	r.POST("/api/auth/register", auth.Register)
+	r.POST("/api/auth/login", auth.Login)
 
 	// 5. 启动服务
 	addr := ":" + cfg.ServerPort
