@@ -15,6 +15,7 @@ function Login() {
     try {
       const data = await apiPost('/auth/login', { username, password })
       setToken(data.token)
+      localStorage.setItem('user', JSON.stringify(data.user))
       navigate('/')  // 登录成功后跳转首页
     } catch (err) {
       setError(err.message)
