@@ -34,11 +34,20 @@ func main() {
 	// 认证相关路由
 	r.POST("/api/auth/register", auth.Register)
 	r.POST("/api/auth/login", auth.Login)
+
+	// 工具相关路由
+	tool := handler.NewToolHandler(pool)
+	r.GET("/api/tools", tool.List)
+	r.GET("/api/tools/:id", tool.Get)
+
 	// 受保护的路由组（需要 JWT 认证）
 	protected := r.Group("/api")
 	protected.Use(middleware.AuthMiddleware(cfg))
 	{
 		protected.GET("/users/me", auth.Me)
+		protected.POST("/tools", tool.Create)
+		protected.PUT("/tools/:id", tool.Update)
+		protected.DELETE("/tools/:id", tool.Delete)
 	}
 
 	// 5. 启动服务
