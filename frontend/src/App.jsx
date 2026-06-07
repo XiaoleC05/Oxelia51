@@ -1,12 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ToolCreate from './pages/ToolCreate'
 import './App.css'
-
-function Home() {
-  return <h1 style={{ marginTop: 60 }}>Oxelia51</h1>
-}
 
 function App() {
   return (
@@ -16,6 +14,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/tools/create" element={<ToolCreate />} />
       </Routes>
     </BrowserRouter>
   )
