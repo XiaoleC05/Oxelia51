@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { apiPost, setToken } from '../api'
+import { apiPost } from '../api'
 
-function Login() {
+function Register() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
@@ -13,9 +14,8 @@ function Login() {
     setError('')
 
     try {
-      const data = await apiPost('/auth/login', { username, password })
-      setToken(data.token)
-      navigate('/')  // 登录成功后跳转首页
+      await apiPost('/auth/register', { username, password, email })
+      navigate('/login')  // 注册成功跳登录页
     } catch (err) {
       setError(err.message)
     }
@@ -23,7 +23,7 @@ function Login() {
 
   return (
     <div style={{ maxWidth: 400, margin: '80px auto', textAlign: 'left' }}>
-      <h1>登录</h1>
+      <h1>注册</h1>
       <form onSubmit={handleSubmit}>
         {error && <p style={{ color: '#ef4444' }}>{error}</p>}
         <div style={{ marginBottom: 16 }}>
@@ -32,6 +32,18 @@ function Login() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            required
+            minLength={3}
+            maxLength={64}
+            style={{ display: 'block', width: '100%', padding: '8px', marginTop: 4 }}
+          />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label>邮箱</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
             style={{ display: 'block', width: '100%', padding: '8px', marginTop: 4 }}
           />
@@ -43,18 +55,20 @@ function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            minLength={8}
+            maxLength={128}
             style={{ display: 'block', width: '100%', padding: '8px', marginTop: 4 }}
           />
         </div>
         <button type="submit" style={{ padding: '10px 24px', cursor: 'pointer' }}>
-          登录
+          注册
         </button>
       </form>
       <p style={{ marginTop: 16, fontSize: 14 }}>
-        没有账号？<Link to="/register">去注册</Link>
+        已有账号？<Link to="/login">去登录</Link>
       </p>
     </div>
   )
 }
 
-export default Login
+export default Register
