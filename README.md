@@ -10,9 +10,9 @@ Oxelia51 是一个综合性 Web 平台，为用户提供统一的在线工具入
 
 | 文档 | 用途 | 受众 |
 | --- | --- | --- |
-| `docs/requirements-architecture-framework.md` | 需求分析、理论框架、系统架构、用户流程、技术规格、阶段路线图和风险模型。 | 公开/协作者 |
-| `docs/requirements-questionnaire.md` | 结构化需求问卷。**已填写**，含决策摘要。 | 公开/协作者 |
-| `docs/implementation-specification.md` | 实现规格。概念补全说明、技术栈推荐对比、MVP 实施引导。 | 公开/协作者 |
+| `docs/01-需求与架构框架.md` | 需求分析、理论框架、系统架构、用户流程、技术规格、阶段路线图和风险模型。 | 公开/协作者 |
+| `docs/02-需求问卷.md` | 结构化需求问卷。**已填写**，含决策摘要。 | 公开/协作者 |
+| `docs/03-实现规格.md` | 实现规格。概念补全说明、技术栈推荐对比、MVP 实施引导。 | 公开/协作者 |
 | `docs/adr/` | 架构决策记录。 | 公开/协作者 |
 
 ## 架构模式
@@ -35,11 +35,12 @@ Oxelia51 是一个综合性 Web 平台，为用户提供统一的在线工具入
 | 本地项目 | 平台角色 |
 | --- | --- |
 | `XiaoleC05.github.io` | 现有个人/开发者网站，平台底部链接引流。 |
-| `dorm-power-guard-lite-repo` | 仅作品集案例展示，不做在线服务。 |
-| `file-format-converter` | 未来的在线文件格式转换服务。 |
-| `rss-aggregator-reader` | 未来的 RSS 聚合阅读服务。 |
-| `short-link-platform` | 未来的短链接管理与数据分析服务。 |
-| `temporary-file-sharing` | 未来的临时文件上传、分享和生命周期管理服务。 |
+| `DormGuard` | 宿舍电费监控，线上个人使用，开源自部署。 |
+| `SuperRead` | RSS 聚合阅读服务。 |
+| `MusicBox` | 跨平台音乐聚合播放。 |
+| `CS2Lab` | CS2 道具教学与地图攻略。 |
+| `AgentCanvas` | AI Agent 过程可视化教学。 |
+| `AIHelper` | AI 提示词生成与优化。 |
 
 ## 当前进度
 
