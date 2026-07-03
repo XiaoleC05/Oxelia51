@@ -1,47 +1,80 @@
-# Oxelia51
+# Oxelia51 — Developer Tool Service Platform
 
-> 开发者工具服务与作品集平台。面向用户提供在线工具服务，同时展示开发者的技术能力与项目成果。
+> One entry point for all your developer tools. One account, one experience.
 
-## 项目目标
+## What Is Oxelia51?
 
-Oxelia51 是一个综合性 Web 平台，为用户提供统一的在线工具入口。各工具作为独立项目开发，通过平台后端 API 网关统一调用。用户始终在平台内操作，无跳转、无分离感。工具源码开源，可下载 exe 本地使用。
+Oxelia51 is a unified platform for developer tools. Rather than a scattered collection of separate services, users register one account and use all integrated tools within a single interface. Tools are rendered by the platform's React frontend, with the Go backend acting as an API gateway to forward requests to each tool's backend service. Users never leave the platform — no redirects, no fragmented experience.
 
-## 初始文档
+## Architecture
 
-| 文档 | 用途 | 受众 |
-| --- | --- | --- |
-| `docs/01-需求与架构框架.md` | 需求分析、理论框架、系统架构、用户流程、技术规格、阶段路线图和风险模型。 | 公开/协作者 |
-| `docs/02-需求问卷.md` | 结构化需求问卷。**已填写**，含决策摘要。 | 公开/协作者 |
-| `docs/03-实现规格.md` | 实现规格。概念补全说明、技术栈推荐对比、MVP 实施引导。 | 公开/协作者 |
-| `docs/adr/` | 架构决策记录。 | 公开/协作者 |
+```
+Browser → oxelia51.com
+              ├── React Frontend (unified UI for all tools)
+              ├── Go Backend (auth, tool registry, API gateway)
+              ├── PostgreSQL (user data, tool metadata)
+              └── Redis (session cache, task queue)
+                     │
+                     ▼ Internal API forwarding
+              ┌──────┼──────┬──────┐
+            Tool A  Tool B  Tool C  Tool D
+          (internal)(internal)(internal)(internal)
+```
 
-## 架构模式
+Each tool provides only a backend API — no standalone frontend. Tool ports are not exposed to the public internet.
 
-用户始终在平台操作 → 平台 React 前端渲染 UI → 平台 Go 后端接收请求 → 转发到对应工具后端 API → 返回结果。
+## Tech Stack
 
-各工具仅提供后端 API，无独立前端，工具端口不暴露公网。
+| Layer | Technology |
+|-------|-----------|
+| Backend | Go + Gin |
+| Frontend | React (Vite) |
+| Database | PostgreSQL 17 |
+| Cache | Redis 7 |
+| Deployment | Docker Compose + Nginx |
+| API Style | REST |
 
-## 仓库可见性
+## Platform Features
 
-| 仓库 | 可见性 | 写权限 |
-| --- | --- | --- |
-| Oxelia51（平台） | 公开 | 仅拥有者及授权协作者 |
-| 各工具项目 | 公开 | 各仓库独立管理 |
+| Module | Status | Description |
+|--------|--------|-------------|
+| User System | ✅ | Registration, login, JWT authentication |
+| Tool Directory | ✅ | Tool listing, detail pages |
+| Admin Dashboard | 🔧 | Tool metadata management |
+| Public Landing Page | ❌ | Platform introduction portal |
 
-敏感信息（密钥、密码等）不提交仓库，通过 `.env` 和环境变量管理。
+## Integrated Tools
 
-## 当前本地工具候选项目
+| Tool | Description | Online | Desktop |
+|------|-------------|--------|---------|
+| DormGuard | Dormitory electricity monitoring | Personal | exe |
+| MusicBox | Cross-platform music aggregator | Personal | exe |
+| CS2Lab | CS2 utility training lab | All users | exe |
+| SuperRead | AI RSS news briefing | All users | exe |
+| AgentCanvas | AI agent process visualization | All users | exe |
+| AIHelper | Prompt generator & optimizer | All users | exe |
 
-| 本地项目 | 平台角色 |
-| --- | --- |
-| `XiaoleC05.github.io` | 现有个人/开发者网站，平台底部链接引流。 |
-| `DormGuard` | 宿舍电费监控，线上个人使用，开源自部署。 |
-| `SuperRead` | RSS 聚合阅读服务。 |
-| `MusicBox` | 跨平台音乐聚合播放。 |
-| `CS2Lab` | CS2 道具教学与地图攻略。 |
-| `AgentCanvas` | AI Agent 过程可视化教学。 |
-| `AIHelper` | AI 提示词生成与优化。 |
+## Repository Visibility
 
-## 当前进度
+| Repository | Visibility | Write Access |
+|------------|-----------|--------------|
+| Oxelia51 (platform) | Public | Owner & authorized collaborators only |
+| Tool projects | Public | Independently managed per repo |
 
-阶段1（平台骨架）已完成：Go/Gin 后端 + React 前端 + PostgreSQL + Redis + 用户认证 + 工具 CRUD。后续阶段待开始。
+Sensitive data (keys, passwords) is managed via `.env` and environment variables — never committed.
+
+## How to Use
+
+- **Online**: Visit [oxelia51.com](https://oxelia51.com), sign up and log in
+- **Desktop**: Download exe installers from each tool's GitHub Releases
+
+## Development Status
+
+Phase 1 (platform skeleton) is complete: Go/Gin backend + React frontend + PostgreSQL + Redis + user auth + tool CRUD. Subsequent phases pending.
+
+## Author
+
+**Xiaole Cheng** — Full-stack developer focused on Go and practical developer tools.
+
+- GitHub: [@XiaoleC05](https://github.com/XiaoleC05)
+- Blog: [xiaolec05.github.io](https://xiaolec05.github.io)
