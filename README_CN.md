@@ -1,80 +1,125 @@
-# Oxelia51 — 开发者工具平台
+# Oxelia51
 
-> 一个入口，访问全部工具。一个账号，统一体验。
+一站式开发者工具平台。一个入口访问全部在线工具，统一账号与体验。
 
-## 项目简介
+## Features
 
-Oxelia51 是一站式开发者工具平台。与零散的工具集合不同——用户在平台注册一次，即可使用所有集成的在线工具。所有操作均在平台内完成，前端统一渲染界面，后端通过 API 网关将请求转发至各工具服务，整个过程用户不感知任何跳转，体验如同使用单体应用。
+- 用户注册与 JWT 认证
+- 工具目录浏览与分类检索
+- 前端统一渲染工具界面，后端通过 API 网关转发请求至各工具服务
+- 管理员后台：工具元数据增删改查
+- 各工具端口不暴露公网，仅内网转发
 
-## 平台架构
+## Architecture
 
+```text
+Browser
+  ↓
+Nginx (reverse proxy)
+  ↓
+React Frontend (unified UI for all tools)
+  ↓
+Go API Layer (auth, tool registry, API gateway)
+  ↓           ↓
+PostgreSQL    Redis
+(user/tool     (session cache,
+ metadata)     task queue)
+
+Internal API gateway:
+  Go Backend → Tool A API (internal)
+             → Tool B API (internal)
+             → Tool C API (internal)
 ```
-浏览器 → oxelia51.com
-              ├── React 前端（统一渲染全部页面）
-              ├── Go 后端（用户认证、工具注册、API 网关）
-              ├── PostgreSQL（用户数据、工具元数据）
-              └── Redis（会话缓存、任务队列）
-                     │
-                     ▼ 内网 API 转发
-              ┌──────┼──────┬──────┐
-           工具A   工具B   工具C   工具D
-          (内网)   (内网)   (内网)   (内网)
+
+各工具仅提供后端 API，不包含独立前端。前端统一由 Oxelia51 的 React 应用渲染，后端负责认证、工具注册和请求转发。
+
+## Directory Structure
+
+```text
+Oxelia51/
+├── backend/          # Go + Gin
+│   ├── cmd/          # entry point
+│   ├── internal/     # business logic
+│   └── migrations/   # PostgreSQL migrations
+├── frontend/         # React (Vite)
+├── docker/           # Docker Compose
+├── docs/             # development documents
+├── README.md
+└── README_CN.md
 ```
 
-各工具仅提供后端 API，不包含独立前端。工具端口不暴露于公网。
+## Requirements
 
-## 技术栈
+- Go 1.26+
+- Node.js 24+
+- PostgreSQL 17
+- Redis 7
+- Docker & Docker Compose
 
-| 层级 | 技术 |
+## Quick Start
+
+```bash
+# clone repository
+git clone https://github.com/XiaoleC05/Oxelia51.git
+cd Oxelia51
+
+# start dependencies
+docker compose up -d
+
+# backend
+cd backend
+go run ./cmd/main.go
+
+# frontend
+cd frontend
+npm install
+npm run dev
+```
+
+## Configuration
+
+配置通过环境变量管理。复制 `.env.example` 为 `.env` 并填入实际值：
+
+- `DATABASE_URL`: PostgreSQL 连接字符串
+- `REDIS_URL`: Redis 连接字符串
+- `JWT_SECRET`: JWT 签名密钥
+
+## Usage
+
+访问 [oxelia51.com](https://oxelia51.com) 注册账号后进入工具目录，选择工具开始使用。
+
+## Development
+
+| 模块 | 状态 |
 |------|------|
-| 后端 | Go + Gin |
-| 前端 | React (Vite) |
-| 数据库 | PostgreSQL 17 |
-| 缓存 | Redis 7 |
-| 部署 | Docker Compose + Nginx |
-| API 风格 | REST |
+| 用户系统（注册/登录/JWT） | 已完成 |
+| 工具目录（列表/详情） | 已完成 |
+| 管理后台（工具 CRUD） | 进行中 |
+| 平台落地页 | 未开始 |
+| API 网关 | 未开始 |
 
-## 平台功能
+## Deployment
 
-| 模块 | 状态 | 说明 |
-|------|------|------|
-| 用户系统 | ✅ | 注册、登录、JWT 认证 |
-| 工具目录 | ✅ | 工具列表与详情浏览 |
-| 管理后台 | 🔧 | 工具元数据增删改查 |
-| 落地页 | ❌ | 平台公共门户 |
+```bash
+# build and deploy with Docker Compose
+docker compose -f docker/docker-compose.yml up -d --build
+```
 
-## 集成工具
+## Roadmap
 
-| 工具 | 功能 | 在线 | 桌面 |
-|------|------|------|------|
-| DormGuard | 宿舍电费监控 | 个人 | exe |
-| MusicBox | 跨平台音乐聚合 | 个人 | exe |
-| CS2Lab | CS2 道具教学 | 全部用户 | exe |
-| SuperRead | RSS AI 简报 | 全部用户 | exe |
-| AgentCanvas | Agent 可视化 | 全部用户 | exe |
-| AIHelper | 提示词工坊 | 全部用户 | exe |
+- [ ] 平台落地页
+- [ ] API 网关与工具请求转发
+- [ ] 前端工具 UI 框架
+- [ ] 工具集成的标准化注册机制
 
-## 仓库可见性
+## Contributing
 
-| 仓库 | 可见性 | 修改权限 |
-|------|--------|---------|
-| Oxelia51（平台） | 公开 | 作者及授权协作者 |
-| 各工具项目 | 公开 | 各自独立管理 |
+1. Fork 本仓库
+2. 创建功能分支 (`git checkout -b feature/xxx`)
+3. 提交变更 (`git commit -m 'Add xxx'`)
+4. 推送分支 (`git push origin feature/xxx`)
+5. 提交 Pull Request
 
-敏感信息通过 `.env` 和环境变量管理，不提交至仓库。
+## License
 
-## 使用方式
-
-- **在线**：访问 [oxelia51.com](https://oxelia51.com) 注册登录
-- **桌面**：各工具 GitHub Releases 提供 exe 安装包
-
-## 开发状态
-
-阶段1（平台骨架）已完成：Go/Gin 后端 + React 前端 + PostgreSQL + Redis + 用户认证 + 工具 CRUD。后续阶段待开发。
-
-## 作者
-
-**Xiaole Cheng（程）** — 全栈开发者，主攻 Go。
-
-- GitHub: [@XiaoleC05](https://github.com/XiaoleC05)
-- 博客: [xiaolec05.github.io](https://xiaolec05.github.io)
+This project is licensed under the MIT License.

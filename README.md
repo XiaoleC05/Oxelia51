@@ -1,80 +1,125 @@
-# Oxelia51 — Developer Tool Service Platform
+# Oxelia51
 
-> One entry point for all your developer tools. One account, one experience.
+Unified developer tool platform. One entry point for all online tools, with a single account and consistent experience.
 
-## What Is Oxelia51?
+## Features
 
-Oxelia51 is a unified platform for developer tools. Rather than a scattered collection of separate services, users register one account and use all integrated tools within a single interface. Tools are rendered by the platform's React frontend, with the Go backend acting as an API gateway to forward requests to each tool's backend service. Users never leave the platform — no redirects, no fragmented experience.
+- User registration with JWT authentication
+- Tool directory with browsing and categorization
+- Unified React frontend rendering for all tool interfaces; Go API gateway forwards requests to tool backends
+- Admin dashboard for tool metadata CRUD
+- Internal-only tool ports, not exposed to the public internet
 
 ## Architecture
 
+```text
+Browser
+  ↓
+Nginx (reverse proxy)
+  ↓
+React Frontend (unified UI for all tools)
+  ↓
+Go API Layer (auth, tool registry, API gateway)
+  ↓           ↓
+PostgreSQL    Redis
+(user/tool     (session cache,
+ metadata)     task queue)
+
+Internal API gateway:
+  Go Backend → Tool A API (internal)
+             → Tool B API (internal)
+             → Tool C API (internal)
 ```
-Browser → oxelia51.com
-              ├── React Frontend (unified UI for all tools)
-              ├── Go Backend (auth, tool registry, API gateway)
-              ├── PostgreSQL (user data, tool metadata)
-              └── Redis (session cache, task queue)
-                     │
-                     ▼ Internal API forwarding
-              ┌──────┼──────┬──────┐
-            Tool A  Tool B  Tool C  Tool D
-          (internal)(internal)(internal)(internal)
+
+Each tool provides only a backend API without a standalone frontend. All UIs are rendered by the unified React application. The backend handles authentication, tool registration, and request forwarding.
+
+## Directory Structure
+
+```text
+Oxelia51/
+├── backend/          # Go + Gin
+│   ├── cmd/          # entry point
+│   ├── internal/     # business logic
+│   └── migrations/   # PostgreSQL migrations
+├── frontend/         # React (Vite)
+├── docker/           # Docker Compose
+├── docs/             # development documents
+├── README.md
+└── README_CN.md
 ```
 
-Each tool provides only a backend API — no standalone frontend. Tool ports are not exposed to the public internet.
+## Requirements
 
-## Tech Stack
+- Go 1.26+
+- Node.js 24+
+- PostgreSQL 17
+- Redis 7
+- Docker and Docker Compose
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Go + Gin |
-| Frontend | React (Vite) |
-| Database | PostgreSQL 17 |
-| Cache | Redis 7 |
-| Deployment | Docker Compose + Nginx |
-| API Style | REST |
+## Quick Start
 
-## Platform Features
+```bash
+# clone repository
+git clone https://github.com/XiaoleC05/Oxelia51.git
+cd Oxelia51
 
-| Module | Status | Description |
-|--------|--------|-------------|
-| User System | ✅ | Registration, login, JWT authentication |
-| Tool Directory | ✅ | Tool listing, detail pages |
-| Admin Dashboard | 🔧 | Tool metadata management |
-| Public Landing Page | ❌ | Platform introduction portal |
+# start dependencies
+docker compose up -d
 
-## Integrated Tools
+# backend
+cd backend
+go run ./cmd/main.go
 
-| Tool | Description | Online | Desktop |
-|------|-------------|--------|---------|
-| DormGuard | Dormitory electricity monitoring | Personal | exe |
-| MusicBox | Cross-platform music aggregator | Personal | exe |
-| CS2Lab | CS2 utility training lab | All users | exe |
-| SuperRead | AI RSS news briefing | All users | exe |
-| AgentCanvas | AI agent process visualization | All users | exe |
-| AIHelper | Prompt generator & optimizer | All users | exe |
+# frontend
+cd frontend
+npm install
+npm run dev
+```
 
-## Repository Visibility
+## Configuration
 
-| Repository | Visibility | Write Access |
-|------------|-----------|--------------|
-| Oxelia51 (platform) | Public | Owner & authorized collaborators only |
-| Tool projects | Public | Independently managed per repo |
+Configuration is managed through environment variables. Copy `.env.example` to `.env` and fill in actual values:
 
-Sensitive data (keys, passwords) is managed via `.env` and environment variables — never committed.
+- `DATABASE_URL`: PostgreSQL connection string
+- `REDIS_URL`: Redis connection string
+- `JWT_SECRET`: JWT signing key
 
-## How to Use
+## Usage
 
-- **Online**: Visit [oxelia51.com](https://oxelia51.com), sign up and log in
-- **Desktop**: Download exe installers from each tool's GitHub Releases
+Visit [oxelia51.com](https://oxelia51.com), register an account, and enter the tool directory to start using tools.
 
-## Development Status
+## Development
 
-Phase 1 (platform skeleton) is complete: Go/Gin backend + React frontend + PostgreSQL + Redis + user auth + tool CRUD. Subsequent phases pending.
+| Module | Status |
+|--------|--------|
+| User system (register/login/JWT) | Completed |
+| Tool directory (list/detail) | Completed |
+| Admin dashboard (tool CRUD) | In progress |
+| Landing page | Not started |
+| API gateway | Not started |
 
-## Author
+## Deployment
 
-**Xiaole Cheng** — Full-stack developer focused on Go and practical developer tools.
+```bash
+# build and deploy with Docker Compose
+docker compose -f docker/docker-compose.yml up -d --build
+```
 
-- GitHub: [@XiaoleC05](https://github.com/XiaoleC05)
-- Blog: [xiaolec05.github.io](https://xiaolec05.github.io)
+## Roadmap
+
+- [ ] Platform landing page
+- [ ] API gateway and request forwarding
+- [ ] Frontend tool UI framework
+- [ ] Standardized tool registration mechanism
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/xxx`)
+3. Commit your changes (`git commit -m 'Add xxx'`)
+4. Push the branch (`git push origin feature/xxx`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License.
