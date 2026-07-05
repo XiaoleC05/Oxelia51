@@ -109,10 +109,36 @@ DG_SETTINGS="$(curl -fsS --max-time 10 \
   http://127.0.0.1:8000/api/admin/settings)" || DG_SETTINGS=""
 
 if echo "$DG_SETTINGS" | grep -q '"settings"'; then
-  log "OK  DormGuard 网关头信任（/api/admin/settings）"
+  log "OK  DormGuard 直连网关头信任（/api/admin/settings）"
 else
-  warn "FAIL DormGuard 网关头信任 — 响应: ${DG_SETTINGS:-<empty>}"
+  warn "FAIL DormGuard 直连网关头 — 响应: ${DG_SETTINGS:-<empty>}"
   FAIL=1
+fi
+
+log "=== 6/6 验证经 Oxelia51 网关（需 OXELIA51_ADMIN_PASSWORD 或参数） ==="
+ADMIN_PW="${1:-${OXELIA51_ADMIN_PASSWORD:-}}"
+if [ -z "$ADMIN_PW" ]; then
+  warn "跳过 Oxelia51 网关 E2E（未提供密码）。请执行: bash $0 'oxelia51密码'"
+else
+  LOGIN=$(curl -fsS --max-time 15 -X POST http://127.0.0.1:8080/api/auth/login \
+    -H 'Content-Type: application/json' \
+    -d "{\"username\":\"oxelia51\",\"password\":\"$ADMIN_PW\"}" 2>/dev/null) || LOGIN=""
+  TOKEN=$(echo "$LOGIN" | python3 -c "import json,sys; print(json.load(sys.stdin).get('token',''))" 2>/dev/null || true)
+  if [ -z "$TOKEN" ]; then
+    warn "FAIL Oxelia51 登录失败，无法测网关 E2E"
+    FAIL=1
+  else
+    PROXY=$(curl -fsS --max-time 15 \
+      -H "Authorization: Bearer $TOKEN" \
+      "http://127.0.0.1:8080/api/tools/dormguard/proxy/api/admin/settings" 2>/dev/null) || PROXY=""
+    if echo "$PROXY" | grep -q '"settings"'; then
+      log "OK  经 Oxelia51 网关访问 DormGuard"
+    else
+      warn "FAIL 经 Oxelia51 网关 — 响应: ${PROXY:-<empty>}"
+      warn "→ 请运行: sudo bash /opt/Oxelia51/deploy/update-backend.sh 后重新登录"
+      FAIL=1
+    fi
+  fi
 fi
 
 if [ "$FAIL" -ne 0 ]; then
