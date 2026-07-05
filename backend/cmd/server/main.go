@@ -85,6 +85,7 @@ func main() {
 	r.GET("/api/articles/categories", articleH.Categories)
 	r.GET("/api/articles/:id", articleH.GetPublic)
 	r.GET("/api/pages/:slug", articleH.GetPage)
+	r.GET("/api/search", articleH.Search)
 
 	authMW := middleware.NewAuthMiddleware(cfg, tokenSvc, blacklist)
 	protected := r.Group("/api")

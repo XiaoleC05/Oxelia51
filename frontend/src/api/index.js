@@ -228,6 +228,11 @@ export async function fetchCategories() {
   return apiGet('/articles/categories')
 }
 
+/** 公开：搜索工具 + 文章 */
+export async function searchAll(q) {
+  return apiGet(`/search?q=${encodeURIComponent(q)}`)
+}
+
 /** 公开：获取静态页面内容 */
 export async function fetchPage(slug) {
   return apiGet(`/pages/${slug}`)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/XiaoleC05/oxelia51-backend/internal/model"
@@ -285,7 +286,68 @@ func (h *ArticleHandler) Delete(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// ===== 静态页面 =====
+// Search GET /api/search?q=xxx — 搜索工具 + 文章
+func (h *ArticleHandler) Search(c *gin.Context) {
+	q := strings.TrimSpace(c.Query("q"))
+	if len(q) < 2 {
+		c.JSON(http.StatusOK, gin.H{"tools": []interface{}{}, "articles": []interface{}{}})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	pattern := "%" + q + "%"
+
+	// 搜索工具
+	tools := []map[string]interface{}{}
+	toolRows, err := h.db.Query(ctx, `
+		SELECT slug, name, COALESCE(description_override, description) AS description
+		FROM tools
+		WHERE (name ILIKE $1 OR description ILIKE $1 OR slug ILIKE $1)
+		  AND online_capable = TRUE
+		ORDER BY name
+		LIMIT 10`, pattern)
+	if err == nil {
+		for toolRows.Next() {
+			var slug, name, desc string
+			if err := toolRows.Scan(&slug, &name, &desc); err == nil {
+				tools = append(tools, map[string]interface{}{
+					"slug": slug, "name": name, "description": desc, "type": "tool",
+				})
+			}
+		}
+		toolRows.Close()
+	}
+
+	// 搜索文章
+	articles := []map[string]interface{}{}
+	articleRows, err := h.db.Query(ctx, `
+		SELECT id, title, summary, category
+		FROM articles
+		WHERE (title ILIKE $1 OR summary ILIKE $1 OR category ILIKE $1)
+		  AND enabled = TRUE AND is_draft = FALSE
+		ORDER BY published_at DESC NULLS LAST
+		LIMIT 10`, pattern)
+	if err == nil {
+		for articleRows.Next() {
+			var id int64
+			var title, summary, category string
+			if err := articleRows.Scan(&id, &title, &summary, &category); err == nil {
+				articles = append(articles, map[string]interface{}{
+					"id": id, "title": title, "summary": summary, "category": category, "type": "article",
+				})
+			}
+		}
+		articleRows.Close()
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"query":    q,
+		"tools":    tools,
+		"articles": articles,
+	})
+}
 
 // GetPage GET /api/pages/:slug — 公开页面内容
 func (h *ArticleHandler) GetPage(c *gin.Context) {
