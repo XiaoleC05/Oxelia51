@@ -23,6 +23,25 @@ if grep -q '^OXELIA_GATEWAY_MODE=' "$ENV_FILE"; then
 else
   echo 'OXELIA_GATEWAY_MODE=true' >> "$ENV_FILE"
 fi
+# 平台网关未转发 X-Oxelia51-Gateway-Secret，留空 secret 避免 401
+if grep -q '^OXELIA_GATEWAY_SECRET=' "$ENV_FILE"; then
+  sed -i 's/^OXELIA_GATEWAY_SECRET=.*/OXELIA_GATEWAY_SECRET=/' "$ENV_FILE"
+else
+  echo 'OXELIA_GATEWAY_SECRET=' >> "$ENV_FILE"
+fi
+
+OX_ENV="$OX_DIR/backend/.env"
+if [ -f "$OX_ENV" ]; then
+  if grep -q '^TOOL_API_BASE_DORMGUARD=' "$OX_ENV"; then
+    sed -i 's|^TOOL_API_BASE_DORMGUARD=.*|TOOL_API_BASE_DORMGUARD=http://127.0.0.1:8000|' "$OX_ENV"
+  else
+    echo 'TOOL_API_BASE_DORMGUARD=http://127.0.0.1:8000' >> "$OX_ENV"
+  fi
+  DB_PASSWORD="$(grep -E '^DB_PASSWORD=' "$OX_ENV" | cut -d= -f2- | tr -d '\r' || true)"
+  if [ -n "$DB_PASSWORD" ] && [ -f "$OX_DIR/deploy/seed-tools.sql" ]; then
+    PGPASSWORD="$DB_PASSWORD" psql -h 127.0.0.1 -U root -d oxelia51 -f "$OX_DIR/deploy/seed-tools.sql" || true
+  fi
+fi
 
 echo "[2/6] NoneBot 端口 $NONEBOT_PORT（释放 8080 给 Oxelia51）..."
 if grep -q '^QQ_BOT_API_URL=' "$ENV_FILE"; then

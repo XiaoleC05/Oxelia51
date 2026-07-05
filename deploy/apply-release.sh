@@ -31,6 +31,11 @@ POSTGRES_PASSWORD=${DB_PASSWORD}
 POSTGRES_DB=oxelia51
 EOF
 
+if ! command -v pg_isready >/dev/null 2>&1; then
+  apt-get update -qq
+  apt-get install -y postgresql-client
+fi
+
 cp "$APP_DIR/deploy/systemd/oxelia51-data.service" /etc/systemd/system/
 cp "$APP_DIR/deploy/systemd/oxelia51-backend.service" /etc/systemd/system/
 systemctl daemon-reload
@@ -61,3 +66,8 @@ nginx -t
 systemctl reload nginx
 
 "$APP_DIR/deploy/monitor/oxelia51-healthcheck.sh"
+
+if [ -d /opt/DormGuard/backend ] && [ -f "$APP_DIR/deploy/fix-dormguard-gateway.sh" ]; then
+  echo "检测到 DormGuard，执行网关联调修复..."
+  bash "$APP_DIR/deploy/fix-dormguard-gateway.sh"
+fi
