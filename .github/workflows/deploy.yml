@@ -11,6 +11,10 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
+# 默认权限：仅读。release job 单独提升写权限。
+permissions:
+  contents: read
+
 jobs:
   build-test:
     name: Build & Test
@@ -74,32 +78,42 @@ jobs:
   release:
     name: Push tarball to release branch
     needs: build-test
-    # 仅 master push 与手动触发才发布；PR 只跑 build-test
     if: >-
       (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # release job 需要写权限来 push 到 release 分支
+    permissions:
+      contents: write
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Download release artifact
         uses: actions/download-artifact@v4
         with:
           name: oxelia-release
 
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
       - name: Push tarball to release branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git checkout --orphan release
+
+          # 创建 orphan 分支（无历史），仅包含 tarball
+          git checkout --orphan release-tmp
           git rm -rf . 2>/dev/null || true
-          cp oxelia51-release.tar.gz .
+
+          # 确认 tarball 存在
+          ls -lh oxelia51-release.tar.gz
+
           git add oxelia51-release.tar.gz
           git commit -m "release: ${GITHUB_SHA::7}"
-          git push origin release --force
-          echo "tarball pushed to release branch, webhook will trigger deploy"
+
+          # 强制推送到 release 分支（覆盖旧版本）
+          git push origin "release-tmp:release" --force
+          echo "tarball pushed to release branch"
