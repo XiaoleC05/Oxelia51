@@ -161,6 +161,11 @@
   50% { transform: translateX(-50%) translateY(6px); }
 }
 
+/* ===== 内容区容器：奇偶交替背景 ===== */
+.landing-content-sections {
+  /* wrapper only，不含自身样式 */
+}
+
 /* ===== 内容区：Fluid 极简 ===== */
 .landing-intro {
   background: var(--bg);
@@ -168,6 +173,13 @@
   text-align: center;
   max-width: 800px;
   margin: 0 auto;
+}
+
+/* 偶数区块：交替背景 + 微妙点阵纹理 */
+.landing-content-sections > section:nth-of-type(even) {
+  background: var(--bg-alt);
+  background-image: radial-gradient(circle, rgba(42, 42, 42, 0.03) 1px, transparent 1px);
+  background-size: 16px 16px;
 }
 
 .landing-intro-brand {
@@ -234,6 +246,8 @@
   font-weight: 700;
   color: var(--text-h);
   margin: 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--accent);
 }
 
 .landing-section-link {
@@ -421,6 +435,14 @@
   overflow: hidden;
 }
 
+/* ===== 渐变过渡：浅色 → 深色 footer ===== */
+.landing-footer-transition {
+  height: 48px;
+  background: linear-gradient(to bottom, var(--bg), var(--bg-dark));
+  margin-left: calc(-1 * clamp(24px, 5vw, 80px));
+  margin-right: calc(-1 * clamp(24px, 5vw, 80px));
+}
+
 /* ===== Footer：Fluid 分栏风格，与 Hero 深色呼应 ===== */
 .landing-footer {
   background: var(--bg-dark);
@@ -533,10 +555,6 @@
 
   .landing-intro-brand {
     font-size: 1.5rem;
-  }
-
-  .landing-links-row {
-    padding: 0 16px 36px;
   }
 
   .landing-section {
