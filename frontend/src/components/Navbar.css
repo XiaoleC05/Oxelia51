@@ -1,30 +1,29 @@
-/* ===== Navbar: refined, editorial ===== */
+/* ===== Navbar: Fluid Material Design style ===== */
 
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 0;
-  border-bottom: 1px solid var(--border);
+  padding: 16px clamp(24px, 5vw, 80px);
   background: var(--bg);
-  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.3s, border-color 0.3s;
 }
 
 .navbar-brand {
   font-family: var(--heading);
-  font-size: 1.3rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
   color: var(--text-h);
   text-decoration: none;
   letter-spacing: -0.01em;
 }
 
 .navbar-brand sup {
-  font-size: 0.6em;
-  font-family: var(--heading);
-  font-weight: 600;
-  letter-spacing: 0;
+  font-size: 0.55em;
+  font-weight: 700;
   color: var(--accent);
+  vertical-align: super;
 }
 
 .navbar-links {
@@ -36,7 +35,7 @@
 .navbar-links a {
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   transition: color 0.2s;
 }
@@ -46,32 +45,80 @@
 }
 
 .navbar-user {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
 .navbar-btn {
   font-size: 13px;
-  padding: 5px 16px;
+  padding: 5px 14px;
   background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 4px;
   font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
 }
 
 .navbar-btn:hover {
   background: var(--bg-alt);
   color: var(--text-h);
-  opacity: 1;
+}
+
+/* ---- Hero overlay: 透明覆盖在头图上（Fluid 风格）---- */
+.navbar--hero {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.navbar--hero .navbar-brand {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.navbar--hero .navbar-brand sup {
+  color: var(--accent);
+}
+
+.navbar--hero .navbar-links a {
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.navbar--hero .navbar-links a:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.navbar--hero .navbar-user {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.navbar--hero .navbar-btn {
+  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.navbar--hero .navbar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 @media (max-width: 480px) {
+  .navbar {
+    padding: 12px 16px;
+  }
+
   .navbar-links {
     gap: 14px;
   }
 
   .navbar-links a {
-    font-size: 14px;
+    font-size: 13px;
   }
 }

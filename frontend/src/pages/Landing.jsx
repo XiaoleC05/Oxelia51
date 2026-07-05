@@ -14,7 +14,6 @@ function Landing() {
   useEffect(() => {
     fetchHeroImages()
       .then((data) => {
-        // API 返回 { images, autoplay_interval_ms }
         setImages(data.images || [])
         if (data.autoplay_interval_ms) setAutoplayMs(data.autoplay_interval_ms)
       })
@@ -44,131 +43,107 @@ function Landing() {
     return stopTimer
   }, [startTimer, stopTimer])
 
-  const goTo = (index) => {
-    setCurrent(index)
-    startTimer()
-  }
-
-  const goPrev = () => {
-    setCurrent((prev) => (prev - 1 + total) % total)
-    startTimer()
-  }
-
-  const goNext = () => {
-    setCurrent((prev) => (prev + 1) % total)
-    startTimer()
-  }
+  const goTo = (index) => { setCurrent(index); startTimer() }
+  const goPrev = () => { setCurrent((prev) => (prev - 1 + total) % total); startTimer() }
+  const goNext = () => { setCurrent((prev) => (prev + 1) % total); startTimer() }
 
   return (
     <main className="landing">
-      {/* ---- Hero Carousel ---- */}
-      <section className="hero-carousel" aria-label="头图轮播">
+      {/* ===== Fluid 风格全宽头图 ===== */}
+      <section className="hero" aria-label="头图轮播">
         {hasImages ? (
           images.map((img, i) => (
             <div
               key={img.id}
-              className={`hero-carousel-slide ${i === current ? 'hero-carousel-slide--active' : ''}`}
+              className={`hero-slide ${i === current ? 'hero-slide--active' : ''}`}
               style={{ backgroundImage: `url(${img.image_url})` }}
               aria-hidden={i !== current}
             />
           ))
         ) : (
-          /* Default hero: CSS gradient fallback */
-          <div className="hero-carousel-slide hero-carousel-slide--active hero-carousel-slide--default" />
+          <div className="hero-slide hero-slide--active hero-slide--default" />
         )}
 
-        {/* Overlay gradient + text */}
-        <div className="hero-carousel-overlay" />
+        {/* 渐变遮罩 */}
+        <div className="hero-overlay" />
 
-        {hasImages && (
-          <div className="hero-carousel-text">
-            <h2 className="hero-carousel-title">{images[current]?.title || ''}</h2>
-            {images[current]?.subtitle && (
-              <p className="hero-carousel-subtitle">{images[current].subtitle}</p>
-            )}
-          </div>
-        )}
+        {/* 居中标题 */}
+        <div className="hero-content">
+          <h1 className="hero-title">
+            Oxelia<span className="hero-sup">51</span>
+          </h1>
+          <p className="hero-tagline">统一在线工具平台</p>
+          {hasImages && images[current]?.title && (
+            <p className="hero-img-title">{images[current].title}</p>
+          )}
+        </div>
 
-        {/* Default hero text when no images */}
-        {!hasImages && (
-          <div className="hero-carousel-text">
-            <h2 className="hero-carousel-title">Oxelia<span className="landing-hero-sup">51</span></h2>
-            <p className="hero-carousel-subtitle">统一在线工具平台</p>
-          </div>
-        )}
-
-        {/* Arrows */}
+        {/* 箭头 */}
         {hasImages && (
           <>
-            <button className="hero-carousel-arrow hero-carousel-arrow--left" onClick={goPrev} aria-label="上一张">
-              &#10094;
-            </button>
-            <button className="hero-carousel-arrow hero-carousel-arrow--right" onClick={goNext} aria-label="下一张">
-              &#10095;
-            </button>
+            <button className="hero-arrow hero-arrow--left" onClick={goPrev} aria-label="上一张">&#10094;</button>
+            <button className="hero-arrow hero-arrow--right" onClick={goNext} aria-label="下一张">&#10095;</button>
           </>
         )}
 
-        {/* Dots */}
+        {/* 圆点 */}
         {hasImages && total > 1 && (
-          <div className="hero-carousel-dots">
+          <div className="hero-dots">
             {images.map((img, i) => (
               <button
                 key={img.id}
-                className={`hero-carousel-dot ${i === current ? 'hero-carousel-dot--active' : ''}`}
+                className={`hero-dot ${i === current ? 'hero-dot--active' : ''}`}
                 onClick={() => goTo(i)}
                 aria-label={`第 ${i + 1} 张`}
               />
             ))}
           </div>
         )}
-      </section>
 
-      {/* ---- Existing Landing content ---- */}
-      <section className="landing-hero">
-        <div className="landing-hero-inner">
-          <p className="landing-hero-chapter">一</p>
-          <h1 className="landing-hero-title">Oxelia<span className="landing-hero-sup">51</span></h1>
-          <p className="landing-hero-sub">统一在线工具平台</p>
-          <p className="landing-hero-desc">
-            一个账号，探索全部在线工具。<br />
-            不追逐潮流，只做好用的小工具。
-          </p>
-          <nav className="landing-hero-actions">
-            <Link to="/tools" className="landing-hero-cta">浏览工具</Link>
-            <Link to="/portfolio" className="landing-hero-link">作品集</Link>
-          </nav>
+        {/* 向下箭头 */}
+        <div className="hero-scroll-hint">
+          <span>&#8964;</span>
         </div>
       </section>
 
-      {/* ---- Light content section ---- */}
-      <section className="landing-body">
-        <div className="landing-body-inner">
-          <p className="landing-body-lead">
-            作品集展示 <code>code</code> 目录下的全部项目，
-            每个工具均为独立开源仓库，可独立部署与使用。
-          </p>
-          <div className="landing-body-links">
-            <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer" className="landing-footnote-link">
-              GitHub &rarr;
-            </a>
-            <a href="https://xiaolec05.github.io" target="_blank" rel="noreferrer" className="landing-footnote-link">
-              Blog &rarr;
-            </a>
+      {/* ===== 内容区：Material Design 卡片 ===== */}
+      <section className="landing-content">
+        <div className="landing-content-inner">
+          <div className="landing-card">
+            <h2 className="landing-card-title">探索工具</h2>
+            <p className="landing-card-desc">
+              一个账号，探索全部在线工具。不追逐潮流，只做好用的小工具。
+            </p>
+            <div className="landing-card-actions">
+              <Link to="/tools" className="landing-btn landing-btn--primary">浏览工具</Link>
+              <Link to="/portfolio" className="landing-btn landing-btn--ghost">作品集</Link>
+            </div>
+          </div>
+
+          <div className="landing-card">
+            <h2 className="landing-card-title">开源项目</h2>
+            <p className="landing-card-desc">
+              每个工具均为独立开源仓库，可独立部署与使用。
+            </p>
+            <div className="landing-card-links">
+              <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer" className="landing-link">
+                GitHub &rarr;
+              </a>
+              <a href="https://xiaolec05.github.io" target="_blank" rel="noreferrer" className="landing-link">
+                Blog &rarr;
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ---- Dark footer ---- */}
+      {/* ===== Footer ===== */}
       <footer className="landing-footer">
-        <div className="landing-footer-inner">
-          <p className="landing-footer-links">
-            <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer">GitHub</a>
-            <span className="landing-sep">/</span>
-            <a href="https://xiaolec05.github.io" target="_blank" rel="noreferrer">Blog</a>
-          </p>
-          <p className="landing-signature"><em>by ChenXiaole</em></p>
-        </div>
+        <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer">GitHub</a>
+        <span className="landing-footer-sep">·</span>
+        <a href="https://xiaolec05.github.io" target="_blank" rel="noreferrer">Blog</a>
+        <span className="landing-footer-sep">·</span>
+        <em>by ChenXiaole</em>
       </footer>
     </main>
   )
