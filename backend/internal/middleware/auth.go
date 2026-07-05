@@ -25,21 +25,14 @@ func NewAuthMiddleware(cfg *config.Config, tokens *auth.TokenService, blacklist 
 
 func (m *AuthMiddleware) Handle() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+		tokenString := extractAccessToken(c)
+		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "未提供认证令牌", "code": "UNAUTHORIZED"})
 			c.Abort()
 			return
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "请求头格式错误", "code": "UNAUTHORIZED"})
-			c.Abort()
-			return
-		}
-
-		claims, err := m.tokens.ParseAccess(parts[1])
+		claims, err := m.tokens.ParseAccess(tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "无效或已过期的令牌", "code": "UNAUTHORIZED"})
 			c.Abort()
@@ -69,6 +62,17 @@ func (m *AuthMiddleware) Handle() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// extractAccessToken 优先 Authorization Bearer；Nginx/CDN 可能丢弃该头，备用 X-Oxelia51-Access-Token
+func extractAccessToken(c *gin.Context) string {
+	if authHeader := c.GetHeader("Authorization"); authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") && parts[1] != "" {
+			return parts[1]
+		}
+	}
+	return strings.TrimSpace(c.GetHeader("X-Oxelia51-Access-Token"))
 }
 
 func claimString(claims jwt.MapClaims, key string) string {

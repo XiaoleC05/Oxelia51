@@ -3,7 +3,10 @@ const API_BASE = '/api'
 function authHeaders(extra = {}) {
   const headers = { 'Content-Type': 'application/json', ...extra }
   const token = getToken()
-  if (token) headers['Authorization'] = `Bearer ${token}`
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+    headers['X-Oxelia51-Access-Token'] = token
+  }
   return headers
 }
 
