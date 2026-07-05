@@ -4,24 +4,59 @@ set -euo pipefail
 
 APP_DIR=/opt/Oxelia51
 BUILD_DIR=/tmp/Oxelia51-build
+REPO_HTTPS="https://github.com/XiaoleC05/Oxelia51.git"
 export PATH=/usr/local/go/bin:${PATH:-}
 export GOTOOLCHAIN=auto
+export GOPROXY="${GOPROXY:-https://goproxy.cn,direct}"
 
-if ! command -v go >/dev/null 2>&1; then
-  echo "错误：未找到 go，请先安装 /usr/local/go" >&2
-  exit 1
-fi
+log() { echo "[update-backend] $*"; }
+die() { echo "[update-backend][ERROR] $*" >&2; exit 1; }
 
-rm -rf "$BUILD_DIR"
-git clone --depth 1 git@github.com:XiaoleC05/Oxelia51.git "$BUILD_DIR"
+ensure_go() {
+  if command -v go >/dev/null 2>&1; then
+    log "Go: $(go version)"
+    return
+  fi
+  log "安装 Go 1.23.6..."
+  curl -fsSL --max-time 120 https://go.dev/dl/go1.23.6.linux-amd64.tar.gz -o /tmp/go.tgz
+  rm -rf /usr/local/go
+  tar -C /usr/local -xzf /tmp/go.tgz
+  export PATH=/usr/local/go/bin:$PATH
+  log "Go: $(go version)"
+}
+
+fetch_source() {
+  if [ -d "$APP_DIR/.git" ]; then
+    log "使用已有仓库 git pull ($APP_DIR)..."
+    timeout 120 git -C "$APP_DIR" pull --ff-only origin master
+    BUILD_DIR="$APP_DIR"
+    return
+  fi
+  log "浅克隆源码（HTTPS，超时 120s）..."
+  rm -rf "$BUILD_DIR"
+  timeout 120 git clone --depth 1 "$REPO_HTTPS" "$BUILD_DIR"
+}
+
+log "=== 1/4 准备 Go ==="
+ensure_go
+
+log "=== 2/4 拉源码 ==="
+fetch_source
+
+log "=== 3/4 编译（超时 300s，首次可能较慢）..."
 cd "$BUILD_DIR/backend"
-go mod tidy
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o oxelia51-server ./cmd/server
+timeout 300 go mod download
+timeout 300 env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o oxelia51-server ./cmd/server
+test -f oxelia51-server || die "编译失败：无 oxelia51-server"
+
+log "=== 4/4 安装并重启 ==="
 install -m755 oxelia51-server "$APP_DIR/backend/oxelia51-server"
-rsync -a "$BUILD_DIR/deploy/" "$APP_DIR/deploy/"
+if [ "$BUILD_DIR" != "$APP_DIR" ]; then
+  rsync -a "$BUILD_DIR/deploy/" "$APP_DIR/deploy/"
+fi
 chmod +x "$APP_DIR/deploy/"*.sh "$APP_DIR/deploy/monitor/"*.sh 2>/dev/null || true
-systemctl restart oxelia51-backend.service
+timeout 30 systemctl restart oxelia51-backend.service || die "oxelia51-backend 重启超时"
 sleep 2
 curl -fsS --max-time 10 http://127.0.0.1:8080/api/health
 echo ""
-echo "Oxelia51 后端已更新。请浏览器退出后重新登录，再访问 /tools/dormguard"
+log "完成。请浏览器退出 → 重新登录 → 访问 /tools/dormguard"
