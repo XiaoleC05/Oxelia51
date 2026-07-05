@@ -22,10 +22,12 @@ function Navbar() {
 
   return (
     <nav className="navbar">
-      <Link to="/" className="navbar-brand">Oxelia51</Link>
+      <Link to="/" className="navbar-brand">
+        Oxelia<sup>51</sup>
+      </Link>
       <div className="navbar-links">
-        <Link to="/tools">工具目录</Link>
-        <Link to="/portfolio">作品集</Link>
+        <Link to="/tools">工具</Link>
+        <Link to="/portfolio">作品</Link>
         {token && user ? (
           <>
             <span className="navbar-user">{user.username}</span>

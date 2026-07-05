@@ -15,20 +15,24 @@ function Portfolio() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <p className="portfolio-status">加载中...</p>
+  if (loading) return <p className="portfolio-status">载入中…</p>
   if (error) return <p className="portfolio-status portfolio-error">{error}</p>
 
   return (
     <div className="portfolio-page">
       <header className="portfolio-header">
+        <p className="chapter-num">三</p>
         <h1>作品集</h1>
-        <p>本地 <code>code</code> 目录下的全部项目</p>
+        <p><code>code</code> 目录下的全部项目</p>
       </header>
-      <div className="portfolio-grid">
+
+      <div className="portfolio-list">
         {items.map((item) => (
-          <article key={item.slug} className="portfolio-card">
-            <h2>{item.name}</h2>
-            <p>{item.description || '暂无描述'}</p>
+          <article key={item.slug} className="portfolio-row">
+            <div className="portfolio-info">
+              <h2>{item.name}</h2>
+              <p>{item.description || '\u2014'}</p>
+            </div>
             <div className="portfolio-links">
               {item.linked_tool_slug && (
                 <Link to={`/tools/${item.linked_tool_slug}`}>在线工具</Link>

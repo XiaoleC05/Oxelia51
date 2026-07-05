@@ -1,65 +1,80 @@
+/* ===== Tool Shell ===== */
+
 .tool-shell {
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 24px;
+  padding: 8px 0 48px;
 }
 
 .tool-shell-back {
   font-size: 14px;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text);
   text-decoration: none;
+  transition: color 0.2s;
+}
+
+.tool-shell-back:hover {
+  color: var(--text-h);
+}
+
+.tool-shell-header {
+  margin-bottom: 28px;
 }
 
 .tool-shell-header h1 {
-  margin: 12px 0 8px;
+  margin: 12px 0 6px;
   display: inline-block;
   margin-right: 12px;
 }
 
 .tool-shell-badge {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 4px;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 2px;
   vertical-align: middle;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--bg);
 }
 
 .tool-shell-badge--open {
-  background: #166534;
-  color: #bbf7d0;
+  background: #5b8731;
 }
 
 .tool-shell-badge--closed_to_users {
-  background: #854d0e;
-  color: #fef08a;
+  background: #b8934f;
 }
 
 .tool-shell-badge--offline {
-  background: #475569;
-  color: #e2e8f0;
+  background: #888;
 }
 
 .tool-shell-desc {
-  color: var(--text, #cbd5e1);
-  line-height: 1.6;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 8px 0 0;
 }
 
 .tool-shell-blocked {
-  margin-top: 24px;
-  padding: 16px;
-  border: 1px solid var(--border, #334155);
-  border-radius: 8px;
+  padding: 20px;
+  color: var(--text);
+  border-left: 3px solid var(--accent);
+  background: var(--code-bg);
+  font-size: 14px;
+  line-height: 1.7;
+  margin-top: 16px;
 }
 
 .tool-shell-muted {
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text);
   font-size: 14px;
 }
 
 .tool-shell-status {
-  text-align: center;
-  margin-top: 40px;
+  padding: 48px 0;
+  color: var(--text);
+  font-size: 15px;
 }
 
 .tool-shell-error {
-  color: #ef4444;
+  color: #c44;
 }

@@ -4,6 +4,8 @@ import './DormGuardTool.css'
 
 const DEFAULT_THRESHOLD = 20
 
+// CRAWLER_ALERT_THRESHOLD 不在 DormGuard 后端 MANAGEABLE_ENV_KEYS 中，
+// 阈值仅作前端展示分组用，不参与后端配置。
 function balanceClass(value, threshold) {
   if (value == null) return ''
   if (value < threshold) return 'dg-balance--low'
@@ -11,10 +13,73 @@ function balanceClass(value, threshold) {
   return 'dg-balance--normal'
 }
 
+// 配置分组元数据：字段 key 必须与 DormGuard backend/app/auth.py MANAGEABLE_ENV_KEYS 一致
+const CONFIG_GROUPS = [
+  {
+    title: '爬虫配置',
+    fields: [
+      { key: 'CRAWLER_DORM_NUMBER', label: '宿舍号', type: 'text', hint: '如 101' },
+      { key: 'CRAWLER_ROOM_ID', label: '房间 ID', type: 'text', hint: '爬虫接口要求的房间标识' },
+      { key: 'CRAWLER_OPENID', label: 'OpenID', type: 'text', hint: '爬虫认证 openid' },
+      {
+        key: 'CRAWLER_JSESSIONID',
+        label: 'JSESSIONID',
+        type: 'password',
+        sensitive: true,
+        hint: '爬虫会话凭证；不改则保留原值',
+      },
+    ],
+  },
+  {
+    title: '调度与告警',
+    fields: [
+      { key: 'SCHEDULER_INTERVAL_HOURS', label: '抓取间隔（小时）', type: 'number' },
+      { key: 'ALERT_COOLDOWN_HOURS', label: '告警冷却（小时）', type: 'number' },
+      {
+        key: 'QQ_ALERT_PAUSE_UNTIL',
+        label: 'QQ 告警暂停至',
+        type: 'text',
+        hint: 'ISO 时间，留空表示不暂停',
+      },
+    ],
+  },
+  {
+    title: 'QQ 机器人',
+    fields: [
+      { key: 'QQ_BOT_ENABLED', label: '启用 QQ 机器人', type: 'checkbox' },
+      { key: 'QQ_BOT_API_URL', label: '机器人 API 地址', type: 'text' },
+      { key: 'QQ_BOT_GROUP_ID', label: '告警群号', type: 'text' },
+    ],
+  },
+]
+
+const ALL_CONFIG_KEYS = CONFIG_GROUPS.flatMap((g) => g.fields.map((f) => f.key))
+const SENSITIVE_KEYS = new Set(
+  CONFIG_GROUPS.flatMap((g) => g.fields.filter((f) => f.sensitive).map((f) => f.key))
+)
+
+function emptySettings() {
+  const obj = {}
+  for (const k of ALL_CONFIG_KEYS) obj[k] = ''
+  return obj
+}
+
+// checkbox 后端存 'true'/'false' 字符串
+function toFormValue(key, raw) {
+  if (key === 'QQ_BOT_ENABLED') return raw === 'true' || raw === true
+  return raw ?? ''
+}
+
+function toSubmissionValue(key, formValue) {
+  if (key === 'QQ_BOT_ENABLED') return formValue ? 'true' : 'false'
+  return String(formValue ?? '')
+}
+
 function DormGuardTool() {
   const [dormNumber, setDormNumber] = useState('')
   const [record, setRecord] = useState(null)
   const [records, setRecords] = useState([])
+  // threshold 仅前端展示用，不读后端不存在的 CRAWLER_ALERT_THRESHOLD
   const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD)
   const [viewMode, setViewMode] = useState('latest')
   const [loading, setLoading] = useState(true)
@@ -25,10 +90,8 @@ function DormGuardTool() {
     try {
       const settings = await apiProxy('dormguard', 'api/admin/settings')
       const dorm = settings?.settings?.CRAWLER_DORM_NUMBER || '101'
-      const cfgThreshold = Number(settings?.settings?.CRAWLER_ALERT_THRESHOLD) || DEFAULT_THRESHOLD
       if (cancelled) return
       setDormNumber(dorm)
-      setThreshold(cfgThreshold)
 
       try {
         const latest = await apiProxy('dormguard', `api/power/records/${dorm}/latest`)
@@ -76,7 +139,6 @@ function DormGuardTool() {
 
   const kClass = balanceClass(record?.kbalance, threshold)
   const zClass = balanceClass(record?.zbalance, threshold)
-
   const latestRecords = [...records].reverse().slice(0, 12)
 
   return (
@@ -99,6 +161,12 @@ function DormGuardTool() {
             onClick={() => setViewMode('history')}
           >
             历史记录
+          </button>
+          <button
+            className={`dg-tab ${viewMode === 'config' ? 'dg-tab--active' : ''}`}
+            onClick={() => setViewMode('config')}
+          >
+            配置
           </button>
         </div>
       </div>
@@ -137,16 +205,25 @@ function DormGuardTool() {
           {!record && (
             <div className="dg-card dg-card--empty">
               <p>暂无电费数据</p>
-              <p className="dg-hint">本地开发可配置爬虫凭证后抓取</p>
+              <p className="dg-hint">可在「配置」tab 中填写爬虫凭证后手动抓取</p>
             </div>
           )}
 
-          {/* ---- Threshold Legend ---- */}
           <div className="dg-legend">
             <span className="dg-legend-item dg-legend--normal">充足</span>
             <span className="dg-legend-item dg-legend--warning">偏低</span>
             <span className="dg-legend-item dg-legend--low">告警</span>
-            <span className="dg-legend-threshold">阈值 {threshold} 度</span>
+            <label className="dg-legend-threshold">
+              阈值
+              <input
+                type="number"
+                min="1"
+                value={threshold}
+                onChange={(e) => setThreshold(Number(e.target.value) || DEFAULT_THRESHOLD)}
+                className="dg-threshold-input"
+              />
+              度
+            </label>
           </div>
         </div>
       )}
@@ -193,6 +270,227 @@ function DormGuardTool() {
           )}
         </div>
       )}
+
+      {/* ---- Config Panel ---- */}
+      {viewMode === 'config' && (
+        <ConfigPanel />
+      )}
+    </div>
+  )
+}
+
+/**
+ * 配置面板：读写 DormGuard api/admin/settings，并提供手动操作按钮。
+ * 敏感字段（CRAWLER_JSESSIONID）后端返回 ******，提交时若未改则原样回传，后端保留旧值。
+ */
+function ConfigPanel() {
+  const [settings, setSettings] = useState(emptySettings)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [saveResult, setSaveResult] = useState(null) // { type: 'success'|'error', message, restartRequired }
+  const [actionBusy, setActionBusy] = useState('') // 'crawl' | 'report' | 'qq-status' | ''
+  const [actionResult, setActionResult] = useState(null) // { type, message, detail? }
+
+  const loadSettings = useCallback(async () => {
+    setLoading(true)
+    setLoadError('')
+    try {
+      const resp = await apiProxy('dormguard', 'api/admin/settings')
+      const raw = resp?.settings ?? {}
+      const next = emptySettings()
+      for (const k of ALL_CONFIG_KEYS) {
+        next[k] = toFormValue(k, raw[k])
+      }
+      setSettings(next)
+    } catch (err) {
+      setLoadError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
+  function updateField(key, value) {
+    setSettings((prev) => ({ ...prev, [key]: value }))
+    setSaveResult(null)
+  }
+
+  async function handleSave(e) {
+    e.preventDefault()
+    setSaving(true)
+    setSaveResult(null)
+    try {
+      const payload = {}
+      for (const k of ALL_CONFIG_KEYS) {
+        payload[k] = toSubmissionValue(k, settings[k])
+      }
+      const resp = await apiProxy('dormguard', 'api/admin/settings', {
+        method: 'PUT',
+        body: JSON.stringify({ settings: payload }),
+      })
+      // 后端返回掩码后的 settings，回填表单
+      const raw = resp?.settings ?? {}
+      const next = emptySettings()
+      for (const k of ALL_CONFIG_KEYS) {
+        next[k] = toFormValue(k, raw[k])
+      }
+      setSettings(next)
+      const restartRequired = !!resp?.restart_required
+      setSaveResult({
+        type: 'success',
+        message: restartRequired
+          ? '已保存，但后端重启失败，需手动重启 dormguard-backend 服务'
+          : '已保存并已重启 dormguard-backend',
+        restartRequired,
+      })
+    } catch (err) {
+      setSaveResult({ type: 'error', message: err.message })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function runAction(kind) {
+    setActionBusy(kind)
+    setActionResult(null)
+    try {
+      let resp
+      if (kind === 'crawl') {
+        resp = await apiProxy('dormguard', 'api/system/crawl', { method: 'POST' })
+      } else if (kind === 'report') {
+        resp = await apiProxy('dormguard', 'api/system/report', { method: 'POST' })
+      } else if (kind === 'qq-status') {
+        resp = await apiProxy('dormguard', 'api/system/qq-status')
+      }
+      const ok = resp?.success !== false
+      setActionResult({
+        type: ok ? 'success' : 'error',
+        message: resp?.message || (ok ? '操作成功' : '操作失败'),
+        detail: resp?.detail,
+      })
+    } catch (err) {
+      setActionResult({ type: 'error', message: err.message })
+    } finally {
+      setActionBusy('')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="dg-config">
+        <div className="dg-loading">
+          <div className="dg-spinner" />
+          <p>加载配置…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="dg-config">
+        <div className="dg-error-banner">
+          <p className="dg-error-text">{loadError}</p>
+          <button className="dg-action-btn" onClick={loadSettings}>重试</button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="dg-config">
+      <form className="dg-config-form" onSubmit={handleSave}>
+        {CONFIG_GROUPS.map((group) => (
+          <fieldset key={group.title} className="dg-fieldset">
+            <legend className="dg-fieldset-legend">{group.title}</legend>
+            {group.fields.map((field) => {
+              const value = settings[field.key]
+              const isSensitive = SENSITIVE_KEYS.has(field.key)
+              return (
+                <label key={field.key} className="dg-field">
+                  <span className="dg-field-label">
+                    {field.label}
+                    {isSensitive && <span className="dg-field-sensitive" title="敏感字段">●</span>}
+                  </span>
+                  {field.type === 'checkbox' ? (
+                    <input
+                      type="checkbox"
+                      className="dg-checkbox"
+                      checked={Boolean(value)}
+                      onChange={(e) => updateField(field.key, e.target.checked)}
+                    />
+                  ) : (
+                    <input
+                      type={field.type}
+                      className="dg-input"
+                      value={value}
+                      onChange={(e) => updateField(field.key, e.target.value)}
+                      placeholder={isSensitive ? '******' : ''}
+                    />
+                  )}
+                  {field.hint && <span className="dg-field-hint">{field.hint}</span>}
+                </label>
+              )
+            })}
+          </fieldset>
+        ))}
+
+        <div className="dg-config-actions">
+          <button type="submit" className="dg-save-btn" disabled={saving}>
+            {saving ? '保存中…' : '保存配置'}
+          </button>
+          <button type="button" className="dg-reset-btn" onClick={loadSettings} disabled={saving}>
+            重置
+          </button>
+        </div>
+
+        {saveResult && (
+          <div className={`dg-config-feedback dg-config-feedback--${saveResult.type}`}>
+            <p>{saveResult.message}</p>
+          </div>
+        )}
+      </form>
+
+      {/* ---- 操作面板 ---- */}
+      <fieldset className="dg-fieldset dg-fieldset--actions">
+        <legend className="dg-fieldset-legend">手动操作</legend>
+        <div className="dg-action-buttons">
+          <button
+            className="dg-action-btn"
+            onClick={() => runAction('crawl')}
+            disabled={actionBusy !== ''}
+          >
+            {actionBusy === 'crawl' ? '抓取中…' : '手动抓取电费'}
+          </button>
+          <button
+            className="dg-action-btn"
+            onClick={() => runAction('report')}
+            disabled={actionBusy !== ''}
+          >
+            {actionBusy === 'report' ? '发送中…' : '发送报告到 QQ 群'}
+          </button>
+          <button
+            className="dg-action-btn"
+            onClick={() => runAction('qq-status')}
+            disabled={actionBusy !== ''}
+          >
+            {actionBusy === 'qq-status' ? '检查中…' : '检查 QQ 机器人状态'}
+          </button>
+        </div>
+
+        {actionResult && (
+          <div className={`dg-config-feedback dg-config-feedback--${actionResult.type}`}>
+            <p>{actionResult.message}</p>
+            {actionResult.detail && (
+              <pre className="dg-action-detail">{JSON.stringify(actionResult.detail, null, 2)}</pre>
+            )}
+          </div>
+        )}
+      </fieldset>
     </div>
   )
 }
