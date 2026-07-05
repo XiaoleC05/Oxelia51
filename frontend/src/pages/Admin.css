@@ -400,3 +400,44 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Hero Settings Bar ---- */
+.hero-settings-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  margin-bottom: 8px;
+}
+
+.hero-settings-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-h);
+  font-family: var(--heading);
+}
+
+.hero-settings-input {
+  width: 80px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--text-h);
+  background: var(--bg);
+}
+
+.hero-settings-input:focus {
+  outline: none;
+  border-color: var(--text-h);
+}
+
+.hero-settings-msg {
+  font-size: 12px;
+  color: var(--accent-2);
+}

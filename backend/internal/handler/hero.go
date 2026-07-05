@@ -43,7 +43,7 @@ func NewHeroHandler(db *pgxpool.Pool) *HeroHandler {
 	return &HeroHandler{db: db, uploadDir: dir}
 }
 
-// ListPublic GET /api/hero-images — 公开列表（仅 enabled，按 order 排序）
+// ListPublic GET /api/hero-images — 公开列表 + 轮播设置
 func (h *HeroHandler) ListPublic(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -72,7 +72,17 @@ func (h *HeroHandler) ListPublic(c *gin.Context) {
 		items = append(items, item)
 	}
 
-	c.JSON(http.StatusOK, items)
+	// 查询轮播间隔设置
+	var intervalMs int
+	_ = h.db.QueryRow(ctx, `SELECT autoplay_interval_ms FROM carousel_settings WHERE id = 1`).Scan(&intervalMs)
+	if intervalMs <= 0 {
+		intervalMs = 5000
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"images":                items,
+		"autoplay_interval_ms":  intervalMs,
+	})
 }
 
 // ListAdmin GET /api/admin/hero-images — 管理端列表（全部）
@@ -255,5 +265,35 @@ func (h *HeroHandler) Upload(c *gin.Context) {
 		"url":      "/uploads/hero-images/" + filename,
 		"filename": filename,
 		"size":     file.Size,
+	})
+}
+
+// UpdateCarouselSettings PUT /api/admin/carousel-settings — 更新轮播间隔
+func (h *HeroHandler) UpdateCarouselSettings(c *gin.Context) {
+	var req struct {
+		AutoplayIntervalMs *int `json:"autoplay_interval_ms"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apiError(c, http.StatusBadRequest, "INVALID_REQUEST", "请求格式错误")
+		return
+	}
+	if req.AutoplayIntervalMs == nil || *req.AutoplayIntervalMs < 1000 || *req.AutoplayIntervalMs > 60000 {
+		apiError(c, http.StatusBadRequest, "INVALID_INTERVAL", "轮播间隔需在 1000-60000 毫秒之间")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	_, err := h.db.Exec(ctx, `
+		UPDATE carousel_settings SET autoplay_interval_ms = $1, updated_at = NOW() WHERE id = 1`,
+		*req.AutoplayIntervalMs)
+	if err != nil {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "更新失败")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"autoplay_interval_ms": *req.AutoplayIntervalMs,
 	})
 }

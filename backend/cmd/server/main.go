@@ -106,6 +106,7 @@ func main() {
 		admin.PUT("/hero-images/:id", heroH.Update)
 		admin.DELETE("/hero-images/:id", heroH.Delete)
 		admin.POST("/hero-images/upload", heroH.Upload)
+		admin.PUT("/carousel-settings", heroH.UpdateCarouselSettings)
 	}
 
 	addr := cfg.BindAddr()

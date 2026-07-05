@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage } from '../api'
+import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings } from '../api'
 import './Admin.css'
 
 function Admin() {
@@ -397,11 +397,35 @@ function PortfolioTab({ portfolio }) {
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 function HeroImagesTab({ heroImages, onUpdated }) {
-  const [modal, setModal] = useState(null) // 'upload' | 'url' | 'edit'
-  const [editing, setEditing] = useState(null) // hero image record for edit mode
+  const [modal, setModal] = useState(null)
+  const [editing, setEditing] = useState(null)
   const [saving, setSaving] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const fileInputRef = useRef(null)
+
+  // 轮播间隔设置
+  const [intervalMs, setIntervalMs] = useState(5000)
+  const [savingInterval, setSavingInterval] = useState(false)
+  const [intervalMsg, setIntervalMsg] = useState('')
+
+  useEffect(() => {
+    apiGet('/hero-images').then((data) => {
+      if (data.autoplay_interval_ms) setIntervalMs(data.autoplay_interval_ms)
+    }).catch(() => {})
+  }, [])
+
+  async function handleSaveInterval() {
+    setSavingInterval(true)
+    setIntervalMsg('')
+    try {
+      await adminUpdateCarouselSettings(Number(intervalMs))
+      setIntervalMsg('已保存')
+    } catch (err) {
+      setIntervalMsg(err.message)
+    } finally {
+      setSavingInterval(false)
+    }
+  }
 
   // Upload modal state
   const [uploadFile, setUploadFile] = useState(null)
@@ -562,6 +586,27 @@ function HeroImagesTab({ heroImages, onUpdated }) {
 
   return (
     <div className="admin-section">
+      {/* 轮播间隔设置 */}
+      <div className="hero-settings-bar">
+        <label className="hero-settings-label">
+          轮播间隔
+          <input
+            type="number"
+            min="1000"
+            max="60000"
+            step="500"
+            value={intervalMs}
+            onChange={(e) => setIntervalMs(e.target.value)}
+            className="hero-settings-input"
+          />
+          毫秒（1000-60000）
+        </label>
+        <button className="admin-btn" onClick={handleSaveInterval} disabled={savingInterval}>
+          {savingInterval ? '保存中…' : '保存间隔'}
+        </button>
+        {intervalMsg && <span className="hero-settings-msg">{intervalMsg}</span>}
+      </div>
+
       {/* Top action bar */}
       <div className="admin-section-actions">
         <button className="admin-btn" onClick={openUpload}>上传图片</button>

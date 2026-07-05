@@ -3,16 +3,21 @@ import { Link } from 'react-router-dom'
 import { fetchHeroImages } from '../api'
 import './Landing.css'
 
-const AUTOPLAY_INTERVAL = 5000 // ms
+const DEFAULT_INTERVAL = 5000
 
 function Landing() {
   const [images, setImages] = useState([])
   const [current, setCurrent] = useState(0)
+  const [autoplayMs, setAutoplayMs] = useState(DEFAULT_INTERVAL)
   const timerRef = useRef(null)
 
   useEffect(() => {
     fetchHeroImages()
-      .then(setImages)
+      .then((data) => {
+        // API 返回 { images, autoplay_interval_ms }
+        setImages(data.images || [])
+        if (data.autoplay_interval_ms) setAutoplayMs(data.autoplay_interval_ms)
+      })
       .catch(() => {})
   }, [])
 
@@ -31,8 +36,8 @@ function Landing() {
     if (!hasImages) return
     timerRef.current = setInterval(() => {
       setCurrent((prev) => (prev + 1) % total)
-    }, AUTOPLAY_INTERVAL)
-  }, [hasImages, total, stopTimer])
+    }, autoplayMs)
+  }, [hasImages, total, stopTimer, autoplayMs])
 
   useEffect(() => {
     startTimer()

@@ -205,3 +205,8 @@ export async function adminUploadHeroImage(file) {
   return parseResponse(res)
 }
 
+/** 管理端：更新轮播间隔设置 */
+export async function adminUpdateCarouselSettings(intervalMs) {
+  return apiPut('/admin/carousel-settings', { autoplay_interval_ms: intervalMs })
+}
+
