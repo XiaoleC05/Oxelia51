@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -64,10 +65,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	ok, err := h.rl.Allow(ctx, "rl:register:ip:"+c.ClientIP(), 3, time.Hour)
 	if err != nil {
+		log.Printf("rate limit error: register ip=%s err=%v", c.ClientIP(), err)
 		apiError(c, http.StatusInternalServerError, "RATE_LIMIT_ERROR", "限流检查失败")
 		return
 	}
 	if !ok {
+		log.Printf("rate limit hit: register ip=%s", c.ClientIP())
 		apiError(c, http.StatusTooManyRequests, "RATE_LIMITED", "注册过于频繁，请稍后再试")
 		return
 	}
@@ -149,9 +152,11 @@ func (h *AuthHandler) ResendVerification(c *gin.Context) {
 	ok, err := h.rl.Allow(ctx, "rl:resend:email:"+req.Email, 1, 24*time.Hour)
 	if err != nil || !ok {
 		if !ok {
+			log.Printf("rate limit hit: resend email=%s", req.Email)
 			apiError(c, http.StatusTooManyRequests, "RATE_LIMITED", "发送过于频繁")
 			return
 		}
+		log.Printf("rate limit error: resend email=%s err=%v", req.Email, err)
 		apiError(c, http.StatusInternalServerError, "RATE_LIMIT_ERROR", "限流检查失败")
 		return
 	}
@@ -193,7 +198,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	rlKey := "rl:login:ip:" + c.ClientIP()
 	count, err := h.rl.Count(ctx, rlKey)
-	if err == nil && count >= 10 {
+	if err != nil {
+		// R5 修复：不再静默 Count 错误，记录日志后继续走凭证校验（fail-open，避免 Redis 故障阻断登录）
+		log.Printf("rate limit count error: login ip=%s err=%v", c.ClientIP(), err)
+	} else if count >= 10 {
+		log.Printf("rate limit hit: login ip=%s count=%d", c.ClientIP(), count)
 		apiError(c, http.StatusTooManyRequests, "RATE_LIMITED", "登录尝试过多，请稍后再试")
 		return
 	}
@@ -312,6 +321,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 
 	ok, _ := h.rl.Allow(ctx, "rl:forgot:email:"+req.Email, 1, 24*time.Hour)
 	if !ok {
+		log.Printf("rate limit hit: forgot email=%s", req.Email)
 		c.JSON(http.StatusOK, gin.H{"message": "ok"})
 		return
 	}

@@ -53,12 +53,23 @@ func (m *AuthMiddleware) Handle() gin.HandlerFunc {
 		role := claimString(claims, "role")
 		username := claimString(claims, "username")
 		exp := claimInt64(claims, "exp")
+		emailVerified := claimBool(claims, "email_verified")
+
+		// 纵深防御：Login 已拦截未验证用户获 JWT，此处二次校验 claim，
+		// 防止 JWT 泄漏/旧 token/异常签发路径绕过邮箱验证。
+		// 缺少该 claim 的旧 token 视为未验证，强制重新登录。
+		if !emailVerified {
+			c.JSON(http.StatusForbidden, gin.H{"error": "邮箱未验证，请完成验证后重新登录", "code": "EMAIL_NOT_VERIFIED"})
+			c.Abort()
+			return
+		}
 
 		c.Set("userID", sub)
 		c.Set("userRole", role)
 		c.Set("username", username)
 		c.Set("jti", jti)
 		c.Set("tokenExp", exp)
+		c.Set("emailVerified", emailVerified)
 
 		c.Next()
 	}
@@ -84,6 +95,21 @@ func claimString(claims jwt.MapClaims, key string) string {
 		return s
 	}
 	return fmt.Sprint(v)
+}
+
+func claimBool(claims jwt.MapClaims, key string) bool {
+	v, ok := claims[key]
+	if !ok || v == nil {
+		return false
+	}
+	switch b := v.(type) {
+	case bool:
+		return b
+	case string:
+		return b == "true"
+	default:
+		return false
+	}
 }
 
 func claimInt64(claims jwt.MapClaims, key string) int64 {

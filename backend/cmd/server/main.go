@@ -51,6 +51,12 @@ func main() {
 
 	r := gin.Default()
 
+	// 仅信任本机 Nginx 作为反代，防止客户端伪造 X-Forwarded-For 污染限流 key。
+	// Nginx 在 127.0.0.1 转发，c.ClientIP() 将读取可信的 X-Forwarded-For。
+	if err := r.SetTrustedProxies([]string{"127.0.0.1", "::1"}); err != nil {
+		log.Printf("警告: 设置可信代理失败: %v", err)
+	}
+
 	health := handler.NewHealthHandler(pool)
 	r.GET("/api/health", health.Health)
 

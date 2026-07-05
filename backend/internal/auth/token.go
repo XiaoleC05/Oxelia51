@@ -30,12 +30,13 @@ func (s *TokenService) IssueAccess(user model.User) (token string, jti string, e
 	jti = uuid.NewString()
 	exp = time.Now().Add(s.cfg.AccessTokenTTL)
 	claims := jwt.MapClaims{
-		"sub":      user.ID,
-		"username": user.Username,
-		"role":     user.Role,
-		"jti":      jti,
-		"exp":      exp.Unix(),
-		"iat":      time.Now().Unix(),
+		"sub":             user.ID,
+		"username":        user.Username,
+		"role":            user.Role,
+		"email_verified":  user.EmailVerified,
+		"jti":             jti,
+		"exp":             exp.Unix(),
+		"iat":             time.Now().Unix(),
 	}
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	token, err = t.SignedString([]byte(s.cfg.JWTSecret))

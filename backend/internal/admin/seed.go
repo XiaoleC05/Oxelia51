@@ -60,8 +60,11 @@ func EnsureAdmin(ctx context.Context, pool *pgxpool.Pool, cfg *config.Config) er
 	if generated {
 		log.Printf("[一次性] 管理员初始密码已生成，请查看桌面文件 oxelia51-admin-password.txt")
 		if err := writeDesktopPassword(password); err != nil {
+			// 不再将明文密码输出到日志（P3 R2 修复）。
+			// 桌面文件写入失败时，管理员应通过 ADMIN_INITIAL_PASSWORD 环境变量重新设置，
+			// 或手动重置数据库密码哈希。
 			log.Printf("警告: 无法写入桌面密码文件: %v", err)
-			log.Printf("[一次性] 管理员初始密码: %s", password)
+			log.Printf("警告: 请改用 ADMIN_INITIAL_PASSWORD 环境变量设置管理员密码，或手动重置数据库")
 		}
 	} else {
 		log.Printf("管理员使用 ADMIN_INITIAL_PASSWORD 环境变量创建")
