@@ -27,6 +27,8 @@ release/
 oxelia51-release.tar.gz
 backend/oxelia51-server
 backend/oxelia51-server.exe
+backend/oxelia51-server-linux
+oxelia51-server-linux.zip
 
 #docker配置
 docker-compose.yml
