@@ -75,6 +75,10 @@ func main() {
 	r.GET("/api/tools/:slug", tool.Get)
 	r.GET("/api/portfolio", tool.ListPortfolioPublic)
 
+	// 首页头图轮播（公开读）
+	heroH := handler.NewHeroHandler(pool)
+	r.GET("/api/hero-images", heroH.ListPublic)
+
 	authMW := middleware.NewAuthMiddleware(cfg, tokenSvc, blacklist)
 	protected := r.Group("/api")
 	protected.Use(authMW.Handle())
@@ -97,6 +101,11 @@ func main() {
 		admin.PATCH("/users/:id", adminTool.PatchUser)
 		admin.GET("/portfolio", adminTool.ListPortfolio)
 		admin.PUT("/portfolio/:slug", adminTool.UpdatePortfolio)
+		admin.GET("/hero-images", heroH.ListAdmin)
+		admin.POST("/hero-images", heroH.Create)
+		admin.PUT("/hero-images/:id", heroH.Update)
+		admin.DELETE("/hero-images/:id", heroH.Delete)
+		admin.POST("/hero-images/upload", heroH.Upload)
 	}
 
 	addr := cfg.BindAddr()

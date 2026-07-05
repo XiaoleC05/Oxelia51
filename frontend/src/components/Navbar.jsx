@@ -28,6 +28,7 @@ function Navbar() {
         Oxelia<sup>51</sup>
       </Link>
       <div className="navbar-links">
+        <Link to="/">首页</Link>
         <Link to="/tools">工具</Link>
         <Link to="/portfolio">作品</Link>
         {token && user?.role === 'admin' && (
