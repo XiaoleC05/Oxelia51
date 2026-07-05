@@ -44,16 +44,37 @@ R1=$(curl -sS --max-time 15 -o /tmp/dg1.json -w "%{http_code}" \
   http://127.0.0.1:8080/api/tools/dormguard/proxy/api/admin/settings)
 echo "HTTP $R1  body: $(head -c 120 /tmp/dg1.json)"
 
-echo "--- proxy via nginx 127.0.0.1 (Host: oxelia51.com) ---"
+echo "--- proxy via nginx 127.0.0.1 (Host: oxelia51.com, Authorization) ---"
 R2=$(curl -sS --max-time 15 -o /tmp/dg2.json -w "%{http_code}" \
   -H "Host: oxelia51.com" -H "Authorization: Bearer $TOKEN" \
   http://127.0.0.1/api/tools/dormguard/proxy/api/admin/settings)
 echo "HTTP $R2  body: $(head -c 120 /tmp/dg2.json)"
 
-if [ "$R1" = "200" ] && [ "$R2" != "200" ]; then
-  echo ">>> 结论: 后端正常，Nginx 转发有问题（Authorization 或配置）"
+echo "--- proxy via nginx (X-Oxelia51-Access-Token 备用头) ---"
+R3=$(curl -sS --max-time 15 -o /tmp/dg3.json -w "%{http_code}" \
+  -H "Host: oxelia51.com" -H "X-Oxelia51-Access-Token: $TOKEN" \
+  http://127.0.0.1/api/tools/dormguard/proxy/api/admin/settings)
+echo "HTTP $R3  body: $(head -c 120 /tmp/dg3.json)"
+
+echo "--- 前端 bundle（nginx 静态）---"
+grep -o 'assets/index-[^"]*\.js' /opt/Oxelia51/frontend/dist/index.html 2>/dev/null \
+  | sed 's/^/磁盘: /' || echo "磁盘: <未找到 dist>"
+curl -sS --max-time 5 -H 'Host: oxelia51.com' http://127.0.0.1/index.html 2>/dev/null \
+  | grep -o 'assets/index-[^"]*\.js' | sed 's/^/nginx: /' || echo "nginx: <未返回>"
+
+if [ "$R1" = "200" ] && [ "$R2" != "200" ] && [ "$R3" = "200" ]; then
+  echo ">>> 结论: 后端正常；Nginx 丢弃 Authorization，但 X-Oxelia51-Access-Token 可用"
+elif [ "$R1" = "200" ] && [ "$R2" != "200" ] && [ "$R3" != "200" ]; then
+  echo ">>> 结论: 后端正常，Nginx 未转发认证头 — 更新 oxelia51.com.conf 并 reload"
 elif [ "$R1" = "200" ] && [ "$R2" = "200" ]; then
-  echo ">>> 结论: 服务端全通。浏览器请 F12 Console 执行自测（见文档），并强刷缓存"
+  echo ">>> 结论: 服务端全通。若浏览器仍 401：强刷缓存，F12 确认 bundle 非 index--vw9HPJu.js"
 else
   echo ">>> 结论: 后端 proxy 异常，查 journalctl -u oxelia51-backend / dormguard-backend"
 fi
+
+echo "--- 浏览器 Console 自测（登录后粘贴）---"
+cat <<'EOF'
+const t=localStorage.getItem('token');
+fetch('/api/tools/dormguard/proxy/api/admin/settings',{headers:{Authorization:'Bearer '+t,'X-Oxelia51-Access-Token':t},cache:'no-store'})
+  .then(r=>r.json().then(j=>({status:r.status,body:j}))).then(console.log);
+EOF
