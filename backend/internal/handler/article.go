@@ -93,6 +93,11 @@ func (h *ArticleHandler) Create(c *gin.Context) {
 		apiError(c, http.StatusBadRequest, "INVALID_REQUEST", "请求格式错误: "+err.Error())
 		return
 	}
+	// URL 基础格式校验
+	if len(req.URL) < 8 || (req.URL[:4] != "http" && req.URL[:2] != "//") {
+		apiError(c, http.StatusBadRequest, "INVALID_URL", "URL 格式无效，需以 http 开头")
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
