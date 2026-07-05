@@ -2,11 +2,15 @@ package handler
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/XiaoleC05/oxelia51-backend/internal/model"
@@ -21,9 +25,21 @@ type HeroHandler struct {
 	uploadDir string
 }
 
+// allowedImageExt 允许上传的图片扩展名（防止上传可执行文件 / SVG XSS）
+var allowedImageExt = map[string]bool{
+	".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true,
+}
+
 func NewHeroHandler(db *pgxpool.Pool) *HeroHandler {
-	dir := "/opt/Oxelia51/uploads/hero-images"
-	_ = os.MkdirAll(dir, 0755)
+	// H11: 可通过环境变量覆盖上传目录，本地开发可用相对路径
+	dir := os.Getenv("HERO_UPLOAD_DIR")
+	if dir == "" {
+		dir = "/opt/Oxelia51/uploads/hero-images"
+	}
+	// H10: 不再忽略 MkdirAll 错误
+	if err := os.MkdirAll(dir, 0750); err != nil {
+		log.Printf("警告: 创建上传目录失败 %s: %v", dir, err)
+	}
 	return &HeroHandler{db: db, uploadDir: dir}
 }
 
@@ -167,6 +183,18 @@ func (h *HeroHandler) Delete(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
+	// H9: 先查出 image_url，删除记录后清理磁盘文件
+	var imageURL string
+	err := h.db.QueryRow(ctx, `SELECT image_url FROM hero_images WHERE id = $1`, id).Scan(&imageURL)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apiError(c, http.StatusNotFound, "HERO_NOT_FOUND", "头图不存在")
+			return
+		}
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
+		return
+	}
+
 	result, err := h.db.Exec(ctx, `DELETE FROM hero_images WHERE id = $1`, id)
 	if err != nil {
 		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "删除失败")
@@ -175,6 +203,14 @@ func (h *HeroHandler) Delete(c *gin.Context) {
 	if result.RowsAffected() == 0 {
 		apiError(c, http.StatusNotFound, "HERO_NOT_FOUND", "头图不存在")
 		return
+	}
+
+	// H9: 清理本地上传文件（仅清理 /uploads/ 开头的本地文件，不动外部 URL）
+	if len(imageURL) > 9 && imageURL[:9] == "/uploads/" {
+		diskPath := filepath.Join("/opt/Oxelia51/uploads", imageURL[9:])
+		if removeErr := os.Remove(diskPath); removeErr != nil && !os.IsNotExist(removeErr) {
+			log.Printf("警告: 删除磁盘文件失败 %s: %v", diskPath, removeErr)
+		}
 	}
 
 	c.Status(http.StatusNoContent)
@@ -194,15 +230,26 @@ func (h *HeroHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	// 生成唯一文件名
-	ext := filepath.Ext(file.Filename)
-	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+	// H1: 文件类型校验（仅允许 jpg/jpeg/png/gif/webp，拒绝 SVG/HTML/PHP 等）
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if !allowedImageExt[ext] {
+		apiError(c, http.StatusBadRequest, "INVALID_FILE_TYPE", "仅允许 jpg/jpeg/png/gif/webp 格式")
+		return
+	}
+
+	// H3: 纳秒时间戳 + 随机 hex 防并发冲突
+	randBytes := make([]byte, 4)
+	_, _ = rand.Read(randBytes)
+	filename := fmt.Sprintf("%d-%s%s", time.Now().UnixNano(), hex.EncodeToString(randBytes), ext)
 	dst := filepath.Join(h.uploadDir, filename)
 
 	if err := c.SaveUploadedFile(file, dst); err != nil {
 		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "保存文件失败")
 		return
 	}
+
+	// H2: 收紧文件权限
+	_ = os.Chmod(dst, 0640)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"url":      "/uploads/hero-images/" + filename,

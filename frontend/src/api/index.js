@@ -117,6 +117,15 @@ export async function apiDelete(path) {
   return parseResponse(res)
 }
 
+export async function apiPut(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  })
+  return parseResponse(res)
+}
+
 export async function apiPatch(path, body) {
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'PATCH',
@@ -148,5 +157,51 @@ export const BADGE_LABEL = {
   open: '已开放',
   closed_to_users: '暂未开放',
   offline: '已下线',
+}
+
+/* ---- Hero Images (头图轮播) ---- */
+
+/** 公开：获取已启用的头图列表 */
+export async function fetchHeroImages() {
+  return apiGet('/hero-images')
+}
+
+/** 管理端：获取全部头图列表 */
+export async function adminFetchHeroImages() {
+  return apiGet('/admin/hero-images', { auth: true })
+}
+
+/** 管理端：创建头图 */
+export async function adminCreateHeroImage(data) {
+  return apiPost('/admin/hero-images', data)
+}
+
+/** 管理端：更新头图 */
+export async function adminUpdateHeroImage(id, data) {
+  return apiPut(`/admin/hero-images/${id}`, data)
+}
+
+/** 管理端：删除头图 */
+export async function adminDeleteHeroImage(id) {
+  return apiDelete(`/admin/hero-images/${id}`)
+}
+
+/** 管理端：上传图片文件（multipart form，不带 JSON Content-Type） */
+export async function adminUploadHeroImage(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {}
+  const token = getToken()
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const res = await fetch(`${API_BASE}/admin/hero-images/upload`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  })
+  return parseResponse(res)
 }
 

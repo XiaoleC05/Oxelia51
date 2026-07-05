@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiGet, apiPost, apiPatch, getStoredUser, getToken } from '../api'
+import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage } from '../api'
 import './Admin.css'
 
 function Admin() {
@@ -11,6 +11,7 @@ function Admin() {
   const [tools, setTools] = useState([])
   const [users, setUsers] = useState([])
   const [portfolio, setPortfolio] = useState([])
+  const [heroImages, setHeroImages] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -34,6 +35,9 @@ function Admin() {
       } else if (tab === 'portfolio') {
         const data = await apiGet('/admin/portfolio', { auth: true })
         setPortfolio(data)
+      } else if (tab === 'heroes') {
+        const data = await adminFetchHeroImages()
+        setHeroImages(data)
       }
     } catch (err) {
       setError(err.message)
@@ -81,6 +85,12 @@ function Admin() {
         >
           作品集
         </button>
+        <button
+          className={`admin-tab ${tab === 'heroes' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('heroes')}
+        >
+          头图
+        </button>
       </div>
 
       {loading && <p className="admin-status">加载中…</p>}
@@ -94,6 +104,9 @@ function Admin() {
       )}
       {!loading && !error && tab === 'portfolio' && (
         <PortfolioTab portfolio={portfolio} />
+      )}
+      {!loading && !error && tab === 'heroes' && (
+        <HeroImagesTab heroImages={heroImages} onUpdated={loadData} />
       )}
     </div>
   )
@@ -376,6 +389,418 @@ function PortfolioTab({ portfolio }) {
           </tbody>
         </table>
       </div>
+    </div>
+  )
+}
+
+// ===== 头图管理 =====
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
+function HeroImagesTab({ heroImages, onUpdated }) {
+  const [modal, setModal] = useState(null) // 'upload' | 'url' | 'edit'
+  const [editing, setEditing] = useState(null) // hero image record for edit mode
+  const [saving, setSaving] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const fileInputRef = useRef(null)
+
+  // Upload modal state
+  const [uploadFile, setUploadFile] = useState(null)
+  const [uploadPreview, setUploadPreview] = useState('')
+  const [uploadTitle, setUploadTitle] = useState('')
+  const [uploadSubtitle, setUploadSubtitle] = useState('')
+  const [uploadOrder, setUploadOrder] = useState('')
+
+  // URL modal state
+  const [urlValue, setUrlValue] = useState('')
+  const [urlTitle, setUrlTitle] = useState('')
+  const [urlSubtitle, setUrlSubtitle] = useState('')
+  const [urlOrder, setUrlOrder] = useState('')
+
+  // Edit modal state
+  const [editUrl, setEditUrl] = useState('')
+  const [editTitle, setEditTitle] = useState('')
+  const [editSubtitle, setEditSubtitle] = useState('')
+  const [editOrder, setEditOrder] = useState('')
+  const [editEnabled, setEditEnabled] = useState(true)
+
+  function openUpload() {
+    setUploadFile(null)
+    setUploadPreview('')
+    setUploadTitle('')
+    setUploadSubtitle('')
+    setUploadOrder('')
+    setUploadError('')
+    setModal('upload')
+  }
+
+  function openUrl() {
+    setUrlValue('')
+    setUrlTitle('')
+    setUrlSubtitle('')
+    setUrlOrder('')
+    setModal('url')
+  }
+
+  function openEdit(img) {
+    setEditing(img)
+    setEditUrl(img.image_url)
+    setEditTitle(img.title || '')
+    setEditSubtitle(img.subtitle || '')
+    setEditOrder(String(img.display_order))
+    setEditEnabled(img.enabled)
+    setModal('edit')
+  }
+
+  function closeModal() {
+    setModal(null)
+    setEditing(null)
+    setUploadError('')
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadError('文件不能超过 10MB')
+      return
+    }
+
+    setUploadFile(file)
+    setUploadError('')
+
+    const reader = new FileReader()
+    reader.onload = () => setUploadPreview(reader.result)
+    reader.readAsDataURL(file)
+  }
+
+  async function handleUpload(e) {
+    e.preventDefault()
+    if (!uploadFile) {
+      setUploadError('请选择文件')
+      return
+    }
+
+    setSaving(true)
+    setUploadError('')
+    try {
+      const { url } = await adminUploadHeroImage(uploadFile)
+      await adminCreateHeroImage({
+        image_url: url,
+        title: uploadTitle || '',
+        subtitle: uploadSubtitle || '',
+        display_order: parseInt(uploadOrder, 10) || 0,
+      })
+      closeModal()
+      onUpdated()
+    } catch (err) {
+      setUploadError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleUrlSubmit(e) {
+    e.preventDefault()
+    if (!urlValue.trim()) return
+
+    setSaving(true)
+    try {
+      await adminCreateHeroImage({
+        image_url: urlValue.trim(),
+        title: urlTitle || '',
+        subtitle: urlSubtitle || '',
+        display_order: parseInt(urlOrder, 10) || 0,
+      })
+      closeModal()
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleEdit(e) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await adminUpdateHeroImage(editing.id, {
+        image_url: editUrl || undefined,
+        title: editTitle || undefined,
+        subtitle: editSubtitle || undefined,
+        display_order: parseInt(editOrder, 10) || undefined,
+        enabled: editEnabled,
+      })
+      closeModal()
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleToggle(img) {
+    try {
+      await adminUpdateHeroImage(img.id, { enabled: !img.enabled })
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  async function handleDelete(img) {
+    if (!window.confirm(`确认删除头图「${img.title || img.image_url}」？`)) return
+    try {
+      await adminDeleteHeroImage(img.id)
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  return (
+    <div className="admin-section">
+      {/* Top action bar */}
+      <div className="admin-section-actions">
+        <button className="admin-btn" onClick={openUpload}>上传图片</button>
+        <button className="admin-btn" onClick={openUrl}>添加 URL</button>
+      </div>
+
+      {/* Card grid */}
+      {heroImages.length === 0 ? (
+        <p className="admin-muted" style={{ paddingTop: 16 }}>暂无头图，点击上方按钮添加。</p>
+      ) : (
+        <div className="hero-card-grid">
+          {heroImages.map((img) => (
+            <div key={img.id} className={`hero-card ${!img.enabled ? 'hero-card--disabled' : ''}`}>
+              <div className="hero-card-thumb">
+                <img src={img.image_url} alt={img.title || ''} loading="lazy" />
+              </div>
+              <div className="hero-card-body">
+                <div className="hero-card-info">
+                  <h4 className="hero-card-title">{img.title || '（无标题）'}</h4>
+                  {img.subtitle && <p className="hero-card-subtitle">{img.subtitle}</p>}
+                  <span className="hero-card-order">排序：{img.display_order}</span>
+                </div>
+                <div className="hero-card-actions">
+                  <label className="hero-card-toggle" title={img.enabled ? '已启用' : '已禁用'}>
+                    <input
+                      type="checkbox"
+                      checked={img.enabled}
+                      onChange={() => handleToggle(img)}
+                    />
+                    <span className="hero-card-toggle-label">{img.enabled ? '启用' : '禁用'}</span>
+                  </label>
+                  <button className="admin-btn admin-btn--sm" onClick={() => openEdit(img)}>编辑</button>
+                  <button className="admin-btn admin-btn--sm admin-btn--ghost" onClick={() => handleDelete(img)}>删除</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      {modal === 'upload' && (
+        <div className="admin-modal">
+          <form className="admin-modal-form" onSubmit={handleUpload}>
+            <h3>上传头图</h3>
+            {uploadError && <p className="admin-error">{uploadError}</p>}
+
+            <label className="admin-field">
+              <span>选择图片（支持 GIF，最大 10MB）</span>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+              />
+            </label>
+
+            {uploadPreview && (
+              <div className="hero-preview">
+                <img src={uploadPreview} alt="预览" />
+              </div>
+            )}
+
+            <label className="admin-field">
+              <span>标题</span>
+              <input
+                type="text"
+                value={uploadTitle}
+                onChange={(e) => setUploadTitle(e.target.value)}
+                placeholder="显示在图片上的大标题"
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>副标题</span>
+              <input
+                type="text"
+                value={uploadSubtitle}
+                onChange={(e) => setUploadSubtitle(e.target.value)}
+                placeholder="标题下方的描述文字"
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>排序号</span>
+              <input
+                type="number"
+                value={uploadOrder}
+                onChange={(e) => setUploadOrder(e.target.value)}
+                placeholder="数字越小越靠前"
+              />
+            </label>
+
+            <div className="admin-modal-actions">
+              <button type="submit" className="admin-btn" disabled={saving || !uploadFile}>
+                {saving ? '上传中…' : '上传并创建'}
+              </button>
+              <button type="button" className="admin-btn admin-btn--ghost" onClick={closeModal}>
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* URL Modal */}
+      {modal === 'url' && (
+        <div className="admin-modal">
+          <form className="admin-modal-form" onSubmit={handleUrlSubmit}>
+            <h3>添加图片 URL</h3>
+
+            <label className="admin-field">
+              <span>图片 URL</span>
+              <input
+                type="text"
+                value={urlValue}
+                onChange={(e) => setUrlValue(e.target.value)}
+                placeholder="https://example.com/hero.jpg"
+                required
+              />
+            </label>
+
+            {urlValue && (
+              <div className="hero-preview">
+                <img src={urlValue} alt="预览" onError={(e) => { e.target.style.display = 'none' }} />
+              </div>
+            )}
+
+            <label className="admin-field">
+              <span>标题</span>
+              <input
+                type="text"
+                value={urlTitle}
+                onChange={(e) => setUrlTitle(e.target.value)}
+                placeholder="显示在图片上的大标题"
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>副标题</span>
+              <input
+                type="text"
+                value={urlSubtitle}
+                onChange={(e) => setUrlSubtitle(e.target.value)}
+                placeholder="标题下方的描述文字"
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>排序号</span>
+              <input
+                type="number"
+                value={urlOrder}
+                onChange={(e) => setUrlOrder(e.target.value)}
+                placeholder="数字越小越靠前"
+              />
+            </label>
+
+            <div className="admin-modal-actions">
+              <button type="submit" className="admin-btn" disabled={saving || !urlValue.trim()}>
+                {saving ? '创建中…' : '创建'}
+              </button>
+              <button type="button" className="admin-btn admin-btn--ghost" onClick={closeModal}>
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {modal === 'edit' && editing && (
+        <div className="admin-modal">
+          <form className="admin-modal-form" onSubmit={handleEdit}>
+            <h3>编辑头图 #{editing.id}</h3>
+
+            <div className="hero-preview">
+              <img src={editUrl} alt="预览" onError={(e) => { e.target.style.display = 'none' }} />
+            </div>
+
+            <label className="admin-field">
+              <span>图片 URL</span>
+              <input
+                type="text"
+                value={editUrl}
+                onChange={(e) => setEditUrl(e.target.value)}
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>标题</span>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="显示在图片上的大标题"
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>副标题</span>
+              <input
+                type="text"
+                value={editSubtitle}
+                onChange={(e) => setEditSubtitle(e.target.value)}
+                placeholder="标题下方的描述文字"
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>排序号</span>
+              <input
+                type="number"
+                value={editOrder}
+                onChange={(e) => setEditOrder(e.target.value)}
+                placeholder="数字越小越靠前"
+              />
+            </label>
+
+            <label className="admin-field admin-field--row">
+              <span>启用状态</span>
+              <input
+                type="checkbox"
+                checked={editEnabled}
+                onChange={(e) => setEditEnabled(e.target.checked)}
+              />
+            </label>
+
+            <div className="admin-modal-actions">
+              <button type="submit" className="admin-btn" disabled={saving}>
+                {saving ? '保存中…' : '保存'}
+              </button>
+              <button type="button" className="admin-btn admin-btn--ghost" onClick={closeModal}>
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }
