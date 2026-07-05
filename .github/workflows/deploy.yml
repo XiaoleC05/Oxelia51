@@ -76,8 +76,11 @@ jobs:
     name: Deploy to Production
     needs: build-test
     # 仅 master 分支 push 与手动触发才部署；PR 只跑 build-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+      github.event_name == 'workflow_dispatch'
+    # self-hosted runner = 生产服务器本身，无需 SSH/SCP
+    runs-on: self-hosted
     timeout-minutes: 10
     steps:
       - name: Download release artifact
@@ -85,41 +88,17 @@ jobs:
         with:
           name: oxelia-release
 
-      - name: Upload tarball to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: oxelia51-release.tar.gz
-          target: /tmp
-          strip_components: 0
-
-      - name: Apply release on server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script_stop: true
-          script: |
-            set -euo pipefail
-            WORK="/tmp/oxelia51-release-$$"
-            trap 'rm -rf "$WORK" /tmp/oxelia51-release.tar.gz' EXIT
-            mkdir -p "$WORK"
-            tar xzf /tmp/oxelia51-release.tar.gz -C "$WORK"
-            bash "$WORK/deploy/apply-release.sh" "$WORK"
+      - name: Extract and apply release
+        run: |
+          set -euo pipefail
+          WORK="/tmp/oxelia51-release-$$"
+          trap 'rm -rf "$WORK" oxelia51-release.tar.gz' EXIT
+          mkdir -p "$WORK"
+          tar xzf oxelia51-release.tar.gz -C "$WORK"
+          bash "$WORK/deploy/apply-release.sh" "$WORK"
 
       - name: Health check
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            curl -fsS --max-time 10 http://127.0.0.1:8080/api/health
-            echo ""
-            echo "部署完成: https://oxelia51.com / http://47.108.202.199"
+        run: |
+          curl -fsS --max-time 10 http://127.0.0.1:8080/api/health
+          echo ""
+          echo "部署完成: https://oxelia51.com / http://47.108.202.199"
