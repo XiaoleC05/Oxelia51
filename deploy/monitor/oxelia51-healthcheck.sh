@@ -18,7 +18,13 @@ check() {
 
 check "api" curl -fsS --max-time 10 http://127.0.0.1:8080/api/health
 check "nginx" systemctl is-active --quiet nginx
-check "postgres" PGPASSWORD="$(grep -E '^DB_PASSWORD=' /opt/Oxelia51/backend/.env 2>/dev/null | cut -d= -f2- | tr -d '\r')" pg_isready -h 127.0.0.1 -U root -d oxelia51
+
+check_postgres() {
+  local pw
+  pw="$(grep -E '^DB_PASSWORD=' /opt/Oxelia51/backend/.env 2>/dev/null | cut -d= -f2- | tr -d '\r')"
+  PGPASSWORD="$pw" pg_isready -h 127.0.0.1 -U root -d oxelia51
+}
+check "postgres" check_postgres
 
 if [ "$FAIL" -ne 0 ]; then
   logger -t "$LOG_TAG" "$MSG"

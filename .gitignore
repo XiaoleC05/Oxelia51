@@ -23,6 +23,10 @@ node_modules/
 # 构建产物
 dist/
 build/
+release/
+oxelia51-release.tar.gz
+backend/oxelia51-server
+backend/oxelia51-server.exe
 
 #docker配置
 docker-compose.yml

@@ -8,8 +8,8 @@ Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/Oxelia51/deploy/docker
 EnvironmentFile=-/opt/Oxelia51/deploy/docker/.env
-ExecStart=/usr/bin/docker compose -f compose.prod.yml up -d
-ExecStop=/usr/bin/docker compose -f compose.prod.yml down
+ExecStart=/bin/bash -c 'if command -v docker-compose >/dev/null 2>&1; then docker-compose -f compose.prod.yml up -d; else docker compose -f compose.prod.yml up -d; fi'
+ExecStop=/bin/bash -c 'if command -v docker-compose >/dev/null 2>&1; then docker-compose -f compose.prod.yml down; else docker compose -f compose.prod.yml down; fi'
 TimeoutStartSec=120
 
 [Install]
