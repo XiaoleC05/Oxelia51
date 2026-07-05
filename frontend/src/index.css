@@ -1,28 +1,31 @@
-/* ===== Oxelia51 Design Tokens ===== */
-/* 气质：文本优先、书卷气、克制 */
+/* ===== Oxelia51 Design Tokens — UI-07 ===== */
+/* 气质：编辑式克制 × 电影级大胆 */
 
 :root {
-  /* ---- Palette: warm ink ---- */
-  --text: #5c5346;
-  --text-h: #1a1510;
-  --bg: #fdfaf4;
-  --border: #e3ded3;
-  --code-bg: #f3efe7;
-  --accent: #8b3a2b;
-  --accent-bg: rgba(139, 58, 43, 0.07);
-  --accent-border: rgba(139, 58, 43, 0.35);
-  --social-bg: rgba(243, 239, 231, 0.5);
+  /* ---- Palette: warm, luminous ---- */
+  --bg: #fafaf7;
+  --bg-alt: #f0efe9;
+  --bg-dark: #1a1d24;
+  --text: #2a2a2a;
+  --text-h: #0d0d0d;
+  --text-muted: #6b6b6b;
+  --border: #e0ddd5;
+  --code-bg: #f4f3ec;
+  --accent: #c8553d;
+  --accent-2: #2c6e49;
+  --accent-bg: rgba(200, 85, 61, 0.07);
+  --accent-border: rgba(200, 85, 61, 0.35);
+  --social-bg: rgba(240, 239, 233, 0.5);
   --shadow: none;
 
   /* ---- Typography ---- */
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --heading:
-    Georgia, 'Noto Serif SC', 'Source Han Serif SC', 'SimSun', '宋体', serif;
-  --mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+  --sans: 'Inter', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --heading: 'Noto Serif SC', 'Source Han Serif SC', Georgia, serif;
+  --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
-  font: 17px/1.7 var(--sans);
+  font: 16px/1.7 var(--sans);
   letter-spacing: 0.01em;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -31,19 +34,18 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ---- Dark mode: reading lamp ---- */
+/* ---- Dark mode (optional, not default) ---- */
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #a39a8c;
-    --text-h: #e8e1d5;
-    --bg: #1a1612;
-    --border: #3a3228;
-    --code-bg: #262016;
-    --accent: #c07050;
-    --accent-bg: rgba(192, 112, 80, 0.1);
-    --accent-border: rgba(192, 112, 80, 0.35);
-    --social-bg: rgba(58, 50, 40, 0.5);
-    --shadow: none;
+    --bg: #1a1d24;
+    --bg-alt: #22262e;
+    --text: #c4c4c4;
+    --text-h: #f0f0f0;
+    --text-muted: #888;
+    --accent: #d96b5a;
+    --accent-2: #3d8b5f;
+    --border: #2e323a;
+    --code-bg: #282c34;
   }
 }
 
@@ -54,44 +56,65 @@ body {
 
 #root {
   width: 100%;
-  max-width: 760px;
+  max-width: 1200px;
   margin: 0 auto;
   text-align: left;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  padding: 0 20px;
+  padding: 0 clamp(24px, 5vw, 80px);
 }
 
-/* ---- Headings: serif ---- */
+/* ---- Chapter number ---- */
+.chapter-num {
+  font-family: var(--heading);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 8px;
+  line-height: 1;
+}
+
+/* ---- Headings: serif, bold sizes ---- */
 h1,
 h2,
 h3,
 h4 {
   font-family: var(--heading);
-  font-weight: 400;
+  font-weight: 600;
   color: var(--text-h);
-  line-height: 1.35;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
 }
 
 h1 {
-  font-size: 2rem;
-  letter-spacing: -0.02em;
-  margin: 0 0 16px;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  margin: 0 0 20px;
 }
+
 h2 {
-  font-size: 1.35rem;
-  letter-spacing: -0.01em;
-  margin: 0 0 10px;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 0 0 12px;
 }
+
 h3 {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   margin: 0 0 8px;
 }
 
 p {
   margin: 0;
+}
+
+a {
+  color: var(--text-h);
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+a:hover {
+  color: var(--accent);
 }
 
 /* ---- Code ---- */
@@ -109,13 +132,13 @@ input,
 textarea {
   box-sizing: border-box;
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 16px;
   border: none;
   border-bottom: 1px solid var(--border);
   border-radius: 0;
   background: transparent;
   color: var(--text-h);
-  padding: 8px 0;
+  padding: 10px 0;
   transition: border-color 0.2s;
 }
 
@@ -127,30 +150,36 @@ textarea:focus {
 
 button {
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
-  padding: 8px 20px;
+  padding: 10px 24px;
   border: 1px solid var(--text-h);
-  border-radius: 2px;
+  border-radius: 3px;
   background: var(--text-h);
   color: var(--bg);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, background 0.2s;
 }
 
 button:hover {
-  opacity: 0.85;
+  opacity: 0.88;
 }
 
 button:active {
-  opacity: 0.7;
+  opacity: 0.72;
 }
 
 label {
   display: block;
-  margin-bottom: 2px;
-  font-size: 13px;
-  color: var(--text);
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ---- Section spacing ---- */
+section {
+  padding: 80px 0;
 }
 
 /* ---- Responsive ---- */
@@ -160,13 +189,18 @@ label {
   }
 
   #root {
-    padding: 0 14px;
+    padding: 0 16px;
   }
 
   h1 {
-    font-size: 1.55rem;
+    font-size: 2rem;
   }
+
   h2 {
-    font-size: 1.15rem;
+    font-size: 1.35rem;
+  }
+
+  section {
+    padding: 48px 0;
   }
 }

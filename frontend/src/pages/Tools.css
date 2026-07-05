@@ -1,21 +1,21 @@
-/* ===== Tool Directory: editorial list ===== */
+/* ===== Tool Directory: editorial wide-row list ===== */
 
 .tools-page {
-  padding: 8px 0 48px;
+  padding: 32px 0 80px;
 }
 
 /* ---- Header ---- */
 .tools-header {
-  margin-bottom: 36px;
+  margin-bottom: 48px;
 }
 
 .tools-header h1 {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
 }
 
 .tools-subtitle {
-  color: var(--text);
-  font-size: 15px;
+  color: var(--text-muted);
+  font-size: 16px;
   margin: 0;
 }
 
@@ -25,22 +25,26 @@
   flex-direction: column;
 }
 
-/* ---- Row ---- */
+/* ---- Row: wide, editorial, divider-separated ---- */
 .tool-row {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  padding: 18px 0;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 0;
   border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
+  transition: background 0.2s, padding 0.2s;
+}
+
+.tool-row:first-child {
+  border-top: 1px solid var(--border);
 }
 
 .tool-row:hover {
-  background: var(--code-bg);
-  margin: 0 -12px;
-  padding-left: 12px;
-  padding-right: 12px;
+  background: var(--bg-alt);
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
 /* ---- Left: name + desc ---- */
@@ -51,16 +55,30 @@
 
 .tool-name {
   font-family: var(--heading);
-  font-size: 1.05rem;
-  font-weight: 400;
+  font-size: 1.3rem;
+  font-weight: 600;
   color: var(--text-h);
-  margin: 0 0 4px;
+  margin: 0 0 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tool-recommend {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 1px 8px;
+  letter-spacing: 0.04em;
 }
 
 .tool-desc {
   color: var(--text);
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.6;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -72,40 +90,41 @@
 .tool-meta {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   flex-shrink: 0;
 }
 
 /* ---- Badge ---- */
 .tool-badge {
   font-size: 11px;
-  padding: 1px 8px;
+  font-weight: 600;
+  padding: 2px 10px;
   border-radius: 2px;
   color: var(--bg);
   white-space: nowrap;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
 }
 
 .tool-badge--open {
-  background: #5b8731;
+  background: var(--accent-2);
 }
 
 .tool-badge--closed_to_users {
-  background: #b8934f;
+  background: var(--accent);
 }
 
 .tool-badge--offline {
-  background: #888;
+  background: var(--text-muted);
 }
 
 /* ---- Entry link ---- */
 .tool-enter {
   font-size: 14px;
+  font-weight: 500;
   color: var(--text-h);
   text-decoration: none;
   border-bottom: 1px solid var(--accent-border);
-  padding-bottom: 1px;
+  padding-bottom: 2px;
   transition: border-color 0.2s, color 0.2s;
   cursor: pointer;
   background: none;
@@ -113,7 +132,6 @@
   border-left: none;
   border-right: none;
   border-radius: 0;
-  font-weight: 400;
 }
 
 .tool-enter:hover {
@@ -125,32 +143,34 @@
 /* ---- Release link ---- */
 .tool-release-link {
   font-size: 13px;
-  color: var(--text);
+  color: var(--text-muted);
   text-decoration: none;
   border-bottom: 1px solid var(--border);
   padding-bottom: 1px;
   transition: border-color 0.2s, color 0.2s;
+  margin-top: 6px;
+  display: inline-block;
 }
 
 .tool-release-link:hover {
   color: var(--text-h);
-  border-color: var(--text);
+  border-color: var(--text-muted);
 }
 
 /* ---- Status ---- */
 .tools-status {
-  padding: 60px 0;
-  color: var(--text);
-  font-size: 15px;
+  padding: 80px 0;
+  color: var(--text-muted);
+  font-size: 16px;
 }
 
 .tools-error {
-  color: #c44;
+  color: var(--accent);
 }
 
 .tools-empty {
-  padding: 60px 0;
-  color: var(--text);
+  padding: 80px 0;
+  color: var(--text-muted);
 }
 
 /* ---- Responsive ---- */
@@ -158,13 +178,17 @@
   .tool-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
-    padding: 16px 0;
+    gap: 10px;
+    padding: 20px 0;
   }
 
   .tool-row:hover {
     padding-left: 8px;
     padding-right: 8px;
+  }
+
+  .tool-name {
+    font-size: 1.15rem;
   }
 
   .tool-desc {

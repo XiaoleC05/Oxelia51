@@ -1,4 +1,4 @@
-/* ===== DormGuard Panel ===== */
+/* ===== DormGuard Panel: data-driven, cinematic cards ===== */
 
 .dg-shell {
   background: transparent;
@@ -7,18 +7,19 @@
 
 /* ---- Loading ---- */
 .dg-loading {
-  padding: 60px 0;
-  color: var(--text);
-  font-size: 15px;
+  padding: 80px 0;
+  color: var(--text-muted);
+  font-size: 16px;
+  text-align: center;
 }
 
 .dg-spinner {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border: 2px solid var(--border);
-  border-top-color: var(--text);
+  border-top-color: var(--accent);
   border-radius: 50%;
-  margin-bottom: 16px;
+  margin: 0 auto 20px;
   animation: dg-spin 0.8s linear infinite;
 }
 
@@ -28,14 +29,14 @@
 
 /* ---- Error ---- */
 .dg-error-banner {
-  padding: 20px;
-  border-left: 3px solid #c44;
+  padding: 24px;
+  border-left: 3px solid var(--accent);
   background: var(--code-bg);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .dg-error-text {
-  color: #c44;
+  color: var(--accent);
   margin: 0;
 }
 
@@ -45,20 +46,21 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
-  padding: 0 0 20px;
+  gap: 16px;
+  padding: 0 0 24px;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .dg-dorm-badge {
   font-family: var(--heading);
-  font-size: 1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
   color: var(--text-h);
 }
 
 .dg-dorm-icon {
-  margin-right: 4px;
+  margin-right: 6px;
 }
 
 /* ---- Tabs ---- */
@@ -68,13 +70,13 @@
 }
 
 .dg-tab {
-  padding: 5px 14px;
+  padding: 6px 18px;
   border: none;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
   background: transparent;
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   border-radius: 0;
   transition: border-color 0.2s, color 0.2s;
@@ -90,37 +92,39 @@
   opacity: 1;
 }
 
-/* ---- Balance Cards ---- */
+/* ---- Balance Cards: big numbers ---- */
 .dg-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
 }
 
 .dg-card {
-  padding: 20px;
+  padding: 32px 28px;
   border: 1px solid var(--border);
   background: var(--bg);
+  border-radius: 3px;
 }
 
 .dg-card--aircon {
-  border-left: 3px solid var(--text-h);
+  border-left: 4px solid var(--text-h);
 }
 
 .dg-card--lighting {
-  border-left: 3px solid #5b8731;
+  border-left: 4px solid var(--accent-2);
 }
 
 .dg-card--empty {
   grid-column: 1 / -1;
   text-align: center;
   border-left-color: var(--border);
-  color: var(--text);
+  color: var(--text-muted);
+  padding: 48px 28px;
 }
 
 .dg-card-icon {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
+  font-size: 1.4rem;
+  margin-bottom: 16px;
   display: block;
 }
 
@@ -129,42 +133,45 @@
 }
 
 .dg-card--lighting .dg-card-icon {
-  color: #5b8731;
+  color: var(--accent-2);
 }
 
 .dg-card-body {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px;
+  gap: 6px;
 }
 
 .dg-card-label {
   width: 100%;
-  font-size: 12px;
-  color: var(--text);
-  margin-bottom: 2px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 500;
 }
 
 .dg-card-value {
-  font-size: 1.7rem;
-  font-weight: 400;
-  font-family: var(--mono);
-  line-height: 1.1;
+  font-size: 3rem;
+  font-weight: 600;
+  font-family: var(--heading);
+  line-height: 1.05;
 }
 
 .dg-card-unit {
-  font-size: 13px;
-  color: var(--text);
+  font-size: 15px;
+  color: var(--text-muted);
+  font-weight: 400;
+  font-family: var(--sans);
 }
 
 /* ---- Balance Colors ---- */
 .dg-balance--normal {
-  color: #5b8731;
+  color: var(--accent-2);
 }
 
 .dg-balance--warning {
-  color: #b8934f;
+  color: var(--accent);
 }
 
 .dg-balance--low {
@@ -176,8 +183,8 @@
   grid-column: 1 / -1;
   text-align: center;
   font-size: 13px;
-  color: var(--text);
-  margin-top: 4px;
+  color: var(--text-muted);
+  margin-top: 8px;
 }
 
 /* ---- Legend ---- */
@@ -186,68 +193,71 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 18px;
-  padding: 8px 0;
+  gap: 24px;
+  padding: 12px 0;
   font-size: 12px;
-  color: var(--text);
+  color: var(--text-muted);
 }
 
 .dg-legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
 }
 
 .dg-legend-item::before {
   content: '';
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
 }
 
-.dg-legend--normal::before { background: #5b8731; }
-.dg-legend--warning::before { background: #b8934f; }
+.dg-legend--normal::before { background: var(--accent-2); }
+.dg-legend--warning::before { background: var(--accent); }
 .dg-legend--low::before { background: #c44; }
 
 .dg-legend-threshold {
-  color: var(--text);
+  color: var(--text-muted);
 }
 
 /* ---- History Table ---- */
 .dg-history {
-  margin-top: 24px;
+  margin-top: 32px;
 }
 
 .dg-empty-text {
-  color: var(--text);
-  padding: 32px 0;
-  font-size: 14px;
+  color: var(--text-muted);
+  padding: 48px 0;
+  font-size: 15px;
 }
 
 .dg-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border);
+  border-radius: 3px;
 }
 
 .dg-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .dg-table th {
-  padding: 10px 14px;
+  padding: 12px 16px;
   text-align: left;
-  font-weight: 500;
-  color: var(--text-h);
+  font-weight: 600;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text-muted);
   background: var(--code-bg);
   border-bottom: 1px solid var(--border);
-  font-size: 13px;
   white-space: nowrap;
 }
 
 .dg-table td {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   color: var(--text);
   white-space: nowrap;
@@ -258,92 +268,93 @@
 }
 
 .dg-table tr:hover td {
-  background: var(--code-bg);
+  background: var(--bg-alt);
 }
 
 /* ---- Status dot ---- */
 .dg-status-dot {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  margin-right: 5px;
+  margin-right: 6px;
   vertical-align: middle;
 }
 
-.dg-status-dot.dg-balance--normal { background: #5b8731; }
-.dg-status-dot.dg-balance--warning { background: #b8934f; }
+.dg-status-dot.dg-balance--normal { background: var(--accent-2); }
+.dg-status-dot.dg-balance--warning { background: var(--accent); }
 .dg-status-dot.dg-balance--low { background: #c44; }
 
 /* ---- Hint ---- */
 .dg-hint {
-  color: var(--text);
+  color: var(--text-muted);
   font-size: 13px;
-  margin: 4px 0 0;
+  margin: 6px 0 0;
 }
 
 /* ===== Config Panel ===== */
 .dg-config {
-  margin-top: 24px;
+  margin-top: 32px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 36px;
 }
 
 .dg-config-form {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 36px;
 }
 
 .dg-fieldset {
   border: none;
   border-top: 1px solid var(--border);
-  border-left: 3px solid var(--text-h);
-  padding: 18px 0 0 18px;
+  border-left: 4px solid var(--text-h);
+  padding: 24px 0 0 24px;
   margin: 0;
   background: transparent;
 }
 
 .dg-fieldset--actions {
-  border-left-color: #5b8731;
+  border-left-color: var(--accent-2);
   background: var(--code-bg);
-  padding: 18px 18px 18px 18px;
+  padding: 24px;
 }
 
 .dg-fieldset-legend {
   font-family: var(--heading);
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.1rem;
+  font-weight: 600;
   color: var(--text-h);
-  padding: 0 8px 0 0;
-  margin-left: -8px;
+  padding: 0 10px 0 0;
+  margin-left: -10px;
 }
 
 .dg-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 16px;
+  gap: 6px;
+  margin-top: 20px;
 }
 
 .dg-field-label {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-h);
+  font-weight: 500;
   display: inline-flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 8px;
 }
 
 .dg-field-sensitive {
-  color: #b8934f;
+  color: var(--accent);
   font-size: 9px;
   line-height: 1;
 }
 
 .dg-field-hint {
   font-size: 12px;
-  color: var(--text);
+  color: var(--text-muted);
   font-family: var(--mono);
 }
 
@@ -351,8 +362,8 @@
   border: none;
   border-bottom: 1px solid var(--border);
   border-radius: 0;
-  padding: 4px 0;
-  font-size: 14px;
+  padding: 6px 0;
+  font-size: 15px;
   color: var(--text-h);
   background: transparent;
   font-family: var(--mono);
@@ -361,21 +372,21 @@
 
 .dg-input:focus {
   outline: none;
-  border-bottom-color: var(--text-h);
+  border-bottom-color: var(--accent);
 }
 
 .dg-input::placeholder {
-  color: var(--text);
+  color: var(--text-muted);
   opacity: 0.6;
 }
 
 .dg-checkbox {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   cursor: pointer;
   align-self: flex-start;
   margin-top: 2px;
-  accent-color: var(--text-h);
+  accent-color: var(--accent);
 }
 
 .dg-config-actions {
@@ -388,14 +399,14 @@
 .dg-save-btn,
 .dg-reset-btn,
 .dg-action-btn {
-  padding: 6px 18px;
+  padding: 8px 22px;
   border: 1px solid var(--border);
-  border-radius: 0;
+  border-radius: 3px;
   background: transparent;
   color: var(--text-h);
-  font-size: 13px;
-  font-family: var(--heading);
-  font-weight: 400;
+  font-size: 14px;
+  font-family: var(--sans);
+  font-weight: 500;
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s;
 }
@@ -415,21 +426,29 @@
 
 .dg-save-btn {
   border-color: var(--text-h);
+  background: var(--text-h);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.dg-save-btn:hover:not(:disabled) {
+  opacity: 0.88;
 }
 
 .dg-action-buttons {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
   margin-top: 4px;
 }
 
 .dg-config-feedback {
-  margin-top: 16px;
-  padding: 10px 14px;
+  margin-top: 20px;
+  padding: 12px 18px;
   border-left: 3px solid var(--border);
-  font-size: 13px;
-  background: var(--code-bg);
+  font-size: 14px;
+  background: var(--bg);
+  border-radius: 3px;
 }
 
 .dg-config-feedback p {
@@ -437,32 +456,33 @@
 }
 
 .dg-config-feedback--success {
-  border-left-color: #5b8731;
-  color: #5b8731;
+  border-left-color: var(--accent-2);
+  color: var(--accent-2);
 }
 
 .dg-config-feedback--error {
-  border-left-color: #c44;
-  color: #c44;
+  border-left-color: var(--accent);
+  color: var(--accent);
 }
 
 .dg-action-detail {
-  margin: 8px 0 0;
-  padding: 8px 10px;
-  background: var(--bg);
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  background: var(--code-bg);
   border: 1px solid var(--border);
   font-family: var(--mono);
   font-size: 12px;
   color: var(--text-h);
   white-space: pre-wrap;
   word-break: break-all;
+  border-radius: 3px;
 }
 
 .dg-threshold-input {
-  width: 48px;
-  padding: 1px 4px;
+  width: 56px;
+  padding: 2px 6px;
   margin: 0 4px;
-  font-size: 12px;
+  font-size: 13px;
   font-family: var(--mono);
   border: none;
   border-bottom: 1px solid var(--border);
@@ -473,7 +493,7 @@
 
 .dg-threshold-input:focus {
   outline: none;
-  border-bottom-color: var(--text-h);
+  border-bottom-color: var(--accent);
 }
 
 /* ---- Responsive ---- */
@@ -481,8 +501,8 @@
   .dg-header {
     flex-direction: column;
     align-items: flex-start;
-    padding-bottom: 14px;
-    margin-bottom: 18px;
+    padding-bottom: 18px;
+    margin-bottom: 24px;
   }
 
   .dg-cards {
@@ -490,12 +510,12 @@
   }
 
   .dg-card-value {
-    font-size: 1.4rem;
+    font-size: 2.2rem;
   }
 
   .dg-table th,
   .dg-table td {
-    padding: 8px 10px;
-    font-size: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
   }
 }

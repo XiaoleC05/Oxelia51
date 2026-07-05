@@ -50,10 +50,15 @@ function Tools() {
         </div>
       ) : (
         <div className="tools-list">
-          {tools.map((t) => (
+          {tools.map((t, idx) => (
             <div key={t.slug} className="tool-row">
               <div className="tool-info">
-                <h2 className="tool-name">{t.name}</h2>
+                <h2 className="tool-name">
+                  {t.name}
+                  {idx === 0 && t.badge === 'open' && (
+                    <span className="tool-recommend">推荐</span>
+                  )}
+                </h2>
                 <p className="tool-desc">{t.description || '\u2014'}</p>
                 {t.release_url && (
                   <a href={t.release_url} target="_blank" rel="noreferrer" className="tool-release-link">

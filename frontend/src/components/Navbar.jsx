@@ -1,10 +1,12 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { getToken, logout } from '../api'
 import './Navbar.css'
 
 function Navbar() {
   const navigate = useNavigate()
+  const location = useLocation()
   const token = getToken()
+  const isLanding = location.pathname === '/'
 
   const user = (() => {
     try {
@@ -21,7 +23,7 @@ function Navbar() {
   }
 
   return (
-    <nav className="navbar">
+    <nav className={`navbar${isLanding ? ' navbar--hero' : ''}`}>
       <Link to="/" className="navbar-brand">
         Oxelia<sup>51</sup>
       </Link>

@@ -1,26 +1,26 @@
-/* ===== Portfolio: archive feel ===== */
+/* ===== Portfolio: magazine-style layout ===== */
 
 .portfolio-page {
-  padding: 8px 0 48px;
+  padding: 32px 0 80px;
 }
 
 /* ---- Header ---- */
 .portfolio-header {
-  margin-bottom: 36px;
+  margin-bottom: 48px;
 }
 
 .portfolio-header h1 {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
 }
 
 .portfolio-header p {
-  color: var(--text);
-  font-size: 15px;
+  color: var(--text-muted);
+  font-size: 16px;
   margin: 0;
 }
 
 .portfolio-header code {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* ---- List ---- */
@@ -29,47 +29,52 @@
   flex-direction: column;
 }
 
-/* ---- Row ---- */
+/* ---- Item: magazine spread, big spacing ---- */
 .portfolio-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  padding: 20px 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px 40px;
+  align-items: start;
+  padding: 48px 0;
   border-bottom: 1px solid var(--border);
 }
 
+.portfolio-row:first-child {
+  border-top: 1px solid var(--border);
+}
+
 .portfolio-info {
-  flex: 1;
   min-width: 0;
 }
 
 .portfolio-info h2 {
-  font-size: 1.05rem;
-  margin: 0 0 4px;
+  font-family: var(--heading);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 8px;
 }
 
 .portfolio-info p {
   color: var(--text);
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.7;
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
+  max-width: 560px;
 }
 
-/* ---- Links: footnote style ---- */
+/* ---- Links: footnote style on right ---- */
 .portfolio-links {
   display: flex;
-  gap: 18px;
+  flex-direction: column;
+  gap: 8px;
   flex-shrink: 0;
+  text-align: right;
+  padding-top: 4px;
 }
 
 .portfolio-links a {
   font-size: 13px;
-  color: var(--text);
+  color: var(--text-muted);
   text-decoration: none;
   border-bottom: 1px solid var(--border);
   padding-bottom: 1px;
@@ -78,33 +83,35 @@
 
 .portfolio-links a:hover {
   color: var(--text-h);
-  border-color: var(--text);
+  border-color: var(--text-muted);
 }
 
 /* ---- Status ---- */
 .portfolio-status {
-  padding: 60px 0;
-  color: var(--text);
-  font-size: 15px;
+  padding: 80px 0;
+  color: var(--text-muted);
+  font-size: 16px;
 }
 
 .portfolio-error {
-  color: #c44;
+  color: var(--accent);
 }
 
 /* ---- Responsive ---- */
 @media (max-width: 640px) {
   .portfolio-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 16px 0;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 32px 0;
   }
 
-  .portfolio-info p {
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+  .portfolio-info h2 {
+    font-size: 1.25rem;
+  }
+
+  .portfolio-links {
+    flex-direction: row;
+    gap: 18px;
+    text-align: left;
   }
 }

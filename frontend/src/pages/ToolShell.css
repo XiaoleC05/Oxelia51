@@ -1,12 +1,12 @@
-/* ===== Tool Shell ===== */
+/* ===== Tool Shell: refined header ===== */
 
 .tool-shell {
-  padding: 8px 0 48px;
+  padding: 32px 0 80px;
 }
 
 .tool-shell-back {
   font-size: 14px;
-  color: var(--text);
+  color: var(--text-muted);
   text-decoration: none;
   transition: color 0.2s;
 }
@@ -16,65 +16,68 @@
 }
 
 .tool-shell-header {
-  margin-bottom: 28px;
+  margin-bottom: 36px;
 }
 
 .tool-shell-header h1 {
-  margin: 12px 0 6px;
+  font-family: var(--heading);
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  font-weight: 600;
+  margin: 16px 12px 8px 0;
   display: inline-block;
-  margin-right: 12px;
 }
 
 .tool-shell-badge {
   font-size: 11px;
-  padding: 1px 8px;
+  font-weight: 600;
+  padding: 2px 10px;
   border-radius: 2px;
   vertical-align: middle;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   color: var(--bg);
 }
 
 .tool-shell-badge--open {
-  background: #5b8731;
+  background: var(--accent-2);
 }
 
 .tool-shell-badge--closed_to_users {
-  background: #b8934f;
+  background: var(--accent);
 }
 
 .tool-shell-badge--offline {
-  background: #888;
+  background: var(--text-muted);
 }
 
 .tool-shell-desc {
   color: var(--text);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.7;
-  margin: 8px 0 0;
+  margin: 12px 0 0;
+  max-width: 640px;
 }
 
 .tool-shell-blocked {
-  padding: 20px;
+  padding: 24px;
   color: var(--text);
   border-left: 3px solid var(--accent);
   background: var(--code-bg);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.7;
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 .tool-shell-muted {
-  color: var(--text);
+  color: var(--text-muted);
   font-size: 14px;
 }
 
 .tool-shell-status {
-  padding: 48px 0;
-  color: var(--text);
-  font-size: 15px;
+  padding: 80px 0;
+  color: var(--text-muted);
+  font-size: 16px;
 }
 
 .tool-shell-error {
-  color: #c44;
+  color: var(--accent);
 }

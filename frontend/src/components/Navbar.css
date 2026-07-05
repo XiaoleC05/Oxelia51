@@ -1,39 +1,43 @@
+/* ===== Navbar: refined, editorial ===== */
+
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 0;
+  padding: 24px 0;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
-  margin-bottom: 40px;
+  margin-bottom: 0;
 }
 
 .navbar-brand {
   font-family: var(--heading);
-  font-size: 1.25rem;
-  font-weight: 400;
+  font-size: 1.3rem;
+  font-weight: 600;
   color: var(--text-h);
   text-decoration: none;
   letter-spacing: -0.01em;
 }
 
 .navbar-brand sup {
-  font-size: 0.65em;
+  font-size: 0.6em;
   font-family: var(--heading);
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: 0;
+  color: var(--accent);
 }
 
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
 }
 
 .navbar-links a {
-  color: var(--text);
+  color: var(--text-muted);
   text-decoration: none;
   font-size: 15px;
+  font-weight: 500;
   transition: color 0.2s;
 }
 
@@ -43,26 +47,71 @@
 
 .navbar-user {
   font-size: 14px;
-  color: var(--text-h);
+  color: var(--text-muted);
 }
 
 .navbar-btn {
   font-size: 13px;
-  padding: 4px 14px;
+  padding: 5px 16px;
   background: transparent;
-  color: var(--text);
+  color: var(--text-muted);
   border: 1px solid var(--border);
+  border-radius: 3px;
+  font-weight: 500;
 }
 
 .navbar-btn:hover {
-  background: var(--code-bg);
+  background: var(--bg-alt);
   color: var(--text-h);
   opacity: 1;
 }
 
+/* ---- Hero overlay: transparent on landing ---- */
+.navbar--hero {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: transparent;
+  border-bottom-color: rgba(250, 250, 247, 0.1);
+  padding-left: clamp(24px, 5vw, 80px);
+  padding-right: clamp(24px, 5vw, 80px);
+}
+
+.navbar--hero .navbar-brand {
+  color: rgba(250, 250, 247, 0.9);
+}
+
+.navbar--hero .navbar-brand sup {
+  color: var(--accent);
+}
+
+.navbar--hero .navbar-links a {
+  color: rgba(250, 250, 247, 0.55);
+}
+
+.navbar--hero .navbar-links a:hover {
+  color: rgba(250, 250, 247, 0.85);
+}
+
+.navbar--hero .navbar-user {
+  color: rgba(250, 250, 247, 0.55);
+}
+
+.navbar--hero .navbar-btn {
+  color: rgba(250, 250, 247, 0.55);
+  border-color: rgba(250, 250, 247, 0.2);
+}
+
+.navbar--hero .navbar-btn:hover {
+  background: rgba(250, 250, 247, 0.08);
+  color: rgba(250, 250, 247, 0.85);
+}
+
 @media (max-width: 480px) {
   .navbar-links {
-    gap: 12px;
+    gap: 14px;
   }
 
   .navbar-links a {
