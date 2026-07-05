@@ -37,6 +37,7 @@ function Login() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
+            autoComplete="username"
           />
         </div>
         <div className="auth-field">
@@ -46,6 +47,7 @@ function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            autoComplete="current-password"
           />
         </div>
         <button type="submit" className="auth-btn">登录</button>

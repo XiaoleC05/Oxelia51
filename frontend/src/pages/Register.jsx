@@ -49,6 +49,7 @@ function Register() {
             required
             minLength={3}
             maxLength={64}
+            autoComplete="username"
           />
         </div>
         <div className="auth-field">
@@ -58,6 +59,7 @@ function Register() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            autoComplete="email"
           />
         </div>
         <div className="auth-field">
@@ -69,6 +71,7 @@ function Register() {
             required
             minLength={8}
             maxLength={128}
+            autoComplete="new-password"
           />
         </div>
         <div className="auth-field">
@@ -80,6 +83,7 @@ function Register() {
             required
             minLength={8}
             maxLength={128}
+            autoComplete="new-password"
           />
         </div>
         <button type="submit" className="auth-btn">注册</button>
