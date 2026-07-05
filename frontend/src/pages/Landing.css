@@ -172,13 +172,22 @@
   /* wrapper only，不含自身样式 */
 }
 
+/* 全宽背景突破 #root max-width + padding：背景铺满视口，内容保持居中 */
+.landing-content-sections > section {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  box-sizing: border-box;
+  padding-left: clamp(24px, 5vw, 80px);
+  padding-right: clamp(24px, 5vw, 80px);
+}
+
 /* ===== 内容区：Fluid 极简 ===== */
-.landing-intro {
+.landing-content-sections .landing-intro {
   background: var(--bg);
-  padding: 80px clamp(24px, 5vw, 80px) 48px;
+  padding-top: 80px;
+  padding-bottom: 48px;
   text-align: center;
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: none;
 }
 
 /* 偶数区块：交替背景 + 微妙点阵纹理 */
@@ -234,7 +243,11 @@
 /* ===== New Landing Sections ===== */
 .landing-section {
   background: var(--bg);
-  padding: 64px clamp(24px, 5vw, 80px);
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+
+.landing-section-inner {
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -452,8 +465,8 @@
 .landing-footer-transition {
   height: 48px;
   background: linear-gradient(to bottom, var(--bg), var(--bg-dark));
-  margin-left: calc(-1 * clamp(24px, 5vw, 80px));
-  margin-right: calc(-1 * clamp(24px, 5vw, 80px));
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
 }
 
 /* ===== Footer：Fluid 分栏风格，与 Hero 深色呼应 ===== */
@@ -563,7 +576,8 @@
   }
 
   .landing-intro {
-    padding: 56px 16px 36px;
+    padding-top: 56px;
+    padding-bottom: 36px;
   }
 
   .landing-intro-brand {
@@ -571,7 +585,8 @@
   }
 
   .landing-section {
-    padding: 48px 16px;
+    padding-top: 48px;
+    padding-bottom: 48px;
   }
 
   .landing-section-title {

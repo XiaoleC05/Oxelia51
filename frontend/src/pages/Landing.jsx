@@ -260,124 +260,130 @@ function Landing() {
 
         {/* ===== 热门工具 ===== */}
         <section className="landing-section">
-          <div className="landing-section-head">
-            <h2 className="landing-section-title">
-              热门工具
-              <span className="landing-section-count" ref={toolsCount.ref}>
-                {toolsCount.count > 0 && <span className="count-up"> {toolsCount.count} 个</span>}
-              </span>
-            </h2>
-            <Link to="/tools" className="landing-section-link">查看全部 &rarr;</Link>
-          </div>
-          {loading ? (
-            <SkeletonCards count={4} />
-          ) : tools.length > 0 ? (
-            <div className="landing-card-grid">
-              {tools.slice(0, 4).map((tool) => (
-                <div key={tool.slug} className="landing-card">
-                  <div className="landing-card-body">
-                    <h3 className="landing-card-name">{tool.name}</h3>
-                    <p className="landing-card-desc">{tool.description || '\u2014'}</p>
-                    {tool.badge && (
-                      <span className="landing-card-badge">{tool.badge === 'open' ? '已开放' : tool.badge === 'closed_to_users' ? '暂未开放' : '已下线'}</span>
-                    )}
-                  </div>
-                  <div className="landing-card-foot">
-                    <Link to={`/tools/${tool.slug}`} className="landing-card-link">进入工具 &rarr;</Link>
-                  </div>
-                </div>
-              ))}
+          <div className="landing-section-inner">
+            <div className="landing-section-head">
+              <h2 className="landing-section-title">
+                热门工具
+                <span className="landing-section-count" ref={toolsCount.ref}>
+                  {toolsCount.count > 0 && <span className="count-up"> {toolsCount.count} 个</span>}
+                </span>
+              </h2>
+              <Link to="/tools" className="landing-section-link">查看全部 &rarr;</Link>
             </div>
-          ) : null}
+            {loading ? (
+              <SkeletonCards count={4} />
+            ) : tools.length > 0 ? (
+              <div className="landing-card-grid">
+                {tools.slice(0, 4).map((tool) => (
+                  <div key={tool.slug} className="landing-card">
+                    <div className="landing-card-body">
+                      <h3 className="landing-card-name">{tool.name}</h3>
+                      <p className="landing-card-desc">{tool.description || '\u2014'}</p>
+                      {tool.badge && (
+                        <span className="landing-card-badge">{tool.badge === 'open' ? '已开放' : tool.badge === 'closed_to_users' ? '暂未开放' : '已下线'}</span>
+                      )}
+                    </div>
+                    <div className="landing-card-foot">
+                      <Link to={`/tools/${tool.slug}`} className="landing-card-link">进入工具 &rarr;</Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </section>
 
         {/* ===== 热门作品 ===== */}
         <section className="landing-section">
-          <div className="landing-section-head">
-            <h2 className="landing-section-title">
-              热门作品
-              <span className="landing-section-count" ref={portfolioCount.ref}>
-                {portfolioCount.count > 0 && <span className="count-up"> {portfolioCount.count} 个</span>}
-              </span>
-            </h2>
-            <Link to="/portfolio" className="landing-section-link">查看全部 &rarr;</Link>
-          </div>
-          {loading ? (
-            <SkeletonCards count={4} />
-          ) : portfolio.length > 0 ? (
-            <div className="landing-card-grid">
-              {portfolio.slice(0, 4).map((item) => (
-                <div key={item.slug} className="landing-card">
-                  <div className="landing-card-body">
-                    <h3 className="landing-card-name">{item.name}</h3>
-                    <p className="landing-card-desc">{item.description || '\u2014'}</p>
-                  </div>
-                  <div className="landing-card-foot">
-                    {item.github_repo && (
-                      <a
-                        href={`https://github.com/${item.github_repo}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="landing-card-link"
-                      >
-                        GitHub &rarr;
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
+          <div className="landing-section-inner">
+            <div className="landing-section-head">
+              <h2 className="landing-section-title">
+                热门作品
+                <span className="landing-section-count" ref={portfolioCount.ref}>
+                  {portfolioCount.count > 0 && <span className="count-up"> {portfolioCount.count} 个</span>}
+                </span>
+              </h2>
+              <Link to="/portfolio" className="landing-section-link">查看全部 &rarr;</Link>
             </div>
-          ) : null}
+            {loading ? (
+              <SkeletonCards count={4} />
+            ) : portfolio.length > 0 ? (
+              <div className="landing-card-grid">
+                {portfolio.slice(0, 4).map((item) => (
+                  <div key={item.slug} className="landing-card">
+                    <div className="landing-card-body">
+                      <h3 className="landing-card-name">{item.name}</h3>
+                      <p className="landing-card-desc">{item.description || '\u2014'}</p>
+                    </div>
+                    <div className="landing-card-foot">
+                      {item.github_repo && (
+                        <a
+                          href={`https://github.com/${item.github_repo}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="landing-card-link"
+                        >
+                          GitHub &rarr;
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </section>
 
         {/* ===== 最新文章 ===== */}
         <section className="landing-section">
-          <div className="landing-section-head">
-            <h2 className="landing-section-title">
-              最新文章
-              <span className="landing-section-count" ref={articlesCount.ref}>
-                {articlesCount.count > 0 && <span className="count-up"> {articlesCount.count} 篇</span>}
-              </span>
-            </h2>
-            <Link to="/blog" className="landing-section-link">
-              博客 &rarr;
-            </Link>
-          </div>
-          {loading ? (
-            <SkeletonArticles count={4} />
-          ) : articles.length > 0 ? (
-            <div className="landing-article-list">
-              {articles.slice(0, 6).map((article) => (
-                <Link
-                  key={article.id}
-                  to={`/blog/${article.id}`}
-                  className="landing-article-row"
-                >
-                  <div className="landing-article-main">
-                    <div className="landing-article-head">
-                      <h3 className="landing-article-title">
-                        {article.title}
-                        <svg className="landing-article-ext" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M6 2h8v8M14 2L4 12M11 8v4a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1h4"/>
-                        </svg>
-                      </h3>
-                      {article.published_at && (
-                        <span className="landing-article-date">
-                          {new Date(article.published_at).toLocaleDateString('zh-CN')}
-                        </span>
+          <div className="landing-section-inner">
+            <div className="landing-section-head">
+              <h2 className="landing-section-title">
+                最新文章
+                <span className="landing-section-count" ref={articlesCount.ref}>
+                  {articlesCount.count > 0 && <span className="count-up"> {articlesCount.count} 篇</span>}
+                </span>
+              </h2>
+              <Link to="/blog" className="landing-section-link">
+                博客 &rarr;
+              </Link>
+            </div>
+            {loading ? (
+              <SkeletonArticles count={4} />
+            ) : articles.length > 0 ? (
+              <div className="landing-article-list">
+                {articles.slice(0, 6).map((article) => (
+                  <Link
+                    key={article.id}
+                    to={`/blog/${article.id}`}
+                    className="landing-article-row"
+                  >
+                    <div className="landing-article-main">
+                      <div className="landing-article-head">
+                        <h3 className="landing-article-title">
+                          {article.title}
+                          <svg className="landing-article-ext" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M6 2h8v8M14 2L4 12M11 8v4a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1h4"/>
+                          </svg>
+                        </h3>
+                        {article.published_at && (
+                          <span className="landing-article-date">
+                            {new Date(article.published_at).toLocaleDateString('zh-CN')}
+                          </span>
+                        )}
+                      </div>
+                      {article.category && (
+                        <span className="landing-article-cat">{article.category}</span>
+                      )}
+                      {article.summary && (
+                        <p className="landing-article-summary">{article.summary}</p>
                       )}
                     </div>
-                    {article.category && (
-                      <span className="landing-article-cat">{article.category}</span>
-                    )}
-                    {article.summary && (
-                      <p className="landing-article-summary">{article.summary}</p>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : null}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </section>
       </div>
 
