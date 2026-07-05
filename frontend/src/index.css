@@ -34,9 +34,33 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ---- Dark mode (optional, not default) ---- */
+/* ---- Theme transition ---- */
+:root, [data-theme] {
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+/* ---- Dark mode ---- */
+[data-theme="dark"] {
+  --bg: #1a1d24;
+  --bg-alt: #22262e;
+  --text: #c4c4c4;
+  --text-h: #f0f0f0;
+  --text-muted: #888;
+  --accent: #d96b5a;
+  --accent-2: #3d8b5f;
+  --border: #2e323a;
+  --code-bg: #282c34;
+  --social-bg: rgba(34, 38, 46, 0.5);
+  --accent-bg: rgba(217, 107, 90, 0.12);
+  --accent-border: rgba(217, 107, 90, 0.4);
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* system dark as default (overridden by manual toggle) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #1a1d24;
     --bg-alt: #22262e;
     --text: #c4c4c4;
@@ -46,6 +70,10 @@
     --accent-2: #3d8b5f;
     --border: #2e323a;
     --code-bg: #282c34;
+    --social-bg: rgba(34, 38, 46, 0.5);
+    --accent-bg: rgba(217, 107, 90, 0.12);
+    --accent-border: rgba(217, 107, 90, 0.4);
+    color-scheme: dark;
   }
 }
 

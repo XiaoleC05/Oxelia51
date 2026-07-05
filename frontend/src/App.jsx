@@ -1,5 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import ScrollProgress from './components/ScrollProgress'
+import BackToTop from './components/BackToTop'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -16,11 +18,11 @@ import ArticleDetail from './pages/ArticleDetail'
 import About from './pages/About'
 import './App.css'
 
-function App() {
+function AnimatedRoutes() {
+  const location = useLocation()
   return (
-    <BrowserRouter>
-      <Navbar />
-      <Routes>
+    <div key={location.pathname} className="route-fade">
+      <Routes location={location}>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -36,6 +38,17 @@ function App() {
         <Route path="/blog/:id" element={<ArticleDetail />} />
         <Route path="/about" element={<About />} />
       </Routes>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <ScrollProgress />
+      <Navbar />
+      <AnimatedRoutes />
+      <BackToTop />
     </BrowserRouter>
   )
 }

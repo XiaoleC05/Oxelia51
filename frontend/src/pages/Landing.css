@@ -81,6 +81,12 @@
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 
+.hero-cursor {
+  display: inline;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.7);
+}
+
 /* 左右箭头 */
 .hero-arrow {
   position: absolute;
@@ -261,6 +267,13 @@
   color: var(--accent);
 }
 
+.landing-section-count {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
 /* ---- Card Grid ---- */
 .landing-card-grid {
   display: grid;
@@ -276,12 +289,12 @@
   background: var(--bg);
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .landing-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
 .landing-card-body {

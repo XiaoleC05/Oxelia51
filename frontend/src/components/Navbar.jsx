@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { getToken, logout } from '../api'
+import { getToken, logout, searchAll } from '../api'
 import './Navbar.css'
 
 /* ===== Inline SVG icons (16x16, color inherits) ===== */
@@ -71,6 +71,26 @@ const IconPerson = () => (
   </svg>
 )
 
+const IconSun = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="8" cy="8" r="3"/>
+    <path d="M8 1.5v1.5M8 13v1.5M3.05 3.05l1.06 1.06M11.9 11.9l1.06 1.06M1.5 8H3M13 8h1.5M3.05 12.95l1.06-1.06M11.9 4.1l1.06-1.06"/>
+  </svg>
+)
+
+const IconMoon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13.5 9.5A5.5 5.5 0 016.5 2.5 5.5 5.5 0 1013.5 9.5z"/>
+  </svg>
+)
+
+const IconSearch = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="6.5" cy="6.5" r="4.5"/>
+    <path d="M10 10l3.5 3.5"/>
+  </svg>
+)
+
 /* ===== Nav item with icon helper ===== */
 
 function NavItem({ to, icon: Icon, label }) {
@@ -91,6 +111,76 @@ function Navbar() {
   const isHome = location.pathname === '/'
 
   const [scrolled, setScrolled] = useState(false)
+
+  /* ---- Theme ---- */
+  const getInitialTheme = () => {
+    const saved = localStorage.getItem('theme')
+    if (saved) return saved
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark'
+    return 'light'
+  }
+  const [theme, setTheme] = useState(getInitialTheme)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+  }
+
+  /* ---- Search ---- */
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState({ tools: [], articles: [] })
+  const [searchLoading, setSearchLoading] = useState(false)
+  const searchRef = useRef(null)
+  const searchInputRef = useRef(null)
+
+  const doSearch = useCallback(async (q) => {
+    if (q.length < 2) { setSearchResults({ tools: [], articles: [] }); return }
+    setSearchLoading(true)
+    try {
+      const res = await searchAll(q)
+      setSearchResults({ tools: res.tools || [], articles: res.articles || [] })
+    } catch {
+      setSearchResults({ tools: [], articles: [] })
+    } finally {
+      setSearchLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => doSearch(searchQuery), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery, doSearch])
+
+  // Close search on outside click or ESC
+  useEffect(() => {
+    if (!searchOpen) return
+    const handler = (e) => {
+      if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery('') }
+    }
+    const clickHandler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchOpen(false); setSearchQuery('')
+      }
+    }
+    document.addEventListener('keydown', handler)
+    document.addEventListener('mousedown', clickHandler)
+    return () => {
+      document.removeEventListener('keydown', handler)
+      document.removeEventListener('mousedown', clickHandler)
+    }
+  }, [searchOpen])
+
+  const openSearch = () => {
+    setSearchOpen(true)
+    setTimeout(() => searchInputRef.current?.focus(), 50)
+  }
+
+  /* ---- Scroll ---- */
 
   useEffect(() => {
     const handleScroll = () => {
@@ -153,7 +243,67 @@ function Navbar() {
             <NavItem to="/register" icon={IconUserPlus} label="注册" />
           </>
         )}
+        <button className="navbar-icon-btn" onClick={openSearch} aria-label="搜索">
+          <IconSearch />
+        </button>
+        <button className="navbar-icon-btn" onClick={toggleTheme} aria-label="切换主题">
+          {theme === 'dark' ? <IconSun /> : <IconMoon />}
+        </button>
       </div>
+
+      {/* ---- Search panel ---- */}
+      {searchOpen && (
+        <div className="navbar-search" ref={searchRef}>
+          <input
+            ref={searchInputRef}
+            className="navbar-search-input"
+            type="text"
+            placeholder="搜索工具或文章…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchLoading && <span className="navbar-search-status">搜索中…</span>}
+          {(searchResults.tools.length > 0 || searchResults.articles.length > 0) && (
+            <div className="navbar-search-results">
+              {searchResults.tools.length > 0 && (
+                <div className="navbar-search-group">
+                  <span className="navbar-search-label">工具</span>
+                  {searchResults.tools.map((t) => (
+                    <Link
+                      key={t.slug}
+                      to={`/tools/${t.slug}`}
+                      className="navbar-search-item"
+                      onClick={() => { setSearchOpen(false); setSearchQuery('') }}
+                    >
+                      <span className="navbar-search-name">{t.name}</span>
+                      <span className="navbar-search-desc">{t.description}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {searchResults.articles.length > 0 && (
+                <div className="navbar-search-group">
+                  <span className="navbar-search-label">文章</span>
+                  {searchResults.articles.map((a) => (
+                    <Link
+                      key={a.id}
+                      to={`/blog/${a.id}`}
+                      className="navbar-search-item"
+                      onClick={() => { setSearchOpen(false); setSearchQuery('') }}
+                    >
+                      <span className="navbar-search-name">{a.title}</span>
+                      <span className="navbar-search-desc">{a.summary}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {!searchLoading && searchQuery.length >= 2 && searchResults.tools.length === 0 && searchResults.articles.length === 0 && (
+            <span className="navbar-search-status">无结果</span>
+          )}
+        </div>
+      )}
     </nav>
   )
 }

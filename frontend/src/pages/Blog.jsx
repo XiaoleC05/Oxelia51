@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchArticles, fetchCategories } from '../api'
 import './Blog.css'
@@ -7,6 +7,7 @@ function Blog() {
   const [articles, setArticles] = useState([])
   const [categories, setCategories] = useState([])
   const [selectedCat, setSelectedCat] = useState('')
+  const [selectedTag, setSelectedTag] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -25,6 +26,35 @@ function Blog() {
       .finally(() => setLoading(false))
   }, [selectedCat])
 
+  // Build tag cloud from ALL articles (not just filtered)
+  const tagCloud = useMemo(() => {
+    const tagMap = {}
+    articles.forEach((a) => {
+      if (Array.isArray(a.tags)) {
+        a.tags.forEach((t) => {
+          tagMap[t] = (tagMap[t] || 0) + 1
+        })
+      }
+    })
+    const entries = Object.entries(tagMap).sort((a, b) => b[1] - a[1])
+    const maxCount = entries.length > 0 ? entries[0][1] : 1
+    return entries.map(([tag, count]) => ({
+      tag,
+      count,
+      size: 0.75 + (count / maxCount) * 0.45, // 0.75rem ~ 1.2rem
+    }))
+  }, [articles])
+
+  // Client-side tag filter
+  const filteredArticles = useMemo(() => {
+    if (!selectedTag) return articles
+    return articles.filter((a) => Array.isArray(a.tags) && a.tags.includes(selectedTag))
+  }, [articles, selectedTag])
+
+  const handleTagClick = (tag) => {
+    setSelectedTag((prev) => (prev === tag ? '' : tag))
+  }
+
   return (
     <div className="blog-page">
       <header className="blog-header">
@@ -34,14 +64,15 @@ function Blog() {
       </header>
 
       <div className="blog-layout">
-        {/* 分类侧栏 */}
+        {/* 侧栏 */}
         <aside className="blog-sidebar">
+          {/* 分类 */}
           <h3 className="blog-sidebar-title">分类</h3>
           <ul className="blog-cat-list">
             <li>
               <button
                 className={`blog-cat-btn ${selectedCat === '' ? 'blog-cat-btn--active' : ''}`}
-                onClick={() => setSelectedCat('')}
+                onClick={() => { setSelectedCat(''); setSelectedTag('') }}
               >
                 全部
               </button>
@@ -50,7 +81,7 @@ function Blog() {
               <li key={c.category}>
                 <button
                   className={`blog-cat-btn ${selectedCat === c.category ? 'blog-cat-btn--active' : ''}`}
-                  onClick={() => setSelectedCat(c.category)}
+                  onClick={() => { setSelectedCat(c.category); setSelectedTag('') }}
                 >
                   {c.category}
                   <span className="blog-cat-count">{c.count}</span>
@@ -58,6 +89,34 @@ function Blog() {
               </li>
             ))}
           </ul>
+
+          {/* 标签云 */}
+          {tagCloud.length > 0 && (
+            <div className="blog-tag-cloud">
+              <h3 className="blog-sidebar-title">标签</h3>
+              <div className="blog-tag-list">
+                {tagCloud.map(({ tag, count, size }) => (
+                  <button
+                    key={tag}
+                    className={`blog-tag-item ${selectedTag === tag ? 'blog-tag-item--active' : ''}`}
+                    style={{ fontSize: `${size}rem` }}
+                    onClick={() => handleTagClick(tag)}
+                  >
+                    {tag}
+                    <span className="blog-tag-count">{count}</span>
+                  </button>
+                ))}
+              </div>
+              {selectedTag && (
+                <button
+                  className="blog-tag-clear"
+                  onClick={() => setSelectedTag('')}
+                >
+                  清除筛选
+                </button>
+              )}
+            </div>
+          )}
         </aside>
 
         {/* 文章列表 */}
@@ -65,15 +124,15 @@ function Blog() {
           {loading && <p className="blog-status">载入中…</p>}
           {error && <p className="blog-status blog-error">{error}</p>}
 
-          {!loading && !error && articles.length === 0 && (
+          {!loading && !error && filteredArticles.length === 0 && (
             <div className="blog-empty">
               <p>暂无文章。</p>
             </div>
           )}
 
-          {!loading && !error && articles.length > 0 && (
+          {!loading && !error && filteredArticles.length > 0 && (
             <div className="blog-list">
-              {articles.map((article) => (
+              {filteredArticles.map((article) => (
                 <article key={article.id} className="blog-item">
                   <div className="blog-item-main">
                     <div className="blog-item-head">

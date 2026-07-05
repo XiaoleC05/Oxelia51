@@ -5,6 +5,114 @@ import './Landing.css'
 
 const DEFAULT_INTERVAL = 5000
 
+/* ---- Count-up hook ---- */
+function useCountUp(target, duration = 1500) {
+  const [count, setCount] = useState(0)
+  const ref = useRef(null)
+  const started = useRef(false)
+
+  useEffect(() => {
+    if (!target || target <= 0) return
+    const el = ref.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true
+        const start = performance.now()
+        const step = (now) => {
+          const elapsed = now - start
+          const progress = Math.min(elapsed / duration, 1)
+          // ease-out
+          setCount(Math.round(target * (1 - Math.pow(1 - progress, 3))))
+          if (progress < 1) requestAnimationFrame(step)
+        }
+        requestAnimationFrame(step)
+        observer.disconnect()
+      }
+    }, { threshold: 0.3 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [target, duration])
+
+  return { count, ref }
+}
+
+/* ---- Typewriter ---- */
+function Typewriter({ text, onComplete }) {
+  const [displayed, setDisplayed] = useState('')
+  const [cursor, setCursor] = useState(true)
+  const idxRef = useRef(0)
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    setDisplayed('')
+    idxRef.current = 0
+    const textToType = text || ''
+
+    timerRef.current = setInterval(() => {
+      idxRef.current++
+      if (idxRef.current <= textToType.length) {
+        setDisplayed(textToType.slice(0, idxRef.current))
+      } else {
+        clearInterval(timerRef.current)
+        onComplete?.()
+      }
+    }, 80)
+
+    return () => clearInterval(timerRef.current)
+  }, [text, onComplete])
+
+  // Blinking cursor
+  useEffect(() => {
+    const cursorTimer = setInterval(() => setCursor((c) => !c), 500)
+    return () => clearInterval(cursorTimer)
+  }, [])
+
+  return (
+    <span>
+      <span>{displayed}</span>
+      <span className="hero-cursor" style={{ opacity: cursor ? 1 : 0 }}>|</span>
+    </span>
+  )
+}
+
+/* ---- Skeleton cards ---- */
+function SkeletonCards({ count = 4 }) {
+  return (
+    <div className="landing-card-grid">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="landing-card">
+          <div className="landing-card-body">
+            <div className="skeleton skeleton-title" />
+            <div className="skeleton skeleton-text" />
+            <div className="skeleton skeleton-text" style={{ width: '40%' }} />
+          </div>
+          <div className="landing-card-foot">
+            <div className="skeleton skeleton-text" style={{ width: '80px' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function SkeletonArticles({ count = 4 }) {
+  return (
+    <div className="landing-article-list">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="landing-article-row" style={{ padding: '18px 0', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="skeleton skeleton-title" />
+            <div className="skeleton skeleton-text" />
+            <div className="skeleton skeleton-text" style={{ width: '70%' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function Landing() {
   const [images, setImages] = useState([])
   const [current, setCurrent] = useState(0)
@@ -13,8 +121,10 @@ function Landing() {
   const [tools, setTools] = useState([])
   const [portfolio, setPortfolio] = useState([])
   const [articles, setArticles] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     Promise.all([
       fetchHeroImages().catch(() => null),
       apiGet('/tools').catch(() => []),
@@ -28,7 +138,7 @@ function Landing() {
       setTools(toolsData || [])
       setPortfolio(portfolioData || [])
       setArticles(articlesData || [])
-    })
+    }).finally(() => setLoading(false))
   }, [])
 
   const total = images.length
@@ -58,6 +168,20 @@ function Landing() {
   const goPrev = () => { setCurrent((prev) => (prev - 1 + total) % total); startTimer() }
   const goNext = () => { setCurrent((prev) => (prev + 1) % total); startTimer() }
 
+  // Typewriter trigger key
+  const [typewriterKey, setTypewriterKey] = useState(0)
+
+  const heroText = hasImages && images[current]?.title
+    ? images[current].title
+    : 'Oxelia51 · 统一在线工具平台'
+
+  // Restart typewriter on image change
+  const onTypewriterComplete = useCallback(() => {}, [])
+
+  const toolsCount = useCountUp(loading ? 0 : tools.length)
+  const portfolioCount = useCountUp(loading ? 0 : portfolio.length)
+  const articlesCount = useCountUp(loading ? 0 : articles.length)
+
   return (
     <main className="landing">
       {/* ===== Fluid 全屏头图 ===== */}
@@ -81,9 +205,11 @@ function Landing() {
         {/* 居中单行标题 */}
         <div className="hero-content">
           <h1 className="hero-title">
-            {hasImages && images[current]?.title
-              ? images[current].title
-              : 'Oxelia51 · 统一在线工具平台'}
+            <Typewriter
+              key={`${current}-${heroText}`}
+              text={heroText}
+              onComplete={onTypewriterComplete}
+            />
           </h1>
         </div>
 
@@ -133,12 +259,19 @@ function Landing() {
         </section>
 
         {/* ===== 热门工具 ===== */}
-        {tools.length > 0 && (
-          <section className="landing-section">
-            <div className="landing-section-head">
-              <h2 className="landing-section-title">热门工具</h2>
-              <Link to="/tools" className="landing-section-link">查看全部 &rarr;</Link>
-            </div>
+        <section className="landing-section">
+          <div className="landing-section-head">
+            <h2 className="landing-section-title">
+              热门工具
+              <span className="landing-section-count" ref={toolsCount.ref}>
+                {toolsCount.count > 0 && <span className="count-up"> {toolsCount.count} 个</span>}
+              </span>
+            </h2>
+            <Link to="/tools" className="landing-section-link">查看全部 &rarr;</Link>
+          </div>
+          {loading ? (
+            <SkeletonCards count={4} />
+          ) : tools.length > 0 ? (
             <div className="landing-card-grid">
               {tools.slice(0, 4).map((tool) => (
                 <div key={tool.slug} className="landing-card">
@@ -155,16 +288,23 @@ function Landing() {
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          ) : null}
+        </section>
 
         {/* ===== 热门作品 ===== */}
-        {portfolio.length > 0 && (
-          <section className="landing-section">
-            <div className="landing-section-head">
-              <h2 className="landing-section-title">热门作品</h2>
-              <Link to="/portfolio" className="landing-section-link">查看全部 &rarr;</Link>
-            </div>
+        <section className="landing-section">
+          <div className="landing-section-head">
+            <h2 className="landing-section-title">
+              热门作品
+              <span className="landing-section-count" ref={portfolioCount.ref}>
+                {portfolioCount.count > 0 && <span className="count-up"> {portfolioCount.count} 个</span>}
+              </span>
+            </h2>
+            <Link to="/portfolio" className="landing-section-link">查看全部 &rarr;</Link>
+          </div>
+          {loading ? (
+            <SkeletonCards count={4} />
+          ) : portfolio.length > 0 ? (
             <div className="landing-card-grid">
               {portfolio.slice(0, 4).map((item) => (
                 <div key={item.slug} className="landing-card">
@@ -187,18 +327,25 @@ function Landing() {
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          ) : null}
+        </section>
 
         {/* ===== 最新文章 ===== */}
-        {articles.length > 0 && (
-          <section className="landing-section">
-            <div className="landing-section-head">
-              <h2 className="landing-section-title">最新文章</h2>
-              <Link to="/blog" className="landing-section-link">
-                博客 &rarr;
-              </Link>
-            </div>
+        <section className="landing-section">
+          <div className="landing-section-head">
+            <h2 className="landing-section-title">
+              最新文章
+              <span className="landing-section-count" ref={articlesCount.ref}>
+                {articlesCount.count > 0 && <span className="count-up"> {articlesCount.count} 篇</span>}
+              </span>
+            </h2>
+            <Link to="/blog" className="landing-section-link">
+              博客 &rarr;
+            </Link>
+          </div>
+          {loading ? (
+            <SkeletonArticles count={4} />
+          ) : articles.length > 0 ? (
             <div className="landing-article-list">
               {articles.slice(0, 6).map((article) => (
                 <Link
@@ -230,8 +377,8 @@ function Landing() {
                 </Link>
               ))}
             </div>
-          </section>
-        )}
+          ) : null}
+        </section>
       </div>
 
       {/* ===== 渐变过渡：浅色 → 深色 footer ===== */}
