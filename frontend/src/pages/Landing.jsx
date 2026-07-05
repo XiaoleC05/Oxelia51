@@ -49,7 +49,7 @@ function Landing() {
 
   return (
     <main className="landing">
-      {/* ===== Fluid 风格全宽头图 ===== */}
+      {/* ===== Fluid 全屏头图 ===== */}
       <section className="hero" aria-label="头图轮播">
         {hasImages ? (
           images.map((img, i) => (
@@ -67,18 +67,16 @@ function Landing() {
         {/* 渐变遮罩 */}
         <div className="hero-overlay" />
 
-        {/* 居中标题 */}
+        {/* 居中单行标题 */}
         <div className="hero-content">
           <h1 className="hero-title">
-            Oxelia<span className="hero-sup">51</span>
+            {hasImages && images[current]?.title
+              ? images[current].title
+              : 'Oxelia51 · 统一在线工具平台'}
           </h1>
-          <p className="hero-tagline">统一在线工具平台</p>
-          {hasImages && images[current]?.title && (
-            <p className="hero-img-title">{images[current].title}</p>
-          )}
         </div>
 
-        {/* 箭头 */}
+        {/* 左右箭头 */}
         {hasImages && (
           <>
             <button className="hero-arrow hero-arrow--left" onClick={goPrev} aria-label="上一张">&#10094;</button>
@@ -86,7 +84,7 @@ function Landing() {
           </>
         )}
 
-        {/* 圆点 */}
+        {/* 圆点指示器 */}
         {hasImages && total > 1 && (
           <div className="hero-dots">
             {images.map((img, i) => (
@@ -100,50 +98,35 @@ function Landing() {
           </div>
         )}
 
-        {/* 向下箭头 */}
-        <div className="hero-scroll-hint">
-          <span>&#8964;</span>
+        {/* 向下箭头 bounce */}
+        <div className="hero-scroll-hint" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
         </div>
       </section>
 
-      {/* ===== 内容区：Material Design 卡片 ===== */}
-      <section className="landing-content">
-        <div className="landing-content-inner">
-          <div className="landing-card">
-            <h2 className="landing-card-title">探索工具</h2>
-            <p className="landing-card-desc">
-              一个账号，探索全部在线工具。不追逐潮流，只做好用的小工具。
-            </p>
-            <div className="landing-card-actions">
-              <Link to="/tools" className="landing-btn landing-btn--primary">浏览工具</Link>
-              <Link to="/portfolio" className="landing-btn landing-btn--ghost">作品集</Link>
-            </div>
-          </div>
-
-          <div className="landing-card">
-            <h2 className="landing-card-title">开源项目</h2>
-            <p className="landing-card-desc">
-              每个工具均为独立开源仓库，可独立部署与使用。
-            </p>
-            <div className="landing-card-links">
-              <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer" className="landing-link">
-                GitHub &rarr;
-              </a>
-              <a href="https://xiaolec05.github.io" target="_blank" rel="noreferrer" className="landing-link">
-                Blog &rarr;
-              </a>
-            </div>
-          </div>
+      {/* ===== 内容区：Fluid 极简风格 ===== */}
+      <section className="landing-intro">
+        <h2 className="landing-intro-brand">Oxelia51</h2>
+        <p className="landing-intro-desc">
+          一个账号，探索全部在线工具。不追逐潮流，只做好用的小工具。
+        </p>
+        <div className="landing-intro-links">
+          <Link to="/tools" className="landing-intro-link">浏览工具</Link>
+          <Link to="/portfolio" className="landing-intro-link">作品集</Link>
         </div>
+      </section>
+
+      <section className="landing-links-row">
+        <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer">GitHub</a>
+        <span className="landing-links-sep">·</span>
+        <a href="https://xiaolec05.github.io" target="_blank" rel="noreferrer">Blog</a>
       </section>
 
       {/* ===== Footer ===== */}
       <footer className="landing-footer">
-        <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer">GitHub</a>
-        <span className="landing-footer-sep">·</span>
-        <a href="https://xiaolec05.github.io" target="_blank" rel="noreferrer">Blog</a>
-        <span className="landing-footer-sep">·</span>
-        <em>by ChenXiaole</em>
+        <span>by ChenXiaole</span>
       </footer>
     </main>
   )

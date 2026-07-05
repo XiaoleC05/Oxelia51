@@ -1,55 +1,74 @@
-/* ===== Navbar: Fluid Material Design style ===== */
+/* ===== Navbar: Fluid style — fixed top, transparent over hero ===== */
 
 .navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px clamp(24px, 5vw, 80px);
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  transition: background 0.3s, border-color 0.3s;
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+  box-sizing: border-box;
 }
 
+/* ---- Brand ---- */
 .navbar-brand {
-  font-family: var(--heading);
+  font-family: var(--sans);
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-h);
   text-decoration: none;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
-.navbar-brand sup {
-  font-size: 0.55em;
-  font-weight: 700;
-  color: var(--accent);
-  vertical-align: super;
-}
-
+/* ---- Links wrapper ---- */
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
 }
 
-.navbar-links a {
+/* ---- Nav items with icon ---- */
+.navbar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-muted);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
   transition: color 0.2s;
+  white-space: nowrap;
 }
 
-.navbar-links a:hover {
+.navbar-item:hover {
   color: var(--text-h);
 }
 
+/* ---- Icon wrapper ---- */
+.navbar-icon {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* ---- User info ---- */
 .navbar-user {
   font-size: 13px;
   color: var(--text-muted);
 }
 
+/* ---- Buttons ---- */
 .navbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
   padding: 5px 14px;
   background: transparent;
@@ -59,6 +78,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
 }
 
 .navbar-btn:hover {
@@ -66,13 +86,10 @@
   color: var(--text-h);
 }
 
-/* ---- Hero overlay: 透明覆盖在头图上（Fluid 风格）---- */
+/* =============================================
+   Hero overlay: transparent on top of hero
+   ============================================= */
 .navbar--hero {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
   background: transparent;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -82,16 +99,12 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-.navbar--hero .navbar-brand sup {
-  color: var(--accent);
-}
-
-.navbar--hero .navbar-links a {
-  color: rgba(255, 255, 255, 0.7);
+.navbar--hero .navbar-item {
+  color: rgba(255, 255, 255, 0.75);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.navbar--hero .navbar-links a:hover {
+.navbar--hero .navbar-item:hover {
   color: rgba(255, 255, 255, 0.95);
 }
 
@@ -102,6 +115,7 @@
 .navbar--hero .navbar-btn {
   color: rgba(255, 255, 255, 0.7);
   border-color: rgba(255, 255, 255, 0.2);
+  background: transparent;
 }
 
 .navbar--hero .navbar-btn:hover {
@@ -109,16 +123,54 @@
   color: rgba(255, 255, 255, 0.95);
 }
 
+/* =============================================
+   Scrolled: solid background after hero
+   ============================================= */
+.navbar--scrolled {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar--scrolled .navbar-brand {
+  color: var(--text-h);
+  text-shadow: none;
+}
+
+.navbar--scrolled .navbar-item {
+  color: var(--text-muted);
+  text-shadow: none;
+}
+
+.navbar--scrolled .navbar-item:hover {
+  color: var(--text-h);
+}
+
+.navbar--scrolled .navbar-user {
+  color: var(--text-muted);
+}
+
+.navbar--scrolled .navbar-btn {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.navbar--scrolled .navbar-btn:hover {
+  background: var(--bg-alt);
+  color: var(--text-h);
+}
+
+/* ---- Responsive ---- */
 @media (max-width: 480px) {
   .navbar {
     padding: 12px 16px;
   }
 
   .navbar-links {
-    gap: 14px;
+    gap: 12px;
   }
 
-  .navbar-links a {
+  .navbar-item {
     font-size: 13px;
+    gap: 4px;
   }
 }

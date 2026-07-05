@@ -76,16 +76,16 @@ body {
   line-height: 1;
 }
 
-/* ---- Headings: serif, bold sizes ---- */
+/* ---- Headings: sans-serif, bold sizes (Fluid style) ---- */
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--heading);
+  font-family: var(--sans);
   font-weight: 600;
   color: var(--text-h);
   line-height: 1.25;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 h1 {
@@ -180,6 +180,11 @@ label {
 /* ---- Section spacing ---- */
 section {
   padding: 80px 0;
+}
+
+/* Navbar is fixed — offset for non-landing pages */
+#root {
+  padding-top: 56px;
 }
 
 /* ---- Responsive ---- */

@@ -1,18 +1,24 @@
-/* ===== Landing: Fluid Material Design style ===== */
+/* ===== Landing: Hexo Theme Fluid style ===== */
 
 .landing {
   flex: 1;
-  /* 全宽出血（头图需要 100vw） */
+  /* 全宽出血 + 补偿 fixed navbar */
+  margin-top: -56px;
   margin-left: calc(-1 * clamp(24px, 5vw, 80px));
   margin-right: calc(-1 * clamp(24px, 5vw, 80px));
 }
 
-/* ===== Hero: 全宽头图 ===== */
+/* 覆盖全局 section padding，hero/content 自己控制间距 */
+.landing section {
+  padding: 0;
+}
+
+/* ===== Hero: 全屏头图 100vh ===== */
 .hero {
   position: relative;
   width: 100%;
-  height: 65vh;
-  min-height: 420px;
+  height: 100vh;
+  min-height: 500px;
   overflow: hidden;
   background: #1a1d24;
 }
@@ -38,21 +44,21 @@
   opacity: 1;
 }
 
-/* 渐变遮罩：上轻下重，让导航栏和标题都可读 */
+/* 渐变遮罩：上浅下深 */
 .hero-overlay {
   position: absolute;
   inset: 0;
   z-index: 3;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.25) 0%,
-    rgba(0, 0, 0, 0.1) 40%,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.15) 40%,
     rgba(0, 0, 0, 0.5) 100%
   );
   pointer-events: none;
 }
 
-/* 居中标题 */
+/* 居中单行标题 */
 .hero-content {
   position: absolute;
   top: 50%;
@@ -65,39 +71,16 @@
 }
 
 .hero-title {
-  font-family: var(--heading);
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.1;
-  margin: 0 0 12px;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-}
-
-.hero-sup {
-  font-size: 0.5em;
-  font-weight: 700;
-  color: var(--accent);
-  vertical-align: super;
-}
-
-.hero-tagline {
   font-family: var(--sans);
-  font-size: clamp(1rem, 2vw, 1.3rem);
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0 0 16px;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 500;
+  color: #fff;
+  line-height: 1.4;
+  margin: 0;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 
-.hero-img-title {
-  font-family: var(--sans);
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0;
-}
-
-/* 箭头 */
+/* 左右箭头 */
 .hero-arrow {
   position: absolute;
   top: 50%;
@@ -125,10 +108,10 @@
 .hero-arrow--left { left: 0; }
 .hero-arrow--right { right: 0; }
 
-/* 圆点 */
+/* 圆点指示器 */
 .hero-dots {
   position: absolute;
-  bottom: 60px;
+  bottom: 48px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
@@ -156,15 +139,15 @@
   border-color: rgba(255, 255, 255, 0.8);
 }
 
-/* 向下滚动提示 */
+/* 向下箭头 bounce */
 .hero-scroll-hint {
   position: absolute;
-  bottom: 20px;
+  bottom: 18px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 20px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1;
   animation: hero-bounce 2s ease-in-out infinite;
 }
 
@@ -173,108 +156,80 @@
   50% { transform: translateX(-50%) translateY(6px); }
 }
 
-/* ===== 内容区：Material Design 卡片 ===== */
-.landing-content {
+/* ===== 内容区：Fluid 极简 ===== */
+.landing-intro {
   background: var(--bg);
-  padding: 64px 0 48px;
-}
-
-.landing-content-inner {
-  max-width: 960px;
+  padding: 80px 24px 48px;
+  text-align: center;
+  max-width: 800px;
   margin: 0 auto;
-  padding: 0 clamp(24px, 5vw, 80px);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
 }
 
-.landing-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 32px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.3s, transform 0.2s;
-}
-
-.landing-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
-}
-
-.landing-card-title {
-  font-family: var(--heading);
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--text-h);
-  margin: 0 0 12px;
-}
-
-.landing-card-desc {
+.landing-intro-brand {
   font-family: var(--sans);
-  font-size: 0.95rem;
-  line-height: 1.7;
-  color: var(--text-muted);
-  margin: 0 0 24px;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0 0 16px;
 }
 
-.landing-card-actions {
+.landing-intro-desc {
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--text-muted);
+  margin: 0 0 28px;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.landing-intro-links {
   display: flex;
-  gap: 16px;
+  justify-content: center;
+  gap: 20px;
   flex-wrap: wrap;
 }
 
-.landing-btn {
+.landing-intro-link {
   display: inline-block;
   font-family: var(--sans);
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 10px 24px;
-  border-radius: 4px;
-  text-decoration: none;
-  transition: background 0.2s, box-shadow 0.2s;
-}
-
-.landing-btn--primary {
-  color: #fff;
-  background: var(--accent);
-  border: none;
-  box-shadow: 0 2px 4px rgba(200, 85, 61, 0.25);
-}
-
-.landing-btn--primary:hover {
-  box-shadow: 0 4px 8px rgba(200, 85, 61, 0.3);
-  color: #fff;
-}
-
-.landing-btn--ghost {
+  font-size: 0.95rem;
+  font-weight: 500;
   color: var(--text-h);
-  background: transparent;
-  border: 1px solid var(--border);
-}
-
-.landing-btn--ghost:hover {
-  background: var(--bg-alt);
-  color: var(--text-h);
-}
-
-.landing-card-links {
-  display: flex;
-  gap: 20px;
-}
-
-.landing-link {
-  font-size: 14px;
-  color: var(--text-muted);
   text-decoration: none;
   border-bottom: 1px solid var(--border);
   padding-bottom: 2px;
   transition: color 0.2s, border-color 0.2s;
 }
 
-.landing-link:hover {
+.landing-intro-link:hover {
   color: var(--accent);
   border-color: var(--accent);
+}
+
+/* GitHub / Blog 链接行 */
+.landing-links-row {
+  background: var(--bg);
+  text-align: center;
+  padding: 0 24px 48px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.landing-links-row a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.landing-links-row a:hover {
+  color: var(--accent);
+}
+
+.landing-links-sep {
+  margin: 0 10px;
+  color: var(--border);
 }
 
 /* ===== Footer ===== */
@@ -287,39 +242,14 @@
   color: var(--text-muted);
 }
 
-.landing-footer a {
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.landing-footer a:hover {
-  color: var(--text-h);
-}
-
-.landing-footer-sep {
-  margin: 0 8px;
-  color: var(--border);
-}
-
-.landing-footer em {
-  font-family: var(--heading);
-  color: var(--text-muted);
-}
-
 /* ===== Responsive ===== */
 @media (max-width: 640px) {
   .hero {
-    height: 50vh;
-    min-height: 320px;
+    min-height: 380px;
   }
 
   .hero-title {
-    font-size: 2rem;
-  }
-
-  .hero-tagline {
-    font-size: 1rem;
+    font-size: 1.25rem;
   }
 
   .hero-arrow {
@@ -329,19 +259,18 @@
   }
 
   .hero-dots {
-    bottom: 48px;
+    bottom: 40px;
   }
 
-  .landing-content {
-    padding: 40px 0 32px;
+  .landing-intro {
+    padding: 56px 16px 36px;
   }
 
-  .landing-content-inner {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  .landing-intro-brand {
+    font-size: 1.5rem;
   }
 
-  .landing-card {
-    padding: 24px;
+  .landing-links-row {
+    padding: 0 16px 36px;
   }
 }
