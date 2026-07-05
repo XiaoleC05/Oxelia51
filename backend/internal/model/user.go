@@ -49,3 +49,8 @@ type ResetPasswordRequest struct {
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
+
+// LogoutRequest 登出（可选携带 refresh_token 以便服务端吊销）
+type LogoutRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}

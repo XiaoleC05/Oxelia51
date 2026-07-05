@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { getToken, clearToken } from '../api'
+import { getToken, logout } from '../api'
 import './Navbar.css'
 
 function Navbar() {
@@ -15,9 +15,8 @@ function Navbar() {
     }
   })()
 
-  const handleLogout = () => {
-    clearToken()
-    localStorage.removeItem('user')
+  const handleLogout = async () => {
+    await logout()
     navigate('/login')
   }
 

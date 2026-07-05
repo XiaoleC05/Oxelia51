@@ -240,6 +240,12 @@ func (h *AuthHandler) recordLoginFailure(ctx context.Context, ip string) {
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
+	var req model.LogoutRequest
+	_ = c.ShouldBindJSON(&req)
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
 	jti, _ := c.Get("jti")
 	expVal, _ := c.Get("tokenExp")
 	jtiStr, _ := jti.(string)
@@ -247,11 +253,14 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	if jtiStr != "" && expUnix > 0 {
 		ttl := time.Until(time.Unix(int64(expUnix), 0))
 		if ttl > 0 {
-			ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 			_ = h.blacklist.Add(ctx, jtiStr, ttl)
-			cancel()
 		}
 	}
+
+	if req.RefreshToken != "" {
+		_ = h.refresh.Delete(ctx, req.RefreshToken)
+	}
+
 	c.Status(http.StatusNoContent)
 }
 

@@ -17,6 +17,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+var errResponseTooLarge = errors.New("upstream response too large")
+
 const (
 	defaultUpstreamTimeout = 30 * time.Second
 	defaultMaxBodyBytes    = 10 << 20 // 10MB
@@ -131,10 +133,24 @@ func (h *Handler) Proxy(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
+	maxResp := h.cfg.GatewayMaxBodyBytes
+	if maxResp <= 0 {
+		maxResp = defaultMaxBodyBytes
+	}
+	respBody, err := readLimitedBody(resp.Body, maxResp)
+	if err != nil {
+		if errors.Is(err, errResponseTooLarge) {
+			apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游响应体过大")
+			return
+		}
+		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "读取上游响应失败")
+		return
+	}
+
 	copyResponseHeaders(c.Writer.Header(), resp.Header)
 	c.Status(resp.StatusCode)
-	if _, err := io.Copy(c.Writer, resp.Body); err != nil {
-		fmt.Printf("gateway copy response: %v\n", err)
+	if _, err := c.Writer.Write(respBody); err != nil {
+		fmt.Printf("gateway write response: %v\n", err)
 	}
 }
 
@@ -155,6 +171,18 @@ func (h *Handler) loadTool(ctx context.Context, slug string) (*toolRow, error) {
 		return nil, err
 	}
 	return &t, nil
+}
+
+func readLimitedBody(r io.Reader, max int64) ([]byte, error) {
+	limited := io.LimitReader(r, max+1)
+	data, err := io.ReadAll(limited)
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > max {
+		return nil, errResponseTooLarge
+	}
+	return data, nil
 }
 
 func copyHeaders(dst, src http.Header) {
