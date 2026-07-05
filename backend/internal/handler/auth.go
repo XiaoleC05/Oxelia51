@@ -107,7 +107,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "verification_email_sent"})
+	c.JSON(http.StatusCreated, gin.H{
+		"message":         "verification_email_sent",
+		"smtp_configured": h.cfg.SMTPConfigured(),
+	})
 }
 
 func (h *AuthHandler) VerifyEmail(c *gin.Context) {

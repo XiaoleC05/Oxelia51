@@ -23,14 +23,18 @@ function Register() {
     }
     setSubmitting(true)
     try {
-      await apiPost('/auth/register', {
+      const data = await apiPost('/auth/register', {
         username,
         password,
         password_confirm: passwordConfirm,
         email,
       })
-      setMessage('注册成功，请查收验证邮件后再登录。')
-      setTimeout(() => navigate('/login'), 2000)
+      if (data.smtp_configured) {
+        setMessage('注册成功，请查收验证邮件后再登录。')
+      } else {
+        setMessage('注册成功。当前邮件服务未配置，请联系管理员在后台手动验证你的邮箱后登录。')
+      }
+      setTimeout(() => navigate('/login'), 3000)
     } catch (err) {
       setError(err.message)
     } finally {

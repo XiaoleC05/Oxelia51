@@ -24,6 +24,10 @@ function Login() {
       navigate(from)
     } catch (err) {
       setError(err.message)
+      // 邮箱未验证时给出重发链接
+      if (err.message.includes('邮箱') || err.message.includes('EMAIL_NOT_VERIFIED')) {
+        setError('邮箱未验证，请查收验证邮件。未收到？可重发验证邮件。')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -62,6 +66,8 @@ function Login() {
         没有账号？<Link to="/register">去注册</Link>
         {' · '}
         <Link to="/forgot-password">忘记密码</Link>
+        {' · '}
+        <Link to="/resend-verification">重发验证邮件</Link>
       </p>
     </div>
   )
