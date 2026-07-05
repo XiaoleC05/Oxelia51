@@ -1,0 +1,5 @@
+ALTER TABLE articles
+    DROP COLUMN IF EXISTS content,
+    DROP COLUMN IF EXISTS tags,
+    DROP COLUMN IF EXISTS is_draft;
+DROP TABLE IF EXISTS pages;

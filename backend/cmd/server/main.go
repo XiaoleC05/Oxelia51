@@ -82,6 +82,9 @@ func main() {
 	// 文章展示（公开读）
 	articleH := handler.NewArticleHandler(pool)
 	r.GET("/api/articles", articleH.ListPublic)
+	r.GET("/api/articles/categories", articleH.Categories)
+	r.GET("/api/articles/:id", articleH.GetPublic)
+	r.GET("/api/pages/:slug", articleH.GetPage)
 
 	authMW := middleware.NewAuthMiddleware(cfg, tokenSvc, blacklist)
 	protected := r.Group("/api")
@@ -115,6 +118,8 @@ func main() {
 		admin.POST("/articles", articleH.Create)
 		admin.PUT("/articles/:id", articleH.Update)
 		admin.DELETE("/articles/:id", articleH.Delete)
+		admin.GET("/pages", articleH.ListPagesAdmin)
+		admin.PUT("/pages/:slug", articleH.UpdatePage)
 	}
 
 	addr := cfg.BindAddr()

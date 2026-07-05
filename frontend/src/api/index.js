@@ -213,8 +213,24 @@ export async function adminUpdateCarouselSettings(intervalMs) {
 /* ---- Articles (文章展示) ---- */
 
 /** 公开：获取已启用的文章列表 */
-export async function fetchArticles() {
-  return apiGet('/articles')
+export async function fetchArticles(category) {
+  const query = category ? `?category=${encodeURIComponent(category)}` : ''
+  return apiGet(`/articles${query}`)
+}
+
+/** 公开：获取文章详情（含正文） */
+export async function fetchArticle(id) {
+  return apiGet(`/articles/${id}`)
+}
+
+/** 公开：获取分类列表 */
+export async function fetchCategories() {
+  return apiGet('/articles/categories')
+}
+
+/** 公开：获取静态页面内容 */
+export async function fetchPage(slug) {
+  return apiGet(`/pages/${slug}`)
 }
 
 /** 管理端：获取全部文章 */
@@ -235,5 +251,15 @@ export async function adminUpdateArticle(id, data) {
 /** 管理端：删除文章 */
 export async function adminDeleteArticle(id) {
   return apiDelete(`/admin/articles/${id}`)
+}
+
+/** 管理端：页面列表 */
+export async function adminFetchPages() {
+  return apiGet('/admin/pages', { auth: true })
+}
+
+/** 管理端：更新页面 */
+export async function adminUpdatePage(slug, data) {
+  return apiPut(`/admin/pages/${slug}`, data)
 }
 
