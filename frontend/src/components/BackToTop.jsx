@@ -4,12 +4,20 @@ function BackToTop() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    let rafId = null
     const handleScroll = () => {
-      setVisible(window.scrollY > window.innerHeight)
+      if (rafId) return
+      rafId = requestAnimationFrame(() => {
+        rafId = null
+        setVisible(window.scrollY > window.innerHeight)
+      })
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
   }, [])
 
   const scrollToTop = () => {
