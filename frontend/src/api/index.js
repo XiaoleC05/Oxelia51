@@ -210,3 +210,30 @@ export async function adminUpdateCarouselSettings(intervalMs) {
   return apiPut('/admin/carousel-settings', { autoplay_interval_ms: intervalMs })
 }
 
+/* ---- Articles (文章展示) ---- */
+
+/** 公开：获取已启用的文章列表 */
+export async function fetchArticles() {
+  return apiGet('/articles')
+}
+
+/** 管理端：获取全部文章 */
+export async function adminFetchArticles() {
+  return apiGet('/admin/articles', { auth: true })
+}
+
+/** 管理端：创建文章 */
+export async function adminCreateArticle(data) {
+  return apiPost('/admin/articles', data)
+}
+
+/** 管理端：更新文章 */
+export async function adminUpdateArticle(id, data) {
+  return apiPut(`/admin/articles/${id}`, data)
+}
+
+/** 管理端：删除文章 */
+export async function adminDeleteArticle(id) {
+  return apiDelete(`/admin/articles/${id}`)
+}
+

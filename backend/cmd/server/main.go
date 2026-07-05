@@ -79,6 +79,10 @@ func main() {
 	heroH := handler.NewHeroHandler(pool)
 	r.GET("/api/hero-images", heroH.ListPublic)
 
+	// 文章展示（公开读）
+	articleH := handler.NewArticleHandler(pool)
+	r.GET("/api/articles", articleH.ListPublic)
+
 	authMW := middleware.NewAuthMiddleware(cfg, tokenSvc, blacklist)
 	protected := r.Group("/api")
 	protected.Use(authMW.Handle())
@@ -107,6 +111,10 @@ func main() {
 		admin.DELETE("/hero-images/:id", heroH.Delete)
 		admin.POST("/hero-images/upload", heroH.Upload)
 		admin.PUT("/carousel-settings", heroH.UpdateCarouselSettings)
+		admin.GET("/articles", articleH.ListAdmin)
+		admin.POST("/articles", articleH.Create)
+		admin.PUT("/articles/:id", articleH.Update)
+		admin.DELETE("/articles/:id", articleH.Delete)
 	}
 
 	addr := cfg.BindAddr()
