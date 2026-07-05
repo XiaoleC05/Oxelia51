@@ -8,10 +8,20 @@ import {
   BADGE_LABEL,
 } from '../api'
 import DormGuardTool from '../tools/dormguard/DormGuardTool'
+import SuperReadTool from '../tools/superread/SuperReadTool'
+import MusicBoxTool from '../tools/musicbox/MusicBoxTool'
+import CS2LabTool from '../tools/cs2lab/CS2LabTool'
+import AIHelperTool from '../tools/aihelper/AIHelperTool'
+import AgentCanvasTool from '../tools/agentcanvas/AgentCanvasTool'
 import './ToolShell.css'
 
 const TOOL_VIEWS = {
   dormguard: DormGuardTool,
+  superread: SuperReadTool,
+  musicbox: MusicBoxTool,
+  cs2lab: CS2LabTool,
+  aihelper: AIHelperTool,
+  agentcanvas: AgentCanvasTool,
 }
 
 function ToolShell() {
