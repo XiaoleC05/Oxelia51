@@ -54,3 +54,19 @@ type RefreshRequest struct {
 type LogoutRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
+
+// AdminUserItem 管理端用户列表项
+type AdminUserItem struct {
+	ID            int64     `json:"id"`
+	Username      string    `json:"username"`
+	Email         string    `json:"email"`
+	Role          string    `json:"role"`
+	EmailVerified bool      `json:"email_verified"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+// PatchUserRequest 管理端 PATCH 用户
+type PatchUserRequest struct {
+	EmailVerified *bool   `json:"email_verified"`
+	Role          *string `json:"role"`
+}

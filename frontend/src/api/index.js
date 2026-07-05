@@ -107,6 +107,15 @@ export async function apiDelete(path) {
   return parseResponse(res)
 }
 
+export async function apiPatch(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  })
+  return parseResponse(res)
+}
+
 /** 经平台网关转发至工具后端 */
 export async function apiProxy(slug, toolPath, options = {}) {
   const path = toolPath.replace(/^\//, '')

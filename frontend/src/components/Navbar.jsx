@@ -28,6 +28,9 @@ function Navbar() {
       <div className="navbar-links">
         <Link to="/tools">工具</Link>
         <Link to="/portfolio">作品</Link>
+        {token && user?.role === 'admin' && (
+          <Link to="/admin">管理</Link>
+        )}
         {token && user ? (
           <>
             <span className="navbar-user">{user.username}</span>

@@ -90,8 +90,11 @@ func main() {
 	admin := r.Group("/api/admin")
 	admin.Use(authMW.Handle(), middleware.RequireAdmin())
 	{
+		admin.GET("/tools", adminTool.ListTools)
 		admin.PATCH("/tools/:slug", adminTool.PatchTool)
 		admin.POST("/tools/scan-local", adminTool.ScanLocal)
+		admin.GET("/users", adminTool.ListUsers)
+		admin.PATCH("/users/:id", adminTool.PatchUser)
 		admin.GET("/portfolio", adminTool.ListPortfolio)
 		admin.PUT("/portfolio/:slug", adminTool.UpdatePortfolio)
 	}

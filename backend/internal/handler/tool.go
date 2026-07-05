@@ -182,6 +182,115 @@ func (h *AdminToolHandler) PatchTool(c *gin.Context) {
 	c.JSON(http.StatusOK, detail)
 }
 
+// ListTools GET /api/admin/tools — 列出全部工具（含非在线），管理端用
+func (h *AdminToolHandler) ListTools(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	rows, err := h.db.Query(ctx, `
+		SELECT slug, name, description,
+		       user_accessible, online_capable, status,
+		       internal_api_base, github_repo, release_url, manifest_path, description_override
+		FROM tools
+		ORDER BY name`)
+	if err != nil {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
+		return
+	}
+	defer rows.Close()
+
+	items := []model.AdminToolDetail{}
+	for rows.Next() {
+		var item model.AdminToolDetail
+		if err := rows.Scan(
+			&item.Slug, &item.Name, &item.Description,
+			&item.UserAccessible, &item.OnlineCapable, &item.Status,
+			&item.InternalAPIBase, &item.GithubRepo, &item.ReleaseURL,
+			&item.ManifestPath, &item.DescriptionOverride,
+		); err != nil {
+			apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "读取数据失败")
+			return
+		}
+		items = append(items, item)
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
+// ListUsers GET /api/admin/users — 列出全部用户
+func (h *AdminToolHandler) ListUsers(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	rows, err := h.db.Query(ctx, `
+		SELECT id, username, email, role, email_verified, created_at
+		FROM users
+		ORDER BY created_at DESC`)
+	if err != nil {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
+		return
+	}
+	defer rows.Close()
+
+	items := []model.AdminUserItem{}
+	for rows.Next() {
+		var item model.AdminUserItem
+		if err := rows.Scan(
+			&item.ID, &item.Username, &item.Email,
+			&item.Role, &item.EmailVerified, &item.CreatedAt,
+		); err != nil {
+			apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "读取数据失败")
+			return
+		}
+		items = append(items, item)
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
+// PatchUser PATCH /api/admin/users/:id — 修改用户邮箱验证状态或角色
+func (h *AdminToolHandler) PatchUser(c *gin.Context) {
+	id := c.Param("id")
+
+	var req model.PatchUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apiError(c, http.StatusBadRequest, "INVALID_REQUEST", "请求格式错误: "+err.Error())
+		return
+	}
+
+	if req.Role != nil && *req.Role != "admin" && *req.Role != "user" {
+		apiError(c, http.StatusBadRequest, "INVALID_ROLE", "role 必须为 admin 或 user")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	var item model.AdminUserItem
+	err := h.db.QueryRow(ctx, `
+		UPDATE users SET
+			email_verified = COALESCE($2, email_verified),
+			role = COALESCE($3, role),
+			updated_at = NOW()
+		WHERE id = $1
+		RETURNING id, username, email, role, email_verified, created_at`,
+		id, req.EmailVerified, req.Role,
+	).Scan(
+		&item.ID, &item.Username, &item.Email,
+		&item.Role, &item.EmailVerified, &item.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apiError(c, http.StatusNotFound, "USER_NOT_FOUND", "用户不存在")
+			return
+		}
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "更新失败")
+		return
+	}
+
+	c.JSON(http.StatusOK, item)
+}
+
 // ScanLocal POST /api/admin/tools/scan-local
 func (h *AdminToolHandler) ScanLocal(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)

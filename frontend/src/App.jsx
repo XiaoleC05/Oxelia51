@@ -9,6 +9,7 @@ import Portfolio from './pages/Portfolio'
 import VerifyEmail from './pages/VerifyEmail'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import Admin from './pages/Admin'
 import './App.css'
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <Route path="/tools" element={<Tools />} />
         <Route path="/tools/:slug" element={<ToolShell />} />
         <Route path="/portfolio" element={<Portfolio />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </BrowserRouter>
   )
