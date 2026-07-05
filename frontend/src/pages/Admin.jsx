@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle } from '../api'
+import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle, adminFetchPages, adminUpdatePage } from '../api'
 import './Admin.css'
 
 function Admin() {
@@ -13,6 +13,7 @@ function Admin() {
   const [portfolio, setPortfolio] = useState([])
   const [heroImages, setHeroImages] = useState([])
   const [articles, setArticles] = useState([])
+  const [pages, setPages] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -42,6 +43,9 @@ function Admin() {
       } else if (tab === 'articles') {
         const data = await adminFetchArticles()
         setArticles(data)
+      } else if (tab === 'pages') {
+        const data = await adminFetchPages()
+        setPages(data)
       }
     } catch (err) {
       setError(err.message)
@@ -101,6 +105,12 @@ function Admin() {
         >
           文章
         </button>
+        <button
+          className={`admin-tab ${tab === 'pages' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('pages')}
+        >
+          页面
+        </button>
       </div>
 
       {loading && <p className="admin-status">加载中…</p>}
@@ -120,6 +130,9 @@ function Admin() {
       )}
       {!loading && !error && tab === 'articles' && (
         <ArticlesTab articles={articles} onUpdated={loadData} />
+      )}
+      {!loading && !error && tab === 'pages' && (
+        <PagesTab pages={pages} onUpdated={loadData} />
       )}
     </div>
   )
@@ -873,10 +886,13 @@ function ArticlesTab({ articles, onUpdated }) {
     title: '',
     url: '',
     summary: '',
+    content: '',
     category: '',
+    tags: '',
     published_at: '',
     display_order: '0',
     enabled: true,
+    is_draft: false,
   }
 
   const [form, setForm] = useState(emptyForm)
@@ -893,10 +909,13 @@ function ArticlesTab({ articles, onUpdated }) {
       title: article.title || '',
       url: article.url || '',
       summary: article.summary || '',
+      content: article.content || '',
       category: article.category || '',
+      tags: Array.isArray(article.tags) ? article.tags.join(', ') : '',
       published_at: article.published_at ? article.published_at.slice(0, 10) : '',
       display_order: String(article.display_order ?? 0),
       enabled: article.enabled !== false,
+      is_draft: article.is_draft === true,
     })
     setModal('edit')
   }
@@ -906,19 +925,29 @@ function ArticlesTab({ articles, onUpdated }) {
     setEditing(null)
   }
 
+  function buildArticleData() {
+    const tags = form.tags
+      ? form.tags.split(',').map((t) => t.trim()).filter(Boolean)
+      : undefined
+    return {
+      title: form.title,
+      url: form.url || undefined,
+      summary: form.summary || undefined,
+      content: form.content || undefined,
+      category: form.category || undefined,
+      tags,
+      published_at: form.published_at || undefined,
+      display_order: parseInt(form.display_order, 10) || 0,
+      enabled: form.enabled,
+      is_draft: form.is_draft,
+    }
+  }
+
   async function handleCreate(e) {
     e.preventDefault()
     setSaving(true)
     try {
-      await adminCreateArticle({
-        title: form.title,
-        url: form.url,
-        summary: form.summary || undefined,
-        category: form.category || undefined,
-        published_at: form.published_at || undefined,
-        display_order: parseInt(form.display_order, 10) || 0,
-        enabled: form.enabled,
-      })
+      await adminCreateArticle(buildArticleData())
       closeModal()
       onUpdated()
     } catch (err) {
@@ -933,15 +962,7 @@ function ArticlesTab({ articles, onUpdated }) {
     if (!editing) return
     setSaving(true)
     try {
-      await adminUpdateArticle(editing.id, {
-        title: form.title,
-        url: form.url,
-        summary: form.summary || undefined,
-        category: form.category || undefined,
-        published_at: form.published_at || undefined,
-        display_order: parseInt(form.display_order, 10) || 0,
-        enabled: form.enabled,
-      })
+      await adminUpdateArticle(editing.id, buildArticleData())
       closeModal()
       onUpdated()
     } catch (err) {
@@ -973,6 +994,7 @@ function ArticlesTab({ articles, onUpdated }) {
             <tr>
               <th>标题</th>
               <th>分类</th>
+              <th>状态</th>
               <th>发布日期</th>
               <th>启用</th>
               <th>操作</th>
@@ -981,13 +1003,18 @@ function ArticlesTab({ articles, onUpdated }) {
           <tbody>
             {articles.length === 0 ? (
               <tr>
-                <td colSpan={5} className="admin-muted">暂无文章。</td>
+                <td colSpan={6} className="admin-muted">暂无文章。</td>
               </tr>
             ) : (
               articles.map((a) => (
                 <tr key={a.id}>
-                  <td className="admin-mono" style={{ whiteSpace: 'normal', maxWidth: 300 }}>{a.title}</td>
+                  <td className="admin-mono" style={{ whiteSpace: 'normal', maxWidth: 280 }}>{a.title}</td>
                   <td className="admin-muted">{a.category || '\u2014'}</td>
+                  <td>
+                    <span className={`admin-badge ${a.is_draft ? 'admin-badge--off' : 'admin-badge--ok'}`}>
+                      {a.is_draft ? '草稿' : '已发布'}
+                    </span>
+                  </td>
                   <td className="admin-muted">
                     {a.published_at ? new Date(a.published_at).toLocaleDateString('zh-CN') : '\u2014'}
                   </td>
@@ -1014,7 +1041,7 @@ function ArticlesTab({ articles, onUpdated }) {
       {/* Create / Edit Modal */}
       {(modal === 'create' || modal === 'edit') && (
         <div className="admin-modal">
-          <form className="admin-modal-form" onSubmit={modal === 'create' ? handleCreate : handleUpdate}>
+          <form className="admin-modal-form admin-modal-form--wide" onSubmit={modal === 'create' ? handleCreate : handleUpdate}>
             <h3>{modal === 'create' ? '添加文章' : '编辑文章'}</h3>
 
             <label className="admin-field">
@@ -1029,13 +1056,12 @@ function ArticlesTab({ articles, onUpdated }) {
             </label>
 
             <label className="admin-field">
-              <span>URL</span>
+              <span>URL（可选，有正文可不填）</span>
               <input
                 type="text"
                 value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
                 placeholder="https://..."
-                required
               />
             </label>
 
@@ -1050,12 +1076,33 @@ function ArticlesTab({ articles, onUpdated }) {
             </label>
 
             <label className="admin-field">
+              <span>正文</span>
+              <textarea
+                className="admin-textarea"
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+                placeholder="支持 HTML 内容"
+                rows={10}
+              />
+            </label>
+
+            <label className="admin-field">
               <span>分类</span>
               <input
                 type="text"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 placeholder="如：技术、随笔"
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>标签（逗号分隔）</span>
+              <input
+                type="text"
+                value={form.tags}
+                onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                placeholder="React, Go, 教程"
               />
             </label>
 
@@ -1075,6 +1122,145 @@ function ArticlesTab({ articles, onUpdated }) {
                 value={form.display_order}
                 onChange={(e) => setForm({ ...form, display_order: e.target.value })}
                 placeholder="数字越小越靠前"
+              />
+            </label>
+
+            <label className="admin-field admin-field--row">
+              <span>启用</span>
+              <input
+                type="checkbox"
+                checked={form.enabled}
+                onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
+              />
+            </label>
+
+            <label className="admin-field admin-field--row">
+              <span>保存为草稿（不公开显示）</span>
+              <input
+                type="checkbox"
+                checked={form.is_draft}
+                onChange={(e) => setForm({ ...form, is_draft: e.target.checked })}
+              />
+            </label>
+
+            <div className="admin-modal-actions">
+              <button type="submit" className="admin-btn" disabled={saving}>
+                {saving ? '保存中…' : '保存'}
+              </button>
+              <button type="button" className="admin-btn admin-btn--ghost" onClick={closeModal}>
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ===== 页面管理 =====
+function PagesTab({ pages, onUpdated }) {
+  const [modal, setModal] = useState(null)
+  const [editingSlug, setEditingSlug] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({ title: '', content: '', enabled: true })
+
+  function openEdit(page) {
+    setEditingSlug(page.slug)
+    setForm({
+      title: page.title || '',
+      content: page.content || '',
+      enabled: page.enabled !== false,
+    })
+    setModal('edit')
+  }
+
+  function closeModal() {
+    setModal(null)
+    setEditingSlug(null)
+  }
+
+  async function handleUpdate(e) {
+    e.preventDefault()
+    if (!editingSlug) return
+    setSaving(true)
+    try {
+      await adminUpdatePage(editingSlug, {
+        title: form.title,
+        content: form.content,
+        enabled: form.enabled,
+      })
+      closeModal()
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="admin-section">
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Slug</th>
+              <th>标题</th>
+              <th>启用</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pages.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="admin-muted">暂无页面。</td>
+              </tr>
+            ) : (
+              pages.map((p) => (
+                <tr key={p.slug}>
+                  <td className="admin-mono">{p.slug}</td>
+                  <td>{p.title}</td>
+                  <td>
+                    <span className={`admin-badge ${p.enabled !== false ? 'admin-badge--ok' : 'admin-badge--off'}`}>
+                      {p.enabled !== false ? '启用' : '禁用'}
+                    </span>
+                  </td>
+                  <td>
+                    <button className="admin-btn admin-btn--sm" onClick={() => openEdit(p)}>
+                      编辑
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {modal === 'edit' && (
+        <div className="admin-modal">
+          <form className="admin-modal-form admin-modal-form--wide" onSubmit={handleUpdate}>
+            <h3>编辑页面：{editingSlug}</h3>
+
+            <label className="admin-field">
+              <span>标题</span>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                required
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>正文</span>
+              <textarea
+                className="admin-textarea"
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+                placeholder="支持 HTML 内容"
+                rows={12}
               />
             </label>
 

@@ -11,6 +11,9 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import ResendVerification from './pages/ResendVerification'
 import Admin from './pages/Admin'
+import Blog from './pages/Blog'
+import ArticleDetail from './pages/ArticleDetail'
+import About from './pages/About'
 import './App.css'
 
 function App() {
@@ -29,6 +32,9 @@ function App() {
         <Route path="/tools/:slug" element={<ToolShell />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:id" element={<ArticleDetail />} />
+        <Route path="/about" element={<About />} />
       </Routes>
     </BrowserRouter>
   )

@@ -1,0 +1,134 @@
+/* ===== About: editorial single-column ===== */
+
+.about-page {
+  padding: 32px 0 80px;
+}
+
+.about-article {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.about-status {
+  padding: 80px 0;
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+.about-error {
+  color: var(--accent);
+}
+
+/* ---- Header ---- */
+.about-header {
+  margin-bottom: 40px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.about-header h1 {
+  margin: 0;
+}
+
+/* ---- Content ---- */
+.about-content {
+  font-size: 16px;
+  line-height: 1.85;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.about-content h1,
+.about-content h2,
+.about-content h3,
+.about-content h4 {
+  font-family: var(--heading);
+  color: var(--text-h);
+  margin: 32px 0 12px;
+  line-height: 1.35;
+}
+
+.about-content h1 { font-size: 1.6rem; }
+.about-content h2 { font-size: 1.35rem; }
+.about-content h3 { font-size: 1.15rem; }
+
+.about-content p {
+  margin: 0 0 16px;
+}
+
+.about-content ul,
+.about-content ol {
+  margin: 0 0 16px;
+  padding-left: 24px;
+}
+
+.about-content li {
+  margin-bottom: 4px;
+}
+
+.about-content blockquote {
+  margin: 0 0 16px;
+  padding: 12px 20px;
+  border-left: 3px solid var(--accent);
+  background: var(--code-bg);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.about-content code {
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--code-bg);
+}
+
+.about-content pre {
+  margin: 0 0 16px;
+  padding: 16px 20px;
+  background: var(--code-bg);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.about-content pre code {
+  padding: 0;
+  background: none;
+}
+
+.about-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 16px 0;
+}
+
+.about-content a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-border);
+}
+
+.about-content a:hover {
+  color: var(--text-h);
+  border-color: var(--text-h);
+}
+
+.about-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  .about-article {
+    padding: 0;
+  }
+
+  .about-content {
+    font-size: 15px;
+  }
+}

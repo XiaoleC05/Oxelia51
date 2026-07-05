@@ -194,22 +194,15 @@ function Landing() {
         <section className="landing-section">
           <div className="landing-section-head">
             <h2 className="landing-section-title">最新文章</h2>
-            <a
-              href="https://xiaolec05.github.io"
-              target="_blank"
-              rel="noreferrer"
-              className="landing-section-link"
-            >
+            <Link to="/blog" className="landing-section-link">
               博客 &rarr;
-            </a>
+            </Link>
           </div>
           <div className="landing-article-list">
             {articles.slice(0, 6).map((article) => (
-              <a
+              <Link
                 key={article.id}
-                href={article.url}
-                target="_blank"
-                rel="noreferrer"
+                to={`/blog/${article.id}`}
                 className="landing-article-row"
               >
                 <div className="landing-article-main">
@@ -233,7 +226,7 @@ function Landing() {
                     <p className="landing-article-summary">{article.summary}</p>
                   )}
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </section>

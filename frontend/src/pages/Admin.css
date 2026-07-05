@@ -212,6 +212,10 @@
   gap: 20px;
 }
 
+.admin-modal-form--wide {
+  max-width: 640px;
+}
+
 .admin-modal-form h3 {
   font-family: var(--heading);
   font-size: 1.1rem;
@@ -440,4 +444,23 @@
 .hero-settings-msg {
   font-size: 12px;
   color: var(--accent-2);
+}
+
+/* ---- Textarea ---- */
+.admin-textarea {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: var(--mono);
+  color: var(--text-h);
+  background: var(--bg);
+  border-radius: 3px;
+  resize: vertical;
+  min-height: 200px;
+  line-height: 1.6;
+}
+
+.admin-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
 }
