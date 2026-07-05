@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -70,6 +71,12 @@ func (h *ArticleHandler) ListPublic(c *gin.Context) {
 // GetPublic GET /api/articles/:id — 公开详情（含正文）
 func (h *ArticleHandler) GetPublic(c *gin.Context) {
 	id := c.Param("id")
+	// L2: 整数校验，防止非数字输入
+	var idInt int64
+	if _, err := fmt.Sscanf(id, "%d", &idInt); err != nil {
+		apiError(c, http.StatusBadRequest, "INVALID_ID", "文章 ID 无效")
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -210,6 +217,11 @@ func (h *ArticleHandler) Update(c *gin.Context) {
 	var req model.UpdateArticleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		apiError(c, http.StatusBadRequest, "INVALID_REQUEST", "请求格式错误: "+err.Error())
+		return
+	}
+	// L1: URL 格式校验（与 Create 一致）
+	if req.URL != nil && *req.URL != "" && (len(*req.URL) < 8 || (*req.URL)[:4] != "http") {
+		apiError(c, http.StatusBadRequest, "INVALID_URL", "URL 格式无效，需以 http 开头")
 		return
 	}
 
