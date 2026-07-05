@@ -3,7 +3,7 @@
 set -euo pipefail
 
 APP_DIR=/opt/Oxelia51
-BUILD_DIR=/tmp/Oxelia51-build
+BUILD_DIR="${OXELIA_BUILD_DIR:-/root/Oxelia51-build}"
 REPO_HTTPS="https://github.com/XiaoleC05/Oxelia51.git"
 export PATH=/usr/local/go/bin:${PATH:-}
 export GOTOOLCHAIN=auto
@@ -32,9 +32,12 @@ fetch_source() {
     BUILD_DIR="$APP_DIR"
     return
   fi
-  log "浅克隆源码（HTTPS，超时 120s）..."
+  log "清理并浅克隆到 $BUILD_DIR（HTTPS）..."
   rm -rf "$BUILD_DIR"
-  timeout 120 git clone --depth 1 "$REPO_HTTPS" "$BUILD_DIR"
+  mkdir -p "$(dirname "$BUILD_DIR")"
+  # 避免 /tmp 或 hooks 模板目录异常
+  GIT_TEMPLATE_DIR= timeout 180 git -c core.hooksPath=/dev/null clone --depth 1 --single-branch -b master \
+    "$REPO_HTTPS" "$BUILD_DIR" || die "git clone 失败（检查磁盘: df -h）"
 }
 
 log "=== 1/4 准备 Go ==="
@@ -43,7 +46,7 @@ ensure_go
 log "=== 2/4 拉源码 ==="
 fetch_source
 
-log "=== 3/4 编译（超时 300s，首次可能较慢）..."
+log "=== 3/4 编译（超时 300s）..."
 cd "$BUILD_DIR/backend"
 timeout 300 go mod download
 timeout 300 env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o oxelia51-server ./cmd/server
