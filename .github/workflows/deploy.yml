@@ -1,80 +1,125 @@
-name: Deploy Oxelia51
+name: Build and Deploy
 
 on:
   push:
     branches: [master]
+  pull_request:
+    branches: [master]
   workflow_dispatch:
 
+# 同一分支新 push 取消旧 run，避免并发部署
 concurrency:
-  group: deploy-oxelia51
-  cancel-in-progress: false
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-test:
+    name: Build & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache-dependency-path: backend/go.sum
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
+          cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-
-      - name: Build frontend
+      - name: Backend vet + test
+        working-directory: backend
         run: |
-          cd frontend
+          go vet ./...
+          go test ./...
+
+      - name: Backend cross-compile (linux/amd64)
+        working-directory: backend
+        run: |
+          mkdir -p ../release/backend
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../release/backend/oxelia51-server ./cmd/server
+          cp -r migrations ../release/backend/migrations
+
+      - name: Frontend install + build
+        working-directory: frontend
+        run: |
           npm ci
           npm run build
+          cp -r dist ../release/frontend-dist
 
-      - name: Build backend binary
+      - name: Stage deploy scripts
+        run: cp -r deploy release/deploy
+
+      - name: Verify release structure
         run: |
-          cd backend
-          go mod tidy
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o oxelia51-server ./cmd/server
+          test -f release/backend/oxelia51-server
+          test -f release/backend/migrations/003_auth_v11.up.sql
+          test -f release/deploy/apply-release.sh
+          test -d release/frontend-dist
+          echo "release structure OK"
 
-      - name: Pack release bundle
-        run: |
-          mkdir -p release/backend/migrations release/frontend-dist release/deploy
-          cp backend/oxelia51-server release/backend/
-          rsync -a backend/migrations/ release/backend/migrations/
-          rsync -a --delete frontend/dist/ release/frontend-dist/
-          rsync -a deploy/ release/deploy/
-          chmod +x release/deploy/*.sh release/deploy/monitor/*.sh 2>/dev/null || true
-          tar czf oxelia51-release.tar.gz -C release .
+      - name: Package release tarball
+        run: tar czf oxelia51-release.tar.gz -C release .
 
-      - name: Upload release artifact
+      - name: Upload tarball artifact
         uses: actions/upload-artifact@v4
         with:
-          name: oxelia51-release
+          name: oxelia-release
           path: oxelia51-release.tar.gz
-          retention-days: 1
+          retention-days: 7
 
   deploy:
-    needs: build
-    runs-on: self-hosted
+    name: Deploy to Production
+    needs: build-test
+    # 仅 master 分支 push 与手动触发才部署；PR 只跑 build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Download release artifact
         uses: actions/download-artifact@v4
         with:
-          name: oxelia51-release
+          name: oxelia-release
+
+      - name: Upload tarball to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: oxelia51-release.tar.gz
+          target: /tmp
+          strip_components: 0
 
       - name: Apply release on server
-        run: |
-          set -euo pipefail
-          TARBALL="${GITHUB_WORKSPACE}/oxelia51-release.tar.gz"
-          CI_SCRIPT="/opt/Oxelia51/deploy/ci-deploy.sh"
-          if [ -f "$CI_SCRIPT" ]; then
-            sudo /usr/bin/bash "$CI_SCRIPT" "$TARBALL"
-          else
-            WORK="/tmp/oxelia51-release"
-            rm -rf "$WORK"
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            WORK="/tmp/oxelia51-release-$$"
+            trap 'rm -rf "$WORK" /tmp/oxelia51-release.tar.gz' EXIT
             mkdir -p "$WORK"
-            tar xzf "$TARBALL" -C "$WORK"
-            sudo /usr/bin/bash "$WORK/deploy/apply-release.sh" "$WORK"
-            rm -rf "$WORK" || true
-          fi
+            tar xzf /tmp/oxelia51-release.tar.gz -C "$WORK"
+            bash "$WORK/deploy/apply-release.sh" "$WORK"
+
+      - name: Health check
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            curl -fsS --max-time 10 http://127.0.0.1:8080/api/health
+            echo ""
+            echo "部署完成: https://oxelia51.com / http://47.108.202.199"
