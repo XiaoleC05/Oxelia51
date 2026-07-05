@@ -245,11 +245,11 @@ function DormGuardTool() {
                   </tr>
                 </thead>
                 <tbody>
-                  {latestRecords.map((r, i) => {
+                  {latestRecords.map((r) => {
                     const total = (Number(r.kbalance) || 0) + (Number(r.zbalance) || 0)
                     const cls = balanceClass(total, threshold * 2)
                     return (
-                      <tr key={i}>
+                      <tr key={r.record_time || `${r.kbalance}-${r.zbalance}`}>
                         <td>{new Date(r.record_time).toLocaleString('zh-CN')}</td>
                         <td className={balanceClass(r.kbalance, threshold)}>
                           {r.kbalance != null ? Number(r.kbalance).toFixed(2) : '—'}

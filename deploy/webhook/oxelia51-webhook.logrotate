@@ -1,0 +1,8 @@
+/var/log/oxelia51-webhook-deploy.log {
+    weekly
+    rotate 4
+    compress
+    missingok
+    notifempty
+    copytruncate
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiGet, getToken, getStoredUser, BADGE_LABEL } from '../api'
+import { apiGet, getToken, getStoredUser, canUseTool, BADGE_LABEL } from '../api'
 import './Tools.css'
 
 function Tools() {
@@ -70,7 +70,7 @@ function Tools() {
                   className="tool-enter"
                   onClick={() => handleEnter(t)}
                 >
-                  {t.badge === 'open' || user?.role === 'admin' ? '进入' : '详情'}
+                  {canUseTool(t, user) ? '进入' : '详情'}
                 </button>
               </div>
             </div>

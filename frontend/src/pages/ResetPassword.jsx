@@ -60,6 +60,9 @@ function ResetPassword() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={8}
+              maxLength={128}
+              autoComplete="new-password"
             />
           </div>
           <div className="auth-field">
@@ -69,6 +72,9 @@ function ResetPassword() {
               value={passwordConfirm}
               onChange={(e) => setPasswordConfirm(e.target.value)}
               required
+              minLength={8}
+              maxLength={128}
+              autoComplete="new-password"
             />
           </div>
           <button type="submit" className="auth-btn">更新密码</button>

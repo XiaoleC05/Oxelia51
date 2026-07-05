@@ -19,6 +19,7 @@ import (
 
 func main() {
 	cfg := config.Load()
+	cfg.Validate()
 	ctx := context.Background()
 
 	pool, err := database.Connect(ctx, cfg.DSN())

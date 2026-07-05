@@ -9,11 +9,13 @@ function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setSubmitting(true)
     try {
       const data = await apiPost('/auth/login', { username, password })
       setToken(data.token)
@@ -22,6 +24,8 @@ function Login() {
       navigate(from)
     } catch (err) {
       setError(err.message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -50,7 +54,9 @@ function Login() {
             autoComplete="current-password"
           />
         </div>
-        <button type="submit" className="auth-btn">登录</button>
+        <button type="submit" className="auth-btn" disabled={submitting}>
+          {submitting ? '登录中…' : '登录'}
+        </button>
       </form>
       <p className="auth-footer">
         没有账号？<Link to="/register">去注册</Link>

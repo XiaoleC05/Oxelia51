@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/joho/godotenv"
 )
+
+const defaultJWTSecret = "change-me-in-production"
 
 type Config struct {
 	DBHost     string
@@ -56,7 +59,7 @@ func Load() *Config {
 		DBName:     getEnv("DB_NAME", "oxelia51"),
 		ServerPort: getEnv("SERVER_PORT", "8080"),
 		ListenAddr: getEnv("LISTEN_ADDR", ""),
-		JWTSecret:  getEnv("JWT_SECRET", "change-me-in-production"),
+		JWTSecret:  getEnv("JWT_SECRET", defaultJWTSecret),
 
 		RedisAddr: getEnv("REDIS_ADDR", "localhost:6379"),
 
@@ -80,6 +83,16 @@ func Load() *Config {
 
 		GatewayUpstreamTimeout: getEnvDuration("GATEWAY_UPSTREAM_TIMEOUT", 30*time.Second),
 		GatewayMaxBodyBytes:    getEnvInt64("GATEWAY_MAX_BODY_BYTES", 10<<20),
+	}
+}
+
+// Validate 检查生产环境关键配置，防止弱密钥/默认值上生产。
+func (c *Config) Validate() {
+	if c.JWTSecret == defaultJWTSecret || len(c.JWTSecret) < 16 {
+		log.Fatal("JWT_SECRET 未配置或过短（<16字符），拒绝启动。请在 .env 中设置强密钥")
+	}
+	if c.DBPassword == "" {
+		log.Fatal("DB_PASSWORD 未配置，拒绝启动")
 	}
 }
 

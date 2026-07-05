@@ -49,6 +49,8 @@ function ToolShell() {
 
   if (loading) return <p className="tool-shell-status">加载中...</p>
   if (error) return <p className="tool-shell-status tool-shell-error">{error}</p>
+  // 未登录时立即返回 null，不渲染工具页内容，避免闪现后跳转
+  if (!token) return null
   if (!tool) return null
 
   const usable = canUseTool(tool, user)
@@ -64,8 +66,6 @@ function ToolShell() {
         </span>
         {tool.description && <p className="tool-shell-desc">{tool.description}</p>}
       </header>
-
-      {!token && <p className="tool-shell-status">请先登录</p>}
 
       {token && !usable && (
         <div className="tool-shell-blocked">

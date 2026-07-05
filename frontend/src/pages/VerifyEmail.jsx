@@ -14,10 +14,13 @@ function VerifyEmail() {
     }
     fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
       .then(async (res) => {
-        if (res.ok) setStatus('success')
-        else setStatus('error')
+        if (res.ok) {
+          setStatus('success')
+        } else {
+          setStatus('invalid')
+        }
       })
-      .catch(() => setStatus('error'))
+      .catch(() => setStatus('network-error'))
   }, [token])
 
   return (
@@ -31,9 +34,15 @@ function VerifyEmail() {
             <p><Link to="/login">去登录</Link></p>
           </>
         )}
-        {status === 'error' && (
+        {status === 'invalid' && (
           <>
-            <p className="auth-error">链接无效或已过期。</p>
+            <p className="auth-error">验证链接无效或已过期。</p>
+            <p><Link to="/login">返回登录</Link></p>
+          </>
+        )}
+        {status === 'network-error' && (
+          <>
+            <p className="auth-error">网络连接失败，请检查网络后刷新重试。</p>
             <p><Link to="/login">返回登录</Link></p>
           </>
         )}

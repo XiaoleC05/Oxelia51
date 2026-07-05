@@ -5,9 +5,18 @@ set -euo pipefail
 
 LOG=/var/log/oxelia51-webhook-deploy.log
 REPO_DIR=/opt/Oxelia51-src
-WORK=/tmp/oxelia51-webhook-deploy-$$
+LOCK_FILE=/tmp/oxelia51-deploy.lock
 
 exec >> "$LOG" 2>&1
+
+# 互斥锁：防止并发 webhook 触发多个 deploy.sh 同时执行
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    echo "=== $(date -Iseconds) 另一个部署正在执行，跳过 ==="
+    exit 0
+fi
+
+WORK=/tmp/oxelia51-webhook-deploy-$$
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK"
 

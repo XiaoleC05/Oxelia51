@@ -10,6 +10,7 @@ function Register() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -20,6 +21,7 @@ function Register() {
       setError('两次密码不一致')
       return
     }
+    setSubmitting(true)
     try {
       await apiPost('/auth/register', {
         username,
@@ -31,6 +33,8 @@ function Register() {
       setTimeout(() => navigate('/login'), 2000)
     } catch (err) {
       setError(err.message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -86,7 +90,9 @@ function Register() {
             autoComplete="new-password"
           />
         </div>
-        <button type="submit" className="auth-btn">注册</button>
+        <button type="submit" className="auth-btn" disabled={submitting}>
+          {submitting ? '注册中…' : '注册'}
+        </button>
       </form>
       <p className="auth-footer">
         已有账号？<Link to="/login">去登录</Link>

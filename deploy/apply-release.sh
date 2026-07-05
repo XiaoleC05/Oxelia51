@@ -43,12 +43,19 @@ systemctl enable oxelia51-data.service oxelia51-backend.service
 systemctl start oxelia51-data.service
 
 echo "等待 PostgreSQL 就绪..."
+PG_READY=false
 for _ in $(seq 1 30); do
   if PGPASSWORD="$DB_PASSWORD" pg_isready -h 127.0.0.1 -U root -d oxelia51 >/dev/null 2>&1; then
+    PG_READY=true
     break
   fi
   sleep 2
 done
+
+if [ "$PG_READY" = "false" ]; then
+  echo "错误：PostgreSQL 60 秒内未就绪，中止部署" >&2
+  exit 1
+fi
 
 systemctl restart oxelia51-backend.service
 sleep 3
