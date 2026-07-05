@@ -188,9 +188,32 @@ func readLimitedBody(r io.Reader, max int64) ([]byte, error) {
 	return data, nil
 }
 
+// clientIPForwardHeaders 是反向代理常用于传递客户端真实 IP 的请求头。
+// Oxelia51 作为内网网关代理到上游工具时必须剥离这些头：
+//   - 上游工具（如 DormGuard）的 loopback 信任校验基于 TCP peer 地址，
+//     若上游启用 proxy-headers 解析，这些头会覆盖 TCP peer，导致信任校验失败。
+//   - 这些头携带的是公网客户端 IP，对内网上游无业务意义，透传属于信息泄漏。
+//   - Oxelia51 入站不清洗 X-Forwarded-For，前端可伪造，透传会污染上游 IP 逻辑。
+var clientIPForwardHeaders = map[string]struct{}{
+	"x-real-ip":                {},
+	"x-forwarded-for":          {},
+	"x-forwarded-host":         {},
+	"x-forwarded-proto":        {},
+	"x-forwarded-port":         {},
+	"x-forwarded-server":       {},
+	"x-client-ip":              {},
+	"x-original-forwarded-for": {},
+	"forwarded":                {}, // RFC 7239
+}
+
+func isClientIPForwardHeader(h string) bool {
+	_, ok := clientIPForwardHeaders[strings.ToLower(h)]
+	return ok
+}
+
 func copyHeaders(dst, src http.Header) {
 	for k, vals := range src {
-		if isHopByHop(k) || strings.EqualFold(k, "Authorization") {
+		if isHopByHop(k) || isClientIPForwardHeader(k) || strings.EqualFold(k, "Authorization") {
 			continue
 		}
 		for _, v := range vals {
