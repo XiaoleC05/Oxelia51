@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -16,6 +17,7 @@ type Config struct {
 	DBPassword string
 	DBName     string
 	ServerPort string
+	ListenAddr string
 	JWTSecret  string
 
 	RedisAddr string
@@ -53,6 +55,7 @@ func Load() *Config {
 		DBPassword: getEnv("DB_PASSWORD", ""),
 		DBName:     getEnv("DB_NAME", "oxelia51"),
 		ServerPort: getEnv("SERVER_PORT", "8080"),
+		ListenAddr: getEnv("LISTEN_ADDR", ""),
 		JWTSecret:  getEnv("JWT_SECRET", "change-me-in-production"),
 
 		RedisAddr: getEnv("REDIS_ADDR", "localhost:6379"),
@@ -89,6 +92,14 @@ func (c *Config) DSN() string {
 
 func (c *Config) SMTPConfigured() bool {
 	return c.SMTPHost != "" && c.SMTPUser != "" && c.SMTPPass != ""
+}
+
+// BindAddr 返回 HTTP 监听地址（生产默认仅 loopback）
+func (c *Config) BindAddr() string {
+	if v := strings.TrimSpace(c.ListenAddr); v != "" {
+		return v
+	}
+	return ":" + c.ServerPort
 }
 
 func getEnv(key, fallback string) string {

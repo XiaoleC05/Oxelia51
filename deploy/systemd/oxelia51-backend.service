@@ -1,0 +1,17 @@
+[Unit]
+Description=Oxelia51 Platform API
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/Oxelia51/backend
+EnvironmentFile=-/opt/Oxelia51/backend/.env
+ExecStart=/opt/Oxelia51/backend/oxelia51-server
+Restart=always
+RestartSec=5
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

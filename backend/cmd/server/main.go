@@ -89,8 +89,8 @@ func main() {
 		admin.PUT("/portfolio/:slug", adminTool.UpdatePortfolio)
 	}
 
-	addr := ":" + cfg.ServerPort
-	log.Printf("服务启动: http://localhost%s", addr)
+	addr := cfg.BindAddr()
+	log.Printf("服务启动: %s", addr)
 	if err := r.Run(addr); err != nil {
 		log.Fatalf("服务启动失败: %v", err)
 	}
