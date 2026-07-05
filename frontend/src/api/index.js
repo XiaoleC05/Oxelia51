@@ -20,6 +20,15 @@ async function parseResponse(res) {
       data = { error: text }
     }
   }
+  if (res.status === 401) {
+    // Token 过期或无效：清除本地凭据并跳转登录页
+    clearToken()
+    localStorage.removeItem('user')
+    if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+      window.location.href = '/login'
+    }
+    throw new Error(data?.error || '登录已过期，请重新登录')
+  }
   if (!res.ok) {
     const detail = data?.detail
     const detailMsg = typeof detail === 'string'
@@ -32,11 +41,12 @@ async function parseResponse(res) {
   return data
 }
 
-export async function apiPost(path, body) {
+export async function apiPost(path, body, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(body),
+    ...options,
   })
   return parseResponse(res)
 }

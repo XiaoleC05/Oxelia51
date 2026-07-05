@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -157,7 +158,7 @@ func (h *AdminToolHandler) PatchTool(c *gin.Context) {
 		UPDATE tools SET
 			user_accessible = COALESCE($2, user_accessible),
 			status = COALESCE($3, status),
-			description_override = COALESCE($4, description_override),
+			description_override = COALESCE(NULLIF($4, ''), description_override),
 			internal_api_base = COALESCE($5, internal_api_base),
 			updated_at = NOW()
 		WHERE slug = $1
@@ -223,7 +224,7 @@ func (h *AdminToolHandler) ListUsers(c *gin.Context) {
 	defer cancel()
 
 	rows, err := h.db.Query(ctx, `
-		SELECT id, username, email, role, email_verified, created_at
+		SELECT id, username, email, role, email_verified, created_at, updated_at
 		FROM users
 		ORDER BY created_at DESC`)
 	if err != nil {
@@ -237,7 +238,7 @@ func (h *AdminToolHandler) ListUsers(c *gin.Context) {
 		var item model.AdminUserItem
 		if err := rows.Scan(
 			&item.ID, &item.Username, &item.Email,
-			&item.Role, &item.EmailVerified, &item.CreatedAt,
+			&item.Role, &item.EmailVerified, &item.CreatedAt, &item.UpdatedAt,
 		); err != nil {
 			apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "读取数据失败")
 			return
@@ -263,6 +264,16 @@ func (h *AdminToolHandler) PatchUser(c *gin.Context) {
 		return
 	}
 
+	// 防止 admin 把自己降级为 user 导致锁死后台
+	currentUserID := c.GetInt64("userID")
+	if req.Role != nil && *req.Role != "admin" {
+		var targetID int64
+		if _, err := fmt.Sscanf(id, "%d", &targetID); err == nil && targetID == currentUserID {
+			apiError(c, http.StatusUnprocessableEntity, "CANNOT_DEMOTE_SELF", "不能将自己降级为普通用户")
+			return
+		}
+	}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
@@ -273,11 +284,11 @@ func (h *AdminToolHandler) PatchUser(c *gin.Context) {
 			role = COALESCE($3, role),
 			updated_at = NOW()
 		WHERE id = $1
-		RETURNING id, username, email, role, email_verified, created_at`,
+		RETURNING id, username, email, role, email_verified, created_at, updated_at`,
 		id, req.EmailVerified, req.Role,
 	).Scan(
 		&item.ID, &item.Username, &item.Email,
-		&item.Role, &item.EmailVerified, &item.CreatedAt,
+		&item.Role, &item.EmailVerified, &item.CreatedAt, &item.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

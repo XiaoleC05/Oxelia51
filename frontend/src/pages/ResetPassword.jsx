@@ -12,6 +12,7 @@ function ResetPassword() {
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -20,6 +21,7 @@ function ResetPassword() {
       setError('两次密码不一致')
       return
     }
+    setSubmitting(true)
     try {
       await apiPost('/auth/reset-password', {
         token,
@@ -30,6 +32,8 @@ function ResetPassword() {
       setTimeout(() => navigate('/login'), 2000)
     } catch (err) {
       setError(err.message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -77,7 +81,9 @@ function ResetPassword() {
               autoComplete="new-password"
             />
           </div>
-          <button type="submit" className="auth-btn">更新密码</button>
+          <button type="submit" className="auth-btn" disabled={submitting}>
+            {submitting ? '更新中…' : '更新密码'}
+          </button>
         </form>
       )}
     </div>

@@ -63,6 +63,7 @@ type AdminUserItem struct {
 	Role          string    `json:"role"`
 	EmailVerified bool      `json:"email_verified"`
 	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // PatchUserRequest 管理端 PATCH 用户

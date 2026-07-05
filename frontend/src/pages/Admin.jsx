@@ -1,15 +1,25 @@
 import { useState, useEffect, useCallback } from 'react'
-import { apiGet, apiPost, apiPatch, getStoredUser } from '../api'
+import { useNavigate } from 'react-router-dom'
+import { apiGet, apiPost, apiPatch, getStoredUser, getToken } from '../api'
 import './Admin.css'
 
 function Admin() {
   const user = getStoredUser()
+  const token = getToken()
+  const navigate = useNavigate()
   const [tab, setTab] = useState('tools')
   const [tools, setTools] = useState([])
   const [users, setUsers] = useState([])
   const [portfolio, setPortfolio] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // 登录守卫：未登录跳转登录页
+  useEffect(() => {
+    if (!token) {
+      navigate('/login', { state: { from: '/admin' } })
+    }
+  }, [token, navigate])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -99,13 +109,20 @@ function ToolsTab({ tools, onUpdated }) {
   async function handleScan() {
     setScanning(true)
     setScanResult(null)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 65000)
     try {
-      const result = await apiPost('/admin/tools/scan-local', {})
+      const result = await apiPost('/admin/tools/scan-local', {}, { signal: controller.signal })
       setScanResult(result)
       onUpdated()
     } catch (err) {
-      setScanResult({ error: err.message })
+      if (err.name === 'AbortError') {
+        setScanResult({ error: '扫描超时（65秒），请检查本地 manifest 目录' })
+      } else {
+        setScanResult({ error: err.message })
+      }
     } finally {
+      clearTimeout(timeout)
       setScanning(false)
     }
   }

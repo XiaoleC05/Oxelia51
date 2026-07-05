@@ -24,7 +24,7 @@ function ForgotPassword() {
       <h1>忘记密码</h1>
       {sent ? (
         <div className="auth-status">
-          <p className="auth-success">若该邮箱已注册，重置链接已发送（开发模式请查看后端日志）。</p>
+          <p className="auth-success">若该邮箱已注册，重置链接已发送至邮箱，请在 24 小时内完成重置。</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
