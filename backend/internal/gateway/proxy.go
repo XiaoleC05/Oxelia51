@@ -120,7 +120,10 @@ func (h *Handler) Proxy(c *gin.Context) {
 	}
 
 	copyHeaders(upReq.Header, c.Request.Header)
-	injectGatewayHeaders(upReq, c)
+	if err := injectGatewayHeaders(upReq, c); err != nil {
+		apiError(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
+		return
+	}
 
 	resp, err := h.client.Do(upReq)
 	if err != nil {
@@ -207,15 +210,29 @@ func copyResponseHeaders(dst, src http.Header) {
 	}
 }
 
-func injectGatewayHeaders(req *http.Request, c *gin.Context) {
+func injectGatewayHeaders(req *http.Request, c *gin.Context) error {
 	userID, _ := c.Get("userID")
 	username, _ := c.Get("username")
 	role, _ := c.Get("userRole")
 
-	req.Header.Set("X-Oxelia51-User-Id", fmt.Sprintf("%v", userID))
-	req.Header.Set("X-Oxelia51-Username", fmt.Sprintf("%v", username))
-	req.Header.Set("X-Oxelia51-Role", fmt.Sprintf("%v", role))
+	uid := strings.TrimSpace(fmt.Sprintf("%v", userID))
+	uname := strings.TrimSpace(fmt.Sprintf("%v", username))
+	r := strings.TrimSpace(fmt.Sprintf("%v", role))
+	if uid == "" || uid == "0" || uid == "<nil>" {
+		return fmt.Errorf("令牌缺少用户信息，请重新登录")
+	}
+	if uname == "" || uname == "<nil>" {
+		return fmt.Errorf("令牌缺少用户名，请重新登录")
+	}
+	if r != "admin" && r != "user" {
+		return fmt.Errorf("令牌角色无效，请重新登录")
+	}
+
+	req.Header.Set("X-Oxelia51-User-Id", uid)
+	req.Header.Set("X-Oxelia51-Username", uname)
+	req.Header.Set("X-Oxelia51-Role", r)
 	req.Header.Set("X-Oxelia51-Request-Id", uuid.NewString())
+	return nil
 }
 
 func isHopByHop(h string) bool {

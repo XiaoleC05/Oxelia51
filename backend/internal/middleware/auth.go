@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -8,6 +10,7 @@ import (
 	"github.com/XiaoleC05/oxelia51-backend/internal/config"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthMiddleware struct {
@@ -53,18 +56,52 @@ func (m *AuthMiddleware) Handle() gin.HandlerFunc {
 			}
 		}
 
-		sub, _ := claims["sub"].(float64)
-		role, _ := claims["role"].(string)
-		username, _ := claims["username"].(string)
-		exp, _ := claims["exp"].(float64)
+		sub := claimInt64(claims, "sub")
+		role := claimString(claims, "role")
+		username := claimString(claims, "username")
+		exp := claimInt64(claims, "exp")
 
-		c.Set("userID", int64(sub))
+		c.Set("userID", sub)
 		c.Set("userRole", role)
 		c.Set("username", username)
 		c.Set("jti", jti)
 		c.Set("tokenExp", exp)
 
 		c.Next()
+	}
+}
+
+func claimString(claims jwt.MapClaims, key string) string {
+	v, ok := claims[key]
+	if !ok || v == nil {
+		return ""
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return fmt.Sprint(v)
+}
+
+func claimInt64(claims jwt.MapClaims, key string) int64 {
+	v, ok := claims[key]
+	if !ok || v == nil {
+		return 0
+	}
+	switch n := v.(type) {
+	case float64:
+		return int64(n)
+	case int64:
+		return n
+	case int:
+		return int64(n)
+	case json.Number:
+		i, err := n.Int64()
+		if err != nil {
+			return 0
+		}
+		return i
+	default:
+		return 0
 	}
 }
 

@@ -17,7 +17,15 @@ async function parseResponse(res) {
       data = { error: text }
     }
   }
-  if (!res.ok) throw new Error(data?.error || '请求失败')
+  if (!res.ok) {
+    const detail = data?.detail
+    const detailMsg = typeof detail === 'string'
+      ? detail
+      : Array.isArray(detail)
+        ? detail.map((d) => d?.msg || JSON.stringify(d)).join('; ')
+        : null
+    throw new Error(data?.error || detailMsg || `请求失败 (${res.status})`)
+  }
   return data
 }
 
