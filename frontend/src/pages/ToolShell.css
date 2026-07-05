@@ -1,0 +1,65 @@
+.tool-shell {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.tool-shell-back {
+  font-size: 14px;
+  color: var(--text-secondary, #94a3b8);
+  text-decoration: none;
+}
+
+.tool-shell-header h1 {
+  margin: 12px 0 8px;
+  display: inline-block;
+  margin-right: 12px;
+}
+
+.tool-shell-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.tool-shell-badge--open {
+  background: #166534;
+  color: #bbf7d0;
+}
+
+.tool-shell-badge--closed_to_users {
+  background: #854d0e;
+  color: #fef08a;
+}
+
+.tool-shell-badge--offline {
+  background: #475569;
+  color: #e2e8f0;
+}
+
+.tool-shell-desc {
+  color: var(--text, #cbd5e1);
+  line-height: 1.6;
+}
+
+.tool-shell-blocked {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid var(--border, #334155);
+  border-radius: 8px;
+}
+
+.tool-shell-muted {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 14px;
+}
+
+.tool-shell-status {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.tool-shell-error {
+  color: #ef4444;
+}

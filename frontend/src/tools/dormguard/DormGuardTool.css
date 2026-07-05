@@ -1,0 +1,348 @@
+/* ===== DormGuard Panel ===== */
+
+.dg-shell {
+  background: var(--bg);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* ---- Loading ---- */
+.dg-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text);
+}
+
+.dg-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: dg-spin 0.8s linear infinite;
+}
+
+@keyframes dg-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- Error ---- */
+.dg-error-banner {
+  padding: 24px;
+  margin: 16px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.dg-error-text {
+  color: #ef4444;
+  margin: 0;
+}
+
+/* ---- Header ---- */
+.dg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 24px 24px 0;
+}
+
+.dg-dorm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.dg-dorm-icon {
+  font-size: 18px;
+}
+
+/* ---- Tabs ---- */
+.dg-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--code-bg);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.dg-tab {
+  padding: 7px 18px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dg-tab--active {
+  background: var(--bg);
+  color: var(--text-h);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dg-tab:not(.dg-tab--active):hover {
+  color: var(--text-h);
+}
+
+/* ---- Balance Cards ---- */
+.dg-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  padding: 24px;
+}
+
+.dg-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  background: var(--bg);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.dg-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.dg-card--aircon::before {
+  background: linear-gradient(180deg, #667eea, #764ba2);
+}
+
+.dg-card--lighting::before {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+}
+
+.dg-card:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.dg-card--empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text);
+}
+
+.dg-card--empty::before {
+  display: none;
+}
+
+.dg-card-icon {
+  font-size: 28px;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.dg-card--aircon .dg-card-icon {
+  color: #667eea;
+}
+
+.dg-card--lighting .dg-card-icon {
+  color: #22c55e;
+}
+
+.dg-card-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.dg-card-label {
+  display: block;
+  width: 100%;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.dg-card-value {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.dg-card-unit {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* ---- Balance Colors ---- */
+.dg-balance--normal {
+  color: #22c55e;
+}
+
+.dg-balance--warning {
+  color: #f59e0b;
+}
+
+.dg-balance--low {
+  color: #ef4444;
+}
+
+/* ---- Update Time ---- */
+.dg-update-time {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text);
+  margin-top: 4px;
+}
+
+/* ---- Legend ---- */
+.dg-legend {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.dg-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dg-legend-item::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dg-legend--normal::before { background: #22c55e; }
+.dg-legend--warning::before { background: #f59e0b; }
+.dg-legend--low::before { background: #ef4444; }
+
+.dg-legend-threshold {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ---- History Table ---- */
+.dg-history {
+  padding: 0 24px 24px;
+}
+
+.dg-empty-text {
+  text-align: center;
+  color: var(--text);
+  padding: 40px 0;
+}
+
+.dg-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.dg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.dg-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-h);
+  background: var(--code-bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.dg-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.dg-table tr:last-child td {
+  border-bottom: none;
+}
+
+.dg-table tr:hover td {
+  background: var(--accent-bg);
+}
+
+/* ---- Status dot ---- */
+.dg-status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.dg-status-dot.dg-balance--normal { background: #22c55e; }
+.dg-status-dot.dg-balance--warning { background: #f59e0b; }
+.dg-status-dot.dg-balance--low { background: #ef4444; }
+
+/* ---- Hint ---- */
+.dg-hint {
+  color: var(--text);
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+/* ---- ToolShell header match ---- */
+.dg-shell .tool-shell-header h1 {
+  color: var(--text-h);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  .dg-header {
+    padding: 16px 16px 0;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dg-cards {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .dg-card-value {
+    font-size: 1.6rem;
+  }
+
+  .dg-table th,
+  .dg-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}

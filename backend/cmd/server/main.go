@@ -3,54 +3,92 @@ package main
 import (
 	"context"
 	"log"
+	"path/filepath"
 
+	"github.com/XiaoleC05/oxelia51-backend/internal/admin"
+	"github.com/XiaoleC05/oxelia51-backend/internal/auth"
 	"github.com/XiaoleC05/oxelia51-backend/internal/config"
 	"github.com/XiaoleC05/oxelia51-backend/internal/database"
+	"github.com/XiaoleC05/oxelia51-backend/internal/gateway"
 	"github.com/XiaoleC05/oxelia51-backend/internal/handler"
-
+	"github.com/XiaoleC05/oxelia51-backend/internal/mailer"
 	"github.com/XiaoleC05/oxelia51-backend/internal/middleware"
+
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// 1. 加载配置
 	cfg := config.Load()
-
-	// 2. 连接数据库
 	ctx := context.Background()
+
 	pool, err := database.Connect(ctx, cfg.DSN())
 	if err != nil {
 		log.Fatalf("数据库连接失败: %v", err)
 	}
 	defer pool.Close()
 
-	// 3. 创建 Gin 路由
-	r := gin.Default()
-
-	// 4. 注册路由
-	h := handler.NewHealthHandler(pool)
-	r.GET("/api/health", h.Health)
-	auth := handler.NewAuthHandler(pool, cfg)
-	// 认证相关路由
-	r.POST("/api/auth/register", auth.Register)
-	r.POST("/api/auth/login", auth.Login)
-
-	// 工具相关路由
-	tool := handler.NewToolHandler(pool)
-	r.GET("/api/tools", tool.List)
-	r.GET("/api/tools/:id", tool.Get)
-
-	// 受保护的路由组（需要 JWT 认证）
-	protected := r.Group("/api")
-	protected.Use(middleware.AuthMiddleware(cfg))
-	{
-		protected.GET("/users/me", auth.Me)
-		protected.POST("/tools", tool.Create)
-		protected.PUT("/tools/:id", tool.Update)
-		protected.DELETE("/tools/:id", tool.Delete)
+	migrationsDir := filepath.Join("migrations")
+	if err := database.RunMigrations(ctx, pool, migrationsDir); err != nil {
+		log.Fatalf("数据库迁移失败: %v", err)
 	}
 
-	// 5. 启动服务
+	if err := admin.EnsureAdmin(ctx, pool, cfg); err != nil {
+		log.Fatalf("管理员种子失败: %v", err)
+	}
+
+	rdb, err := database.ConnectRedis(ctx, cfg.RedisAddr)
+	if err != nil {
+		log.Fatalf("Redis 连接失败: %v", err)
+	}
+	defer rdb.Close()
+
+	tokenSvc := auth.NewTokenService(cfg)
+	rl := auth.NewRateLimiter(rdb)
+	emailStore := auth.NewEmailTokenStore(rdb, cfg.EmailTokenTTL)
+	refreshStore := auth.NewRefreshStore(rdb, cfg.RefreshTokenTTL)
+	blacklist := auth.NewJWTBlacklist(rdb)
+	m := mailer.New(cfg)
+
+	r := gin.Default()
+
+	health := handler.NewHealthHandler(pool)
+	r.GET("/api/health", health.Health)
+
+	authH := handler.NewAuthHandlerWithDeps(pool, cfg, m, tokenSvc, rl, emailStore, refreshStore, blacklist)
+	r.POST("/api/auth/register", authH.Register)
+	r.GET("/api/auth/verify-email", authH.VerifyEmail)
+	r.POST("/api/auth/resend-verification", authH.ResendVerification)
+	r.POST("/api/auth/login", authH.Login)
+	r.POST("/api/auth/refresh", authH.Refresh)
+	r.POST("/api/auth/forgot-password", authH.ForgotPassword)
+	r.POST("/api/auth/reset-password", authH.ResetPassword)
+
+	tool := handler.NewToolHandler(pool)
+	r.GET("/api/tools", tool.List)
+	r.GET("/api/tools/:slug", tool.Get)
+	r.GET("/api/portfolio", tool.ListPortfolioPublic)
+
+	authMW := middleware.NewAuthMiddleware(cfg, tokenSvc, blacklist)
+	protected := r.Group("/api")
+	protected.Use(authMW.Handle())
+	{
+		protected.POST("/auth/logout", authH.Logout)
+		protected.GET("/users/me", authH.Me)
+
+		gw := gateway.NewHandler(pool, cfg)
+		protected.Any("/tools/:slug/proxy/*path", gw.Proxy)
+	}
+
+	adminTool := handler.NewAdminToolHandler(pool, cfg)
+	admin := r.Group("/api/admin")
+	admin.Use(authMW.Handle(), middleware.RequireAdmin())
+	{
+		admin.PATCH("/tools/:slug", adminTool.PatchTool)
+		admin.POST("/tools/scan-local", adminTool.ScanLocal)
+		admin.GET("/portfolio", adminTool.ListPortfolio)
+		admin.PUT("/portfolio/:slug", adminTool.UpdatePortfolio)
+	}
+
 	addr := ":" + cfg.ServerPort
 	log.Printf("服务启动: http://localhost%s", addr)
 	if err := r.Run(addr); err != nil {

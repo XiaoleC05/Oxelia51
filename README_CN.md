@@ -111,6 +111,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 - [ ] API 网关与工具请求转发
 - [ ] 前端工具 UI 框架
 - [ ] 工具集成的标准化注册机制
+- [ ] 按 ADR-004 将 5 个在线工具接入 API 网关
 
 ## Contributing
 

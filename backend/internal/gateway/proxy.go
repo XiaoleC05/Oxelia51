@@ -1,0 +1,205 @@
+package gateway
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
+	"github.com/XiaoleC05/oxelia51-backend/internal/config"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+const (
+	defaultUpstreamTimeout = 30 * time.Second
+	defaultMaxBodyBytes    = 10 << 20 // 10MB
+)
+
+// Handler API 网关：/api/tools/:slug/proxy/*path
+type Handler struct {
+	db     *pgxpool.Pool
+	cfg    *config.Config
+	client *http.Client
+}
+
+func NewHandler(db *pgxpool.Pool, cfg *config.Config) *Handler {
+	timeout := cfg.GatewayUpstreamTimeout
+	if timeout <= 0 {
+		timeout = defaultUpstreamTimeout
+	}
+	return &Handler{
+		db:  db,
+		cfg: cfg,
+		client: &http.Client{
+			Timeout: timeout,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
+	}
+}
+
+func (h *Handler) upstreamTimeout() time.Duration {
+	if h.cfg.GatewayUpstreamTimeout > 0 {
+		return h.cfg.GatewayUpstreamTimeout
+	}
+	return defaultUpstreamTimeout
+}
+
+func (h *Handler) Proxy(c *gin.Context) {
+	slug := c.Param("slug")
+	proxyPath := c.Param("path")
+	if proxyPath == "" {
+		proxyPath = "/"
+	} else if !strings.HasPrefix(proxyPath, "/") {
+		proxyPath = "/" + proxyPath
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), h.upstreamTimeout())
+	defer cancel()
+
+	tool, err := h.loadTool(ctx, slug)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apiError(c, http.StatusNotFound, "TOOL_NOT_FOUND", "工具不存在")
+			return
+		}
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询工具失败")
+		return
+	}
+
+	role, _ := c.Get("userRole")
+	roleStr, _ := role.(string)
+	if err := CheckAccess(roleStr, tool.UserAccessible, tool.OnlineCapable, tool.Status); err != nil {
+		var ae *AccessError
+		if errors.As(err, &ae) {
+			apiError(c, ae.Status, ae.Code, ae.Msg)
+			return
+		}
+		apiError(c, http.StatusForbidden, "FORBIDDEN", err.Error())
+		return
+	}
+
+	base := ResolveInternalAPIBase(slug, tool.InternalAPIBase)
+	if base == "" {
+		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "工具上游地址未配置")
+		return
+	}
+
+	target, err := url.Parse(base + proxyPath)
+	if err != nil {
+		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游地址无效")
+		return
+	}
+	if target.RawQuery == "" && c.Request.URL.RawQuery != "" {
+		target.RawQuery = c.Request.URL.RawQuery
+	}
+
+	maxBody := h.cfg.GatewayMaxBodyBytes
+	if maxBody <= 0 {
+		maxBody = defaultMaxBodyBytes
+	}
+	body := c.Request.Body
+	if body != nil {
+		body = http.MaxBytesReader(c.Writer, body, maxBody)
+	}
+
+	upReq, err := http.NewRequestWithContext(ctx, c.Request.Method, target.String(), body)
+	if err != nil {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "构建上游请求失败")
+		return
+	}
+
+	copyHeaders(upReq.Header, c.Request.Header)
+	injectGatewayHeaders(upReq, c)
+
+	resp, err := h.client.Do(upReq)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			apiError(c, http.StatusGatewayTimeout, "UPSTREAM_TIMEOUT", "上游响应超时")
+			return
+		}
+		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游不可达")
+		return
+	}
+	defer resp.Body.Close()
+
+	copyResponseHeaders(c.Writer.Header(), resp.Header)
+	c.Status(resp.StatusCode)
+	if _, err := io.Copy(c.Writer, resp.Body); err != nil {
+		fmt.Printf("gateway copy response: %v\n", err)
+	}
+}
+
+type toolRow struct {
+	UserAccessible  bool
+	OnlineCapable   bool
+	Status          string
+	InternalAPIBase string
+}
+
+func (h *Handler) loadTool(ctx context.Context, slug string) (*toolRow, error) {
+	var t toolRow
+	err := h.db.QueryRow(ctx, `
+		SELECT user_accessible, online_capable, status, internal_api_base
+		FROM tools WHERE slug = $1`, slug,
+	).Scan(&t.UserAccessible, &t.OnlineCapable, &t.Status, &t.InternalAPIBase)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+func copyHeaders(dst, src http.Header) {
+	for k, vals := range src {
+		if isHopByHop(k) || strings.EqualFold(k, "Authorization") {
+			continue
+		}
+		for _, v := range vals {
+			dst.Add(k, v)
+		}
+	}
+}
+
+func copyResponseHeaders(dst, src http.Header) {
+	for k, vals := range src {
+		if isHopByHop(k) {
+			continue
+		}
+		for _, v := range vals {
+			dst.Add(k, v)
+		}
+	}
+}
+
+func injectGatewayHeaders(req *http.Request, c *gin.Context) {
+	userID, _ := c.Get("userID")
+	username, _ := c.Get("username")
+	role, _ := c.Get("userRole")
+
+	req.Header.Set("X-Oxelia51-User-Id", fmt.Sprintf("%v", userID))
+	req.Header.Set("X-Oxelia51-Username", fmt.Sprintf("%v", username))
+	req.Header.Set("X-Oxelia51-Role", fmt.Sprintf("%v", role))
+	req.Header.Set("X-Oxelia51-Request-Id", uuid.NewString())
+}
+
+func isHopByHop(h string) bool {
+	switch strings.ToLower(h) {
+	case "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+		"te", "trailers", "transfer-encoding", "upgrade", "host":
+		return true
+	default:
+		return false
+	}
+}
+
+func apiError(c *gin.Context, status int, code, message string) {
+	c.JSON(status, gin.H{"error": message, "code": code})
+}

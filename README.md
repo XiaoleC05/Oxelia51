@@ -111,6 +111,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 - [ ] API gateway and request forwarding
 - [ ] Frontend tool UI framework
 - [ ] Standardized tool registration mechanism
+- [ ] Integrate 5 online tools per ADR-004 via API gateway
 
 ## Contributing
 

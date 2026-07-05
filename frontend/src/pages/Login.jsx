@@ -1,8 +1,11 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { apiPost, setToken } from '../api'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { apiPost, setToken, setRefreshToken } from '../api'
+import './Auth.css'
 
 function Login() {
+  const location = useLocation()
+  const from = location.state?.from || '/'
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -11,48 +14,46 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-
     try {
       const data = await apiPost('/auth/login', { username, password })
       setToken(data.token)
+      if (data.refresh_token) setRefreshToken(data.refresh_token)
       localStorage.setItem('user', JSON.stringify(data.user))
-      navigate('/')  // 登录成功后跳转首页
+      navigate(from)
     } catch (err) {
       setError(err.message)
     }
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: '80px auto', textAlign: 'left' }}>
+    <div className="auth-page">
       <h1>登录</h1>
       <form onSubmit={handleSubmit}>
-        {error && <p style={{ color: '#ef4444' }}>{error}</p>}
-        <div style={{ marginBottom: 16 }}>
+        {error && <p className="auth-error">{error}</p>}
+        <div className="auth-field">
           <label>用户名</label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            style={{ display: 'block', width: '100%', padding: '8px', marginTop: 4 }}
           />
         </div>
-        <div style={{ marginBottom: 16 }}>
+        <div className="auth-field">
           <label>密码</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ display: 'block', width: '100%', padding: '8px', marginTop: 4 }}
           />
         </div>
-        <button type="submit" style={{ padding: '10px 24px', cursor: 'pointer' }}>
-          登录
-        </button>
+        <button type="submit" className="auth-btn">登录</button>
       </form>
-      <p style={{ marginTop: 16, fontSize: 14 }}>
+      <p className="auth-footer">
         没有账号？<Link to="/register">去注册</Link>
+        {' · '}
+        <Link to="/forgot-password">忘记密码</Link>
       </p>
     </div>
   )

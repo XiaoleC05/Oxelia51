@@ -25,6 +25,8 @@ function Navbar() {
     <nav className="navbar">
       <Link to="/" className="navbar-brand">Oxelia51</Link>
       <div className="navbar-links">
+        <Link to="/tools">工具目录</Link>
+        <Link to="/portfolio">作品集</Link>
         {token && user ? (
           <>
             <span className="navbar-user">{user.username}</span>
