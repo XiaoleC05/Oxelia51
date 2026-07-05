@@ -79,11 +79,11 @@ function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const heroH = window.innerHeight
+      // hero 高度改为 50vh，导航栏在滚过 hero 后变色
+      const heroH = window.innerHeight * 0.5
       setScrolled(window.scrollY > heroH - 64)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
-    // init
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
