@@ -7,7 +7,6 @@ on:
     branches: [master]
   workflow_dispatch:
 
-# 同一分支新 push 取消旧 run，避免并发部署
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
@@ -72,33 +71,35 @@ jobs:
           path: oxelia51-release.tar.gz
           retention-days: 7
 
-  deploy:
-    name: Deploy to Production
+  release:
+    name: Push tarball to release branch
     needs: build-test
-    # 仅 master 分支 push 与手动触发才部署；PR 只跑 build-test
+    # 仅 master push 与手动触发才发布；PR 只跑 build-test
     if: >-
       (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
       github.event_name == 'workflow_dispatch'
-    # self-hosted runner = 生产服务器本身，无需 SSH/SCP
-    runs-on: self-hosted
-    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Download release artifact
         uses: actions/download-artifact@v4
         with:
           name: oxelia-release
 
-      - name: Extract and apply release
-        run: |
-          set -euo pipefail
-          WORK="/tmp/oxelia51-release-$$"
-          trap 'rm -rf "$WORK" oxelia51-release.tar.gz' EXIT
-          mkdir -p "$WORK"
-          tar xzf oxelia51-release.tar.gz -C "$WORK"
-          bash "$WORK/deploy/apply-release.sh" "$WORK"
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Health check
+      - name: Push tarball to release branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -fsS --max-time 10 http://127.0.0.1:8080/api/health
-          echo ""
-          echo "部署完成: https://oxelia51.com / http://47.108.202.199"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git checkout --orphan release
+          git rm -rf . 2>/dev/null || true
+          cp oxelia51-release.tar.gz .
+          git add oxelia51-release.tar.gz
+          git commit -m "release: ${GITHUB_SHA::7}"
+          git push origin release --force
+          echo "tarball pushed to release branch, webhook will trigger deploy"

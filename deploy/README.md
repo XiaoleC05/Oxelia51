@@ -46,63 +46,94 @@ sudo bash /opt/Oxelia51/deploy/platform-cutover.sh
 /opt/DormGuard/deploy/monitor/dormguard-healthcheck.sh
 ```
 
-## GitHub Actions 自动化部署
+## GitHub Webhook 自动化部署
 
-`.github/workflows/deploy.yml` 使用 **self-hosted runner**（生产服务器本身）部署，无需开放公网 22 端口，无需在 GitHub Secrets 存放 SSH 私钥。
+采用 **GitHub Actions 构建 + Webhook 触发服务器拉取** 架构，适配服务器无法访问 GitHub HTTPS(443) 但可 SSH(22) 的网络环境。
 
 ### 架构
 
 ```
-build-test (GitHub-hosted ubuntu-latest)
-  ├ checkout + go vet/test + 交叉编译 linux/amd64
-  ├ npm ci + npm run build
-  ├ 打包 oxelia51-release.tar.gz
-  └ upload-artifact
-                    ↓ artifact 传递
-deploy (self-hosted = 47.108.202.199)
-  ├ download-artifact
-  ├ 解压 + 执行 apply-release.sh（本地，无需 SSH）
-  └ curl http://127.0.0.1:8080/api/health
+git push master
+    ↓ GitHub Actions 构建测试
+build-test (GitHub-hosted)
+    ↓ 交叉编译 + npm build + 打包 tarball
+release (GitHub-hosted)
+    ↓ 把 tarball force-push 到 release 分支
+    ↓ 触发 GitHub webhook
+GitHub ──HTTP POST──→ http://47.108.202.199/webhook (80端口，已开放)
+                        ↓ nginx 转发到 127.0.0.1:9000
+                    receiver.py 验证 HMAC-SHA256 签名
+                        ↓
+                    deploy.sh: git fetch release → 解压 → apply-release.sh
 ```
 
-### Self-hosted Runner 安装（一次性，在服务器上执行）
+**服务器无需 Go/Node**——构建在 GitHub Actions 完成，服务器只拉取预编译 tarball。
 
-在 GitHub 仓库 → **Settings** → **Actions** → **Runners** → **New self-hosted runner** → 选择 Linux x64，按页面提示执行：
+### 服务器一次性安装
+
+通过阿里云 Workbench 在服务器上执行：
 
 ```bash
-# 在服务器 47.108.202.199 上以 root 执行
-mkdir -p /opt/actions-runner && cd /opt/actions-runner
+# 1. 克隆仓库（用于 git fetch release 分支）
+cd /opt
+git clone git@github.com:XiaoleC05/Oxelia51.git Oxelia51-src
 
-# 下载最新 runner（URL 从 GitHub 页面复制，下面是示例）
-curl -o actions-runner-linux-x64.tar.gz -L https://github.com/actions/runner/releases/download/v2.317.0/actions-runner-linux-x64-2.317.0.tar.gz
-tar xzf actions-runner-linux-x64.tar.gz
+# 2. 部署 webhook 文件（若从 release 分支已有则跳过）
+mkdir -p /opt/Oxelia51/deploy/webhook
+cp /opt/Oxelia51-src/deploy/webhook/receiver.py /opt/Oxelia51/deploy/webhook/
+cp /opt/Oxelia51-src/deploy/webhook/deploy.sh /opt/Oxelia51/deploy/webhook/
+cp /opt/Oxelia51-src/deploy/webhook/oxelia51-webhook.service /opt/Oxelia51/deploy/webhook/
+chmod +x /opt/Oxelia51/deploy/webhook/*.sh /opt/Oxelia51/deploy/webhook/*.py
 
-# 配置（TOKEN 从 GitHub 页面复制）
-./config.sh --url https://github.com/XiaoleC05/Oxelia51 --token <TOKEN> --name oxelia51-prod --labels self-hosted,linux
+# 3. 配置 webhook 密钥
+cp /opt/Oxelia51/deploy/webhook/.env.example /opt/Oxelia51/deploy/webhook/.env
+# 编辑 .env，把 CHANGE_ME_TO_RANDOM_SECRET 换成随机字符串（与 GitHub webhook Secret 一致）
+openssl rand -hex 32  # 生成随机密钥
+nano /opt/Oxelia51/deploy/webhook/.env
 
-# 安装为 systemd 服务并启动
-./svc.sh install root
-./svc.sh start
+# 4. 安装 systemd 服务
+cp /opt/Oxelia51/deploy/webhook/oxelia51-webhook.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable oxelia51-webhook
+systemctl start oxelia51-webhook
+systemctl status oxelia51-webhook
+
+# 5. 更新 nginx 配置（添加 /webhook location）
+cp /opt/Oxelia51-src/deploy/nginx/default-ip.conf /etc/nginx/sites-available/default-ip
+nginx -t && systemctl reload nginx
+
+# 6. 配置 SSH deploy key（让服务器能 git fetch 私有仓库）
+ssh-keygen -t ed25519 -f /root/.ssh/oxelia51_deploy -N ""
+cat /root/.ssh/oxelia51_deploy.pub
+# 把公钥添加到 GitHub 仓库 Settings → Deploy keys（勾选 Allow write access 不需要）
 ```
 
-### Runner 要求
+### GitHub 仓库配置
 
-- 以 **root** 运行（需要 systemctl / nginx / 写 /opt/Oxelia51 权限）
-- 需安装：`tar`、`bash`、`curl`、`systemctl`、`nginx`（服务器已具备）
-- **无需** Go/Node（构建在 GitHub-hosted runner 完成）
+1. **Webhook**：Settings → Webhooks → Add webhook
+   - Payload URL: `http://47.108.202.199/webhook`
+   - Content type: `application/json`
+   - Secret: 与服务器 `.env` 中 `WEBHOOK_SECRET` 一致
+   - Events: Just the `push` event
+   - Active: ✓
+
+2. **Deploy key**（若仓库私有）：Settings → Deploy keys → Add deploy key
+   - Title: `oxelia51-prod`
+   - Key: 服务器上 `cat /root/.ssh/oxelia51_deploy.pub` 的输出
+   - Allow write access: ✗（只需读）
+
+### 部署日志
+
+```bash
+tail -f /var/log/oxelia51-webhook-deploy.log
+```
 
 ### 触发条件
 
-- `push` 到 `master` → 构建 + 测试 + 部署
-- `pull_request` → 仅构建 + 测试（不部署）
-- `workflow_dispatch` → 手动触发构建 + 部署
+- `push` 到 `master` → GitHub Actions 构建 → push tarball 到 `release` 分支 → webhook 触发服务器部署
+- `pull_request` → 仅构建测试（不部署）
+- `workflow_dispatch` → 手动触发构建 + 发布
 
 ### 并发控制
 
-同一分支新 push 会取消旧的运行中 job，避免并发部署。
-
-### 维护
-
-- Runner 自动更新（GitHub 推送新版本时）
-- 查看 runner 状态：GitHub 仓库 → Settings → Actions → Runners
-- 服务管理：`systemctl status actions.runner.*`
+同一分支新 push 会取消旧的 build-test run。服务器侧 deploy.sh 串行执行。
