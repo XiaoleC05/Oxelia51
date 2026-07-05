@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings } from '../api'
+import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle } from '../api'
 import './Admin.css'
 
 function Admin() {
@@ -12,6 +12,7 @@ function Admin() {
   const [users, setUsers] = useState([])
   const [portfolio, setPortfolio] = useState([])
   const [heroImages, setHeroImages] = useState([])
+  const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -38,6 +39,9 @@ function Admin() {
       } else if (tab === 'heroes') {
         const data = await adminFetchHeroImages()
         setHeroImages(data)
+      } else if (tab === 'articles') {
+        const data = await adminFetchArticles()
+        setArticles(data)
       }
     } catch (err) {
       setError(err.message)
@@ -91,6 +95,12 @@ function Admin() {
         >
           头图
         </button>
+        <button
+          className={`admin-tab ${tab === 'articles' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('articles')}
+        >
+          文章
+        </button>
       </div>
 
       {loading && <p className="admin-status">加载中…</p>}
@@ -107,6 +117,9 @@ function Admin() {
       )}
       {!loading && !error && tab === 'heroes' && (
         <HeroImagesTab heroImages={heroImages} onUpdated={loadData} />
+      )}
+      {!loading && !error && tab === 'articles' && (
+        <ArticlesTab articles={articles} onUpdated={loadData} />
       )}
     </div>
   )
@@ -832,6 +845,245 @@ function HeroImagesTab({ heroImages, onUpdated }) {
                 type="checkbox"
                 checked={editEnabled}
                 onChange={(e) => setEditEnabled(e.target.checked)}
+              />
+            </label>
+
+            <div className="admin-modal-actions">
+              <button type="submit" className="admin-btn" disabled={saving}>
+                {saving ? '保存中…' : '保存'}
+              </button>
+              <button type="button" className="admin-btn admin-btn--ghost" onClick={closeModal}>
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ===== 文章管理 =====
+function ArticlesTab({ articles, onUpdated }) {
+  const [modal, setModal] = useState(null)
+  const [editing, setEditing] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  const emptyForm = {
+    title: '',
+    url: '',
+    summary: '',
+    category: '',
+    published_at: '',
+    display_order: '0',
+    enabled: true,
+  }
+
+  const [form, setForm] = useState(emptyForm)
+
+  function openCreate() {
+    setForm(emptyForm)
+    setEditing(null)
+    setModal('create')
+  }
+
+  function openEdit(article) {
+    setEditing(article)
+    setForm({
+      title: article.title || '',
+      url: article.url || '',
+      summary: article.summary || '',
+      category: article.category || '',
+      published_at: article.published_at ? article.published_at.slice(0, 10) : '',
+      display_order: String(article.display_order ?? 0),
+      enabled: article.enabled !== false,
+    })
+    setModal('edit')
+  }
+
+  function closeModal() {
+    setModal(null)
+    setEditing(null)
+  }
+
+  async function handleCreate(e) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await adminCreateArticle({
+        title: form.title,
+        url: form.url,
+        summary: form.summary || undefined,
+        category: form.category || undefined,
+        published_at: form.published_at || undefined,
+        display_order: parseInt(form.display_order, 10) || 0,
+        enabled: form.enabled,
+      })
+      closeModal()
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleUpdate(e) {
+    e.preventDefault()
+    if (!editing) return
+    setSaving(true)
+    try {
+      await adminUpdateArticle(editing.id, {
+        title: form.title,
+        url: form.url,
+        summary: form.summary || undefined,
+        category: form.category || undefined,
+        published_at: form.published_at || undefined,
+        display_order: parseInt(form.display_order, 10) || 0,
+        enabled: form.enabled,
+      })
+      closeModal()
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete(article) {
+    if (!window.confirm(`确认删除文章「${article.title}」？`)) return
+    try {
+      await adminDeleteArticle(article.id)
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  return (
+    <div className="admin-section">
+      <div className="admin-section-actions">
+        <button className="admin-btn" onClick={openCreate}>添加文章</button>
+      </div>
+
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>标题</th>
+              <th>分类</th>
+              <th>发布日期</th>
+              <th>启用</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {articles.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="admin-muted">暂无文章。</td>
+              </tr>
+            ) : (
+              articles.map((a) => (
+                <tr key={a.id}>
+                  <td className="admin-mono" style={{ whiteSpace: 'normal', maxWidth: 300 }}>{a.title}</td>
+                  <td className="admin-muted">{a.category || '\u2014'}</td>
+                  <td className="admin-muted">
+                    {a.published_at ? new Date(a.published_at).toLocaleDateString('zh-CN') : '\u2014'}
+                  </td>
+                  <td>
+                    <span className={`admin-badge ${a.enabled !== false ? 'admin-badge--ok' : 'admin-badge--off'}`}>
+                      {a.enabled !== false ? '启用' : '禁用'}
+                    </span>
+                  </td>
+                  <td>
+                    <button className="admin-btn admin-btn--sm" onClick={() => openEdit(a)} style={{ marginRight: 8 }}>
+                      编辑
+                    </button>
+                    <button className="admin-btn admin-btn--sm admin-btn--ghost" onClick={() => handleDelete(a)}>
+                      删除
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Create / Edit Modal */}
+      {(modal === 'create' || modal === 'edit') && (
+        <div className="admin-modal">
+          <form className="admin-modal-form" onSubmit={modal === 'create' ? handleCreate : handleUpdate}>
+            <h3>{modal === 'create' ? '添加文章' : '编辑文章'}</h3>
+
+            <label className="admin-field">
+              <span>标题</span>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="文章标题"
+                required
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>URL</span>
+              <input
+                type="text"
+                value={form.url}
+                onChange={(e) => setForm({ ...form, url: e.target.value })}
+                placeholder="https://..."
+                required
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>摘要</span>
+              <input
+                type="text"
+                value={form.summary}
+                onChange={(e) => setForm({ ...form, summary: e.target.value })}
+                placeholder="文章摘要"
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>分类</span>
+              <input
+                type="text"
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                placeholder="如：技术、随笔"
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>发布日期</span>
+              <input
+                type="date"
+                value={form.published_at}
+                onChange={(e) => setForm({ ...form, published_at: e.target.value })}
+              />
+            </label>
+
+            <label className="admin-field">
+              <span>排序号</span>
+              <input
+                type="number"
+                value={form.display_order}
+                onChange={(e) => setForm({ ...form, display_order: e.target.value })}
+                placeholder="数字越小越靠前"
+              />
+            </label>
+
+            <label className="admin-field admin-field--row">
+              <span>启用</span>
+              <input
+                type="checkbox"
+                checked={form.enabled}
+                onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
               />
             </label>
 

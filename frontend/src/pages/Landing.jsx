@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchHeroImages } from '../api'
+import { fetchHeroImages, fetchArticles, apiGet } from '../api'
 import './Landing.css'
 
 const DEFAULT_INTERVAL = 5000
@@ -10,14 +10,25 @@ function Landing() {
   const [current, setCurrent] = useState(0)
   const [autoplayMs, setAutoplayMs] = useState(DEFAULT_INTERVAL)
   const timerRef = useRef(null)
+  const [tools, setTools] = useState([])
+  const [portfolio, setPortfolio] = useState([])
+  const [articles, setArticles] = useState([])
 
   useEffect(() => {
-    fetchHeroImages()
-      .then((data) => {
-        setImages(data.images || [])
-        if (data.autoplay_interval_ms) setAutoplayMs(data.autoplay_interval_ms)
-      })
-      .catch(() => {})
+    Promise.all([
+      fetchHeroImages().catch(() => null),
+      apiGet('/tools').catch(() => []),
+      apiGet('/portfolio').catch(() => []),
+      fetchArticles().catch(() => []),
+    ]).then(([hero, toolsData, portfolioData, articlesData]) => {
+      if (hero) {
+        setImages(hero.images || [])
+        if (hero.autoplay_interval_ms) setAutoplayMs(hero.autoplay_interval_ms)
+      }
+      setTools(toolsData || [])
+      setPortfolio(portfolioData || [])
+      setArticles(articlesData || [])
+    })
   }, [])
 
   const total = images.length
@@ -119,6 +130,114 @@ function Landing() {
           <Link to="/portfolio" className="landing-intro-link">作品集</Link>
         </div>
       </section>
+
+      {/* ===== 热门工具 ===== */}
+      {tools.length > 0 && (
+        <section className="landing-section">
+          <div className="landing-section-head">
+            <h2 className="landing-section-title">热门工具</h2>
+            <Link to="/tools" className="landing-section-link">查看全部 &rarr;</Link>
+          </div>
+          <div className="landing-card-grid">
+            {tools.slice(0, 4).map((tool) => (
+              <div key={tool.slug} className="landing-card">
+                <div className="landing-card-body">
+                  <h3 className="landing-card-name">{tool.name}</h3>
+                  <p className="landing-card-desc">{tool.description || '\u2014'}</p>
+                  {tool.badge && (
+                    <span className="landing-card-badge">{tool.badge === 'open' ? '已开放' : tool.badge === 'closed_to_users' ? '暂未开放' : '已下线'}</span>
+                  )}
+                </div>
+                <div className="landing-card-foot">
+                  <Link to={`/tools/${tool.slug}`} className="landing-card-link">进入工具 &rarr;</Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ===== 热门作品 ===== */}
+      {portfolio.length > 0 && (
+        <section className="landing-section">
+          <div className="landing-section-head">
+            <h2 className="landing-section-title">热门作品</h2>
+            <Link to="/portfolio" className="landing-section-link">查看全部 &rarr;</Link>
+          </div>
+          <div className="landing-card-grid">
+            {portfolio.slice(0, 4).map((item) => (
+              <div key={item.slug} className="landing-card">
+                <div className="landing-card-body">
+                  <h3 className="landing-card-name">{item.name}</h3>
+                  <p className="landing-card-desc">{item.description || '\u2014'}</p>
+                </div>
+                <div className="landing-card-foot">
+                  {item.github_repo && (
+                    <a
+                      href={`https://github.com/${item.github_repo}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="landing-card-link"
+                    >
+                      GitHub &rarr;
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ===== 最新文章 ===== */}
+      {articles.length > 0 && (
+        <section className="landing-section">
+          <div className="landing-section-head">
+            <h2 className="landing-section-title">最新文章</h2>
+            <a
+              href="https://xiaolec05.github.io"
+              target="_blank"
+              rel="noreferrer"
+              className="landing-section-link"
+            >
+              博客 &rarr;
+            </a>
+          </div>
+          <div className="landing-article-list">
+            {articles.slice(0, 6).map((article) => (
+              <a
+                key={article.id}
+                href={article.url}
+                target="_blank"
+                rel="noreferrer"
+                className="landing-article-row"
+              >
+                <div className="landing-article-main">
+                  <div className="landing-article-head">
+                    <h3 className="landing-article-title">
+                      {article.title}
+                      <svg className="landing-article-ext" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 2h8v8M14 2L4 12M11 8v4a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1h4"/>
+                      </svg>
+                    </h3>
+                    {article.published_at && (
+                      <span className="landing-article-date">
+                        {new Date(article.published_at).toLocaleDateString('zh-CN')}
+                      </span>
+                    )}
+                  </div>
+                  {article.category && (
+                    <span className="landing-article-cat">{article.category}</span>
+                  )}
+                  {article.summary && (
+                    <p className="landing-article-summary">{article.summary}</p>
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="landing-links-row">
         <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer">GitHub</a>

@@ -56,6 +56,13 @@ const IconLogout = () => (
   </svg>
 )
 
+const IconBook = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 2h5l2 2h5v10H2V2z"/>
+    <path d="M2 14V4"/>
+  </svg>
+)
+
 /* ===== Nav item with icon helper ===== */
 
 function NavItem({ to, icon: Icon, label }) {
@@ -64,6 +71,15 @@ function NavItem({ to, icon: Icon, label }) {
       <span className="navbar-icon"><Icon /></span>
       <span>{label}</span>
     </Link>
+  )
+}
+
+function NavItemExternal({ href, icon: Icon, label }) {
+  return (
+    <a href={href} className="navbar-item" target="_blank" rel="noreferrer">
+      <span className="navbar-icon"><Icon /></span>
+      <span>{label}</span>
+    </a>
   )
 }
 
@@ -119,6 +135,7 @@ function Navbar() {
         <NavItem to="/" icon={IconHome} label="首页" />
         <NavItem to="/tools" icon={IconTools} label="工具" />
         <NavItem to="/portfolio" icon={IconImage} label="作品" />
+        <NavItemExternal href="https://xiaolec05.github.io" icon={IconBook} label="博客" />
         {token && user?.role === 'admin' && (
           <NavItem to="/admin" icon={IconGear} label="管理" />
         )}
