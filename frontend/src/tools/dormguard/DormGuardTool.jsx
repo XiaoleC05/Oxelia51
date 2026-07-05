@@ -37,7 +37,8 @@ function DormGuardTool() {
 
       try {
         const list = await apiProxy('dormguard', `api/power/records/${dorm}`)
-        if (!cancelled) setRecords(Array.isArray(list) ? list : [])
+        const rows = Array.isArray(list) ? list : (list?.items ?? [])
+        if (!cancelled) setRecords(rows)
       } catch { /* no records */ }
     } catch (err) {
       if (!cancelled) setError(err.message)

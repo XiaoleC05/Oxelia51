@@ -94,7 +94,7 @@ export async function apiGet(path, { auth = false } = {}) {
     delete headers['Content-Type']
     headers['Content-Type'] = 'application/json'
   }
-  const res = await fetch(`${API_BASE}${path}`, { headers })
+  const res = await fetch(`${API_BASE}${path}`, { headers, cache: 'no-store' })
   return parseResponse(res)
 }
 
@@ -109,6 +109,7 @@ export async function apiProxy(slug, toolPath, options = {}) {
   const path = toolPath.replace(/^\//, '')
   const res = await fetch(`${API_BASE}/tools/${slug}/proxy/${path}`, {
     ...options,
+    cache: 'no-store',
     headers: authHeaders(options.headers || {}),
   })
   return parseResponse(res)
@@ -126,4 +127,4 @@ export const BADGE_LABEL = {
   closed_to_users: '暂未开放',
   offline: '已下线',
 }
-
+
