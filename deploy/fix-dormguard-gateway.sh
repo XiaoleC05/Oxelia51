@@ -75,7 +75,16 @@ set_env_kv "$OX_ENV" "LISTEN_ADDR" "127.0.0.1:8080"
 
 DB_PASSWORD="$(grep -E '^DB_PASSWORD=' "$OX_ENV" | cut -d= -f2- | tr -d '\r' || true)"
 if [ -n "$DB_PASSWORD" ] && [ -f "$OX_DIR/deploy/seed-tools.sql" ]; then
-  PGPASSWORD="$DB_PASSWORD" psql -h 127.0.0.1 -U root -d oxelia51 -f "$OX_DIR/deploy/seed-tools.sql" || warn "seed-tools.sql 执行失败（可忽略若已存在）"
+  if PGPASSWORD="$DB_PASSWORD" pg_isready -h 127.0.0.1 -U root -d oxelia51 -t 5 >/dev/null 2>&1; then
+    log "执行 seed-tools.sql（超时 20s）..."
+    if ! timeout 20 env PGPASSWORD="$DB_PASSWORD" PGCONNECT_TIMEOUT=5 \
+      psql -h 127.0.0.1 -U root -d oxelia51 -v ON_ERROR_STOP=0 \
+      -f "$OX_DIR/deploy/seed-tools.sql" >/dev/null 2>&1; then
+      warn "seed-tools.sql 超时或失败（可忽略若工具已注册）"
+    fi
+  else
+    warn "PostgreSQL 未就绪，跳过 seed-tools.sql"
+  fi
 fi
 
 log "=== 4/5 重启服务 ==="
@@ -83,10 +92,13 @@ if [ -f "$DG_DIR/deploy/systemd/dormguard-nonebot.service" ]; then
   cp "$DG_DIR/deploy/systemd/dormguard-nonebot.service" /etc/systemd/system/
 fi
 systemctl daemon-reload
-systemctl restart dormguard-backend.service
-systemctl restart dormguard-nonebot.service 2>/dev/null || true
-systemctl restart oxelia51-backend.service
-sleep 3
+log "重启 dormguard-backend（超时 45s）..."
+timeout 45 systemctl restart dormguard-backend.service || warn "dormguard-backend 重启超时"
+log "重启 dormguard-nonebot（超时 30s，失败可忽略）..."
+timeout 30 systemctl restart dormguard-nonebot.service 2>/dev/null || true
+log "重启 oxelia51-backend（超时 30s）..."
+timeout 30 systemctl restart oxelia51-backend.service || warn "oxelia51-backend 重启超时"
+sleep 2
 
 log "=== 5/5 验证 loopback 网关信任 ==="
 DG_SETTINGS="$(curl -fsS --max-time 10 \
