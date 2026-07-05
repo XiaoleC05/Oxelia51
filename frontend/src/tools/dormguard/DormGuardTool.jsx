@@ -343,8 +343,8 @@ function ConfigPanel() {
       setSaveResult({
         type: 'success',
         message: restartRequired
-          ? '已保存，但后端重启失败，需手动重启 dormguard-backend 服务'
-          : '已保存并已重启 dormguard-backend',
+          ? '配置已保存，服务正在重启，请稍后刷新'
+          : '配置已保存',
         restartRequired,
       })
     } catch (err) {

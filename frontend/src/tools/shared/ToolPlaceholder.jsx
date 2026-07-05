@@ -32,7 +32,7 @@ function ToolPlaceholder({
       )}
 
       <p className="tool-ph-note">
-        工具后端尚未接入平台网关。管理者可先在此验证权限与路由；完整业务 UI 将随各工具仓库迭代上线。
+        在线版本正在开发中，敬请期待。您也可以先下载桌面版体验。
       </p>
 
       {(releaseUrl || repoUrl) && (

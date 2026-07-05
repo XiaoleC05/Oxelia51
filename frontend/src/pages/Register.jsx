@@ -32,7 +32,7 @@ function Register() {
       if (data.smtp_configured) {
         setMessage('注册成功，请查收验证邮件后再登录。')
       } else {
-        setMessage('注册成功。当前邮件服务未配置，请联系管理员在后台手动验证你的邮箱后登录。')
+        setMessage('注册成功。请查收验证邮件完成验证后登录。若未收到邮件，请稍后重试或联系站长。')
       }
       setTimeout(() => navigate('/login'), 3000)
     } catch (err) {

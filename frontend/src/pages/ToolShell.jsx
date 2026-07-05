@@ -71,7 +71,7 @@ function ToolShell() {
         <div className="tool-shell-blocked">
           <p>该工具暂未对普通用户开放。</p>
           {user?.role !== 'admin' && (
-            <p className="tool-shell-muted">管理者可在后台开启 user_accessible。</p>
+            <p className="tool-shell-muted">该工具暂未开放，敬请期待。</p>
           )}
         </div>
       )}
