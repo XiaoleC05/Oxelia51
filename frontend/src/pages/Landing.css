@@ -421,38 +421,89 @@
   overflow: hidden;
 }
 
-/* GitHub / Blog 链接行 */
-.landing-links-row {
-  background: var(--bg);
-  text-align: center;
-  padding: 0 clamp(24px, 5vw, 80px) 48px;
-  font-size: 14px;
-  color: var(--text-muted);
+/* ===== Footer：Fluid 分栏风格，与 Hero 深色呼应 ===== */
+.landing-footer {
+  background: var(--bg-dark);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 48px clamp(24px, 5vw, 80px) 32px;
+  margin-left: calc(-1 * clamp(24px, 5vw, 80px));
+  margin-right: calc(-1 * clamp(24px, 5vw, 80px));
+  font-size: 13px;
+  line-height: 1.8;
 }
 
-.landing-links-row a {
-  color: var(--text-muted);
+.landing-footer a {
+  color: rgba(255, 255, 255, 0.6);
   text-decoration: none;
   transition: color 0.2s;
 }
 
-.landing-links-row a:hover {
-  color: var(--accent);
+.landing-footer a:hover {
+  color: #fff;
 }
 
-.landing-links-sep {
-  margin: 0 10px;
-  color: var(--border);
+.landing-footer-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 48px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* ===== Footer ===== */
-.landing-footer {
-  background: var(--bg-alt);
-  border-top: 1px solid var(--border);
-  padding: 24px 0;
-  text-align: center;
+.landing-footer-brand {
+  flex: 0 0 auto;
+  max-width: 260px;
+}
+
+.landing-footer-logo {
+  font-family: var(--sans);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.landing-footer-desc {
   font-size: 13px;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  line-height: 1.7;
+}
+
+.landing-footer-links {
+  display: flex;
+  gap: 64px;
+}
+
+.landing-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.landing-footer-col-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.landing-footer-bottom {
+  max-width: 1200px;
+  margin: 36px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.landing-footer-sep {
+  color: rgba(255, 255, 255, 0.15);
 }
 
 /* ===== Responsive ===== */
@@ -503,5 +554,14 @@
   .landing-article-head {
     flex-direction: column;
     gap: 4px;
+  }
+
+  .landing-footer-top {
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .landing-footer-links {
+    gap: 40px;
   }
 }

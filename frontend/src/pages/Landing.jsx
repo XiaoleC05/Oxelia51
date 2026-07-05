@@ -232,15 +232,33 @@ function Landing() {
         </section>
       )}
 
-      <section className="landing-links-row">
-        <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer">GitHub</a>
-        <span className="landing-links-sep">·</span>
-        <a href="https://xiaolec05.github.io" target="_blank" rel="noreferrer">Blog</a>
-      </section>
-
-      {/* ===== Footer ===== */}
+      {/* ===== Footer：Fluid 分栏风格 ===== */}
       <footer className="landing-footer">
-        <span>by ChenXiaole</span>
+        <div className="landing-footer-top">
+          <div className="landing-footer-brand">
+            <div className="landing-footer-logo">Oxelia51</div>
+            <p className="landing-footer-desc">一个账号，探索全部在线工具。</p>
+          </div>
+          <div className="landing-footer-links">
+            <div className="landing-footer-col">
+              <span className="landing-footer-col-title">导航</span>
+              <Link to="/tools">工具</Link>
+              <Link to="/portfolio">作品</Link>
+              <Link to="/blog">博客</Link>
+              <Link to="/about">关于</Link>
+            </div>
+            <div className="landing-footer-col">
+              <span className="landing-footer-col-title">链接</span>
+              <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer">GitHub</a>
+              <a href="https://xiaolec05.github.io" target="_blank" rel="noreferrer">Blog</a>
+            </div>
+          </div>
+        </div>
+        <div className="landing-footer-bottom">
+          <span>&copy; {new Date().getFullYear()} Oxelia51</span>
+          <span className="landing-footer-sep">·</span>
+          <span>by ChenXiaole</span>
+        </div>
       </footer>
     </main>
   )
