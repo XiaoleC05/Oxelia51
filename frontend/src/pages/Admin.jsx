@@ -1319,34 +1319,51 @@ function ServerTab() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshFeedback, setRefreshFeedback] = useState('')
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const data = await apiGet('/admin/server-stats', { auth: true })
+      setStats(data)
+      setLoading(false)
+      setError('')
+      return true
+    } catch (err) {
+      setError(err.message)
+      setLoading(false)
+      return false
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
 
-    async function fetchStats() {
-      try {
-        const data = await apiGet('/admin/server-stats', { auth: true })
-        if (!cancelled) {
-          setStats(data)
-          setLoading(false)
-          setError('')
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err.message)
-          setLoading(false)
-        }
-      }
+    async function initialFetch() {
+      const result = await fetchStats()
+      if (cancelled) return
+      if (!result) return
     }
 
-    fetchStats()
-    const interval = setInterval(fetchStats, 10000)
+    initialFetch()
+    const interval = setInterval(async () => {
+      if (!cancelled) await fetchStats()
+    }, 10000)
 
     return () => {
       cancelled = true
       clearInterval(interval)
     }
-  }, [])
+  }, [fetchStats])
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    setRefreshFeedback('')
+    const ok = await fetchStats()
+    setRefreshing(false)
+    setRefreshFeedback(ok ? '已刷新' : '刷新失败')
+    setTimeout(() => setRefreshFeedback(''), 2000)
+  }
 
   if (loading && !stats) {
     return <p className="admin-status">加载中…</p>
@@ -1366,6 +1383,25 @@ function ServerTab() {
 
   return (
     <div className="admin-section">
+      <div className="server-stats-header">
+        <h2>服务器资源监控</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {refreshFeedback && (
+            <span className="server-refresh-feedback">{refreshFeedback}</span>
+          )}
+          <button
+            className="server-refresh-btn"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+            {refreshing ? '刷新中…' : '刷新'}
+          </button>
+        </div>
+      </div>
       {error && <p className="admin-error" style={{ marginBottom: 12 }}>{error}</p>}
       <div className="server-stats-grid">
         <div className="server-card">

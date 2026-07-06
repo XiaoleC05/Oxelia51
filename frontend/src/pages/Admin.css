@@ -195,8 +195,10 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding-top: 5vh;
+  overflow-y: auto;
   z-index: 100;
 }
 
@@ -207,9 +209,12 @@
   padding: 32px;
   max-width: 480px;
   width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  margin-bottom: 5vh;
 }
 
 .admin-modal-form--wide {
@@ -520,4 +525,55 @@
   .server-stats-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---- Server Stats Header ---- */
+.server-stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.server-stats-header h2 {
+  font-family: var(--heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.server-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.server-refresh-btn:hover:not(:disabled) {
+  border-color: var(--text-h);
+  color: var(--text-h);
+}
+
+.server-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.server-refresh-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.server-refresh-feedback {
+  font-size: 13px;
+  color: var(--accent-2);
 }
