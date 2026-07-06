@@ -1,11 +1,7 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { apiProxy } from '../../api'
 import './DormGuardTool.css'
 
-const DEFAULT_THRESHOLD = 20
-
-// CRAWLER_ALERT_THRESHOLD 不在 DormGuard 后端 MANAGEABLE_ENV_KEYS 中，
-// 阈值仅作前端展示分组用，不参与后端配置。
 function balanceClass(value, threshold) {
   if (value == null) return ''
   if (value < threshold) return 'dg-balance--low'
@@ -41,6 +37,7 @@ const CONFIG_GROUPS = [
         type: 'text',
         hint: 'ISO 时间，留空表示不暂停',
       },
+      { key: 'CRAWLER_ALERT_THRESHOLD', label: '低余额阈值（元）', type: 'number', hint: '低于此值标红' },
     ],
   },
   {
@@ -79,8 +76,8 @@ function DormGuardTool() {
   const [dormNumber, setDormNumber] = useState('')
   const [record, setRecord] = useState(null)
   const [records, setRecords] = useState([])
-  // threshold 仅前端展示用，不读后端不存在的 CRAWLER_ALERT_THRESHOLD
-  const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD)
+  const [settings, setSettings] = useState({})
+  const threshold = Number(settings?.CRAWLER_ALERT_THRESHOLD) || 20
   const [viewMode, setViewMode] = useState('latest')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -88,9 +85,11 @@ function DormGuardTool() {
   const loadData = useCallback(async () => {
     let cancelled = false
     try {
-      const settings = await apiProxy('dormguard', 'api/admin/settings')
-      const dorm = settings?.settings?.CRAWLER_DORM_NUMBER || '101'
+      const settingsResp = await apiProxy('dormguard', 'api/admin/settings')
+      const rawSettings = settingsResp?.settings ?? {}
+      const dorm = rawSettings.CRAWLER_DORM_NUMBER || '101'
       if (cancelled) return
+      setSettings(rawSettings)
       setDormNumber(dorm)
 
       try {
@@ -115,6 +114,25 @@ function DormGuardTool() {
     const cleanup = loadData()
     return () => { if (cleanup) cleanup() }
   }, [loadData])
+
+  const handleThresholdChange = useCallback(async (value) => {
+    const newThreshold = Number(value) || 20
+    setSettings(prev => ({ ...prev, CRAWLER_ALERT_THRESHOLD: String(newThreshold) }))
+    try {
+      const currentPayload = {}
+      for (const k of ALL_CONFIG_KEYS) {
+        currentPayload[k] = String(settings?.[k] ?? '')
+      }
+      currentPayload.CRAWLER_ALERT_THRESHOLD = String(newThreshold)
+      const resp = await apiProxy('dormguard', 'api/admin/settings', {
+        method: 'PUT',
+        body: JSON.stringify({ settings: currentPayload }),
+      })
+      if (resp?.settings) {
+        setSettings(resp.settings)
+      }
+    } catch { /* persist on next save */ }
+  }, [settings])
 
   if (loading) {
     return (
@@ -219,7 +237,7 @@ function DormGuardTool() {
                 type="number"
                 min="1"
                 value={threshold}
-                onChange={(e) => setThreshold(Number(e.target.value) || DEFAULT_THRESHOLD)}
+                onChange={(e) => handleThresholdChange(e.target.value)}
                 className="dg-threshold-input"
               />
               度
@@ -273,7 +291,7 @@ function DormGuardTool() {
 
       {/* ---- Config Panel ---- */}
       {viewMode === 'config' && (
-        <ConfigPanel />
+        <ConfigPanel initialSettings={settings} onSettingsChange={setSettings} />
       )}
     </div>
   )
@@ -283,14 +301,35 @@ function DormGuardTool() {
  * 配置面板：读写 DormGuard api/admin/settings，并提供手动操作按钮。
  * 敏感字段（CRAWLER_JSESSIONID）后端返回 ******，提交时若未改则原样回传，后端保留旧值。
  */
-function ConfigPanel() {
-  const [settings, setSettings] = useState(emptySettings)
-  const [loading, setLoading] = useState(true)
+function ConfigPanel({ initialSettings, onSettingsChange }) {
+  const [settings, setSettings] = useState(() => {
+    if (initialSettings && Object.keys(initialSettings).length > 0) {
+      const next = emptySettings()
+      for (const k of ALL_CONFIG_KEYS) {
+        next[k] = toFormValue(k, initialSettings[k])
+      }
+      return next
+    }
+    return emptySettings()
+  })
+  const [loading, setLoading] = useState(!initialSettings || Object.keys(initialSettings).length === 0)
   const [saving, setSaving] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [saveResult, setSaveResult] = useState(null) // { type: 'success'|'error', message, restartRequired }
   const [actionBusy, setActionBusy] = useState('') // 'crawl' | 'report' | 'qq-status' | ''
   const [actionResult, setActionResult] = useState(null) // { type, message, detail? }
+
+  const lastSyncedRef = useRef(initialSettings)
+  useEffect(() => {
+    if (initialSettings && initialSettings !== lastSyncedRef.current) {
+      lastSyncedRef.current = initialSettings
+      const next = emptySettings()
+      for (const k of ALL_CONFIG_KEYS) {
+        next[k] = toFormValue(k, initialSettings[k])
+      }
+      setSettings(next)
+    }
+  }, [initialSettings])
 
   const loadSettings = useCallback(async () => {
     setLoading(true)
@@ -303,6 +342,8 @@ function ConfigPanel() {
         next[k] = toFormValue(k, raw[k])
       }
       setSettings(next)
+      lastSyncedRef.current = raw
+      onSettingsChange?.(raw)
     } catch (err) {
       setLoadError(err.message)
     } finally {
@@ -339,6 +380,7 @@ function ConfigPanel() {
         next[k] = toFormValue(k, raw[k])
       }
       setSettings(next)
+      onSettingsChange?.(raw)
       const restartRequired = !!resp?.restart_required
       setSaveResult({
         type: 'success',
