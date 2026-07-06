@@ -464,3 +464,60 @@
   outline: none;
   border-color: var(--accent);
 }
+
+/* ---- Server Stats ---- */
+.server-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.server-card {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px;
+  background: var(--bg);
+}
+
+.server-card-title {
+  font-family: var(--heading);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.server-card-value {
+  font-family: var(--mono);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0 0 12px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--code-bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar__fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease, background-color 0.4s ease;
+}
+
+@media (max-width: 900px) {
+  .server-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .server-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

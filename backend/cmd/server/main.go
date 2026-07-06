@@ -122,6 +122,9 @@ func main() {
 		admin.DELETE("/articles/:id", articleH.Delete)
 		admin.GET("/pages", articleH.ListPagesAdmin)
 		admin.PUT("/pages/:slug", articleH.UpdatePage)
+
+		statsH := handler.NewStatsHandler()
+		admin.GET("/server-stats", statsH.ServerStats)
 	}
 
 	addr := cfg.BindAddr()

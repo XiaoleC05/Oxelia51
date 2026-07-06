@@ -25,6 +25,7 @@ function Admin() {
   }, [token, navigate])
 
   const loadData = useCallback(async () => {
+    if (tab === 'server') return
     setLoading(true)
     setError('')
     try {
@@ -110,28 +111,40 @@ function Admin() {
         >
           页面
         </button>
+        <button
+          className={`admin-tab ${tab === 'server' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('server')}
+        >
+          服务器
+        </button>
       </div>
 
-      {loading && <p className="admin-status">加载中…</p>}
-      {error && <p className="admin-error">{error}</p>}
+      {tab === 'server' ? (
+        <ServerTab />
+      ) : (
+        <>
+          {loading && <p className="admin-status">加载中…</p>}
+          {error && <p className="admin-error">{error}</p>}
 
-      {!loading && !error && tab === 'tools' && (
-        <ToolsTab tools={tools} onUpdated={loadData} />
-      )}
-      {!loading && !error && tab === 'users' && (
-        <UsersTab users={users} onUpdated={loadData} />
-      )}
-      {!loading && !error && tab === 'portfolio' && (
-        <PortfolioTab portfolio={portfolio} />
-      )}
-      {!loading && !error && tab === 'heroes' && (
-        <HeroImagesTab heroImages={heroImages} onUpdated={loadData} />
-      )}
-      {!loading && !error && tab === 'articles' && (
-        <ArticlesTab articles={articles} onUpdated={loadData} />
-      )}
-      {!loading && !error && tab === 'pages' && (
-        <PagesTab pages={pages} onUpdated={loadData} />
+          {!loading && !error && tab === 'tools' && (
+            <ToolsTab tools={tools} onUpdated={loadData} />
+          )}
+          {!loading && !error && tab === 'users' && (
+            <UsersTab users={users} onUpdated={loadData} />
+          )}
+          {!loading && !error && tab === 'portfolio' && (
+            <PortfolioTab portfolio={portfolio} />
+          )}
+          {!loading && !error && tab === 'heroes' && (
+            <HeroImagesTab heroImages={heroImages} onUpdated={loadData} />
+          )}
+          {!loading && !error && tab === 'articles' && (
+            <ArticlesTab articles={articles} onUpdated={loadData} />
+          )}
+          {!loading && !error && tab === 'pages' && (
+            <PagesTab pages={pages} onUpdated={loadData} />
+          )}
+        </>
       )}
     </div>
   )
@@ -1283,6 +1296,106 @@ function PagesTab({ pages, onUpdated }) {
           </form>
         </div>
       )}
+    </div>
+  )
+}
+
+// ===== 服务器监控 =====
+function ProgressBar({ percent }) {
+  const clamped = Math.min(100, Math.max(0, percent))
+  const color = clamped >= 80 ? '#c8553d' : clamped >= 50 ? '#d4a843' : '#2c6e49'
+
+  return (
+    <div className="progress-bar">
+      <div
+        className="progress-bar__fill"
+        style={{ width: `${clamped}%`, backgroundColor: color }}
+      />
+    </div>
+  )
+}
+
+function ServerTab() {
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchStats() {
+      try {
+        const data = await apiGet('/admin/server-stats', { auth: true })
+        if (!cancelled) {
+          setStats(data)
+          setLoading(false)
+          setError('')
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message)
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchStats()
+    const interval = setInterval(fetchStats, 10000)
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [])
+
+  if (loading && !stats) {
+    return <p className="admin-status">加载中…</p>
+  }
+
+  if (error && !stats) {
+    return <p className="admin-error">{error}</p>
+  }
+
+  if (!stats) return null
+
+  const days = Math.floor(stats.uptime_seconds / 86400)
+  const hours = Math.floor((stats.uptime_seconds % 86400) / 3600)
+  const memPercent = stats.memory_total_mb > 0
+    ? (stats.memory_used_mb / stats.memory_total_mb) * 100
+    : 0
+
+  return (
+    <div className="admin-section">
+      {error && <p className="admin-error" style={{ marginBottom: 12 }}>{error}</p>}
+      <div className="server-stats-grid">
+        <div className="server-card">
+          <h4 className="server-card-title">CPU 使用率</h4>
+          <p className="server-card-value">{stats.cpu_percent.toFixed(1)}%</p>
+          <ProgressBar percent={stats.cpu_percent} />
+        </div>
+        <div className="server-card">
+          <h4 className="server-card-title">内存使用</h4>
+          <p className="server-card-value">{stats.memory_used_mb} / {stats.memory_total_mb} MB</p>
+          <ProgressBar percent={memPercent} />
+        </div>
+        <div className="server-card">
+          <h4 className="server-card-title">磁盘使用</h4>
+          <p className="server-card-value">{stats.disk_used_percent.toFixed(1)}%</p>
+          <ProgressBar percent={stats.disk_used_percent} />
+        </div>
+        <div className="server-card">
+          <h4 className="server-card-title">运行时间</h4>
+          <p className="server-card-value">{days} 天 {hours} 小时</p>
+        </div>
+        <div className="server-card">
+          <h4 className="server-card-title">Go 协程数</h4>
+          <p className="server-card-value">{stats.go_goroutines}</p>
+        </div>
+        <div className="server-card">
+          <h4 className="server-card-title">Go 内存分配</h4>
+          <p className="server-card-value">{stats.go_alloc_mb} MB</p>
+        </div>
+      </div>
     </div>
   )
 }
