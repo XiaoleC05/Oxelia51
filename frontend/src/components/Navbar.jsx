@@ -56,6 +56,14 @@ const IconLogout = () => (
   </svg>
 )
 
+const IconProfile = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2.5" y="1.5" width="11" height="13" rx="1.5"/>
+    <circle cx="8" cy="6" r="2"/>
+    <path d="M5 12c0-1.66 1.34-3 3-3s3 1.34 3 3"/>
+  </svg>
+)
+
 const IconBook = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M2 2h5l2 2h5v10H2V2z"/>
@@ -88,6 +96,13 @@ const IconSearch = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="6.5" cy="6.5" r="4.5"/>
     <path d="M10 10l3.5 3.5"/>
+  </svg>
+)
+
+const IconLink = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 10a3 3 0 010-4.24L8 3.76a3 3 0 014.24 4.24L10 10.24"/>
+    <path d="M10 6a3 3 0 010 4.24L8 12.24a3 3 0 01-4.24-4.24L6 5.76"/>
   </svg>
 )
 
@@ -226,12 +241,14 @@ function Navbar() {
         <NavItem to="/portfolio" icon={IconImage} label="作品" />
         <NavItem to="/blog" icon={IconBook} label="博客" />
         <NavItem to="/about" icon={IconPerson} label="关于" />
+        <NavItem to="/friends" icon={IconLink} label="友链" />
         {token && user?.role === 'admin' && (
           <NavItem to="/admin" icon={IconGear} label="管理" />
         )}
         {token && user ? (
           <>
             <span className="navbar-user">{user.username}</span>
+            <NavItem to="/profile" icon={IconProfile} label="资料" />
             <button onClick={handleLogout} className="navbar-btn">
               <span className="navbar-icon"><IconLogout /></span>
               退出

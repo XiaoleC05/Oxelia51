@@ -1,0 +1,71 @@
+/* ===== Friends: editorial link cards ===== */
+
+.friends-page {
+  padding: 32px 0 80px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.friends-header {
+  margin-bottom: 40px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.friends-header h1 {
+  margin: 0;
+}
+
+.friends-subtitle {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.friends-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.friend-card a {
+  display: block;
+  padding: 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.friend-card a:hover {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.friend-name {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin-bottom: 4px;
+}
+
+.friend-desc {
+  display: block;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.friends-note {
+  margin-top: 40px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .friends-list {
+    grid-template-columns: 1fr;
+  }
+}

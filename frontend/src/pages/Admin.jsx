@@ -70,7 +70,6 @@ function Admin() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <p className="chapter-num">管</p>
         <h1>管理后台</h1>
       </header>
 

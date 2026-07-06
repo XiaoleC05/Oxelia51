@@ -94,16 +94,6 @@ body {
   padding: 0 clamp(24px, 5vw, 80px);
 }
 
-/* ---- Chapter number ---- */
-.chapter-num {
-  font-family: var(--heading);
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: var(--accent);
-  margin: 0 0 8px;
-  line-height: 1;
-}
-
 /* ---- Headings: sans-serif, bold sizes (Fluid style) ---- */
 h1,
 h2,

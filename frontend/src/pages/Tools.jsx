@@ -39,7 +39,6 @@ function Tools() {
   return (
     <div className="tools-page">
       <header className="tools-header">
-        <p className="chapter-num">二</p>
         <h1>工具</h1>
         <p className="tools-subtitle">平台所有在线工具</p>
       </header>

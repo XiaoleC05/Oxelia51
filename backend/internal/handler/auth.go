@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -60,6 +61,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// account_id 格式验证：字母数字下划线
+	if !isValidAccountID(req.AccountID) {
+		apiError(c, http.StatusBadRequest, "INVALID_ACCOUNT_ID", "账号 ID 只能包含字母、数字和下划线")
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
@@ -83,16 +90,21 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	var userID int64
 	err = h.db.QueryRow(ctx,
-		`INSERT INTO users (username, password, email, email_verified)
-		 VALUES ($1, $2, $3, FALSE)
+		`INSERT INTO users (account_id, username, password, email, email_verified)
+		 VALUES ($1, $2, $3, $4, FALSE)
 		 RETURNING id`,
-		req.Username, string(hash), req.Email,
+		req.AccountID, req.Username, string(hash), req.Email,
 	).Scan(&userID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			if strings.Contains(pgErr.ConstraintName, "email") {
+			constraint := pgErr.ConstraintName
+			if strings.Contains(constraint, "email") {
 				apiError(c, http.StatusConflict, "EMAIL_TAKEN", "邮箱已被注册")
+				return
+			}
+			if strings.Contains(constraint, "account_id") {
+				apiError(c, http.StatusConflict, "ACCOUNT_ID_TAKEN", "账号 ID 已被使用")
 				return
 			}
 			apiError(c, http.StatusConflict, "USERNAME_TAKEN", "用户名已被注册")
@@ -202,7 +214,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	rlKey := "rl:login:ip:" + c.ClientIP()
 	count, err := h.rl.Count(ctx, rlKey)
 	if err != nil {
-		// R5 修复：不再静默 Count 错误，记录日志后继续走凭证校验（fail-open，避免 Redis 故障阻断登录）
 		log.Printf("rate limit count error: login ip=%s err=%v", c.ClientIP(), err)
 	} else if count >= 10 {
 		log.Printf("rate limit hit: login ip=%s count=%d", c.ClientIP(), count)
@@ -210,16 +221,22 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := h.fetchUserByUsername(ctx, req.Username)
+	// 判断是 email 还是 account_id
+	var user model.User
+	if strings.Contains(req.Account, "@") {
+		user, err = h.fetchUserByEmail(ctx, req.Account)
+	} else {
+		user, err = h.fetchUserByAccountID(ctx, req.Account)
+	}
 	if err != nil {
 		h.recordLoginFailure(ctx, c.ClientIP())
-		apiError(c, http.StatusUnauthorized, "INVALID_CREDENTIALS", "用户名或密码错误")
+		apiError(c, http.StatusUnauthorized, "INVALID_CREDENTIALS", "账号或密码错误")
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		h.recordLoginFailure(ctx, c.ClientIP())
-		apiError(c, http.StatusUnauthorized, "INVALID_CREDENTIALS", "用户名或密码错误")
+		apiError(c, http.StatusUnauthorized, "INVALID_CREDENTIALS", "账号或密码错误")
 		return
 	}
 
@@ -239,10 +256,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"refresh_token": pair.RefreshToken,
 		"expires_in":    pair.ExpiresIn,
 		"user": gin.H{
-			"id":       user.ID,
-			"username": user.Username,
-			"email":    user.Email,
-			"role":     user.Role,
+			"id":         user.ID,
+			"account_id": user.AccountID,
+			"username":   user.Username,
+			"email":      user.Email,
+			"role":       user.Role,
 		},
 	})
 }
@@ -416,6 +434,56 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// PatchProfile PATCH /api/auth/profile — 允许用户修改自己的 username（显示名）
+func (h *AuthHandler) PatchProfile(c *gin.Context) {
+	userID := c.GetInt64("userID")
+	if userID == 0 {
+		apiError(c, http.StatusUnauthorized, "UNAUTHORIZED", "未登录")
+		return
+	}
+
+	var req model.PatchProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apiError(c, http.StatusBadRequest, "INVALID_REQUEST", "请求格式错误: "+err.Error())
+		return
+	}
+
+	if req.Username == nil {
+		apiError(c, http.StatusBadRequest, "INVALID_REQUEST", "至少提供一个要修改的字段")
+		return
+	}
+	if strings.TrimSpace(*req.Username) == "" {
+		apiError(c, http.StatusBadRequest, "INVALID_REQUEST", "用户名不能为空")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	var updated model.User
+	err := h.db.QueryRow(ctx,
+		`UPDATE users SET username = COALESCE($2, username), updated_at = NOW()
+		 WHERE id = $1
+		 RETURNING id, account_id, username, password, email, role, email_verified, created_at, updated_at`,
+		userID, req.Username,
+	).Scan(
+		&updated.ID, &updated.AccountID, &updated.Username, &updated.Password,
+		&updated.Email, &updated.Role, &updated.EmailVerified,
+		&updated.CreatedAt, &updated.UpdatedAt,
+	)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			apiError(c, http.StatusConflict, "USERNAME_TAKEN", "用户名已被注册")
+			return
+		}
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "更新失败")
+		return
+	}
+	updated.Password = ""
+	c.JSON(http.StatusOK, updated)
+}
+
 func (h *AuthHandler) sendVerificationEmail(ctx context.Context, userID int64, email string) error {
 	token, err := auth.RandomToken()
 	if err != nil {
@@ -449,20 +517,35 @@ func (h *AuthHandler) issueTokenPair(ctx context.Context, user model.User) (auth
 	}, nil
 }
 
-func (h *AuthHandler) fetchUserByUsername(ctx context.Context, username string) (model.User, error) {
+func (h *AuthHandler) fetchUserByAccountID(ctx context.Context, accountID string) (model.User, error) {
 	var u model.User
 	err := h.db.QueryRow(ctx,
-		`SELECT id, username, password, email, role, email_verified, created_at, updated_at
-		 FROM users WHERE username = $1`, username,
-	).Scan(&u.ID, &u.Username, &u.Password, &u.Email, &u.Role, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt)
+		`SELECT id, account_id, username, password, email, role, email_verified, created_at, updated_at
+		 FROM users WHERE account_id = $1`, accountID,
+	).Scan(&u.ID, &u.AccountID, &u.Username, &u.Password, &u.Email, &u.Role, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt)
+	return u, err
+}
+
+func (h *AuthHandler) fetchUserByEmail(ctx context.Context, email string) (model.User, error) {
+	var u model.User
+	err := h.db.QueryRow(ctx,
+		`SELECT id, account_id, username, password, email, role, email_verified, created_at, updated_at
+		 FROM users WHERE email = $1`, email,
+	).Scan(&u.ID, &u.AccountID, &u.Username, &u.Password, &u.Email, &u.Role, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt)
 	return u, err
 }
 
 func (h *AuthHandler) fetchUserByID(ctx context.Context, id string) (model.User, error) {
 	var u model.User
 	err := h.db.QueryRow(ctx,
-		`SELECT id, username, password, email, role, email_verified, created_at, updated_at
+		`SELECT id, account_id, username, password, email, role, email_verified, created_at, updated_at
 		 FROM users WHERE id = $1`, id,
-	).Scan(&u.ID, &u.Username, &u.Password, &u.Email, &u.Role, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt)
+	).Scan(&u.ID, &u.AccountID, &u.Username, &u.Password, &u.Email, &u.Role, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt)
 	return u, err
+}
+
+var accountIDRegex = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+
+func isValidAccountID(s string) bool {
+	return accountIDRegex.MatchString(s)
 }

@@ -6,7 +6,7 @@ import './Auth.css'
 function Login() {
   const location = useLocation()
   const from = location.state?.from || '/'
-  const [username, setUsername] = useState('')
+  const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -17,16 +17,16 @@ function Login() {
     setError('')
     setSubmitting(true)
     try {
-      const data = await apiPost('/auth/login', { username, password })
+      const data = await apiPost('/auth/login', { account, password })
       setToken(data.token)
       if (data.refresh_token) setRefreshToken(data.refresh_token)
       localStorage.setItem('user', JSON.stringify(data.user))
       navigate(from)
     } catch (err) {
-      setError(err.message)
-      // 邮箱未验证时给出重发链接
-      if (err.message.includes('邮箱') || err.message.includes('EMAIL_NOT_VERIFIED')) {
-        setError('邮箱未验证，请查收验证邮件。未收到？可重发验证邮件。')
+      if (err.code === 'EMAIL_NOT_VERIFIED') {
+        setError('邮箱未验证，请检查邮箱并完成验证。')
+      } else {
+        setError(err.message)
       }
     } finally {
       setSubmitting(false)
@@ -34,41 +34,53 @@ function Login() {
   }
 
   return (
-    <div className="auth-page">
-      <h1>登录</h1>
-      <form onSubmit={handleSubmit}>
-        {error && <p className="auth-error">{error}</p>}
-        <div className="auth-field">
-          <label>用户名</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            autoComplete="username"
-          />
+    <div className="auth-wrapper">
+      <aside className="auth-brand">
+        <div className="auth-brand-bg" />
+        <div className="auth-brand-shape auth-brand-shape--1" />
+        <div className="auth-brand-shape auth-brand-shape--2" />
+        <div className="auth-brand-shape auth-brand-shape--3" />
+        <div className="auth-brand-content">
+          <span className="auth-brand-logo">Oxelia51</span>
+          <p className="auth-brand-tagline">探索 · 创造 · 分享</p>
         </div>
-        <div className="auth-field">
-          <label>密码</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
-        </div>
-        <button type="submit" className="auth-btn" disabled={submitting}>
-          {submitting ? '登录中…' : '登录'}
-        </button>
-      </form>
-      <p className="auth-footer">
-        没有账号？<Link to="/register">去注册</Link>
-        {' · '}
-        <Link to="/forgot-password">忘记密码</Link>
-        {' · '}
-        <Link to="/resend-verification">重发验证邮件</Link>
-      </p>
+      </aside>
+      <div className="auth-page">
+        <h1>登录</h1>
+        <form onSubmit={handleSubmit}>
+          {error && <p className="auth-error">{error}</p>}
+          <div className="auth-field">
+            <label>账号</label>
+            <input
+              type="text"
+              value={account}
+              onChange={(e) => setAccount(e.target.value)}
+              required
+              placeholder="输入账号 ID 或邮箱"
+              autoComplete="username"
+            />
+          </div>
+          <div className="auth-field">
+            <label>密码</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </div>
+          <button type="submit" className="auth-btn" disabled={submitting}>
+            {submitting ? '登录中…' : '登录'}
+          </button>
+        </form>
+        <p className="auth-footer">
+          没有账号？<Link to="/register">去注册</Link>
+          {' · '}
+          <Link to="/forgot-password">忘记密码</Link>
+          {' · '}
+        </p>
+      </div>
     </div>
   )
 }

@@ -91,8 +91,9 @@ func main() {
 	protected := r.Group("/api")
 	protected.Use(authMW.Handle())
 	{
-		protected.POST("/auth/logout", authH.Logout)
+	protected.POST("/auth/logout", authH.Logout)
 		protected.GET("/users/me", authH.Me)
+		protected.PATCH("/auth/profile", authH.PatchProfile)
 
 		gw := gateway.NewHandler(pool, cfg)
 		protected.Any("/tools/:slug/proxy/*path", gw.Proxy)

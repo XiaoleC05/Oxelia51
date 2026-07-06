@@ -5,6 +5,7 @@ import "time"
 // User 对应数据库 users 表
 type User struct {
 	ID            int64     `json:"id"`
+	AccountID     string    `json:"account_id"`
 	Username      string    `json:"username"`
 	Password      string    `json:"-"`
 	Email         string    `json:"email"`
@@ -14,18 +15,24 @@ type User struct {
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
-// RegisterRequest 注册请求体（v1.1）
+// RegisterRequest 注册请求体（v1.2 新增 account_id）
 type RegisterRequest struct {
+	AccountID       string `json:"account_id" binding:"required,min=4,max=32"`
 	Username        string `json:"username" binding:"required,min=3,max=64"`
 	Password        string `json:"password" binding:"required,min=8,max=128"`
 	PasswordConfirm string `json:"password_confirm" binding:"required"`
 	Email           string `json:"email" binding:"required,email,max=128"`
 }
 
-// LoginRequest 登录请求体
+// LoginRequest 登录请求体（v1.2 改为 account 字段，支持 account_id 或 email）
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
+	Account  string `json:"account" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+// PatchProfileRequest 用户修改自己的显示名（username）
+type PatchProfileRequest struct {
+	Username *string `json:"username" binding:"omitempty,min=3,max=64"`
 }
 
 // ResendVerificationRequest 重发验证邮件
@@ -58,6 +65,7 @@ type LogoutRequest struct {
 // AdminUserItem 管理端用户列表项
 type AdminUserItem struct {
 	ID            int64     `json:"id"`
+	AccountID     string    `json:"account_id"`
 	Username      string    `json:"username"`
 	Email         string    `json:"email"`
 	Role          string    `json:"role"`

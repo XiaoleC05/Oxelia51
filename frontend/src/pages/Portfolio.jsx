@@ -21,7 +21,6 @@ function Portfolio() {
   return (
     <div className="portfolio-page">
       <header className="portfolio-header">
-        <p className="chapter-num">三</p>
         <h1>作品集</h1>
         <p><code>code</code> 目录下的全部项目</p>
       </header>

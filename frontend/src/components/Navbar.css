@@ -32,6 +32,12 @@
   display: flex;
   align-items: center;
   gap: 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.navbar-links::-webkit-scrollbar {
+  display: none;
 }
 
 /* ---- Nav items with icon ---- */

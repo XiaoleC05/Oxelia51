@@ -58,7 +58,6 @@ function Blog() {
   return (
     <div className="blog-page">
       <header className="blog-header">
-        <p className="chapter-num">博</p>
         <h1>博客</h1>
         <p className="blog-subtitle">技术随笔与思考</p>
       </header>

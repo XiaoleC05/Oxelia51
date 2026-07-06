@@ -47,9 +47,9 @@ func EnsureAdmin(ctx context.Context, pool *pgxpool.Pool, cfg *config.Config) er
 
 	email := "admin@oxelia51.local"
 	_, err = pool.Exec(ctx,
-		`INSERT INTO users (username, password, email, role, email_verified)
-		 VALUES ($1, $2, $3, 'admin', TRUE)`,
-		adminUsername, string(hash), email,
+		`INSERT INTO users (account_id, username, password, email, role, email_verified)
+		 VALUES ($1, $2, $3, $4, 'admin', TRUE)`,
+		adminUsername, adminUsername, string(hash), email,
 	)
 	if err != nil {
 		return fmt.Errorf("创建管理员失败: %w", err)

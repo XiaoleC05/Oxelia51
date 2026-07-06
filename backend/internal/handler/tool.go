@@ -224,7 +224,7 @@ func (h *AdminToolHandler) ListUsers(c *gin.Context) {
 	defer cancel()
 
 	rows, err := h.db.Query(ctx, `
-		SELECT id, username, email, role, email_verified, created_at, updated_at
+		SELECT id, account_id, username, email, role, email_verified, created_at, updated_at
 		FROM users
 		ORDER BY created_at DESC`)
 	if err != nil {
@@ -237,7 +237,7 @@ func (h *AdminToolHandler) ListUsers(c *gin.Context) {
 	for rows.Next() {
 		var item model.AdminUserItem
 		if err := rows.Scan(
-			&item.ID, &item.Username, &item.Email,
+			&item.ID, &item.AccountID, &item.Username, &item.Email,
 			&item.Role, &item.EmailVerified, &item.CreatedAt, &item.UpdatedAt,
 		); err != nil {
 			apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "读取数据失败")
@@ -284,10 +284,10 @@ func (h *AdminToolHandler) PatchUser(c *gin.Context) {
 			role = COALESCE($3, role),
 			updated_at = NOW()
 		WHERE id = $1
-		RETURNING id, username, email, role, email_verified, created_at, updated_at`,
+		RETURNING id, account_id, username, email, role, email_verified, created_at, updated_at`,
 		id, req.EmailVerified, req.Role,
 	).Scan(
-		&item.ID, &item.Username, &item.Email,
+		&item.ID, &item.AccountID, &item.Username, &item.Email,
 		&item.Role, &item.EmailVerified, &item.CreatedAt, &item.UpdatedAt,
 	)
 	if err != nil {

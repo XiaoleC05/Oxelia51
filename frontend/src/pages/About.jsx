@@ -22,7 +22,6 @@ function About() {
     <div className="about-page">
       <article className="about-article">
         <header className="about-header">
-          <p className="chapter-num">关</p>
           <h1>{page.title}</h1>
         </header>
         <div

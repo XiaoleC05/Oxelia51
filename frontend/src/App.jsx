@@ -16,6 +16,9 @@ import Admin from './pages/Admin'
 import Blog from './pages/Blog'
 import ArticleDetail from './pages/ArticleDetail'
 import About from './pages/About'
+import Friends from './pages/Friends'
+import Profile from './pages/Profile'
+import MouseGlow from './effects/MouseGlow'
 import './App.css'
 
 function AnimatedRoutes() {
@@ -37,6 +40,8 @@ function AnimatedRoutes() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:id" element={<ArticleDetail />} />
         <Route path="/about" element={<About />} />
+        <Route path="/friends" element={<Friends />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </div>
   )
@@ -45,6 +50,7 @@ function AnimatedRoutes() {
 function App() {
   return (
     <BrowserRouter>
+      <MouseGlow />
       <ScrollProgress />
       <Navbar />
       <AnimatedRoutes />
