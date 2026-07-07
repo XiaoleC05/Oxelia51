@@ -24,9 +24,11 @@ import Profile from './pages/Profile'
 import './App.css'
 
 function variantFor(pathname) {
-  if (pathname === '/' || pathname === '/portfolio' || pathname === '/friends') return 'split'
-  if (pathname.startsWith('/tools') || pathname.startsWith('/admin')) return 'diagonal'
-  return 'expand'
+  if (pathname === '/') return 'split'
+  if (pathname === '/blog' || pathname.startsWith('/blog/')) return 'ink'
+  if (pathname === '/tools' || pathname.startsWith('/tools/')) return 'mist'
+  if (pathname === '/portfolio' || pathname === '/friends' || pathname === '/about') return 'light'
+  return 'none'
 }
 
 function AnimatedRoutes() {
@@ -61,11 +63,12 @@ function LoaderGate() {
   const [variant, setVariant] = useState(variantFor(location.pathname))
 
   useEffect(() => {
-    setVisible(true)
-    setVariant(variantFor(location.pathname))
+    const next = variantFor(location.pathname)
+    setVisible(next !== 'none')
+    setVariant(next)
   }, [location.pathname])
 
-  if (!visible) return null
+  if (!visible || variant === 'none') return null
 
   return (
     <PageLoader

@@ -301,7 +301,7 @@
 
 @media (max-width: 480px) {
   .auth-wrapper {
-    margin: 16px 0;
+    margin: 48px 0 16px;
     border-radius: 6px;
   }
 

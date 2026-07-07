@@ -1,4 +1,4 @@
-/* ===== PageLoader — full-screen door reveal ===== */
+/* ===== PageLoader — four-variant full-screen reveal ===== */
 
 .page-loader {
   position: fixed;
@@ -6,23 +6,14 @@
   z-index: 1000;
   pointer-events: none;
   overflow: hidden;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
 .page-loader--fade {
   opacity: 0;
 }
 
-/* ---- Shared door base ---- */
-.page-loader__door {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  will-change: transform;
-  transition: transform 1.2s cubic-bezier(0.77, 0, 0.175, 1);
-}
-
-/* Logo centered (shared across variants) */
+/* ---- Logo (shared, centered, fade-in during hold, fade-out during open) ---- */
 .page-loader__logo {
   position: absolute;
   top: 50%;
@@ -34,20 +25,28 @@
   letter-spacing: 0.05em;
   color: #fff;
   opacity: 0;
-  animation: page-loader-logo 1.5s ease forwards;
+  animation: page-loader-logo 1s ease forwards;
   z-index: 5;
   text-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
 }
 
 @keyframes page-loader-logo {
-  0%   { opacity: 0; transform: translate(-50%, -45%) scale(0.96); }
-  30%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  80%  { opacity: 1; }
-  100% { opacity: 0; }
+  0%   { opacity: 0;   transform: translate(-50%, -45%) scale(0.96); }
+  40%  { opacity: 1;   transform: translate(-50%, -50%) scale(1);    }
+  60%  { opacity: 1;                                                  }
+  80%  { opacity: 0;                                                  }
+  100% { opacity: 0;                                                  }
 }
 
-/* ===== split variant: two vertical doors, striped texture ===== */
+
+/* ================================================================
+   split  — two vertical doors slide apart
+   pages : /
+   ================================================================ */
 .page-loader--split .page-loader__door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
   width: 50vw;
   height: 100vh;
   background-color: var(--bg-dark, #1a1d24);
@@ -58,6 +57,8 @@
     transparent 1px,
     transparent 14px
   );
+  will-change: transform;
+  transition: transform 0.3s cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 .page-loader--split .page-loader__door--left  { left: 0;  right: auto; }
@@ -66,60 +67,140 @@
 .page-loader--split.page-loader--open .page-loader__door--left {
   transform: translateX(-100%);
 }
-
 .page-loader--split.page-loader--open .page-loader__door--right {
   transform: translateX(100%);
 }
 
-/* ===== diagonal variant: two halves, accent translucent ===== */
-.page-loader--diagonal .page-loader__door {
-  width: 100vw;
-  height: 100vh;
-  background: rgba(200, 85, 61, 0.85);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+
+/* ================================================================
+   ink  — radial ink blobs bloom from center, container fades out
+   pages : /blog, /blog/:id
+   ================================================================ */
+.page-loader--ink {
+  background-color: #1a1d24;
+  background-color: var(--bg-dark, #1a1d24);
 }
 
-.page-loader--diagonal .page-loader__door--tl {
-  clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
-  transform-origin: 0 0;
-}
-
-.page-loader--diagonal .page-loader__door--br {
-  clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%);
-  transform-origin: 100% 100%;
-}
-
-.page-loader--diagonal.page-loader--open .page-loader__door--tl {
-  transform: translate(-70%, -70%) rotate(-4deg);
-}
-
-.page-loader--diagonal.page-loader--open .page-loader__door--br {
-  transform: translate(70%, 70%) rotate(-4deg);
-}
-
-/* ===== expand variant: circle from center ===== */
-.page-loader--expand .page-loader__curtain {
+.page-loader__ink-wrap {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+}
+
+.page-loader__ink-blob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30vmax;
+  height: 30vmax;
+  margin: -15vmax 0 0 -15vmax;
+  border-radius: 50%;
   background: radial-gradient(
     circle at 50% 50%,
-    #3d8b5f 0%,
-    #2c6e49 55%,
-    #1f4e35 100%
+    #1a1d24 0%,
+    #1a1d24 40%,
+    rgba(26, 29, 36, 0.8) 65%,
+    rgba(26, 29, 36, 0) 100%
   );
-  clip-path: circle(150% at 50% 50%);
-  transition: clip-path 1.3s cubic-bezier(0.77, 0, 0.175, 1);
-  will-change: clip-path;
+  transform: translate(var(--ink-x, 0), var(--ink-y, 0)) scale(0);
+  animation: ink-blob var(--ink-dur, 0.8s) cubic-bezier(0.2, 0.6, 0.3, 1) var(--ink-delay, 0s) forwards;
+  will-change: transform;
 }
 
-.page-loader--expand .page-loader__logo {
-  z-index: 6;
+@keyframes ink-blob {
+  0% {
+    transform: translate(var(--ink-x, 0), var(--ink-y, 0)) scale(0);
+  }
+  100% {
+    transform: translate(var(--ink-x, 0), var(--ink-y, 0)) scale(var(--ink-s, 1));
+  }
 }
 
-.page-loader--expand.page-loader--open .page-loader__curtain {
-  clip-path: circle(0% at 50% 50%);
+
+/* ================================================================
+   mist  — white fog, opacity ease-out, logo disappears first
+   pages : /tools, /tools/:slug
+   ================================================================ */
+.page-loader--mist {
+  background-color: rgba(255, 255, 255, 0.92);
 }
+
+.page-loader--mist .page-loader__logo {
+  color: #1a1d24;
+  text-shadow: none;
+  animation: page-loader-logo-mist 1s ease-out forwards;
+}
+
+@keyframes page-loader-logo-mist {
+  0%   { opacity: 0; transform: translate(-50%, -45%) scale(0.96); }
+  30%  { opacity: 1; transform: translate(-50%, -50%) scale(1);    }
+  50%  { opacity: 1;                                                  }
+  65%  { opacity: 0;                                                  }
+  100% { opacity: 0;                                                  }
+}
+
+
+/* ================================================================
+   light  — horizontal light beam sweeps top → bottom, reveals page
+   pages : /portfolio, /friends, /about
+   ================================================================ */
+.page-loader--light {
+  background-color: transparent;
+}
+
+.page-loader__light-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: #1a1d24;
+  background-color: var(--bg-dark, #1a1d24);
+  clip-path: inset(0 0 0 0);
+  transform: translateY(0);
+  will-change: clip-path, transform;
+  transition:
+    clip-path 0.3s cubic-bezier(0.4, 0, 0.6, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.6, 1);
+  overflow: hidden;
+}
+
+.page-loader--light.page-loader--open .page-loader__light-overlay {
+  clip-path: inset(100% 0 0 0);
+  transform: translateY(-100%);
+}
+
+.page-loader__light-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 28vh;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 245, 220, 0.25) 30%,
+    rgba(255, 250, 235, 0.85) 50%,
+    rgba(255, 245, 220, 0.25) 70%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  filter: blur(2px);
+  animation: light-beam-sweep 0.3s cubic-bezier(0.4, 0, 0.6, 1) 0.5s both;
+  will-change: transform;
+  pointer-events: none;
+}
+
+@keyframes light-beam-sweep {
+  0%   { transform: translateY(0);    }
+  100% { transform: translateY(400vh); }
+}
+
+
+/* ================================================================
+   legacy — kept as no-op so old class refs never collide
+   ================================================================ */
+.page-loader__door,
+.page-loader--diagonal,
+.page-loader--expand,
+.page-loader__curtain { /* preserved for backward compat */ }
+
 
 /* ---- Accessibility ---- */
 @media (prefers-reduced-motion: reduce) {
