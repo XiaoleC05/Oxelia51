@@ -179,6 +179,17 @@
     font-size: 13px;
     gap: 4px;
   }
+
+  .navbar-user {
+    white-space: nowrap;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+  }
 }
 
 /* ---- Icon buttons (search / theme) ---- */

@@ -13,6 +13,11 @@
   will-change: transform;
   opacity: 0;
   animation: mouse-glow-fade-in 0.5s ease 0.2s forwards;
+  transition: opacity 0.3s ease;
+}
+
+.mouse-glow--hidden {
+  opacity: 0 !important;
 }
 
 [data-theme="dark"] .mouse-glow {

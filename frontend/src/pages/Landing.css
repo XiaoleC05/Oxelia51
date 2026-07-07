@@ -315,6 +315,14 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
+.landing-tools-section .landing-card {
+  border-left: 3px solid var(--accent);
+}
+
+.landing-works-section .landing-card {
+  border-left: 3px solid var(--accent-2);
+}
+
 .landing-card-body {
   padding: 20px 20px 0;
   flex: 1;

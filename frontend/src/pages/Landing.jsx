@@ -259,7 +259,7 @@ function Landing() {
         </section>
 
         {/* ===== 热门工具 ===== */}
-        <section className="landing-section">
+        <section className="landing-section landing-tools-section">
           <div className="landing-section-inner">
             <div className="landing-section-head">
               <h2 className="landing-section-title">
@@ -294,7 +294,7 @@ function Landing() {
         </section>
 
         {/* ===== 热门作品 ===== */}
-        <section className="landing-section">
+        <section className="landing-section landing-works-section">
           <div className="landing-section-inner">
             <div className="landing-section-head">
               <h2 className="landing-section-title">
