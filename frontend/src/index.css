@@ -62,6 +62,46 @@
   background: var(--bg);
 }
 
+/* ---- Light mode footer override ---- */
+[data-theme="light"] {
+  --bg-dark: #f0efe9;
+}
+
+.landing-footer[data-theme="light"],
+[data-theme="light"] .landing-footer {
+  color: var(--text);
+}
+
+[data-theme="light"] .landing-footer a {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .landing-footer a:hover {
+  color: var(--text-h);
+}
+
+[data-theme="light"] .landing-footer-logo {
+  color: var(--text-h);
+}
+
+[data-theme="light"] .landing-footer-desc,
+[data-theme="light"] .landing-footer-col-title,
+[data-theme="light"] .landing-footer-bottom {
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .landing-footer-bottom {
+  border-top-color: var(--border);
+}
+
+[data-theme="light"] .landing-footer-sep {
+  color: var(--border);
+}
+
+[data-theme="light"] .landing-footer-transition {
+  background: linear-gradient(to bottom, var(--bg), var(--bg-dark));
+}
+
 /* system dark as default (overridden by manual toggle) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {

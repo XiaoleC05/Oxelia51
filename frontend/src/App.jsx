@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { useState, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Navbar from './components/Navbar'
 import ScrollProgress from './components/ScrollProgress'
 import BackToTop from './components/BackToTop'
@@ -21,7 +21,6 @@ import ArticleDetail from './pages/ArticleDetail'
 import About from './pages/About'
 import Friends from './pages/Friends'
 import Profile from './pages/Profile'
-import MouseGlow from './effects/MouseGlow'
 import './App.css'
 
 function variantFor(pathname) {
@@ -58,18 +57,20 @@ function AnimatedRoutes() {
 
 function LoaderGate() {
   const location = useLocation()
-  const shownRef = useRef(false)
   const [visible, setVisible] = useState(true)
+  const [variant, setVariant] = useState(variantFor(location.pathname))
+
+  useEffect(() => {
+    setVisible(true)
+    setVariant(variantFor(location.pathname))
+  }, [location.pathname])
 
   if (!visible) return null
 
   return (
     <PageLoader
-      variant={variantFor(location.pathname)}
-      onDone={() => {
-        shownRef.current = true
-        setVisible(false)
-      }}
+      variant={variant}
+      onDone={() => setVisible(false)}
     />
   )
 }
@@ -78,7 +79,6 @@ function App() {
   return (
     <BrowserRouter>
       <BackgroundWave />
-      <MouseGlow />
       <ScrollProgress />
       <Navbar />
       <LoaderGate />

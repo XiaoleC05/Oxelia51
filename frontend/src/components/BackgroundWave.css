@@ -1,4 +1,4 @@
-/* ===== BackgroundWave — animated atmosphere layer ===== */
+/* ===== BackgroundWave — cosmic starfield deep space ===== */
 
 .background-wave {
   position: fixed;
@@ -6,75 +6,86 @@
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
-  background: var(--bg);
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    #0d1b2a 0%,
+    #0a1628 25%,
+    #060d18 55%,
+    #020408 100%
+  );
 }
 
-.background-wave__bands {
+.background-wave__field {
   position: absolute;
   inset: -10%;
-  width: 220%;
-  height: 120%;
-  background: linear-gradient(
-    120deg,
-    #f5ebe6 0%,
-    #e8efe3 28%,
-    #f0e8f2 58%,
-    #f5ebe6 100%
-  );
-  background-size: 200% 100%;
-  animation: background-wave-drift 30s ease-in-out infinite alternate;
-  opacity: 0.55;
-  will-change: background-position;
-}
-
-.background-wave__glow {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(200, 85, 61, 0.12), transparent 45%),
-    radial-gradient(circle at 80% 70%, rgba(44, 110, 73, 0.10), transparent 50%),
-    radial-gradient(circle at 50% 90%, rgba(220, 180, 90, 0.08), transparent 45%);
-  animation: background-wave-glow 40s ease-in-out infinite alternate-reverse;
+  animation: background-wave-rotate 600s linear infinite;
   will-change: transform;
-  mix-blend-mode: multiply;
 }
 
-@keyframes background-wave-drift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 200% 50%; }
+.background-wave__star {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  animation: background-wave-twinkle ease-in-out infinite;
 }
 
-@keyframes background-wave-glow {
-  0%   { transform: translate3d(-4%, -2%, 0) scale(1.05); }
-  50%  { transform: translate3d(3%, 4%, 0) scale(1.12); }
-  100% { transform: translate3d(-2%, 3%, 0) scale(1.02); }
+.background-wave__star:nth-child(5n) {
+  background: #b8d4ff;
+  box-shadow: 0 0 3px 1px rgba(184, 212, 255, 0.25);
 }
 
-/* ---- Dark mode ---- */
-[data-theme="dark"] .background-wave__bands {
-  background: linear-gradient(
-    120deg,
-    #1a1d24 0%,
-    #22262e 30%,
-    #2a2230 60%,
-    #1a1d24 100%
+.background-wave__star:nth-child(11n) {
+  background: #ffe8c8;
+  box-shadow: 0 0 3px 1px rgba(255, 232, 200, 0.2);
+}
+
+.background-wave__star:nth-child(17n) {
+  box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.12);
+}
+
+@keyframes background-wave-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes background-wave-twinkle {
+  0%, 100% { opacity: var(--star-opacity, 0.6); transform: scale(1); }
+  50% { opacity: 0.15; transform: scale(0.55); }
+}
+
+/* ---- Light mode: pale blue-gray base with subtle white dots ---- */
+[data-theme="light"] .background-wave {
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    #e8edf2 0%,
+    #dce3ec 30%,
+    #d0d8e4 60%,
+    #c8d2de 100%
   );
-  background-size: 200% 100%;
-  opacity: 0.9;
 }
 
-[data-theme="dark"] .background-wave__glow {
-  background:
-    radial-gradient(circle at 20% 30%, rgba(217, 107, 90, 0.18), transparent 45%),
-    radial-gradient(circle at 80% 70%, rgba(61, 139, 95, 0.14), transparent 50%),
-    radial-gradient(circle at 50% 90%, rgba(180, 140, 80, 0.10), transparent 45%);
-  mix-blend-mode: screen;
+[data-theme="light"] .background-wave__star {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: none;
+  animation: none;
+  opacity: 0.4;
 }
 
+[data-theme="light"] .background-wave__star:nth-child(5n),
+[data-theme="light"] .background-wave__star:nth-child(11n),
+[data-theme="light"] .background-wave__star:nth-child(17n) {
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+}
+
+[data-theme="light"] .background-wave__field {
+  animation: none;
+}
+
+/* ---- Reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {
-  .background-wave__bands,
-  .background-wave__glow {
+  .background-wave__field,
+  .background-wave__star {
     animation: none;
   }
 }
