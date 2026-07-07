@@ -283,5 +283,10 @@
 
   .article-detail-content {
     font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .article-detail-content p {
+    margin-bottom: 12px;
   }
 }

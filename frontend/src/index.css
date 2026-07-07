@@ -80,6 +80,8 @@
 /* ---- Reset ---- */
 body {
   margin: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 #root {
@@ -209,6 +211,7 @@ section {
 @media (max-width: 640px) {
   :root {
     font-size: 15px;
+    letter-spacing: 0;
   }
 
   #root {
@@ -225,5 +228,12 @@ section {
 
   section {
     padding: 48px 0;
+  }
+
+  p,
+  li,
+  .about-content,
+  .article-detail-content {
+    text-align: justify;
   }
 }

@@ -590,6 +590,10 @@
     font-size: 1.5rem;
   }
 
+  .landing-intro-desc {
+    text-align: justify;
+  }
+
   .landing-section {
     padding-top: 48px;
     padding-bottom: 48px;
