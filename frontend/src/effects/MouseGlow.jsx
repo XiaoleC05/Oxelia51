@@ -1,33 +1,31 @@
 import { useRef, useEffect, useState } from 'react'
 import './MouseGlow.css'
 
-const GLOW_RADIUS = 200
-const FADE_OUT_MS = 300
-const RESTORE_DELAY_MS = 800
+const GLOW_SIZE = 300
+const HALF = GLOW_SIZE / 2
 
 function MouseGlow() {
-  const glowRef = useRef(null)
-  const [enabled, setEnabled] = useState(true)
+  const groupRef = useRef(null)
+  const [enabled] = useState(() => window.matchMedia('(hover: hover)').matches)
+  const [alive, setAlive] = useState(false)
 
   useEffect(() => {
-    if (!window.matchMedia('(hover: hover)').matches) {
-      setEnabled(false)
-      return
-    }
+    if (!enabled) return
 
     let rafId = null
-    let mx = 0
-    let my = 0
-    let restoreTimer = null
+    let hideTimer = null
+    let firstMove = false
 
     const onMove = (e) => {
-      mx = e.clientX
-      my = e.clientY
+      if (!firstMove) {
+        firstMove = true
+        setAlive(true)
+      }
       if (!rafId) {
         rafId = requestAnimationFrame(() => {
-          const el = glowRef.current
+          const el = groupRef.current
           if (el) {
-            el.style.transform = `translate3d(${mx - GLOW_RADIUS}px, ${my - GLOW_RADIUS}px, 0)`
+            el.style.transform = `translate3d(${e.clientX - HALF}px, ${e.clientY - HALF}px, 0)`
           }
           rafId = null
         })
@@ -35,16 +33,16 @@ function MouseGlow() {
     }
 
     const onTap = () => {
-      const el = glowRef.current
-      if (!el) return
+      const el = groupRef.current
+      if (!el || !firstMove) return
       el.classList.add('mouse-glow--hidden')
-      clearTimeout(restoreTimer)
-      restoreTimer = setTimeout(() => {
-        el.classList.remove('mouse-glow--hidden')
-      }, RESTORE_DELAY_MS)
+      clearTimeout(hideTimer)
+      hideTimer = setTimeout(() => {
+        if (el) el.classList.remove('mouse-glow--hidden')
+      }, 280)
     }
 
-    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mousemove', onMove, { passive: true })
     document.addEventListener('click', onTap)
     document.addEventListener('touchstart', onTap)
     return () => {
@@ -52,13 +50,22 @@ function MouseGlow() {
       document.removeEventListener('click', onTap)
       document.removeEventListener('touchstart', onTap)
       if (rafId) cancelAnimationFrame(rafId)
-      clearTimeout(restoreTimer)
+      clearTimeout(hideTimer)
     }
-  }, [])
+  }, [enabled])
 
   if (!enabled) return null
 
-  return <div className="mouse-glow" ref={glowRef} aria-hidden="true" />
+  return (
+    <div
+      className={`mouse-glow${alive ? ' mouse-glow--alive' : ''}`}
+      ref={groupRef}
+      aria-hidden="true"
+    >
+      <span className="mouse-glow__spot mouse-glow__spot--main" />
+      <span className="mouse-glow__spot mouse-glow__spot--trail" />
+    </div>
+  )
 }
 
 export default MouseGlow

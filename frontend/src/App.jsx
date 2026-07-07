@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { useState, useRef } from 'react'
 import Navbar from './components/Navbar'
 import ScrollProgress from './components/ScrollProgress'
 import BackToTop from './components/BackToTop'
+import PageLoader from './components/PageLoader'
+import BackgroundWave from './components/BackgroundWave'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -20,6 +23,12 @@ import Friends from './pages/Friends'
 import Profile from './pages/Profile'
 import MouseGlow from './effects/MouseGlow'
 import './App.css'
+
+function variantFor(pathname) {
+  if (pathname === '/' || pathname === '/portfolio' || pathname === '/friends') return 'split'
+  if (pathname.startsWith('/tools') || pathname.startsWith('/admin')) return 'diagonal'
+  return 'expand'
+}
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -47,12 +56,32 @@ function AnimatedRoutes() {
   )
 }
 
+function LoaderGate() {
+  const location = useLocation()
+  const shownRef = useRef(false)
+  const [visible, setVisible] = useState(true)
+
+  if (!visible) return null
+
+  return (
+    <PageLoader
+      variant={variantFor(location.pathname)}
+      onDone={() => {
+        shownRef.current = true
+        setVisible(false)
+      }}
+    />
+  )
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <BackgroundWave />
       <MouseGlow />
       <ScrollProgress />
       <Navbar />
+      <LoaderGate />
       <AnimatedRoutes />
       <BackToTop />
     </BrowserRouter>
