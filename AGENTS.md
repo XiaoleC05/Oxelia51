@@ -11,7 +11,7 @@
 
 1. **归属判断**——这个任务属于哪个智能体？
    - 后端/数据库/API → 产出 Cursor 提示词
-   - 前端/CSS/布局/动画 → 产出 Qoder Wake 提示词
+   - 前端/CSS/布局/动画 → 产出 Hermes 提示词
    - 审查/文档/命名一致性 → 产出 Trae Work 提示词
    - 构建/测试/部署验证 → 产出 Qoder 提示词
    - 架构决策/任务分解/最终集成 → 自己处理
@@ -22,7 +22,7 @@
    - 已部署的服务和配置项不重复询问
 
 3. **行为边界**——不得：
-   - 直接改 CSS/JSX（那是 Qoder Wake 的职责）
+   - 直接改 CSS/JSX（那是 Hermes 的职责）
    - 直接实现后端业务逻辑（那是 Cursor 的职责）
    - 花时间打磨 UI 或写大量代码
 
@@ -64,7 +64,7 @@ Backend   Frontend     QA    Review
 |------|--------|------|
 | **架构智能体** | Codex | DeepSeek V4 Pro |
 | **后端智能体** | Cursor | Qwen3.7-Max |
-| **前端智能体** | Qoder Wake | GLM-5.2 |
+| **前端智能体** | Hermes | GLM-5.2 |
 | **QA 与部署智能体** | Qoder | DeepSeek V4 Flash |
 | **审查与知识智能体** | Trae Work | Kimi K2.7 Code |
 
@@ -112,7 +112,7 @@ Backend   Frontend     QA    Review
 
 **完成标准**：代码编译通过、逻辑正确、现有功能不受影响、无未完成代码、文档注释已更新。
 
-### 4.3 前端智能体 (Qoder Wake)
+### 4.3 前端智能体 (Hermes)
 
 **使命**：将功能需求转化为简洁、响应式和用户友好的界面。
 

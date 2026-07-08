@@ -4,11 +4,12 @@
 INSERT INTO tools (slug, name, description, user_accessible, online_capable, status, internal_api_base, github_repo, release_url)
 VALUES
   ('dormguard', 'DormGuard', '西华大学宿舍电费余额监控', TRUE, TRUE, 'enabled', 'http://127.0.0.1:8000', 'XiaoleC05/DormGuard', 'https://github.com/XiaoleC05/DormGuard/releases'),
-  ('superread', 'SuperRead', 'RSS 订阅与 AI 简报', FALSE, TRUE, 'enabled', '', 'XiaoleC05/SuperRead', 'https://github.com/XiaoleC05/SuperRead/releases'),
-  ('musicbox', 'MusicBox', '音乐聚合播放', FALSE, TRUE, 'enabled', '', 'XiaoleC05/MusicBox', 'https://github.com/XiaoleC05/MusicBox/releases'),
-  ('cs2lab', 'CS2Lab', 'CS2 道具教学与练习', FALSE, TRUE, 'enabled', '', 'XiaoleC05/CS2Lab', 'https://github.com/XiaoleC05/CS2Lab/releases'),
-  ('aihelper', 'AIHelper', '提示词助手', FALSE, TRUE, 'enabled', '', 'XiaoleC05/AIHelper', 'https://github.com/XiaoleC05/AIHelper/releases'),
-  ('agentcanvas', 'AgentCanvas', 'Agent 可视化画布', FALSE, TRUE, 'enabled', '', 'XiaoleC05/AgentCanvas', 'https://github.com/XiaoleC05/AgentCanvas/releases')
+  ('superread', 'SuperRead', 'RSS 订阅与 AI 简报', FALSE, TRUE, 'enabled', 'http://127.0.0.1:8002', 'XiaoleC05/SuperRead', 'https://github.com/XiaoleC05/SuperRead/releases'),
+  ('musicbox', 'MusicBox', '音乐聚合播放', FALSE, TRUE, 'enabled', 'http://127.0.0.1:8003', 'XiaoleC05/MusicBox', 'https://github.com/XiaoleC05/MusicBox/releases'),
+  ('cs2lab', 'CS2Lab', 'CS2 道具教学与练习', FALSE, TRUE, 'enabled', 'http://127.0.0.1:8001', 'XiaoleC05/CS2Lab', 'https://github.com/XiaoleC05/CS2Lab/releases'),
+  ('aihelper', 'AIHelper', '提示词助手', FALSE, TRUE, 'enabled', 'http://127.0.0.1:8004', 'XiaoleC05/AIHelper', 'https://github.com/XiaoleC05/AIHelper/releases'),
+  ('agentcanvas', 'AgentCanvas', 'Agent 可视化画布', FALSE, TRUE, 'enabled', 'http://127.0.0.1:8005', 'XiaoleC05/AgentCanvas', 'https://github.com/XiaoleC05/AgentCanvas/releases'),
+  ('secretstore', 'SecretStore', '加密存储 API 密钥、密码等敏感信息', TRUE, TRUE, 'enabled', 'http://127.0.0.1:8006', 'XiaoleC05/SecretStore', 'https://github.com/XiaoleC05/SecretStore/releases')
 ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
@@ -16,7 +17,7 @@ ON CONFLICT (slug) DO UPDATE SET
   github_repo = EXCLUDED.github_repo,
   release_url = EXCLUDED.release_url,
   internal_api_base = CASE
-    WHEN EXCLUDED.slug = 'dormguard' THEN EXCLUDED.internal_api_base
+    WHEN EXCLUDED.slug IN ('dormguard', 'superread', 'musicbox', 'cs2lab', 'aihelper', 'agentcanvas', 'secretstore') THEN EXCLUDED.internal_api_base
     ELSE tools.internal_api_base
   END,
   updated_at = NOW();

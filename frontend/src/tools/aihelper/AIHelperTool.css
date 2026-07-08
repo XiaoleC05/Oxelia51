@@ -1,0 +1,430 @@
+/* ===== AIHelper Panel ===== */
+
+/* ---- Shell ---- */
+.ah-shell {
+  background: transparent;
+  padding: 0;
+  min-height: 400px;
+}
+
+/* ---- Loading ---- */
+.ah-loading {
+  padding: 80px 0;
+  color: var(--text-muted);
+  font-size: 16px;
+  text-align: center;
+}
+
+.ah-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: ah-spin 0.8s linear infinite;
+}
+
+@keyframes ah-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- Error ---- */
+.ah-error-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  border-left: 3px solid var(--accent);
+  background: var(--code-bg);
+  font-size: 14px;
+  border-radius: 3px;
+}
+
+.ah-error-banner p { margin: 0; color: var(--accent); }
+
+.ah-close-btn {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0;
+  border: none; border-radius: 3px;
+  background: transparent; color: var(--text-muted); cursor: pointer;
+}
+
+.ah-close-btn:hover { color: var(--text-h); }
+
+.ah-empty-text {
+  color: var(--text-muted); padding: 48px 0;
+  text-align: center; font-size: 15px; margin: 0;
+}
+
+/* ---- Tabs ---- */
+.ah-tabs {
+  display: flex; gap: 0;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ah-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 20px;
+  border: none; border-bottom: 2px solid transparent;
+  background: transparent; color: var(--text-muted);
+  font-size: 14px; font-weight: 500; cursor: pointer; border-radius: 0;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.ah-tab--active { border-bottom-color: var(--text-h); color: var(--text-h); }
+.ah-tab:hover { color: var(--text-h); opacity: 1; }
+
+.ah-section-title {
+  font-size: 1rem; font-weight: 600; color: var(--text-h); margin: 0 0 20px;
+}
+
+/* ---- Shared inputs ---- */
+.ah-input {
+  box-sizing: border-box;
+  border: none; border-bottom: 1px solid var(--border); border-radius: 0;
+  background: transparent; color: var(--text-h);
+  font-size: 14px; font-family: var(--sans);
+  padding: 8px 0; width: 100%;
+  transition: border-color 0.2s;
+}
+
+.ah-input:focus { outline: none; border-bottom-color: var(--accent); }
+.ah-input::placeholder { color: var(--text-muted); }
+
+.ah-input--lg { font-size: 16px; padding: 10px 0; font-weight: 500; }
+.ah-input--sm { font-size: 13px; padding: 6px 0; width: 100px; }
+
+.ah-select {
+  padding: 7px 10px;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: transparent; color: var(--text-h);
+  font-size: 14px; font-family: var(--sans); cursor: pointer;
+}
+
+.ah-select:focus { outline: none; border-color: var(--accent); }
+.ah-select--sm { font-size: 13px; padding: 5px 8px; }
+
+/* ---- Icon button ---- */
+.ah-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0;
+  border: none; border-radius: 3px;
+  background: transparent; color: var(--text-muted); cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.ah-icon-btn:hover { color: var(--text-h); background: var(--bg-alt); }
+.ah-icon-btn--danger:hover { color: var(--accent); }
+
+.ah-back-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 0; border: none; border-radius: 0;
+  background: transparent; color: var(--text-muted);
+  font-size: 13px; font-family: var(--sans); cursor: pointer;
+  transition: color 0.15s;
+}
+
+.ah-back-btn:hover { color: var(--text-h); opacity: 1; }
+
+/* ===== Prompt List ===== */
+.ah-list-toolbar {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 24px;
+}
+
+.ah-search-form {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;
+}
+
+.ah-search-wrap {
+  display: flex; align-items: center; gap: 8px;
+  flex: 1; min-width: 180px;
+  padding: 0 0 4px; border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: border-color 0.2s;
+}
+
+.ah-search-wrap:focus-within { border-bottom-color: var(--accent); }
+
+.ah-search-input {
+  flex: 1; border: none; border-radius: 0;
+  background: transparent; color: var(--text-h);
+  font-size: 14px; font-family: var(--sans); padding: 6px 0;
+}
+
+.ah-search-input:focus { outline: none; }
+.ah-search-input::placeholder { color: var(--text-muted); }
+
+.ah-fav-toggle {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 13px; color: var(--text-muted); cursor: pointer; margin: 0;
+  white-space: nowrap;
+}
+
+.ah-fav-toggle input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; }
+
+.ah-search-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--text-h); border-radius: 3px;
+  background: var(--text-h); color: var(--bg);
+  font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer;
+  white-space: nowrap; transition: opacity 0.2s;
+}
+
+.ah-search-btn:hover { opacity: 0.88; }
+
+.ah-new-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px;
+  border: 1px solid var(--text-h); border-radius: 3px;
+  background: var(--text-h); color: var(--bg);
+  font-size: 14px; font-family: var(--sans); font-weight: 500; cursor: pointer;
+  white-space: nowrap; transition: opacity 0.2s;
+}
+
+.ah-new-btn:hover { opacity: 0.88; }
+
+/* ---- Prompt Cards ---- */
+.ah-prompt-list {
+  display: flex; flex-direction: column; gap: 0;
+}
+
+.ah-prompt-card {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.ah-prompt-card:hover { background: var(--bg-alt); padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
+
+.ah-prompt-card-body { flex: 1; min-width: 0; }
+
+.ah-prompt-card-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+
+.ah-prompt-card-title {
+  font-size: 15px; font-weight: 600; color: var(--text-h); margin: 0;
+}
+
+.ah-category-tag {
+  font-size: 11px; padding: 1px 7px;
+  border: 1px solid var(--border); border-radius: 3px;
+  color: var(--text-muted); white-space: nowrap;
+}
+
+.ah-prompt-card-preview {
+  font-size: 13px; color: var(--text-muted); margin: 0 0 8px;
+  line-height: 1.5;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.ah-prompt-card-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 12px; color: var(--text-muted);
+}
+
+.ah-var-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--mono); font-size: 11px;
+}
+
+.ah-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.ah-tag {
+  font-size: 11px; padding: 1px 6px;
+  background: var(--code-bg); border-radius: 3px;
+  color: var(--text-muted);
+}
+
+.ah-time { font-size: 11px; color: var(--text-muted); }
+
+.ah-prompt-card-actions {
+  display: flex; gap: 2px; flex-shrink: 0; padding-top: 4px;
+}
+
+/* ===== Editor ===== */
+.ah-editor { margin-bottom: 24px; }
+
+.ah-editor-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 24px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ah-editor-mode {
+  font-size: 14px; font-weight: 500; color: var(--text-muted);
+}
+
+.ah-editor-form {
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+.ah-editor-fields {
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+.ah-editor-row {
+  display: flex; gap: 12px;
+}
+
+.ah-editor-row .ah-select { min-width: 100px; }
+.ah-editor-row .ah-input { flex: 1; }
+
+.ah-content-wrap {
+  border: 1px solid var(--border); border-radius: 3px; overflow: hidden;
+}
+
+.ah-content-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--code-bg);
+}
+
+.ah-content-label {
+  font-size: 12px; color: var(--text-muted); font-weight: 500;
+}
+
+.ah-enhance-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--accent); border-radius: 3px;
+  background: transparent; color: var(--accent);
+  font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.ah-enhance-btn:hover:not(:disabled) { opacity: 0.8; }
+.ah-enhance-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ah-content-textarea {
+  width: 100%; box-sizing: border-box;
+  padding: 14px; border: none; border-radius: 0;
+  background: var(--bg); color: var(--text);
+  font-size: 14px; font-family: var(--mono); line-height: 1.7;
+  resize: vertical; min-height: 320px;
+}
+
+.ah-content-textarea:focus { outline: none; }
+.ah-content-textarea::placeholder { color: var(--text-muted); font-family: var(--sans); }
+
+.ah-editor-actions {
+  display: flex; gap: 12px;
+}
+
+.ah-save-btn {
+  padding: 9px 22px;
+  border: 1px solid var(--text-h); border-radius: 3px;
+  background: var(--text-h); color: var(--bg);
+  font-size: 14px; font-family: var(--sans); font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.ah-save-btn:hover:not(:disabled) { opacity: 0.88; }
+.ah-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ah-cancel-btn {
+  padding: 9px 22px;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: transparent; color: var(--text-muted);
+  font-size: 14px; font-family: var(--sans); cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.ah-cancel-btn:hover { border-color: var(--text-h); color: var(--text-h); opacity: 1; }
+
+/* ===== Templates ===== */
+.ah-templates { margin-bottom: 24px; }
+
+.ah-templates-filter {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 24px;
+}
+
+.ah-cat-btn {
+  padding: 5px 14px;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: transparent; color: var(--text-muted);
+  font-size: 13px; font-family: var(--sans); cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.ah-cat-btn:hover { border-color: var(--text-h); color: var(--text-h); opacity: 1; }
+.ah-cat-btn--active { border-color: var(--text-h); color: var(--text-h); background: var(--text-h); color: var(--bg); }
+
+.ah-template-list {
+  display: flex; flex-direction: column; gap: 0;
+}
+
+.ah-template-card {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ah-template-card:hover { background: var(--bg-alt); padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
+
+.ah-template-card-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+
+.ah-template-card-title {
+  font-size: 15px; font-weight: 600; color: var(--text-h); margin: 0;
+}
+
+.ah-template-card-preview {
+  font-size: 13px; color: var(--text-muted); margin: 0 0 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.ah-template-hint {
+  font-size: 11px; color: var(--accent); font-weight: 500;
+}
+
+/* ===== Settings ===== */
+.ah-settings { max-width: 480px; }
+
+.ah-settings-form {
+  display: flex; flex-direction: column; gap: 20px;
+}
+
+.ah-field {
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+.ah-field-label {
+  font-size: 13px; color: var(--text-h); font-weight: 500;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  .ah-list-toolbar {
+    flex-direction: column;
+  }
+
+  .ah-search-form {
+    flex-direction: column; align-items: stretch;
+  }
+
+  .ah-search-wrap { min-width: 0; }
+  .ah-input--sm { width: 100%; }
+
+  .ah-editor-row {
+    flex-direction: column;
+  }
+
+  .ah-editor-row .ah-select { min-width: 0; }
+
+  .ah-prompt-card-actions {
+    flex-direction: column; gap: 0;
+  }
+
+  .ah-content-textarea {
+    min-height: 240px;
+  }
+}

@@ -13,6 +13,7 @@ import MusicBoxTool from '../tools/musicbox/MusicBoxTool'
 import CS2LabTool from '../tools/cs2lab/CS2LabTool'
 import AIHelperTool from '../tools/aihelper/AIHelperTool'
 import AgentCanvasTool from '../tools/agentcanvas/AgentCanvasTool'
+import SecretStoreTool from '../tools/secretstore/SecretStoreTool'
 import './ToolShell.css'
 
 const TOOL_VIEWS = {
@@ -22,6 +23,7 @@ const TOOL_VIEWS = {
   cs2lab: CS2LabTool,
   aihelper: AIHelperTool,
   agentcanvas: AgentCanvasTool,
+  secretstore: SecretStoreTool,
 }
 
 function ToolShell() {

@@ -9,7 +9,7 @@
 
 ### Added
 
-- **5-agent 多智能体协作模型**：Codex（架构）、Cursor（后端）、Qoder Wake（前端）、Qoder（QA 与部署）、Trae Work（审查与知识），详见 `AGENTS.md` v2.0
+- **5-agent 多智能体协作模型**：Codex（架构）、Cursor（后端）、Hermes（前端）、Qoder（QA 与部署）、Trae Work（审查与知识），详见 `AGENTS.md` v2.0
 - **account_id 账号体系**：`username` 拆分为不可变 `account_id` + 可修改显示名；新增 `PATCH /api/auth/profile` 修改个人资料接口
 - **友情链接页 `/friends`**：网格卡片布局，移动端单列
 - **个人资料页 `/profile`**：读取用户信息，支持修改显示名

@@ -9,7 +9,31 @@ blocks: TOOL-03, TOOL-04
 precondition: REF-01 (DormGuard Go 重构) 已完成
 ---
 
+
+> **Cursor 职责边界（AGENTS.md §4.2）**
+> - ✅ 可修改：后端源代码、后端配置、后端测试、后端文档
+> - ❌ 不得修改：前端、UI、CSS、项目架构、数据库设计、API 规范、CI/CD 工作流
+> - ⚠️ 上报：数据库模式变更、API 变更、框架变更、项目结构变更、第三方依赖变更
+> - **完成标准**：代码编译通过、逻辑正确、现有功能不受影响、无未完成代码
+
+
 # TOOL-02：SecretStore 后端开发
+
+## 必读文件（动手前先读完）
+
+| 优先级 | 文件 | 为什么 |
+|--------|------|--------|
+| 1 | `AGENTS.md` §4.2 + §0 | 职责边界 + 服务器环境认知 |
+| 2 | `docs/00-deployment-context.md` | 服务器 Ubuntu 22.04 2C2G，SSH 22 不对外 |
+| 3 | `docs/tools/secretstore-design.md` | 完整产品设计文档 |
+| 4 | `D:_Projects\code\Oxelia51\deploy\seed-tools.sql` | 工具注册模式参照 |
+| 5 | `D:_Projects\code\Oxelia51\docspi	ool-registration.md` | 工具注册规范 |
+| 6 | `D:_Projects\code\Oxelia51\docspi\gateway-contract.md` | 网关契约（X-User-Id 短 header） |
+
+> 🖥 **运行环境**：生产服务器 Ubuntu 22.04 2C2G，SSH 22 不对外暴露，操作通过阿里云 Workbench。
+> 🔧 **Gateway 认证**：GW-FIX 后网关发送 `X-User-Id` / `X-Username` / `X-Role` 短 header，auth 中间件应读这些 header（参照其他工具 auth.go）。
+
+
 
 ## 背景
 
@@ -112,7 +136,7 @@ CREATE TABLE secretstore.combo_entries (
 
 ## 核心 API
 
-端口：`8001`
+端口：`8006`
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -133,7 +157,7 @@ CREATE TABLE secretstore.combo_entries (
 |------|------|
 | SECRETSTORE_ENCRYPTION_KEY | AES-256-GCM 32 字节 hex 密钥 |
 | DATABASE_URL | Oxelia51 PostgreSQL 连接字符串 |
-| SECRETSTORE_PORT | 服务端口（默认 8001） |
+| SECRETSTORE_PORT | 服务端口（默认 8006） |
 | OXELIA_GATEWAY_MODE | 信任网关身份头 |
 
 ## 项目结构建议
@@ -164,7 +188,7 @@ SecretStore/
   "online_capable": true,
   "user_accessible": true,
   "status": "enabled",
-  "port": 8001,
+  "port": 8006,
   "release_url": "https://github.com/XiaoleC05/Oxelia51/releases"
 }
 ```
@@ -178,6 +202,9 @@ SecretStore/
 - [ ] 所有 CRUD API 可用
 - [ ] JWT 认证（通过 OXELIA_GATEWAY_MODE 信任网关）
 - [ ] `oxelia51.tool.json` 就绪
+
+> ℹ️ **新建仓库**：github.com/XiaoleC05/SecretStore 目前不存在，需创建。
+> 参照 DormGuard 模式：独立仓库，Go 后端 + oxelia51.tool.json。
 
 ## 仓库
 

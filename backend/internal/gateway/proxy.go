@@ -255,6 +255,11 @@ func injectGatewayHeaders(req *http.Request, c *gin.Context) error {
 	req.Header.Set("X-Oxelia51-Username", uname)
 	req.Header.Set("X-Oxelia51-Role", r)
 	req.Header.Set("X-Oxelia51-Request-Id", uuid.NewString())
+
+	req.Header.Set("X-User-Id", uid)
+	req.Header.Set("X-Username", uname)
+	req.Header.Set("X-Role", r)
+
 	return nil
 }
 

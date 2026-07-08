@@ -1,6 +1,6 @@
 ---
 from: Codex (Architecture Agent)
-to: Qoder Wake (Frontend Agent)
+to: Hermes (Frontend Agent)
 task: TOOL-03
 status: blocked_by_TOOL-02
 date: 2026-07-08

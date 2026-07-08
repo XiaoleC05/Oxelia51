@@ -59,7 +59,7 @@ PostgreSQL    Redis
 | 数据库 | PostgreSQL 17 | 用户与工具元数据 |
 | 缓存 | Redis 7 | 会话缓存、限流器 |
 | 部署 | Docker Compose + Nginx | 2 核 2G 云服务器 |
-| AI 协作 | 5-agent 模型 | Codex（架构）、Cursor（后端）、Qoder Wake（前端）、Qoder（QA 与部署）、Trae Work（审查与知识） |
+| AI 协作 | 5-agent 模型 | Codex（架构）、Cursor（后端）、Hermes（前端）、Qoder（QA 与部署）、Trae Work（审查与知识） |
 
 ## 目录结构
 
@@ -202,7 +202,7 @@ docker compose -f deploy/docker/docker-compose.yml up -d --build
 |------|--------|------|
 | 架构 | Codex | 整体架构、任务分解、最终集成 |
 | 后端 | Cursor | 业务逻辑、API、数据库 |
-| 前端 | Qoder Wake | UI、交互、响应式 |
+| 前端 | Hermes | UI、交互、响应式 |
 | QA 与部署 | Qoder | 测试、构建、CI/CD |
 | 审查与知识 | Trae Work | 代码审查、文档、命名一致性 |
 

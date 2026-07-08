@@ -1,0 +1,128 @@
+/* ===== AgentCanvas ===== */
+
+/* ---- Shell ---- */
+.ac-shell { background: transparent; padding: 0; min-height: 400px; }
+
+/* ---- Loading ---- */
+.ac-loading { padding: 80px 0; color: var(--text-muted); font-size: 16px; text-align: center; }
+.ac-spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 20px; animation: ac-spin 0.8s linear infinite; }
+@keyframes ac-spin { to { transform: rotate(360deg); } }
+
+/* ---- Error ---- */
+.ac-error-banner { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; margin-bottom: 20px; border-left: 3px solid var(--accent); background: var(--code-bg); font-size: 14px; border-radius: 3px; }
+.ac-error-banner p { margin: 0; color: var(--accent); }
+
+.ac-close-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: none; border-radius: 3px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.ac-close-btn:hover { color: var(--text-h); }
+
+.ac-empty-text { color: var(--text-muted); padding: 48px 0; text-align: center; font-size: 15px; margin: 0; }
+
+.ac-section-title { font-size: 1rem; font-weight: 600; color: var(--text-h); margin: 0; }
+
+/* ---- Icon button ---- */
+.ac-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: none; border-radius: 3px; background: transparent; color: var(--text-muted); cursor: pointer; transition: color 0.15s; }
+.ac-icon-btn:hover { color: var(--text-h); }
+.ac-icon-btn--danger:hover { color: var(--accent); }
+
+.ac-back-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 0; border: none; background: transparent; color: var(--text-muted); font-size: 13px; font-family: var(--sans); cursor: pointer; }
+.ac-back-btn:hover { color: var(--text-h); }
+
+.ac-action-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border: 1px solid var(--text-h); border-radius: 3px; background: var(--text-h); color: var(--bg); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+.ac-action-btn:hover:not(:disabled) { opacity: 0.88; }
+.ac-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ac-save-btn { padding: 8px 18px; border: 1px solid var(--text-h); border-radius: 3px; background: var(--text-h); color: var(--bg); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; }
+.ac-save-btn:hover { opacity: 0.88; }
+
+.ac-delete-btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border: 1px solid var(--accent); border-radius: 3px; background: transparent; color: var(--accent); font-size: 12px; font-family: var(--sans); cursor: pointer; }
+.ac-delete-btn:hover { opacity: 0.8; }
+
+/* ===== Projects ===== */
+.ac-projects { margin-bottom: 24px; }
+
+.ac-projects-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+
+.ac-create-form { display: flex; gap: 8px; align-items: center; }
+.ac-input-inline { padding: 7px 0; border: none; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; color: var(--text-h); font-size: 14px; font-family: var(--sans); width: 160px; transition: border-color 0.2s; }
+.ac-input-inline:focus { outline: none; border-bottom-color: var(--accent); }
+
+.ac-project-list { display: flex; flex-direction: column; gap: 0; }
+
+.ac-project-card { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+.ac-project-card:hover { background: var(--bg-alt); padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
+
+.ac-project-card-info { display: flex; align-items: center; gap: 12px; }
+.ac-project-card-name { font-size: 15px; font-weight: 500; color: var(--text-h); }
+.ac-project-card-time { font-size: 12px; color: var(--text-muted); }
+
+/* ===== Canvas Layout ===== */
+.ac-canvas-layout { display: flex; flex-direction: column; height: calc(100vh - 180px); min-height: 500px; margin: -56px clamp(-24px, -5vw, -80px); margin-bottom: 0; }
+
+.ac-toolbar { display: flex; align-items: center; gap: 16px; padding: 8px 20px; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
+.ac-project-name { font-size: 14px; font-weight: 600; color: var(--text-h); flex: 1; }
+
+.ac-canvas-body { flex: 1; display: flex; overflow: hidden; position: relative; }
+
+/* ===== Canvas Area ===== */
+.ac-canvas-area { flex: 1; overflow: auto; background: var(--code-bg); position: relative; cursor: crosshair; }
+
+.ac-canvas-sheet { position: relative; width: 4000px; height: 3000px; }
+
+/* ===== Nodes ===== */
+.ac-node { position: absolute; width: 130px; height: 60px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg); display: flex; align-items: center; gap: 8px; padding: 0 10px; cursor: move; user-select: none; box-sizing: border-box; transition: box-shadow 0.15s; z-index: 10; }
+.ac-node--selected { box-shadow: 0 0 0 3px rgba(200,85,61,0.25); }
+.ac-node--dragging { z-index: 100; opacity: 0.9; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+
+.ac-node-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.ac-node-label { font-size: 12px; font-weight: 500; color: var(--text-h); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ===== Connectors ===== */
+.ac-conn { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--text-muted); border: 2px solid var(--bg); top: 50%; transform: translateY(-50%); z-index: 20; }
+.ac-conn--left  { left: -7px; cursor: crosshair; }
+.ac-conn--right { right: -7px; cursor: crosshair; }
+.ac-conn--right:hover { background: var(--accent); }
+
+/* ===== Edge delete button ===== */
+.ac-edge-del { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 1px solid var(--accent); border-radius: 50%; background: var(--bg); color: var(--accent); cursor: pointer; }
+.ac-edge-del:hover { background: var(--accent); color: var(--bg); }
+
+/* ===== Add node popup ===== */
+.ac-add-popup { position: absolute; z-index: 200; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); overflow: hidden; min-width: 160px; }
+.ac-add-popup-head { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; color: var(--text-h); }
+.ac-add-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 14px; border: none; border-radius: 0; background: transparent; color: var(--text); font-size: 13px; font-family: var(--sans); cursor: pointer; text-align: left; transition: background 0.1s; }
+.ac-add-item:hover { background: var(--bg-alt); opacity: 1; }
+.ac-add-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ===== Property Panel ===== */
+.ac-panel { width: 260px; border-left: 1px solid var(--border); background: var(--bg); overflow-y: auto; flex-shrink: 0; }
+.ac-panel-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.ac-panel-head h4 { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-h); }
+.ac-panel-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.ac-panel-type { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+.ac-field { display: flex; flex-direction: column; gap: 4px; }
+.ac-field-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+
+.ac-input { box-sizing: border-box; width: 100%; border: none; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; color: var(--text-h); font-size: 13px; font-family: var(--sans); padding: 6px 0; transition: border-color 0.2s; }
+.ac-input:focus { outline: none; border-bottom-color: var(--accent); }
+
+.ac-textarea { box-sizing: border-box; width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 3px; background: var(--bg); color: var(--text); font-size: 12px; font-family: var(--mono); line-height: 1.5; resize: vertical; }
+.ac-textarea:focus { outline: none; border-color: var(--accent); }
+
+.ac-panel-actions { display: flex; flex-direction: column; gap: 8px; }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .ac-canvas-body { flex-direction: column; }
+  .ac-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); max-height: 40vh; }
+  .ac-canvas-area { flex: 1; min-height: 300px; }
+}
+
+@media (max-width: 640px) {
+  .ac-canvas-layout { height: calc(100vh - 130px); }
+  .ac-toolbar { padding: 6px 12px; gap: 8px; }
+  .ac-projects-head { flex-direction: column; align-items: flex-start; }
+  .ac-create-form { width: 100%; }
+  .ac-input-inline { flex: 1; }
+  .ac-project-card:hover { padding-left: 4px; padding-right: 4px; margin: 0 -4px; }
+}

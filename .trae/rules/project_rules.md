@@ -28,7 +28,7 @@
 | 部署 | Docker Compose | |
 | 反向代理 | Nginx | |
 | API 风格 | 仅 REST | |
-| AI 协作模型 | 5-agent | Codex（架构）、Cursor（后端）、Qoder Wake（前端）、Qoder（QA 与部署）、Trae Work（审查与知识） |
+| AI 协作模型 | 5-agent | Codex（架构）、Cursor（后端）、Hermes（前端）、Qoder（QA 与部署）、Trae Work（审查与知识） |
 
 ### 环境信息
 
@@ -54,11 +54,14 @@
 | 注册与登录 | 开放注册 + 邮箱验证一次；登录仅用户名密码 | 2026-07-05 | ADR-005 |
 | 邮件服务 | 生产：阿里云邮件推送 | 2026-07-05 | mailer-contract |
 | DormGuard | 在线工具，`/tools/dormguard`；现网首页过渡见 ADR-006 | 2026-07-05 | ADR-004/006 |
-| 多 Agent 分工 | **5-agent 模型**：Codex 架构、Cursor 后端、Qoder Wake 前端、Qoder QA 与部署、Trae Work 审查与知识 | 2026-07-07 | AGENTS.md v2.0 |
+| 多 Agent 分工 | **5-agent 模型**：Codex 架构、Cursor 后端、Hermes 前端、Qoder QA 与部署、Trae Work 审查与知识 | 2026-07-07 | AGENTS.md v2.0 |
 | AI 协作方式 | 允许 AI 直接编写和修改项目代码 | 2026-07-05 | — |
 | account_id 账号标识 | username 拆分为不可变 `account_id` + 可修改显示名 username；新增 `PATCH /api/auth/profile` | 2026-07-07 | REV-05 |
 | DormGuard QQ 机器人 | QQ Bot 已连接上线 | 2026-07-07 | — |
 | 服务器资源监控 | 新增服务器资源监控面板 | 2026-07-08 | — |
+| DormGuard Go 重构 | DormGuard 从 Python FastAPI 重构为 Go+Gin，内存从 ~70MB 降至 3.5MB | 2026-07-08 | — |
+| SecretStore 设计 | 加密保险箱工具设计完成，排入 v2.1 | 2026-07-08 | docs/tools/secretstore-design.md |
+| 在线工具开发启动 | 5 个在线工具依序开发，SuperRead 排在最前 | 2026-07-09 | docs/06-多Agent任务板.md |
 | XiaoleC05.github.io | 保持独立，平台底部链接引流 | 2026-06-03 | — |
 | 功能开关 | 不做 | 2026-06-03 | — |
 | 预发布环境 | 不拆分（服务器资源有限） | 2026-06-03 | — |
@@ -79,6 +82,8 @@
 | 阶段3：公共工具目录与页面 | 已完成 | 首页、工具目录、作品集、博客、认证页、友链、资料页 |
 | 阶段4：服务器资源监控 | 已完成 | 新增服务器资源监控面板 |
 | 阶段5：服务器与部署 | 已完成 | DormGuard QQ 机器人已上线 |
+| 阶段6：DormGuard Go 重构 | 已完成 | go-backend/ 已部署，内存降 95% |
+| 阶段7：在线工具开发 | 进行中 | TOOL-05 SuperRead 后端开发中；SecretStore 设计完成 |
 
 ---
 
