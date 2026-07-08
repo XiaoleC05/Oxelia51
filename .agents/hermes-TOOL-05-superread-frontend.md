@@ -66,7 +66,7 @@ frontend/src/tools/superread/
 所有 API 通过 `api/index.js` 的 gateway proxy 调用，路径前缀：
 
 ```
-const BASE = 'tools/superread/proxy/api'
+# 正确用法：apiProxy('superread', 'api/feeds')，不要拼接完整路径
 ```
 
 | 前端操作 | API 调用 |

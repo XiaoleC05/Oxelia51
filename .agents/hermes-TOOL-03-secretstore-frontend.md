@@ -18,7 +18,7 @@ SecretStore 是 Oxelia51 的新在线工具——加密保险箱。
 ## 路由
 
 `/tools/secretstore` — 通过 Oxelia51 工具壳机制加载 `SecretStoreTool.jsx`。
-Gateway 代理：`/api/tools/secretstore/proxy/*path` → `http://127.0.0.1:8001`
+Gateway 代理：`/api/tools/secretstore/proxy/*path` → `http://127.0.0.1:8006`
 
 ## 功能需求
 

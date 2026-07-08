@@ -169,7 +169,13 @@ npm run dev
 | DormGuard QQ 机器人 | 已完成 |
 | DormGuard Go 重构 | 已完成 |
 | 服务器资源监控 | 已完成 |
-| SecretStore 加密保险箱 | 开发中 |
+| SecretStore 加密保险箱 | 已完成 |
+| SuperRead RSS 订阅 + AI 简报 | 已完成 |
+| MusicBox 音乐聚合播放 | 已完成 |
+| CS2Lab CS2 道具教学 | 已完成 |
+| AIHelper 提示词助手 | 已完成 |
+| AgentCanvas Agent 可视化画布 | 已完成 |
+| Gateway Header 修复 | 已完成 |
 
 ## 部署
 
@@ -192,7 +198,12 @@ docker compose -f deploy/docker/docker-compose.yml up -d --build
 - [x] 服务器资源监控
 - [x] DormGuard QQ 机器人接入
 - [x] DormGuard Go 重构（Python → Go，内存降 95%）
-- [ ] SecretStore 加密保险箱工具
+- [x] SecretStore 加密保险箱工具
+- [x] SuperRead RSS 订阅 + AI 简报
+- [x] MusicBox 音乐聚合播放
+- [x] CS2Lab CS2 道具教学
+- [x] AIHelper 提示词助手
+- [x] AgentCanvas Agent 可视化画布
 
 ## AI 协作模型
 

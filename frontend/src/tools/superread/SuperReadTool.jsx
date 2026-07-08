@@ -2,8 +2,6 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { apiProxy } from '../../api'
 import './SuperReadTool.css'
 
-const API_BASE = 'tools/superread/proxy/api'
-
 // Icon components (Lucide-style inline SVGs)
 const IconRss = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -117,7 +115,7 @@ export default function SuperReadTool() {
 
   const loadFeeds = useCallback(async () => {
     try {
-      const data = await apiProxy(API_BASE, '/feeds')
+      const data = await apiProxy('superread', 'api/feeds')
       setFeeds(Array.isArray(data) ? data : data?.feeds || [])
     } catch (err) {
       console.error('Failed to load feeds:', err)
@@ -133,7 +131,7 @@ export default function SuperReadTool() {
       if (articleFilter === 'feed' && filterFeedId) params.append('feed_id', filterFeedId)
       if (articleFilter === 'tag' && filterTag) params.append('tag', filterTag)
       const query = params.toString() ? `?${params.toString()}` : ''
-      const data = await apiProxy(API_BASE, `/articles${query}`)
+      const data = await apiProxy('superread', `api/articles${query}`)
       setArticles(Array.isArray(data) ? data : data?.articles || [])
     } catch (err) {
       setError(err.message)
@@ -144,7 +142,7 @@ export default function SuperReadTool() {
 
   const loadBriefing = useCallback(async () => {
     try {
-      const data = await apiProxy(API_BASE, '/daily-brief')
+      const data = await apiProxy('superread', 'api/daily-brief')
       setBriefing(Array.isArray(data) ? data : data?.articles || [])
     } catch (err) {
       console.error('Failed to load briefing:', err)
@@ -153,7 +151,7 @@ export default function SuperReadTool() {
 
   const loadSettings = useCallback(async () => {
     try {
-      const data = await apiProxy(API_BASE, '/settings')
+      const data = await apiProxy('superread', 'api/settings')
       setSettings(data || {})
       setSettingsForm(data || {})
     } catch (err) {
@@ -166,7 +164,7 @@ export default function SuperReadTool() {
     if (!newFeedUrl.trim()) return
     setFeedActionBusy('add')
     try {
-      await apiProxy(API_BASE, '/feeds', {
+      await apiProxy('superread', 'api/feeds', {
         method: 'POST',
         body: JSON.stringify({ feed_url: newFeedUrl.trim() })
       })
@@ -184,7 +182,7 @@ export default function SuperReadTool() {
     if (!confirm('确定删除此源？')) return
     setFeedActionBusy(feedId)
     try {
-      await apiProxy(API_BASE, `/feeds/${feedId}`, { method: 'DELETE' })
+      await apiProxy('superread', `api/feeds/${feedId}`, { method: 'DELETE' })
       await loadFeeds()
     } catch (err) {
       alert('删除失败: ' + err.message)
@@ -196,7 +194,7 @@ export default function SuperReadTool() {
   const handleFetchFeed = async (feedId) => {
     setFeedActionBusy(feedId)
     try {
-      await apiProxy(API_BASE, `/feeds/${feedId}/fetch`, { method: 'POST' })
+      await apiProxy('superread', `api/feeds/${feedId}/fetch`, { method: 'POST' })
       alert('抓取成功')
       await loadFeeds()
       await loadArticles()
@@ -245,7 +243,7 @@ export default function SuperReadTool() {
 
   const toggleArticleStar = async (article) => {
     try {
-      await apiProxy(API_BASE, `/articles/${article.id}`, {
+      await apiProxy('superread', `api/articles/${article.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ is_starred: !article.is_starred })
       })
@@ -259,7 +257,7 @@ export default function SuperReadTool() {
 
   const markArticleRead = async (article) => {
     try {
-      await apiProxy(API_BASE, `/articles/${article.id}`, {
+      await apiProxy('superread', `api/articles/${article.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ is_read: true })
       })
@@ -274,7 +272,7 @@ export default function SuperReadTool() {
 
   const updateArticleTags = async (article, newTags) => {
     try {
-      await apiProxy(API_BASE, `/articles/${article.id}`, {
+      await apiProxy('superread', `api/articles/${article.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ tags: newTags })
       })
@@ -291,7 +289,7 @@ export default function SuperReadTool() {
     setSettingsSaving(true)
     setSettingsResult(null)
     try {
-      await apiProxy(API_BASE, '/settings', {
+      await apiProxy('superread', 'api/settings', {
         method: 'PUT',
         body: JSON.stringify(settingsForm)
       })

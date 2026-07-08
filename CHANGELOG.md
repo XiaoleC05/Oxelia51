@@ -5,6 +5,26 @@
 
 ---
 
+## [v2.1] — 2026-07-09
+
+### Added
+
+- **6 个在线工具上线**：SuperRead（RSS + AI 简报）、MusicBox（音乐聚合）、CS2Lab（道具教学）、AIHelper（提示词助手）、AgentCanvas（可视化画布）、SecretStore（加密保险箱）
+- **Gateway Header 统一**（GW-FIX）：proxy.go 同时发送 X-User-Id/X-Username/X-Role 短 header 与 X-Oxelia51-* 长 header
+- **REV-06 审查**：Trae Work 全量审查 6 工具 + 平台代码，输出 9 P0 + 29 P1 + 27 P2 发现
+
+### Changed
+
+- 前端智能体 Qoder Wake 更名为 Hermes（AGENTS.md、README、CHANGELOG、.agents 全部同步）
+- README.md 合并中英文为中文正式版，新增 CHANGELOG.md
+- 5-agent 模型落地：Codex（架构）→ Cursor（后端）/ Hermes（前端）/ Qoder（QA）/ Trae Work（审查）
+
+### Fixed
+
+- REV-06 P0 全量修复：鉴权后门移除、CORS 加固、MusicBox 凭证串用、SecretStore Combo 越权、CS2Lab 测试降级、AIHelper Authorization 缺失
+- REV-06 P1 安全加固：SSRF 白名单、错误脱敏、API Key 隐藏、响应体限制、AI 摘要闭环
+
+
 ## [v2.0] — 2026-07-08
 
 ### Added
