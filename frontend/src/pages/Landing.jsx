@@ -1,19 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchHeroImages, fetchArticles, apiGet } from '../api'
+import { fetchHeroImages, fetchArticles, apiGet, getToken } from '../api'
 import './Landing.css'
 
 const DEFAULT_INTERVAL = 5000
 
-/* ---- Count-up hook ---- */
 function useCountUp(target, duration = 1500) {
   const [count, setCount] = useState(0)
-  const ref = useRef(null)
   const started = useRef(false)
+  const elRef = useRef(null)
 
   useEffect(() => {
     if (!target || target <= 0) return
-    const el = ref.current
+    const el = elRef.current
     if (!el) return
 
     const observer = new IntersectionObserver(([entry]) => {
@@ -23,7 +22,6 @@ function useCountUp(target, duration = 1500) {
         const step = (now) => {
           const elapsed = now - start
           const progress = Math.min(elapsed / duration, 1)
-          // ease-out
           setCount(Math.round(target * (1 - Math.pow(1 - progress, 3))))
           if (progress < 1) requestAnimationFrame(step)
         }
@@ -35,18 +33,30 @@ function useCountUp(target, duration = 1500) {
     return () => observer.disconnect()
   }, [target, duration])
 
-  return { count, ref }
+  const ref = useCallback((node) => { elRef.current = node }, [])
+  return [count, ref]
 }
 
-/* ---- Typewriter ---- */
+function useReveal() {
+  return useCallback((node) => {
+    if (!node) return
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        node.classList.add('reveal--visible')
+        io.disconnect()
+      }
+    }, { rootMargin: '0px 0px -60px 0px', threshold: 0.12 })
+    io.observe(node)
+  }, [])
+}
+
 function Typewriter({ text, onComplete }) {
-  const [displayed, setDisplayed] = useState('')
-  const [cursor, setCursor] = useState(true)
-  const idxRef = useRef(0)
+  const [displayed, setDisplayed] = useState(() => (text || '').charAt(0))
+  const idxRef = useRef(1)
   const timerRef = useRef(null)
+  const [cursor, setCursor] = useState(true)
 
   useEffect(() => {
-    setDisplayed('')
     idxRef.current = 0
     const textToType = text || ''
 
@@ -63,7 +73,6 @@ function Typewriter({ text, onComplete }) {
     return () => clearInterval(timerRef.current)
   }, [text, onComplete])
 
-  // Blinking cursor
   useEffect(() => {
     const cursorTimer = setInterval(() => setCursor((c) => !c), 500)
     return () => clearInterval(cursorTimer)
@@ -77,7 +86,6 @@ function Typewriter({ text, onComplete }) {
   )
 }
 
-/* ---- Skeleton cards ---- */
 function SkeletonCards({ count = 4 }) {
   return (
     <div className="landing-card-grid">
@@ -122,9 +130,9 @@ function Landing() {
   const [portfolio, setPortfolio] = useState([])
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
+  const reveal = useReveal()
 
   useEffect(() => {
-    setLoading(true)
     Promise.all([
       fetchHeroImages().catch(() => null),
       apiGet('/tools').catch(() => []),
@@ -168,23 +176,20 @@ function Landing() {
   const goPrev = () => { setCurrent((prev) => (prev - 1 + total) % total); startTimer() }
   const goNext = () => { setCurrent((prev) => (prev + 1) % total); startTimer() }
 
-  // Typewriter trigger key
-  const [typewriterKey, setTypewriterKey] = useState(0)
-
   const heroText = hasImages && images[current]?.title
     ? images[current].title
-    : 'Oxelia51 · 统一在线工具平台'
+    : 'Oxelia51 · 集成 · 简洁 · 高效'
 
-  // Restart typewriter on image change
   const onTypewriterComplete = useCallback(() => {}, [])
 
-  const toolsCount = useCountUp(loading ? 0 : tools.length)
-  const portfolioCount = useCountUp(loading ? 0 : portfolio.length)
-  const articlesCount = useCountUp(loading ? 0 : articles.length)
+  const [toolsNum, toolsCountRef] = useCountUp(loading ? 0 : tools.length)
+  const [portfolioNum, portfolioCountRef] = useCountUp(loading ? 0 : portfolio.length)
+  const [articlesNum, articlesCountRef] = useCountUp(loading ? 0 : articles.length)
+
+  const isLoggedIn = !!getToken()
 
   return (
     <main className="landing">
-      {/* ===== Fluid 全屏头图 ===== */}
       <section className="hero" aria-label="头图轮播">
         {hasImages ? (
           images.map((img, i) => (
@@ -199,10 +204,8 @@ function Landing() {
           <div className="hero-slide hero-slide--active hero-slide--default" />
         )}
 
-        {/* 渐变遮罩 */}
         <div className="hero-overlay" />
 
-        {/* 居中单行标题 */}
         <div className="hero-content">
           <h1 className="hero-title">
             <Typewriter
@@ -211,9 +214,9 @@ function Landing() {
               onComplete={onTypewriterComplete}
             />
           </h1>
+          <p className="hero-subtitle">不追逐潮流，只做好用的小工具</p>
         </div>
 
-        {/* 左右箭头 */}
         {hasImages && (
           <>
             <button className="hero-arrow hero-arrow--left" onClick={goPrev} aria-label="上一张">&#10094;</button>
@@ -221,7 +224,6 @@ function Landing() {
           </>
         )}
 
-        {/* 圆点指示器 */}
         {hasImages && total > 1 && (
           <div className="hero-dots">
             {images.map((img, i) => (
@@ -235,7 +237,6 @@ function Landing() {
           </div>
         )}
 
-        {/* 向下箭头 */}
         <button className="hero-scroll-hint" onClick={() => {
           document.getElementById('landing-content')?.scrollIntoView({ behavior: 'smooth' })
         }} aria-label="向下滚动">
@@ -245,12 +246,30 @@ function Landing() {
         </button>
       </section>
 
-      {/* ===== 内容区：奇偶交替背景 ===== */}
+      <section className="landing-stats" aria-label="数据概览">
+        <div className="landing-stats-inner">
+          <div className="landing-stat" ref={toolsCountRef}>
+            <span className="landing-stat-num count-up">{toolsNum}</span>
+            <span className="landing-stat-label">在线工具</span>
+          </div>
+          <div className="landing-stat-divider" />
+          <div className="landing-stat" ref={portfolioCountRef}>
+            <span className="landing-stat-num count-up">{portfolioNum}</span>
+            <span className="landing-stat-label">开源作品</span>
+          </div>
+          <div className="landing-stat-divider" />
+          <div className="landing-stat" ref={articlesCountRef}>
+            <span className="landing-stat-num count-up">{articlesNum}</span>
+            <span className="landing-stat-label">技术文章</span>
+          </div>
+        </div>
+      </section>
+
       <div className="landing-content-sections">
-        <section className="landing-intro" id="landing-content">
+        <section className="landing-intro" id="landing-content" ref={reveal}>
           <h2 className="landing-intro-brand">Oxelia51</h2>
           <p className="landing-intro-desc">
-            一个账号，探索全部在线工具。不追逐潮流，只做好用的小工具。
+            一个账号，探索全部在线工具。从宿舍管理到阅读辅助，从代码实验到音乐创作——每一个工具都经过精心打磨。
           </p>
           <div className="landing-intro-links">
             <Link to="/tools" className="landing-intro-link">浏览工具</Link>
@@ -258,14 +277,13 @@ function Landing() {
           </div>
         </section>
 
-        {/* ===== 热门工具 ===== */}
-        <section className="landing-section landing-tools-section">
+        <section className="landing-section landing-tools-section" ref={reveal}>
           <div className="landing-section-inner">
             <div className="landing-section-head">
               <h2 className="landing-section-title">
                 热门工具
-                <span className="landing-section-count" ref={toolsCount.ref}>
-                  {toolsCount.count > 0 && <span className="count-up"> {toolsCount.count} 个</span>}
+                <span className="landing-section-count">
+                  {toolsNum > 0 && <span className="count-up"> {toolsNum} 个</span>}
                 </span>
               </h2>
               <Link to="/tools" className="landing-section-link">查看全部 &rarr;</Link>
@@ -293,55 +311,13 @@ function Landing() {
           </div>
         </section>
 
-        {/* ===== 热门作品 ===== */}
-        <section className="landing-section landing-works-section">
-          <div className="landing-section-inner">
-            <div className="landing-section-head">
-              <h2 className="landing-section-title">
-                热门作品
-                <span className="landing-section-count" ref={portfolioCount.ref}>
-                  {portfolioCount.count > 0 && <span className="count-up"> {portfolioCount.count} 个</span>}
-                </span>
-              </h2>
-              <Link to="/portfolio" className="landing-section-link">查看全部 &rarr;</Link>
-            </div>
-            {loading ? (
-              <SkeletonCards count={4} />
-            ) : portfolio.length > 0 ? (
-              <div className="landing-card-grid">
-                {portfolio.slice(0, 4).map((item) => (
-                  <div key={item.slug} className="landing-card">
-                    <div className="landing-card-body">
-                      <h3 className="landing-card-name">{item.name}</h3>
-                      <p className="landing-card-desc">{item.description || '\u2014'}</p>
-                    </div>
-                    <div className="landing-card-foot">
-                      {item.github_repo && (
-                        <a
-                          href={`https://github.com/${item.github_repo}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="landing-card-link"
-                        >
-                          GitHub &rarr;
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
-
-        {/* ===== 最新文章 ===== */}
-        <section className="landing-section">
+        <section className="landing-section" ref={reveal}>
           <div className="landing-section-inner">
             <div className="landing-section-head">
               <h2 className="landing-section-title">
                 最新文章
-                <span className="landing-section-count" ref={articlesCount.ref}>
-                  {articlesCount.count > 0 && <span className="count-up"> {articlesCount.count} 篇</span>}
+                <span className="landing-section-count">
+                  {articlesNum > 0 && <span className="count-up"> {articlesNum} 篇</span>}
                 </span>
               </h2>
               <Link to="/blog" className="landing-section-link">
@@ -385,12 +361,27 @@ function Landing() {
             ) : null}
           </div>
         </section>
+
+        <section className="landing-cta" ref={reveal}>
+          <div className="landing-cta-inner">
+            <h2 className="landing-cta-title">准备好探索了吗？</h2>
+            <p className="landing-cta-desc">注册一个账号，即可使用全部在线工具。</p>
+            <div className="landing-cta-actions">
+              {isLoggedIn ? (
+                <Link to="/tools" className="landing-cta-btn landing-cta-btn--primary">浏览工具</Link>
+              ) : (
+                <>
+                  <Link to="/register" className="landing-cta-btn landing-cta-btn--primary">免费注册</Link>
+                  <Link to="/login" className="landing-cta-btn landing-cta-btn--ghost">已有账号？登录</Link>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
       </div>
 
-      {/* ===== 渐变过渡：浅色 → 深色 footer ===== */}
       <div className="landing-footer-transition" />
 
-      {/* ===== Footer：Fluid 分栏风格 ===== */}
       <footer className="landing-footer">
         <div className="landing-footer-top">
           <div className="landing-footer-brand">
@@ -416,6 +407,11 @@ function Landing() {
           <span>&copy; {new Date().getFullYear()} Oxelia51</span>
           <span className="landing-footer-sep">·</span>
           <span>by ChenXiaole</span>
+        </div>
+        <div className="landing-footer-filing">
+          <span>ICP备案号：蜀ICP备XXXXXXXX号-1</span>
+          <span className="landing-footer-sep">|</span>
+          <span>公安部备案号：川公网安备 XXXXXXXXXXXX号</span>
         </div>
       </footer>
     </main>

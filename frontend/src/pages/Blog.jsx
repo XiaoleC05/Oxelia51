@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchArticles, fetchCategories } from '../api'
+import { fetchArticles, fetchCategories, getStoredUser, getToken } from '../api'
 import './Blog.css'
 
 function Blog() {
@@ -10,6 +10,10 @@ function Blog() {
   const [selectedTag, setSelectedTag] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const user = getStoredUser()
+  const token = getToken()
+  const isAdmin = token && user?.role === 'admin'
 
   useEffect(() => {
     setLoading(true)
@@ -58,8 +62,13 @@ function Blog() {
   return (
     <div className="blog-page">
       <header className="blog-header">
-        <h1>博客</h1>
-        <p className="blog-subtitle">技术随笔与思考</p>
+        <div className="blog-header-text">
+          <h1>博客</h1>
+          <p className="blog-subtitle">技术随笔与思考</p>
+        </div>
+        {isAdmin && (
+          <Link to="/admin" className="blog-admin-btn">+ 新建文章</Link>
+        )}
       </header>
 
       <div className="blog-layout">

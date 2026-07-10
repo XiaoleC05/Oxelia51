@@ -1,8 +1,14 @@
 import './Friends.css'
 
 const FRIENDS = [
-  { name: 'Example Site', url: 'https://example.com', desc: '一个示例站点' },
-  { name: 'Placeholder', url: 'https://placeholder.com', desc: '友情链接占位' },
+  { name: 'Go', url: 'https://go.dev', desc: 'Go 编程语言' },
+  { name: 'React', url: 'https://react.dev', desc: '用于构建用户界面的 JavaScript 库' },
+  { name: 'PostgreSQL', url: 'https://www.postgresql.org', desc: '先进的开源关系型数据库' },
+  { name: 'Redis', url: 'https://redis.io', desc: '高性能内存数据结构存储' },
+  { name: 'Docker', url: 'https://www.docker.com', desc: '容器化应用平台' },
+  { name: 'Nginx', url: 'https://nginx.org', desc: '高性能 HTTP 和反向代理服务器' },
+  { name: 'Ubuntu', url: 'https://ubuntu.com', desc: '流行的开源 Linux 发行版' },
+  { name: 'GitHub', url: 'https://github.com', desc: '全球最大的代码托管平台' },
 ]
 
 function Friends() {
@@ -10,7 +16,7 @@ function Friends() {
     <div className="friends-page">
       <header className="friends-header">
         <h1>友情链接</h1>
-        <p className="friends-subtitle">同行者，共远行。</p>
+        <p className="friends-subtitle">Oxelia51 用到的技术栈</p>
       </header>
       <ul className="friends-list">
         {FRIENDS.map((f) => (
@@ -22,9 +28,6 @@ function Friends() {
           </li>
         ))}
       </ul>
-      <p className="friends-note">
-        想交换友链？请通过关于页面联系站长。
-      </p>
     </div>
   )
 }

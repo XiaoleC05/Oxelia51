@@ -268,3 +268,15 @@ export async function adminUpdatePage(slug, data) {
   return apiPut(`/admin/pages/${slug}`, data)
 }
 
+/* ---- Developer Profile (开发者资料) ---- */
+
+/** 公开：获取开发者资料 */
+export async function fetchDeveloperProfile() {
+  return apiGet('/developer/profile')
+}
+
+/** 管理端：更新开发者资料 */
+export async function adminPatchDeveloperProfile(data) {
+  return apiPatch('/admin/developer/profile', data)
+}
+

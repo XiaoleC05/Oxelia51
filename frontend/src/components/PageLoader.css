@@ -1,19 +1,27 @@
-/* ===== PageLoader — four-variant full-screen reveal ===== */
+/* ===== PageLoader — unified design language ===== */
 
 .page-loader {
+  --pl-dark: var(--bg-dark, #1a1d24);
+  --pl-light: #fff;
+  --pl-warm: rgba(255, 248, 230, 0.85);
+  --pl-ease: cubic-bezier(0.76, 0, 0.24, 1);
+  --pl-reveal: 0.4s;
+  --pl-fade: 0.25s;
+  --pl-z: 1000;
+
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--pl-z);
   pointer-events: none;
   overflow: hidden;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--pl-fade) var(--pl-ease);
 }
 
 .page-loader--fade {
   opacity: 0;
 }
 
-/* ---- Logo (shared, centered, fade-in during hold, fade-out during open) ---- */
+/* ---- Logo (shared across all variants) ---- */
 .page-loader__logo {
   position: absolute;
   top: 50%;
@@ -23,16 +31,16 @@
   font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: #fff;
+  color: var(--pl-light);
   opacity: 0;
-  animation: page-loader-logo 1s ease forwards;
   z-index: 5;
   text-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
+  animation: page-loader-logo 1s var(--pl-ease) forwards;
 }
 
 @keyframes page-loader-logo {
-  0%   { opacity: 0;   transform: translate(-50%, -45%) scale(0.96); }
-  40%  { opacity: 1;   transform: translate(-50%, -50%) scale(1);    }
+  0%   { opacity: 0; transform: translate(-50%, -45%) scale(0.96); }
+  35%  { opacity: 1; transform: translate(-50%, -50%) scale(1);    }
   60%  { opacity: 1;                                                  }
   80%  { opacity: 0;                                                  }
   100% { opacity: 0;                                                  }
@@ -40,8 +48,8 @@
 
 
 /* ================================================================
-   split  — two vertical doors slide apart
-   pages : /
+   split — two vertical doors slide apart
+   pages: /
    ================================================================ */
 .page-loader--split .page-loader__door {
   position: absolute;
@@ -49,7 +57,7 @@
   bottom: 0;
   width: 50vw;
   height: 100vh;
-  background-color: var(--bg-dark, #1a1d24);
+  background-color: var(--pl-dark);
   background-image: repeating-linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.04) 0,
@@ -58,7 +66,7 @@
     transparent 14px
   );
   will-change: transform;
-  transition: transform 0.3s cubic-bezier(0.77, 0, 0.175, 1);
+  transition: transform var(--pl-reveal) var(--pl-ease);
 }
 
 .page-loader--split .page-loader__door--left  { left: 0;  right: auto; }
@@ -73,12 +81,11 @@
 
 
 /* ================================================================
-   ink  — radial ink blobs bloom from center, container fades out
-   pages : /blog, /blog/:id
+   ink — radial ink blobs bloom from center
+   pages: /blog, /blog/:id
    ================================================================ */
 .page-loader--ink {
-  background-color: #1a1d24;
-  background-color: var(--bg-dark, #1a1d24);
+  background-color: var(--pl-dark);
 }
 
 .page-loader__ink-wrap {
@@ -97,52 +104,39 @@
   border-radius: 50%;
   background: radial-gradient(
     circle at 50% 50%,
-    #1a1d24 0%,
-    #1a1d24 40%,
+    var(--pl-dark) 0%,
+    var(--pl-dark) 40%,
     rgba(26, 29, 36, 0.8) 65%,
     rgba(26, 29, 36, 0) 100%
   );
   transform: translate(var(--ink-x, 0), var(--ink-y, 0)) scale(0);
-  animation: ink-blob var(--ink-dur, 0.8s) cubic-bezier(0.2, 0.6, 0.3, 1) var(--ink-delay, 0s) forwards;
+  animation: ink-blob var(--ink-dur, 0.8s) var(--pl-ease) var(--ink-delay, 0s) forwards;
   will-change: transform;
 }
 
 @keyframes ink-blob {
-  0% {
-    transform: translate(var(--ink-x, 0), var(--ink-y, 0)) scale(0);
-  }
-  100% {
-    transform: translate(var(--ink-x, 0), var(--ink-y, 0)) scale(var(--ink-s, 1));
-  }
+  0%   { transform: translate(var(--ink-x, 0), var(--ink-y, 0)) scale(0); }
+  100% { transform: translate(var(--ink-x, 0), var(--ink-y, 0)) scale(var(--ink-s, 1)); }
 }
 
 
 /* ================================================================
-   mist  — white fog, opacity ease-out, logo disappears first
-   pages : /tools, /tools/:slug
+   mist — white fog, opacity ease-out
+   pages: /tools, /tools/:slug
    ================================================================ */
 .page-loader--mist {
   background-color: rgba(255, 255, 255, 0.92);
 }
 
 .page-loader--mist .page-loader__logo {
-  color: #1a1d24;
+  color: var(--pl-dark);
   text-shadow: none;
-  animation: page-loader-logo-mist 1s ease-out forwards;
-}
-
-@keyframes page-loader-logo-mist {
-  0%   { opacity: 0; transform: translate(-50%, -45%) scale(0.96); }
-  30%  { opacity: 1; transform: translate(-50%, -50%) scale(1);    }
-  50%  { opacity: 1;                                                  }
-  65%  { opacity: 0;                                                  }
-  100% { opacity: 0;                                                  }
 }
 
 
 /* ================================================================
-   light  — horizontal light beam sweeps top → bottom, reveals page
-   pages : /portfolio, /friends, /about
+   light — horizontal light beam sweeps top to bottom
+   pages: /portfolio, /friends, /about
    ================================================================ */
 .page-loader--light {
   background-color: transparent;
@@ -151,14 +145,13 @@
 .page-loader__light-overlay {
   position: absolute;
   inset: 0;
-  background-color: #1a1d24;
-  background-color: var(--bg-dark, #1a1d24);
+  background-color: var(--pl-dark);
   clip-path: inset(0 0 0 0);
   transform: translateY(0);
   will-change: clip-path, transform;
   transition:
-    clip-path 0.3s cubic-bezier(0.4, 0, 0.6, 1),
-    transform 0.3s cubic-bezier(0.4, 0, 0.6, 1);
+    clip-path var(--pl-reveal) var(--pl-ease),
+    transform var(--pl-reveal) var(--pl-ease);
   overflow: hidden;
 }
 
@@ -177,12 +170,12 @@
     to bottom,
     rgba(255, 255, 255, 0) 0%,
     rgba(255, 245, 220, 0.25) 30%,
-    rgba(255, 250, 235, 0.85) 50%,
+    var(--pl-warm) 50%,
     rgba(255, 245, 220, 0.25) 70%,
     rgba(255, 255, 255, 0) 100%
   );
   filter: blur(2px);
-  animation: light-beam-sweep 0.3s cubic-bezier(0.4, 0, 0.6, 1) 0.5s both;
+  animation: light-beam-sweep var(--pl-reveal) var(--pl-ease) 0.5s both;
   will-change: transform;
   pointer-events: none;
 }
@@ -191,15 +184,6 @@
   0%   { transform: translateY(0);    }
   100% { transform: translateY(400vh); }
 }
-
-
-/* ================================================================
-   legacy — kept as no-op so old class refs never collide
-   ================================================================ */
-.page-loader__door,
-.page-loader--diagonal,
-.page-loader--expand,
-.page-loader__curtain { /* preserved for backward compat */ }
 
 
 /* ---- Accessibility ---- */

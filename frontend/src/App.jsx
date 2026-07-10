@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Component, Suspense } from 'react'
 import Navbar from './components/Navbar'
 import ScrollProgress from './components/ScrollProgress'
 import BackToTop from './components/BackToTop'
@@ -31,29 +31,82 @@ function variantFor(pathname) {
   return 'none'
 }
 
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="error-boundary">
+          <div className="error-boundary-content">
+            <h2>页面出错了</h2>
+            <p>{this.state.error?.message || '发生了未知错误'}</p>
+            <button onClick={() => window.location.reload()}>刷新页面</button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+function RouteFallback() {
+  return (
+    <div className="route-fallback">
+      <div className="route-fallback-spinner" />
+    </div>
+  )
+}
+
+function GlobalFooter() {
+  const location = useLocation()
+  if (location.pathname === '/') return null
+  return (
+    <footer className="global-footer">
+      <div className="global-footer-copy">&copy; {new Date().getFullYear()} Oxelia51</div>
+      <div className="global-footer-filing">
+        <span>ICP备案号：蜀ICP备XXXXXXXX号-1</span>
+        <span className="global-footer-sep">|</span>
+        <span>公安部备案号：川公网安备 XXXXXXXXXXXX号</span>
+      </div>
+    </footer>
+  )
+}
+
 function AnimatedRoutes() {
   const location = useLocation()
   return (
-    <div key={location.pathname} className="route-fade">
-      <Routes location={location}>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/resend-verification" element={<ResendVerification />} />
-        <Route path="/tools" element={<Tools />} />
-        <Route path="/tools/:slug" element={<ToolShell />} />
-        <Route path="/portfolio" element={<Portfolio />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/:id" element={<ArticleDetail />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/friends" element={<Friends />} />
-        <Route path="/profile" element={<Profile />} />
-      </Routes>
-    </div>
+    <ErrorBoundary>
+      <Suspense fallback={<RouteFallback />}>
+        <div key={location.pathname} className="route-fade">
+          <Routes location={location}>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/resend-verification" element={<ResendVerification />} />
+            <Route path="/tools" element={<Tools />} />
+            <Route path="/tools/:slug" element={<ToolShell />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:id" element={<ArticleDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/friends" element={<Friends />} />
+            <Route path="/profile" element={<Profile />} />
+          </Routes>
+        </div>
+      </Suspense>
+    </ErrorBoundary>
   )
 }
 
@@ -86,6 +139,7 @@ function App() {
       <Navbar />
       <LoaderGate />
       <AnimatedRoutes />
+      <GlobalFooter />
       <BackToTop />
     </BrowserRouter>
   )

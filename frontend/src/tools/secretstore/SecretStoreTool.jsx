@@ -70,6 +70,7 @@ export default function SecretStoreTool() {
   const [detailEntry, setDetailEntry] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [visibleFields, setVisibleFields] = useState({}) // key → bool
+  const [showAllSensitive, setShowAllSensitive] = useState(false)
 
   // --- Combos ---
   const [combos, setCombos] = useState([])
@@ -167,6 +168,7 @@ export default function SecretStoreTool() {
   const openDetail = useCallback(async (id) => {
     setDetailLoading(true)
     setVisibleFields({})
+    setShowAllSensitive(false)
     try {
       const data = await apiProxy('secretstore', `api/entries/${id}`)
       setDetailEntry(data?.entry || data)
@@ -257,7 +259,7 @@ export default function SecretStoreTool() {
 
       {/* ===== Entry List ===== */}
       {viewMode === 'list' && (
-        <div className="ss-list">
+        <div className="ss-list ss-view-transition">
           <div className="ss-list-toolbar">
             <div className="ss-search-wrap">
               <SearchIcon/>
@@ -303,7 +305,7 @@ export default function SecretStoreTool() {
 
       {/* ===== Editor ===== */}
       {viewMode === 'editor' && (
-        <div className="ss-editor">
+        <div className="ss-editor ss-view-transition">
           <div className="ss-editor-head">
             <button className="ss-back-btn" onClick={() => setViewMode('list')}><ChevronLeftIcon/> 返回</button>
             <span className="ss-editor-mode">{editingId ? '编辑条目' : '新建条目'}</span>
@@ -382,7 +384,7 @@ export default function SecretStoreTool() {
 
       {/* ===== Detail ===== */}
       {viewMode === 'detail' && (
-        <div className="ss-detail">
+        <div className="ss-detail ss-view-transition">
           {detailLoading ? (
             <div className="ss-loading"><div className="ss-spinner"/><p>加载详情…</p></div>
           ) : detailEntry ? (
@@ -390,6 +392,14 @@ export default function SecretStoreTool() {
               <div className="ss-detail-head">
                 <button className="ss-back-btn" onClick={() => setViewMode('list')}><ChevronLeftIcon/> 返回</button>
                 <div className="ss-detail-actions">
+                  <button
+                    className={`ss-toggle-all-btn ${showAllSensitive ? 'ss-toggle-all-btn--active' : ''}`}
+                    onClick={() => setShowAllSensitive((v) => !v)}
+                    title={showAllSensitive ? '隐藏全部敏感字段' : '显示全部敏感字段'}
+                  >
+                    {showAllSensitive ? <EyeOffIcon/> : <EyeIcon/>}
+                    <span>{showAllSensitive ? '隐藏全部' : '显示全部'}</span>
+                  </button>
                   <button className="ss-icon-btn" title="编辑" onClick={() => openEditEditor(detailEntry)}><Edit3Icon/></button>
                   <button className="ss-icon-btn ss-icon-btn--danger" title="删除" onClick={() => { deleteEntry(detailEntry.id); setViewMode('list') }}><Trash2Icon/></button>
                 </div>
@@ -403,7 +413,7 @@ export default function SecretStoreTool() {
               <div className="ss-detail-fields">
                 {(detailEntry.fields || []).map((f) => {
                   const sens = isSensitive(f.key)
-                  const visible = visibleFields[f.key]
+                  const visible = showAllSensitive || visibleFields[f.key]
                   return (
                     <div key={f.key} className="ss-detail-field">
                       <span className="ss-detail-field-key">{f.key}</span>
@@ -416,7 +426,7 @@ export default function SecretStoreTool() {
                         ) : (
                           <>
                             <span className="ss-field-value">{f.value || '—'}</span>
-                            {sens && <button className="ss-icon-btn" title="隐藏" onClick={() => toggleFieldVisible(f.key)}><EyeOffIcon/></button>}
+                            {sens && !showAllSensitive && <button className="ss-icon-btn" title="隐藏" onClick={() => toggleFieldVisible(f.key)}><EyeOffIcon/></button>}
                             {f.value && <button className="ss-icon-btn" title="复制" onClick={() => copyToClipboard(f.value)}><CopyIcon/></button>}
                           </>
                         )}
@@ -434,7 +444,7 @@ export default function SecretStoreTool() {
 
       {/* ===== Combos ===== */}
       {viewMode === 'combos' && (
-        <div className="ss-combos">
+        <div className="ss-combos ss-view-transition">
           <div className="ss-combos-head">
             <button className="ss-back-btn" onClick={() => setViewMode('list')}><ChevronLeftIcon/> 返回</button>
             <h3 className="ss-section-title">Combo 管理</h3>

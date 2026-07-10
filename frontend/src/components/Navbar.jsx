@@ -126,6 +126,9 @@ function Navbar() {
   const isHome = location.pathname === '/'
 
   const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  useEffect(() => { setMobileOpen(false) }, [location.pathname])
 
   /* ---- Theme ---- */
   const getInitialTheme = () => {
@@ -235,13 +238,22 @@ function Navbar() {
       <Link to="/" className="navbar-brand">
         Oxelia51
       </Link>
-      <div className="navbar-links">
+
+      <button
+        className={`navbar-hamburger${mobileOpen ? ' navbar-hamburger--open' : ''}`}
+        onClick={() => setMobileOpen((o) => !o)}
+        aria-label={mobileOpen ? '关闭菜单' : '打开菜单'}
+      >
+        <span /><span /><span />
+      </button>
+
+      <div className={`navbar-links${mobileOpen ? ' navbar-links--open' : ''}`}>
         <NavItem to="/" icon={IconHome} label="首页" />
         <NavItem to="/tools" icon={IconTools} label="工具" />
-        <NavItem to="/portfolio" icon={IconImage} label="作品" />
+        <NavItem to="/portfolio" icon={IconImage} label="资料" />
         <NavItem to="/blog" icon={IconBook} label="博客" />
-        <NavItem to="/about" icon={IconPerson} label="关于" />
-        <NavItem to="/friends" icon={IconLink} label="友链" />
+        <NavItem to="/about" icon={IconPerson} label="关于开发者" />
+        <NavItem to="/friends" icon={IconLink} label="友情链接" />
         {token && user?.role === 'admin' && (
           <NavItem to="/admin" icon={IconGear} label="管理" />
         )}
