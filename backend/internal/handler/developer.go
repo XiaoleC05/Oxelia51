@@ -81,15 +81,19 @@ func (h *DeveloperHandler) PatchProfile(c *gin.Context) {
 	var profile model.DeveloperProfile
 	err := h.db.QueryRow(ctx, `
 		UPDATE developer_profile SET
-			bio = COALESCE($2, bio),
-			resume = COALESCE($3, resume),
-			avatar_url = COALESCE($4, avatar_url),
+			bio = COALESCE($1, bio),
+			resume = COALESCE($2, resume),
+			avatar_url = COALESCE($3, avatar_url),
 			updated_at = NOW()
 		WHERE id = 1
 		RETURNING id, bio, resume, avatar_url, updated_at`,
-		"unused", req.Bio, req.Resume, req.AvatarURL,
+		req.Bio, req.Resume, req.AvatarURL,
 	).Scan(&profile.ID, &profile.Bio, &profile.Resume, &profile.AvatarURL, &profile.UpdatedAt)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apiError(c, http.StatusNotFound, "PROFILE_NOT_FOUND", "开发者信息未配置，请先运行数据库迁移")
+			return
+		}
 		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "更新失败")
 		return
 	}

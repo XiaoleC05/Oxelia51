@@ -36,4 +36,4 @@ deploy/tencent-cloud/health-server
 #docker配置
 docker-compose.yml
 
-backend/server.exe
+backend/server.exe*.tmp

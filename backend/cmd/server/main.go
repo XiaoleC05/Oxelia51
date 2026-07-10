@@ -121,6 +121,7 @@ func main() {
 		admin.POST("/hero-images/upload", heroH.Upload)
 		admin.PUT("/carousel-settings", heroH.UpdateCarouselSettings)
 		admin.PATCH("/developer/profile", devH.PatchProfile)
+		admin.GET("/developer/profile", devH.GetProfileAdmin)
 		admin.GET("/articles", articleH.ListAdmin)
 		admin.POST("/articles", articleH.Create)
 		admin.PUT("/articles/:id", articleH.Update)
