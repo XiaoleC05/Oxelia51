@@ -12,6 +12,7 @@ developer/
 # IDE
 .idea/
 .vscode/
+.vs/
 
 # 系统
 .DS_Store
@@ -29,11 +30,10 @@ backend/oxelia51-server
 backend/oxelia51-server.exe
 backend/oxelia51-server-linux
 oxelia51-server-linux.zip
+backend/*.exe
+deploy/tencent-cloud/health-server
 
 #docker配置
 docker-compose.yml
-
-# 文档
-docs/
 
 backend/server.exe
