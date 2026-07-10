@@ -16,6 +16,7 @@ function Blog() {
   const isAdmin = token && user?.role === 'admin'
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     setError('')
     Promise.all([

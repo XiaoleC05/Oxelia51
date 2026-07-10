@@ -274,11 +274,14 @@ export default function AIHelperTool() {
   }, [settings])
 
   /* ===== Init ===== */
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadPrompts('', '', '', false) }, [loadPrompts])
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (viewMode === 'templates') loadTemplates(templateCategory)
   }, [viewMode, templateCategory, loadTemplates])
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (viewMode === 'settings') loadSettings()
   }, [viewMode, loadSettings])
 

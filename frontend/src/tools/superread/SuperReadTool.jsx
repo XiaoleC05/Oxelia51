@@ -83,7 +83,6 @@ export default function SuperReadTool() {
   const [feeds, setFeeds] = useState([])
   const [articles, setArticles] = useState([])
   const [briefing, setBriefing] = useState([])
-  const [settings, setSettings] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -106,23 +105,16 @@ export default function SuperReadTool() {
 
   const fileInputRef = useRef(null)
 
-  // Load initial data
-  useEffect(() => {
-    loadFeeds()
-    loadArticles()
-    loadSettings()
-  }, [])
-
-  const loadFeeds = useCallback(async () => {
+  const loadFeeds = async () => {
     try {
       const data = await apiProxy('superread', 'api/feeds')
       setFeeds(Array.isArray(data) ? data : data?.feeds || [])
     } catch (err) {
       console.error('Failed to load feeds:', err)
     }
-  }, [])
+  }
 
-  const loadArticles = useCallback(async () => {
+  const loadArticles = async () => {
     setLoading(true)
     setError('')
     try {
@@ -138,7 +130,26 @@ export default function SuperReadTool() {
     } finally {
       setLoading(false)
     }
-  }, [articleFilter, filterFeedId, filterTag])
+  }
+
+  const loadSettings = async () => {
+    try {
+      const data = await apiProxy('superread', 'api/settings')
+      setSettingsForm(data || {})
+    } catch (err) {
+      console.error('Failed to load settings:', err)
+    }
+  }
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  /* eslint-disable react-hooks/exhaustive-deps */
+  useEffect(() => {
+    loadFeeds()
+    loadArticles()
+    loadSettings()
+  }, [])
+  /* eslint-enable react-hooks/set-state-in-effect */
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const loadBriefing = useCallback(async () => {
     try {
@@ -146,16 +157,6 @@ export default function SuperReadTool() {
       setBriefing(Array.isArray(data) ? data : data?.articles || [])
     } catch (err) {
       console.error('Failed to load briefing:', err)
-    }
-  }, [])
-
-  const loadSettings = useCallback(async () => {
-    try {
-      const data = await apiProxy('superread', 'api/settings')
-      setSettings(data || {})
-      setSettingsForm(data || {})
-    } catch (err) {
-      console.error('Failed to load settings:', err)
     }
   }, [])
 

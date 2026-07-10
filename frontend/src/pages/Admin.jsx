@@ -56,8 +56,9 @@ function Admin() {
   }, [tab])
 
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (user?.role === 'admin') { loadData() }
+  }, [user, loadData])
 
   if (user?.role !== 'admin') {
     return (

@@ -91,20 +91,6 @@ function MusicIcon() {
     </svg>
   )
 }
-function ChevronUpIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="18 15 12 9 6 15" />
-    </svg>
-  )
-}
-function ChevronDownIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  )
-}
 function GripIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" opacity="0.35">
@@ -174,8 +160,28 @@ export default function MusicBoxTool() {
   const [credLoading, setCredLoading] = useState(false)
 
   // --- Global ---
-  const [loading, setLoading] = useState(true)
+  const [loading] = useState(false)
   const [error, setError] = useState('')
+
+  async function playTrack(track) {
+    try {
+      const data = await apiProxy('musicbox', `api/play/${track.platform}/${track.platform_song_id || track.song_id}`)
+      const url = data?.url || data?.play_url
+      if (!url) throw new Error('未获取到播放地址')
+      setPlayUrl(url)
+      setCurrentTrack(track)
+      setIsPlaying(true)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  function playNext() {
+    if (queue.length === 0) { setIsPlaying(false); return }
+    const next = (queueIdx + 1) % queue.length
+    setQueueIdx(next)
+    playTrack(queue[next])
+  }
 
   /* ===== Audio Engine ===== */
   useEffect(() => {
@@ -223,32 +229,12 @@ export default function MusicBoxTool() {
   }, [playUrl])
 
   /* ===== Player Controls ===== */
-  const playTrack = useCallback(async (track) => {
-    try {
-      const data = await apiProxy('musicbox', `api/play/${track.platform}/${track.platform_song_id || track.song_id}`)
-      const url = data?.url || data?.play_url
-      if (!url) throw new Error('未获取到播放地址')
-      setPlayUrl(url)
-      setCurrentTrack(track)
-      setIsPlaying(true)
-    } catch (err) {
-      setError(err.message)
-    }
-  }, [])
-
   const togglePlay = useCallback(() => {
     const a = audioRef.current
     if (!a || !a.src || a.src === window.location.href) return
     if (a.paused) a.play().catch(() => {})
     else a.pause()
   }, [])
-
-  const playNext = useCallback(() => {
-    if (queue.length === 0) { setIsPlaying(false); return }
-    const next = (queueIdx + 1) % queue.length
-    setQueueIdx(next)
-    playTrack(queue[next])
-  }, [queue, queueIdx, playTrack])
 
   const playPrev = useCallback(() => {
     if (queue.length === 0) return
@@ -445,10 +431,7 @@ export default function MusicBoxTool() {
   }, [cookie, loadCredStatus])
 
   /* ===== Init ===== */
-  useEffect(() => {
-    setLoading(false)
-  }, [])
-
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (viewMode === 'playlists') loadPlaylists()
   }, [viewMode, loadPlaylists])
@@ -460,6 +443,7 @@ export default function MusicBoxTool() {
   useEffect(() => {
     if (viewMode === 'settings') loadCredStatus()
   }, [viewMode, loadCredStatus])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // persist volume
   useEffect(() => { localStorage.setItem('mb_volume', volume) }, [volume])

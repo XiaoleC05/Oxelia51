@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { useState, useEffect, Component, Suspense } from 'react'
+import { useMemo, Component, Suspense } from 'react'
 import Navbar from './components/Navbar'
 import ScrollProgress from './components/ScrollProgress'
 import BackToTop from './components/BackToTop'
@@ -112,22 +112,12 @@ function AnimatedRoutes() {
 
 function LoaderGate() {
   const location = useLocation()
-  const [visible, setVisible] = useState(true)
-  const [variant, setVariant] = useState(variantFor(location.pathname))
+  const variant = useMemo(() => variantFor(location.pathname), [location.pathname])
 
-  useEffect(() => {
-    const next = variantFor(location.pathname)
-    setVisible(next !== 'none')
-    setVariant(next)
-  }, [location.pathname])
-
-  if (!visible || variant === 'none') return null
+  if (variant === 'none') return null
 
   return (
-    <PageLoader
-      variant={variant}
-      onDone={() => setVisible(false)}
-    />
+    <PageLoader key={location.pathname} variant={variant} />
   )
 }
 

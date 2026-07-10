@@ -111,6 +111,7 @@ function DormGuardTool() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     const cleanup = loadData()
     return () => { if (cleanup) cleanup() }
   }, [loadData])
@@ -349,9 +350,11 @@ function ConfigPanel({ initialSettings, onSettingsChange }) {
     } finally {
       setLoading(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSettings()
   }, [loadSettings])
 

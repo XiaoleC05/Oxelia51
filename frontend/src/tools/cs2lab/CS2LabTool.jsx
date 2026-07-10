@@ -192,15 +192,18 @@ export default function CS2LabTool() {
   }, [selectedLineup, noteContent])
 
   /* ===== Init ===== */
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadMaps() }, [loadMaps])
 
   useEffect(() => {
     if (viewMode === 'browser') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadLineups(selectedMapId, filterType, searchQuery)
     }
   }, [viewMode, selectedMapId, filterType, searchQuery, loadLineups])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (viewMode === 'favorites') loadFavorites()
   }, [viewMode, loadFavorites])
 

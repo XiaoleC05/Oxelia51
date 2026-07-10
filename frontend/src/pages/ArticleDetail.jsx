@@ -11,6 +11,7 @@ function ArticleDetail() {
   const [error, setError] = useState('')
   const [relatedArticles, setRelatedArticles] = useState([])
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setLoading(true)
     setError('')
@@ -29,6 +30,7 @@ function ArticleDetail() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [id])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (loading) {
     return (

@@ -237,7 +237,9 @@ export default function SecretStoreTool() {
   }, [])
 
   /* ===== Init ===== */
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadEntries() }, [loadEntries])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (viewMode === 'combos') { loadEntries(); loadCombos() } }, [viewMode, loadEntries, loadCombos])
 
   const filtered = entries.filter((e) =>

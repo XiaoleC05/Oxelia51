@@ -86,6 +86,20 @@ export default function AgentCanvasTool() {
     finally { setProjectsLoading(false) }
   }, [])
 
+  /* ===== Open Canvas ===== */
+  async function openCanvas(projectId) {
+    setCanvasLoading(true)
+    setSelectedNodeId(null); setSelectedEdgeId(null)
+    try {
+      const data = await apiProxy('agentcanvas', `api/projects/${projectId}`)
+      setProject(data?.project || data)
+      setNodes(Array.isArray(data?.nodes) ? data.nodes : [])
+      setEdges(Array.isArray(data?.edges) ? data.edges : [])
+      setViewMode('canvas')
+    } catch (err) { setError(err.message) }
+    finally { setCanvasLoading(false) }
+  }
+
   const createProject = useCallback(async (e) => {
     e?.preventDefault()
     if (!newProjectName.trim()) return
@@ -100,7 +114,7 @@ export default function AgentCanvasTool() {
       if (pid) openCanvas(pid)
     } catch (err) { setError(err.message) }
     finally { setCreatingProject(false) }
-  }, [newProjectName, loadProjects])
+  }, [newProjectName, loadProjects, openCanvas])
 
   const deleteProject = useCallback(async (id) => {
     try {
@@ -108,20 +122,6 @@ export default function AgentCanvasTool() {
       loadProjects()
     } catch (err) { setError(err.message) }
   }, [loadProjects])
-
-  /* ===== Open Canvas ===== */
-  const openCanvas = useCallback(async (projectId) => {
-    setCanvasLoading(true)
-    setSelectedNodeId(null); setSelectedEdgeId(null)
-    try {
-      const data = await apiProxy('agentcanvas', `api/projects/${projectId}`)
-      setProject(data?.project || data)
-      setNodes(Array.isArray(data?.nodes) ? data.nodes : [])
-      setEdges(Array.isArray(data?.edges) ? data.edges : [])
-      setViewMode('canvas')
-    } catch (err) { setError(err.message) }
-    finally { setCanvasLoading(false) }
-  }, [])
 
   /* ===== Node CRUD ===== */
   const saveNodePos = useCallback(async (nodeId, x, y) => {
@@ -181,10 +181,8 @@ export default function AgentCanvasTool() {
   useEffect(() => {
     if (selectedNodeId) {
       const n = nodes.find((nd) => nd.id === selectedNodeId)
-      if (n) setNodeForm({
-        label: n.label || '',
-        config: typeof n.config === 'string' ? n.config : JSON.stringify(n.config || {}, null, 2),
-      })
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (n) setNodeForm({ label: n.label || '', config: typeof n.config === 'string' ? n.config : JSON.stringify(n.config || {}, null, 2) })
     }
   }, [selectedNodeId, nodes])
 
@@ -278,6 +276,7 @@ export default function AgentCanvasTool() {
   }, [])
 
   /* ===== Init ===== */
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadProjects() }, [loadProjects])
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId)
