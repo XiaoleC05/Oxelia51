@@ -5,6 +5,61 @@
 
 ---
 
+## [v2.3] — 2026-07-11
+
+### Added
+
+- **全站前端优化**（Trae Work）：slogan「集成·简洁·高效」、SEO meta/OG/JSON-LD、移动端汉堡菜单、ErrorBoundary、加载动画统一设计令牌
+- **关于开发者**：GET /api/developer/profile（公开）、PATCH /api/admin/developer/profile（管理员），developer_profile 单行表
+- **导航栏重构**：顺序首页→工具→资料→博客→关于开发者→友情链接，「作品」→「资料」
+- **页脚备案**：ICP 备案 + 公安备案占位
+
+### Changed
+
+- **智能体模型 v2.1**（AGENTS.md）：架构与部署=Claude Code、后端=Qoder、前端=Trae Work、审查与测试=Codex
+- SecretStore 首页「显示全部/隐藏全部」眼睛按钮，防布局跳动 min-height
+- 友情链接替换为 Go/React/PostgreSQL/Redis/Docker/Nginx/Ubuntu/GitHub
+
+### Fixed
+
+- 导航切换页面空白（React Router Suspense fallback）
+- SecretStore 模板切换抽动（ss-view-transition + min-height）
+- 卡片 hover 动画幅度减小（translateY(-2px), 0.3s ease-out）
+
+### Documentation
+
+- AGENTS.md v2.1 智能体分配更新
+- .gitignore 移除 docs/ 排除，全部文档入库（35 文件，4008 行）
+- 新增迁移 011_login_logs
+
+
+## [v2.2] — 2026-07-11
+
+### Added
+
+- **腾讯云服务器**：初始化脚本、health-server 健康检查端点、UFW 防火墙规则
+- **双服务器监控**：GET /api/admin/server-stats 新增 remote 字段（TENCENT_HEALTH_URL）
+- **DormGuard Go 切换**：Python FastAPI → Go+Gin，权限控制（B3：role-based 路由拆分 + 阈值过滤）
+- **CS2Lab 地图扩展**（B2）：新增 de_cache（死城之谜）、de_train（列车停放站），全部道具中文化
+- **SecretStore 模板重设计**（B1）：8→7 种，SSH+云服务合并为服务器凭证，新增模型厂商字段
+- **开发者 API**（C4）：GET /api/developer/profile + PATCH /api/admin/developer/profile
+
+### Changed
+
+- **工具分流**：SuperRead/MusicBox/AIHelper internal_api_base → 腾讯云 118.25.138.177
+- **user_accessible**：AIHelper/SuperRead/AgentCanvas → TRUE（A1+A2 403 修复）
+
+### Deployment
+
+- 部署方式明确：本地交叉编译（build-all-tools.bat）→ scp 二进制 → systemctl restart
+- 服务器清理：删除 /opt/src/、/usr/local/go（服务器不需要 Go）
+
+### Documentation
+
+- docs/00-deployment-context.md 更新服务器信息
+- deploy/tencent-cloud/ 完整部署套件
+
+
 ## [v2.1] — 2026-07-09
 
 ### Added
