@@ -2,7 +2,10 @@ package handler
 
 import (
 	"bufio"
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"runtime"
 	"strconv"
@@ -18,10 +21,13 @@ type StatsHandler struct {
 	mu       sync.Mutex
 	prevCPU  *cpuSample
 	prevTime time.Time
+	hc       *http.Client
 }
 
 func NewStatsHandler() *StatsHandler {
-	return &StatsHandler{}
+	return &StatsHandler{
+		hc: &http.Client{Timeout: 5 * time.Second},
+	}
 }
 
 type cpuSample struct {
@@ -36,7 +42,8 @@ func (s *cpuSample) idleTotal() uint64 {
 	return s.idle + s.iowait
 }
 
-type serverStatsResponse struct {
+// serverStats 单台服务器资源指标
+type serverStats struct {
 	CPUPercent      float64 `json:"cpu_percent"`
 	MemoryUsedMB    uint64  `json:"memory_used_mb"`
 	MemoryTotalMB   uint64  `json:"memory_total_mb"`
@@ -47,9 +54,23 @@ type serverStatsResponse struct {
 	GoAllocMB       uint64  `json:"go_alloc_mb"`
 }
 
+type serverStatsResponse struct {
+	// 扁平字段保持向后兼容（阿里云本地）
+	CPUPercent      float64       `json:"cpu_percent"`
+	MemoryUsedMB    uint64        `json:"memory_used_mb"`
+	MemoryTotalMB   uint64        `json:"memory_total_mb"`
+	DiskUsedPercent float64       `json:"disk_used_percent"`
+	DiskTotalGB     uint64        `json:"disk_total_gb"`
+	UptimeSeconds   uint64        `json:"uptime_seconds"`
+	GoGoroutines    int           `json:"go_goroutines"`
+	GoAllocMB       uint64        `json:"go_alloc_mb"`
+	Remote          *serverStats  `json:"remote,omitempty"` // 腾讯云（若配置 TENCENT_HEALTH_URL）
+}
+
 func (h *StatsHandler) ServerStats(c *gin.Context) {
 	var resp serverStatsResponse
 
+	// 本地（阿里云）指标
 	if runtime.GOOS == "linux" {
 		resp.CPUPercent = h.cpuPercent()
 		resp.MemoryUsedMB, resp.MemoryTotalMB = memInfoLinux()
@@ -62,7 +83,46 @@ func (h *StatsHandler) ServerStats(c *gin.Context) {
 	resp.GoGoroutines = runtime.NumGoroutine()
 	resp.GoAllocMB = m.Alloc / 1024 / 1024
 
+	// 远程（腾讯云）指标 — 通过 health endpoint 拉取
+	if url := os.Getenv("TENCENT_HEALTH_URL"); url != "" {
+		if remote, err := h.fetchRemoteStats(url); err == nil {
+			resp.Remote = remote
+		}
+	}
+
 	c.JSON(http.StatusOK, resp)
+}
+
+func (h *StatsHandler) fetchRemoteStats(rawURL string) (*serverStats, error) {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, err
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return nil, fmt.Errorf("unsupported scheme: %s", parsed.Scheme)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := h.hc.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, nil
+	}
+
+	var remote serverStats
+	if err := json.NewDecoder(resp.Body).Decode(&remote); err != nil {
+		return nil, err
+	}
+	return &remote, nil
 }
 
 // cpuPercent 通过两次采样差值计算 CPU 使用率。

@@ -1,0 +1,15 @@
+[Unit]
+Description=Oxelia51 Tencent Cloud Health Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/opt/tools/health-server
+Environment=HEALTH_PORT=8090
+Restart=always
+RestartSec=5
+MemoryMax=64M
+
+[Install]
+WantedBy=multi-user.target
