@@ -58,10 +58,9 @@
 | IP | 118.25.138.177 |
 | 系统 | Ubuntu 24.04 |
 | 配置 | 4核4G 40GB |
-| 用途 | 分流工具部署（SuperRead, MusicBox, AIHelper）+ Hermes 机器人 |
-| SSH | 阿里云通过 tencent_cloud 密钥访问 |
-| 工具端口 | 8002-8004（UFW 仅允许阿里云 IP） |
-| 部署方式 | 本地交叉编译 → scp 二进制 → systemd |
+| 当前状态 | SSH 连通 + UFW 基础安全（2026-07-11） |
+| 未来用途 | 工具分流部署 + Hermes 机器人 |
+| 部署方式 | 本地交叉编译 → scp 二进制 → systemd（未来执行） |
 
 ---
 
