@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle, fetchDeveloperProfile, adminPatchDeveloperProfile, adminUploadAvatar } from '../api'
+import { apiGet, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle, fetchDeveloperProfile, adminPatchDeveloperProfile, adminUploadAvatar } from '../api'
 import './Admin.css'
 
 function Admin() {
@@ -383,6 +383,10 @@ function ToolsTab({ tools, onUpdated }) {
 // ===== 用户管理 =====
 function UsersTab({ users, onUpdated }) {
   const [patching, setPatching] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filteredUsers, setFilteredUsers] = useState(null)
+  const [searching, setSearching] = useState(false)
+  const debounceRef = useRef(null)
 
   async function patchUser(id, patch) {
     setPatching(id)
@@ -396,8 +400,50 @@ function UsersTab({ users, onUpdated }) {
     }
   }
 
+  // 防抖搜索：300ms
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    const q = searchQuery.trim()
+    if (!q) {
+      setFilteredUsers(null)
+      setSearching(false)
+      return
+    }
+    setSearching(true)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const data = await apiGet(`/admin/users?q=${encodeURIComponent(q)}`, { auth: true })
+        setFilteredUsers(Array.isArray(data) ? data : [])
+      } catch {
+        setFilteredUsers([])
+      } finally {
+        setSearching(false)
+      }
+    }, 300)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [searchQuery])
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const displayUsers = filteredUsers ?? users
+
   return (
     <div className="admin-section">
+      <div className="users-search-bar">
+        <input
+          type="text"
+          className="users-search-input"
+          placeholder="搜索用户（账号/邮箱）"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        {searching && <span className="users-search-status">搜索中…</span>}
+        {searchQuery && !searching && (
+          <button className="users-search-clear" onClick={() => setSearchQuery('')}>清除</button>
+        )}
+      </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
@@ -412,7 +458,13 @@ function UsersTab({ users, onUpdated }) {
             </tr>
           </thead>
           <tbody>
-            {users.map((u) => (
+            {displayUsers.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="admin-muted" style={{ textAlign: 'center', padding: 32 }}>
+                  {searchQuery ? '未找到匹配的用户' : '暂无用户'}
+                </td>
+              </tr>
+            ) : displayUsers.map((u) => (
               <tr key={u.id}>
                 <td className="admin-mono">{u.id}</td>
                 <td>{u.username}</td>

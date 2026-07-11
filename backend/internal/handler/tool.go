@@ -223,10 +223,23 @@ func (h *AdminToolHandler) ListUsers(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	rows, err := h.db.Query(ctx, `
-		SELECT id, account_id, username, email, role, email_verified, created_at, updated_at
-		FROM users
-		ORDER BY created_at DESC`)
+	q := c.Query("q")
+
+	var rows pgx.Rows
+	var err error
+	if q != "" {
+		pattern := "%" + q + "%"
+		rows, err = h.db.Query(ctx, `
+			SELECT id, account_id, username, email, role, email_verified, created_at, updated_at
+			FROM users
+			WHERE account_id ILIKE $1 OR email ILIKE $1
+			ORDER BY created_at DESC`, pattern)
+	} else {
+		rows, err = h.db.Query(ctx, `
+			SELECT id, account_id, username, email, role, email_verified, created_at, updated_at
+			FROM users
+			ORDER BY created_at DESC`)
+	}
 	if err != nil {
 		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
 		return
