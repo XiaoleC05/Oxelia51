@@ -1731,12 +1731,6 @@ function ServerTab() {
             </div>
           </div>
         )}
-            <div className="cloud-card-row">
-              <span className="cloud-card-label">存储</span>
-              <span className="cloud-card-value">40 GB</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )
