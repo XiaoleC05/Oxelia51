@@ -213,12 +213,12 @@ function DashboardTab() {
   if (!stats) return null
 
   const cards = [
-    { icon: <DashboardIconUsers />, title: '用户总数', value: stats.users_total ?? 0 },
-    { icon: <DashboardIconUsers />, title: '新增用户（7 天）', value: stats.users_new_7d ?? 0 },
-    { icon: <DashboardIconUsers />, title: '新增用户（30 天）', value: stats.users_new_30d ?? 0 },
-    { icon: <DashboardIconTools />, title: '工具数量', value: stats.tools_total ?? 0 },
-    { icon: <DashboardIconArticles />, title: '文章数量', value: stats.articles_total ?? 0 },
-    { icon: <DashboardIconPortfolio />, title: '作品数量', value: stats.portfolio_total ?? 0 },
+    { icon: <DashboardIconUsers />, title: '用户总数', value: stats.total_users ?? 0 },
+    { icon: <DashboardIconUsers />, title: '新增用户（7 天）', value: stats.new_users_7d ?? 0 },
+    { icon: <DashboardIconUsers />, title: '新增用户（30 天）', value: stats.new_users_30d ?? 0 },
+    { icon: <DashboardIconTools />, title: '工具数量', value: stats.total_tools ?? 0 },
+    { icon: <DashboardIconArticles />, title: '文章数量', value: stats.total_articles ?? 0 },
+    { icon: <DashboardIconPortfolio />, title: '作品数量', value: stats.total_portfolio ?? 0 },
   ]
 
   return (
@@ -240,31 +240,8 @@ function DashboardTab() {
 
 // ===== 工具管理 =====
 function ToolsTab({ tools, onUpdated }) {
-  const [scanning, setScanning] = useState(false)
-  const [scanResult, setScanResult] = useState(null)
   const [editing, setEditing] = useState(null)
   const [saving, setSaving] = useState(false)
-
-  async function handleScan() {
-    setScanning(true)
-    setScanResult(null)
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 65000)
-    try {
-      const result = await apiPost('/admin/tools/scan-local', {}, { signal: controller.signal })
-      setScanResult(result)
-      onUpdated()
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        setScanResult({ error: '扫描超时（65秒），请检查本地 manifest 目录' })
-      } else {
-        setScanResult({ error: err.message })
-      }
-    } finally {
-      clearTimeout(timeout)
-      setScanning(false)
-    }
-  }
 
   async function handleSave(e) {
     e.preventDefault()
@@ -282,22 +259,6 @@ function ToolsTab({ tools, onUpdated }) {
 
   return (
     <div className="admin-section">
-      <div className="admin-section-actions">
-        <button className="admin-btn" onClick={handleScan} disabled={scanning}>
-          {scanning ? '扫描中…' : '扫描本地 manifest'}
-        </button>
-        {scanResult && (
-          <div className="admin-feedback">
-            {scanResult.error ? (
-              <p className="admin-feedback--error">{scanResult.error}</p>
-            ) : (
-              <p className="admin-feedback--ok">
-                扫描完成：{scanResult.scanned || 0} 个工具，{scanResult.inserted || 0} 个新增，{scanResult.updated || 0} 个更新
-              </p>
-            )}
-          </div>
-        )}
-      </div>
 
       <div className="admin-table-wrap">
         <table className="admin-table">
