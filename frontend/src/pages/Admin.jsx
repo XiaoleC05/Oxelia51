@@ -1708,30 +1708,44 @@ function ServerTab() {
             </div>
           </div>
         </div>
-        {stats.remote && (
-          <div className="server-card server-card--cloud">
-            <div className="cloud-card-header" style={{ borderColor: 'var(--accent)' }}>
-              <svg className="cloud-card-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-              </svg>
-              <h4 className="server-card-title">腾讯云</h4>
+      </div>
+      {stats.remote && (
+        <div>
+          <div className="server-stats-header" style={{ marginTop: 40 }}>
+            <h2>服务器资源监控</h2>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>腾讯云</span>
+          </div>
+          <div className="server-stats-grid">
+            <div className="server-card">
+              <h4 className="server-card-title">CPU 使用率</h4>
+              <p className="server-card-value">{stats.remote.cpu_percent.toFixed(1)}%</p>
+              <ProgressBar percent={stats.remote.cpu_percent} />
             </div>
-            <div className="cloud-card-rows">
-              <div className="cloud-card-row">
-                <span className="cloud-card-label">配置</span>
-                <span className="cloud-card-value">4C4G 40GB</span>
-              </div>
-              <div className="cloud-card-row">
-                <span className="cloud-card-label">CPU</span>
-                <span className="cloud-card-value">{stats.remote.cpu_percent.toFixed(1)}%</span>
-              </div>
-              <div className="cloud-card-row">
-                <span className="cloud-card-label">内存</span>
-                <span className="cloud-card-value">{stats.remote.memory_used_mb}/{stats.remote.memory_total_mb} MB</span>
-              </div>
+            <div className="server-card">
+              <h4 className="server-card-title">内存使用</h4>
+              <p className="server-card-value">{stats.remote.memory_used_mb} / {stats.remote.memory_total_mb} MB</p>
+              <ProgressBar percent={stats.remote.memory_total_mb > 0 ? (stats.remote.memory_used_mb / stats.remote.memory_total_mb) * 100 : 0} />
+            </div>
+            <div className="server-card">
+              <h4 className="server-card-title">磁盘使用</h4>
+              <p className="server-card-value">{stats.remote.disk_used_percent.toFixed(1)}%</p>
+              <ProgressBar percent={stats.remote.disk_used_percent} />
+            </div>
+            <div className="server-card">
+              <h4 className="server-card-title">运行时间</h4>
+              <p className="server-card-value">{Math.floor(stats.remote.uptime_seconds / 86400)} 天 {Math.floor((stats.remote.uptime_seconds % 86400) / 3600)} 小时</p>
+            </div>
+            <div className="server-card">
+              <h4 className="server-card-title">Go 协程数</h4>
+              <p className="server-card-value">{stats.remote.go_goroutines}</p>
+            </div>
+            <div className="server-card">
+              <h4 className="server-card-title">Go 内存分配</h4>
+              <p className="server-card-value">{stats.remote.go_alloc_mb} MB</p>
             </div>
           </div>
-        )}
+        </div>
+      )}
       </div>
     </div>
   )
