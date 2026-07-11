@@ -163,7 +163,7 @@ export default function MusicBoxTool() {
   const [loading] = useState(false)
   const [error, setError] = useState('')
 
-  async function playTrack(track) {
+  const playTrack = useCallback(async (track) => {
     try {
       const data = await apiProxy('musicbox', `api/play/${track.platform}/${track.platform_song_id || track.song_id}`)
       const url = data?.url || data?.play_url
@@ -174,14 +174,14 @@ export default function MusicBoxTool() {
     } catch (err) {
       setError(err.message)
     }
-  }
+  }, [])
 
-  function playNext() {
+  const playNext = useCallback(() => {
     if (queue.length === 0) { setIsPlaying(false); return }
     const next = (queueIdx + 1) % queue.length
     setQueueIdx(next)
     playTrack(queue[next])
-  }
+  }, [queue, queueIdx, playTrack])
 
   /* ===== Audio Engine ===== */
   useEffect(() => {

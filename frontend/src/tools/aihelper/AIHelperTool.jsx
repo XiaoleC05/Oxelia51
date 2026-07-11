@@ -122,6 +122,7 @@ export default function AIHelperTool() {
 
   // --- Copy feedback ---
   const [copiedId, setCopiedId] = useState(null)
+  const [copyError, setCopyError] = useState('')
 
   // --- Editor form ---
   const [form, setForm] = useState(emptyPrompt())
@@ -179,7 +180,10 @@ export default function AIHelperTool() {
       await navigator.clipboard.writeText(p.content || '')
       setCopiedId(p.id)
       setTimeout(() => setCopiedId(null), 2000)
-    } catch { /* fallback silently */ }
+    } catch {
+      setCopyError('复制失败，请手动复制')
+      setTimeout(() => setCopyError(''), 2000)
+    }
   }, [])
 
   /* ===== Open editor ===== */
@@ -323,6 +327,10 @@ export default function AIHelperTool() {
           <p>{error}</p>
           <button className="ah-close-btn" onClick={() => setError('')}><XIcon /></button>
         </div>
+      )}
+
+      {copyError && (
+        <div className="ah-copy-error-banner">{copyError}</div>
       )}
 
       {/* ---- Tabs ---- */}

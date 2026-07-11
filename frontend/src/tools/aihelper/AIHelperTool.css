@@ -251,6 +251,16 @@
 .ah-copy-btn--done { color: var(--accent) !important; }
 .ah-copy-check { font-size: 13px; font-weight: 700; line-height: 1; }
 
+.ah-copy-error-banner {
+  padding: 10px 18px;
+  margin-bottom: 16px;
+  background: rgba(var(--accent-rgb, 255, 100, 100), 0.08);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 13px;
+}
+
 /* ===== Editor ===== */
 .ah-editor { margin-bottom: 24px; }
 

@@ -87,7 +87,7 @@ export default function AgentCanvasTool() {
   }, [])
 
   /* ===== Open Canvas ===== */
-  async function openCanvas(projectId) {
+  const openCanvas = useCallback(async (projectId) => {
     setCanvasLoading(true)
     setSelectedNodeId(null); setSelectedEdgeId(null)
     try {
@@ -98,7 +98,7 @@ export default function AgentCanvasTool() {
       setViewMode('canvas')
     } catch (err) { setError(err.message) }
     finally { setCanvasLoading(false) }
-  }
+  }, [])
 
   const createProject = useCallback(async (e) => {
     e?.preventDefault()

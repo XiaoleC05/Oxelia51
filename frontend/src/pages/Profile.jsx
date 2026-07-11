@@ -39,12 +39,10 @@ function Profile() {
     }
   }
 
-  const brandPanel = <AuthBrandPanel />
-
   if (loading) {
     return (
       <div className="auth-wrapper">
-        {brandPanel}
+        <AuthBrandPanel />
         <div className="auth-page">
           <p className="auth-status">加载中…</p>
         </div>
@@ -54,7 +52,7 @@ function Profile() {
 
   return (
     <div className="auth-wrapper">
-      {brandPanel}
+      <AuthBrandPanel />
       <div className="auth-page">
         <h1>个人资料</h1>
         {error && <p className="auth-error">{error}</p>}

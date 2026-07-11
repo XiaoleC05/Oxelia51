@@ -337,17 +337,25 @@ export default function SecretStoreTool() {
                 <input type="text" className="ss-input" placeholder="为这个条目命名" value={editorTitle} onChange={(e) => setEditorTitle(e.target.value)}/>
               </label>
 
-              {formFields.map((f, i) => (
+              {formFields.map((f, i) => {
+                const isPwd = f.sensitive && !f._editorVisible
+                return (
                 <div key={i} className="ss-form-field">
                   <label className="ss-field">
                     <span className="ss-field-label">{f.key}{f.sensitive ? <span className="ss-sensitive-dot">●</span> : ''}</span>
                     <div className="ss-input-row">
                       <input
-                        type="password" className="ss-input"
+                        type={isPwd ? 'password' : 'text'} className="ss-input"
                         placeholder={f.key}
                         value={f.value}
                         onChange={(e) => updateFieldValue(i, e.target.value)}
                       />
+                      {f.sensitive && (
+                        <button type="button" className="ss-icon-btn" title={f._editorVisible ? '隐藏' : '显示'}
+                          onClick={() => setFormFields((prev) => prev.map((ff, j) => j === i ? { ...ff, _editorVisible: !ff._editorVisible } : ff))}>
+                          {f._editorVisible ? <EyeOffIcon/> : <EyeIcon/>}
+                        </button>
+                      )}
                       {f.value && (
                         <button type="button" className="ss-icon-btn" title="复制" onClick={() => copyToClipboard(f.value)}>
                           <CopyIcon/>
@@ -359,7 +367,8 @@ export default function SecretStoreTool() {
                     <button type="button" className="ss-remove-field-btn" onClick={() => removeField(i)}><XIcon/></button>
                   )}
                 </div>
-              ))}
+                )
+              })}
 
               {selectedTemplate?.type === 'custom' && (
                 <div className="ss-add-field">
