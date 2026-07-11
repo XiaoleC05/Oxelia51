@@ -288,7 +288,7 @@ function Landing() {
         <div className="landing-footer-bottom">
           <span>&copy; {new Date().getFullYear()} Oxelia51</span>
           <span className="landing-footer-sep">·</span>
-          <span>by ChenXiaole</span>
+          <span>by 陈晓乐</span>
         </div>
         <div className="landing-footer-filing">
           <span>ICP备案号：蜀ICP备XXXXXXXX号-1</span>
