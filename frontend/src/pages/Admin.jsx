@@ -333,14 +333,16 @@ function ToolsTab({ tools, onUpdated }) {
             {editing.error && <p className="admin-error">{editing.error}</p>}
             <label className="admin-field">
               <span>用户可访问</span>
-              <input
-                type="checkbox"
-                checked={editing.patch.user_accessible}
+              <select
+                value={editing.patch.user_accessible ? 'true' : 'false'}
                 onChange={(e) => setEditing({
                   ...editing,
-                  patch: { ...editing.patch, user_accessible: e.target.checked },
+                  patch: { ...editing.patch, user_accessible: e.target.value === 'true' },
                 })}
-              />
+              >
+                <option value="true">可访问</option>
+                <option value="false">不可访问</option>
+              </select>
             </label>
             <label className="admin-field">
               <span>状态</span>
