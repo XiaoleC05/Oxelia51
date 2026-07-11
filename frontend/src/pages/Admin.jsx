@@ -1721,6 +1721,7 @@ function ServerTab() {
               <p className="server-card-value">{stats.remote.go_alloc_mb} MB</p>
             </div>
           </div>
+        </>
         )}
       </div>
     </div>
