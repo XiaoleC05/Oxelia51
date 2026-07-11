@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 # 默认权限：仅读。release job 单独提升写权限。
 permissions:
