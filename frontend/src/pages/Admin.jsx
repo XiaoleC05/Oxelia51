@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle, adminFetchPages, adminUpdatePage } from '../api'
 import './Admin.css'
 
 function Admin() {
-  const user = getStoredUser()
-  const token = getToken()
+  const user = useMemo(() => getStoredUser(), [])
+  const token = useMemo(() => getToken(), [])
   const navigate = useNavigate()
   const [tab, setTab] = useState('tools')
   const [tools, setTools] = useState([])
@@ -16,8 +16,13 @@ function Admin() {
   const [pages, setPages] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const tabRef = useRef(tab)
+  const fetchingRef = useRef(false)
 
-  // 登录守卫：未登录跳转登录页
+  useEffect(() => {
+    tabRef.current = tab
+  }, [tab])
+
   useEffect(() => {
     if (!token) {
       navigate('/login', { state: { from: '/admin' } })
@@ -25,40 +30,44 @@ function Admin() {
   }, [token, navigate])
 
   const loadData = useCallback(async () => {
-    if (tab === 'server') return
+    const currentTab = tabRef.current
+    if (currentTab === 'server') return
+    if (fetchingRef.current) return
+    fetchingRef.current = true
     setLoading(true)
     setError('')
     try {
-      if (tab === 'tools') {
+      if (currentTab === 'tools') {
         const data = await apiGet('/admin/tools', { auth: true })
         setTools(data)
-      } else if (tab === 'users') {
+      } else if (currentTab === 'users') {
         const data = await apiGet('/admin/users', { auth: true })
         setUsers(data)
-      } else if (tab === 'portfolio') {
+      } else if (currentTab === 'portfolio') {
         const data = await apiGet('/admin/portfolio', { auth: true })
         setPortfolio(data)
-      } else if (tab === 'heroes') {
+      } else if (currentTab === 'heroes') {
         const data = await adminFetchHeroImages()
         setHeroImages(data)
-      } else if (tab === 'articles') {
+      } else if (currentTab === 'articles') {
         const data = await adminFetchArticles()
         setArticles(data)
-      } else if (tab === 'pages') {
+      } else if (currentTab === 'pages') {
         const data = await adminFetchPages()
         setPages(data)
       }
     } catch (err) {
       setError(err.message)
     } finally {
+      fetchingRef.current = false
       setLoading(false)
     }
-  }, [tab])
+  }, [])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user?.role === 'admin') { loadData() }
-  }, [user, loadData])
+  }, [tab, user, loadData])
 
   if (user?.role !== 'admin') {
     return (
