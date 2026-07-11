@@ -295,12 +295,12 @@ function ToolsTab({ tools, onUpdated }) {
                 <td>{t.online_capable ? '✓' : '—'}</td>
                 <td>
                   <span className={`admin-badge ${t.user_accessible ? 'admin-badge--ok' : 'admin-badge--off'}`}>
-                    {t.user_accessible ? '开放' : '关闭'}
+                    {t.user_accessible ? '可访问' : '不可访问'}
                   </span>
                 </td>
                 <td>
                   <span className={`admin-badge ${t.status === 'enabled' ? 'admin-badge--ok' : 'admin-badge--off'}`}>
-                    {t.status}
+                    {t.status === 'enabled' ? '使用' : '禁用'}
                   </span>
                 </td>
                 <td className="admin-mono admin-muted">{t.internal_api_base || '—'}</td>
@@ -351,8 +351,8 @@ function ToolsTab({ tools, onUpdated }) {
                   patch: { ...editing.patch, status: e.target.value },
                 })}
               >
-                <option value="enabled">enabled</option>
-                <option value="disabled">disabled</option>
+                <option value="enabled">使用</option>
+                <option value="disabled">禁用</option>
               </select>
             </label>
             <label className="admin-field">
