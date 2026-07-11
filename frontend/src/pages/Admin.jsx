@@ -1657,73 +1657,30 @@ function ServerTab() {
         </div>
       </div>
       {error && <p className="admin-error" style={{ marginBottom: 12 }}>{error}</p>}
+      <ServerStatsGrid stats={stats} label="阿里云" />
+      {stats.remote ? <ServerStatsGrid stats={stats.remote} label="腾讯云" topMargin /> : null}
+    </div>
+  )
+}
+
+function ServerStatsGrid({ stats: s, label, topMargin }) {
+  var memPct = s.memory_total_mb > 0 ? (s.memory_used_mb / s.memory_total_mb) * 100 : 0
+  var days = Math.floor(s.uptime_seconds / 86400)
+  var hours = Math.floor((s.uptime_seconds % 86400) / 3600)
+  return (
+    <div>
+      <div className="server-stats-header" style={{ marginTop: topMargin ? 40 : 0 }}>
+        <h2>服务器资源监控</h2>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{label}</span>
+      </div>
       <div className="server-stats-grid">
-        <div className="server-card">
-          <h4 className="server-card-title">CPU 使用率</h4>
-          <p className="server-card-value">{stats.cpu_percent.toFixed(1)}%</p>
-          <ProgressBar percent={stats.cpu_percent} />
-        </div>
-        <div className="server-card">
-          <h4 className="server-card-title">内存使用</h4>
-          <p className="server-card-value">{stats.memory_used_mb} / {stats.memory_total_mb} MB</p>
-          <ProgressBar percent={memPercent} />
-        </div>
-        <div className="server-card">
-          <h4 className="server-card-title">磁盘使用</h4>
-          <p className="server-card-value">{stats.disk_used_percent.toFixed(1)}%</p>
-          <ProgressBar percent={stats.disk_used_percent} />
-        </div>
-        <div className="server-card">
-          <h4 className="server-card-title">运行时间</h4>
-          <p className="server-card-value">{days} 天 {hours} 小时</p>
-        </div>
-        <div className="server-card">
-          <h4 className="server-card-title">Go 协程数</h4>
-          <p className="server-card-value">{stats.go_goroutines}</p>
-        </div>
-        <div className="server-card">
-          <h4 className="server-card-title">Go 内存分配</h4>
-          <p className="server-card-value">{stats.go_alloc_mb} MB</p>
-        </div>
+        <div className="server-card"><h4 className="server-card-title">CPU 使用率</h4><p className="server-card-value">{s.cpu_percent.toFixed(1)}%</p><ProgressBar percent={s.cpu_percent} /></div>
+        <div className="server-card"><h4 className="server-card-title">内存使用</h4><p className="server-card-value">{s.memory_used_mb} / {s.memory_total_mb} MB</p><ProgressBar percent={memPct} /></div>
+        <div className="server-card"><h4 className="server-card-title">磁盘使用</h4><p className="server-card-value">{s.disk_used_percent.toFixed(1)}%</p><ProgressBar percent={s.disk_used_percent} /></div>
+        <div className="server-card"><h4 className="server-card-title">运行时间</h4><p className="server-card-value">{days} 天 {hours} 小时</p></div>
+        <div className="server-card"><h4 className="server-card-title">Go 协程数</h4><p className="server-card-value">{s.go_goroutines}</p></div>
+        <div className="server-card"><h4 className="server-card-title">Go 内存分配</h4><p className="server-card-value">{s.go_alloc_mb} MB</p></div>
       </div>
-      {stats.remote && (
-      <div>
-        <div className="server-stats-header" style={{ marginTop: 40 }}>
-          <h2>服务器资源监控</h2>
-          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>腾讯云</span>
-        </div>
-        <div className="server-stats-grid">
-          <div className="server-card">
-            <h4 className="server-card-title">CPU 使用率</h4>
-            <p className="server-card-value">{stats.remote.cpu_percent.toFixed(1)}%</p>
-            <ProgressBar percent={stats.remote.cpu_percent} />
-          </div>
-          <div className="server-card">
-            <h4 className="server-card-title">内存使用</h4>
-            <p className="server-card-value">{stats.remote.memory_used_mb} / {stats.remote.memory_total_mb} MB</p>
-            <ProgressBar percent={stats.remote.memory_total_mb > 0 ? (stats.remote.memory_used_mb / stats.remote.memory_total_mb) * 100 : 0} />
-          </div>
-          <div className="server-card">
-            <h4 className="server-card-title">磁盘使用</h4>
-            <p className="server-card-value">{stats.remote.disk_used_percent.toFixed(1)}%</p>
-            <ProgressBar percent={stats.remote.disk_used_percent} />
-          </div>
-          <div className="server-card">
-            <h4 className="server-card-title">运行时间</h4>
-            <p className="server-card-value">{Math.floor(stats.remote.uptime_seconds / 86400)} 天 {Math.floor((stats.remote.uptime_seconds % 86400) / 3600)} 小时</p>
-          </div>
-          <div className="server-card">
-            <h4 className="server-card-title">Go 协程数</h4>
-            <p className="server-card-value">{stats.remote.go_goroutines}</p>
-          </div>
-          <div className="server-card">
-            <h4 className="server-card-title">Go 内存分配</h4>
-            <p className="server-card-value">{stats.remote.go_alloc_mb} MB</p>
-          </div>
-        </div>
-      </div>
-      )}
-      <div>
     </div>
   )
 }
