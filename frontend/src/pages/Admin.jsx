@@ -10,7 +10,6 @@ function Admin() {
   const [tab, setTab] = useState('tools')
   const [tools, setTools] = useState([])
   const [users, setUsers] = useState([])
-  const [portfolio, setPortfolio] = useState([])
   const [heroImages, setHeroImages] = useState([])
   const [articles, setArticles] = useState([])
   const [devProfile, setDevProfile] = useState(null)
@@ -43,9 +42,6 @@ function Admin() {
       } else if (currentTab === 'users') {
         const data = await apiGet('/admin/users', { auth: true })
         setUsers(data)
-      } else if (currentTab === 'portfolio') {
-        const data = await apiGet('/admin/portfolio', { auth: true })
-        setPortfolio(data)
       } else if (currentTab === 'heroes') {
         const data = await adminFetchHeroImages()
         setHeroImages(data)
@@ -98,12 +94,6 @@ function Admin() {
           用户
         </button>
         <button
-          className={`admin-tab ${tab === 'portfolio' ? 'admin-tab--active' : ''}`}
-          onClick={() => setTab('portfolio')}
-        >
-          作品集
-        </button>
-        <button
           className={`admin-tab ${tab === 'heroes' ? 'admin-tab--active' : ''}`}
           onClick={() => setTab('heroes')}
         >
@@ -141,9 +131,6 @@ function Admin() {
           )}
           {!loading && !error && tab === 'users' && (
             <UsersTab users={users} onUpdated={loadData} />
-          )}
-          {!loading && !error && tab === 'portfolio' && (
-            <PortfolioTab portfolio={portfolio} />
           )}
           {!loading && !error && tab === 'heroes' && (
             <HeroImagesTab heroImages={heroImages} onUpdated={loadData} />
@@ -400,38 +387,6 @@ function UsersTab({ users, onUpdated }) {
                     </button>
                   )}
                 </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-// ===== 作品集管理 =====
-function PortfolioTab({ portfolio }) {
-  return (
-    <div className="admin-section">
-      <div className="admin-table-wrap">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Slug</th>
-              <th>名称</th>
-              <th>描述</th>
-              <th>GitHub</th>
-              <th>关联工具</th>
-            </tr>
-          </thead>
-          <tbody>
-            {portfolio.map((p) => (
-              <tr key={p.slug}>
-                <td className="admin-mono">{p.slug}</td>
-                <td>{p.name}</td>
-                <td className="admin-muted">{p.description || '—'}</td>
-                <td className="admin-mono admin-muted">{p.github_repo || '—'}</td>
-                <td className="admin-mono admin-muted">{p.linked_tool_slug || '—'}</td>
               </tr>
             ))}
           </tbody>

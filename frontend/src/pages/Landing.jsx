@@ -146,6 +146,10 @@ function Landing() {
     ? images[current].title
     : '集成·简洁·高效'
 
+  const heroSub = hasImages && images[current]?.subtitle
+    ? images[current].subtitle
+    : ''
+
   const onTypewriterComplete = useCallback(() => {}, [])
 
   const [toolsNum, toolsCountRef] = useCountUp(loading ? 0 : tools.length)
@@ -181,7 +185,7 @@ function Landing() {
               onComplete={onTypewriterComplete}
             />
           </h1>
-          <p className="hero-subtitle">做了一些小工具，写了一些东西，都放在这里。</p>
+          {heroSub && <p className="hero-subtitle">{heroSub}</p>}
         </div>
 
         {hasImages && (
