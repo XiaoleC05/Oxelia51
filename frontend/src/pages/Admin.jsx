@@ -191,48 +191,51 @@ function DashboardTab() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [since, setSince] = useState('')
+  const d = new Date(); d.setDate(d.getDate() - 30)
+  const [since, setSince] = useState(d.toISOString().slice(0, 10))
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      try {
-        const qs = since ? '?since=' + encodeURIComponent(since) : ''
-        const data = await apiGet('/admin/dashboard-stats' + qs, { auth: true })
-        if (!cancelled) setStats(data)
-      } catch (err) {
-        if (!cancelled) setError(err.message)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [since])
+  const loadStats = useCallback(async (sinceVal) => {
+    setLoading(true)
+    try {
+      const qs = '?since=' + encodeURIComponent(sinceVal)
+      const data = await apiGet('/admin/dashboard-stats' + qs, { auth: true })
+      setStats(data)
+    } catch (err) { setError(err.message) }
+    finally { setLoading(false) }
+  }, [])
 
-  if (loading) return <p className="admin-status">加载中…</p>
+  useEffect(() => { loadStats(since) }, [since, loadStats])
+
+  const setPreset = (days) => {
+    const d = new Date(); d.setDate(d.getDate() - days)
+    setSince(d.toISOString().slice(0, 10))
+  }
+
+  if (loading && !stats) return <p className="admin-status">加载中…</p>
   if (error) return <p className="admin-error">{error}</p>
   if (!stats) return null
 
   const cards = [
     { icon: <DashboardIconUsers />, title: '用户总数', value: stats.total_users ?? 0 },
-    { icon: <DashboardIconUsers />, title: '新增用户（7 天）', value: stats.new_users_7d ?? 0 },
-    { icon: <DashboardIconUsers />, title: '新增用户（30 天）', value: stats.new_users_30d ?? 0 },
-  ]
-  if (stats.new_users_since !== undefined) {
-    cards.push({ icon: <DashboardIconUsers />, title: `新增用户（自 ${since}）`, value: stats.new_users_since ?? 0 })
-  }
-  cards.push(
+    { icon: <DashboardIconUsers />, title: '新增用户', value: stats.new_users_since ?? 0 },
     { icon: <DashboardIconTools />, title: '工具数量', value: stats.total_tools ?? 0 },
     { icon: <DashboardIconArticles />, title: '文章数量', value: stats.total_articles ?? 0 },
     { icon: <DashboardIconPortfolio />, title: '作品数量', value: stats.total_portfolio ?? 0 },
-  )
+  ]
 
   return (
     <div className="admin-section">
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ fontSize: 13, color: 'var(--text-muted)', marginRight: 8 }}>查看新增用户（自）：</label>
-        <input type="date" value={since} onChange={e => setSince(e.target.value)} style={{ fontSize: 13, padding: '4px 8px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--text)' }} />
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>新增用户统计：</span>
+        {[7, 30, 90].map(d => (
+          <button key={d} onClick={() => setPreset(d)}
+            style={{ fontSize: 12, padding: '3px 10px', border: '1px solid var(--border)', borderRadius: 12, background: 'var(--bg)', color: 'var(--text)', cursor: 'pointer' }}>
+            {d} 天
+          </button>
+        ))}
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>或</span>
+        <input type="date" value={since} onChange={e => setSince(e.target.value)}
+          style={{ fontSize: 12, padding: '3px 8px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--text)' }} />
       </div>
       <div className="dashboard-grid">
         {cards.map((c) => (
