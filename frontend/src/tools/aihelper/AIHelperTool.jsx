@@ -126,6 +126,7 @@ export default function AIHelperTool() {
   const [settings, setSettings] = useState({ api_key: '', api_base: '', model: '' })
   const [settingsLoading, setSettingsLoading] = useState(false)
   const [settingsSaving, setSettingsSaving] = useState(false)
+  const [settingsSaved, setSettingsSaved] = useState(false)
 
   /* ===== Load prompts ===== */
   const loadPrompts = useCallback(async (q, cat, tag, fav) => {
@@ -269,6 +270,8 @@ export default function AIHelperTool() {
       await apiProxy('aihelper', 'api/settings', {
         method: 'PUT', body: JSON.stringify(settings),
       })
+      setSettingsSaved(true)
+      setTimeout(() => setSettingsSaved(false), 2000)
     } catch (err) { setError(err.message) }
     finally { setSettingsSaving(false) }
   }, [settings])
@@ -567,7 +570,7 @@ export default function AIHelperTool() {
               </label>
 
               <button type="submit" className="ah-save-btn" disabled={settingsSaving}>
-                {settingsSaving ? '保存中…' : '保存设置'}
+                {settingsSaving ? '保存中…' : settingsSaved ? '✓ 已保存' : '保存设置'}
               </button>
             </form>
           )}

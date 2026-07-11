@@ -9,7 +9,7 @@ function balanceClass(value, threshold) {
   return 'dg-balance--normal'
 }
 
-// 配置分组元数据：字段 key 必须与 DormGuard backend/app/auth.py MANAGEABLE_ENV_KEYS 一致
+// 配置分组元数据：字段 key 必须与 DormGuard Go backend config.EnvValues 一致
 const CONFIG_GROUPS = [
   {
     title: '爬虫配置',
