@@ -112,8 +112,7 @@ function DormGuardTool() {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    const cleanup = loadData()
-    return () => { if (cleanup) cleanup() }
+    loadData()
   }, [loadData])
 
   const handleThresholdChange = useCallback(async (value) => {
