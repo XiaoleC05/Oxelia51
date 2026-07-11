@@ -280,3 +280,8 @@ export async function adminPatchDeveloperProfile(data) {
   return apiPatch('/admin/developer/profile', data)
 }
 
+/** 管理端：上传头像文件（复用 hero-images/upload 接口） */
+export async function adminUploadAvatar(file) {
+  return adminUploadHeroImage(file)
+}
+

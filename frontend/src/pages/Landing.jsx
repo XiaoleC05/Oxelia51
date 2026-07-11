@@ -178,7 +178,7 @@ function Landing() {
 
   const heroText = hasImages && images[current]?.title
     ? images[current].title
-    : 'Oxelia51 · 集成 · 简洁 · 高效'
+    : '集成·简洁·高效'
 
   const onTypewriterComplete = useCallback(() => {}, [])
 
@@ -207,6 +207,7 @@ function Landing() {
         <div className="hero-overlay" />
 
         <div className="hero-content">
+          <span className="hero-brand">Oxelia51</span>
           <h1 className="hero-title">
             <Typewriter
               key={`${current}-${heroText}`}
@@ -214,7 +215,7 @@ function Landing() {
               onComplete={onTypewriterComplete}
             />
           </h1>
-          <p className="hero-subtitle">不追逐潮流，只做好用的小工具</p>
+          <p className="hero-subtitle">做了一些小工具，写了一些东西，都放在这里。</p>
         </div>
 
         {hasImages && (
@@ -269,7 +270,7 @@ function Landing() {
         <section className="landing-intro" id="landing-content" ref={reveal}>
           <h2 className="landing-intro-brand">Oxelia51</h2>
           <p className="landing-intro-desc">
-            集成 · 简洁 · 高效。集成的力量，简洁的体验。
+            一个开发者的站点。工具、作品、笔记，都放在一起。
           </p>
           <div className="landing-intro-links">
             <Link to="/tools" className="landing-intro-link">浏览工具</Link>
@@ -279,8 +280,8 @@ function Landing() {
 
         <section className="landing-cta" ref={reveal}>
           <div className="landing-cta-inner">
-            <h2 className="landing-cta-title">准备好探索了吗？</h2>
-            <p className="landing-cta-desc">准备好了吗？开始使用</p>
+            <h2 className="landing-cta-title">注册一个账号</h2>
+            <p className="landing-cta-desc">注册后可以在线使用全部工具。</p>
             <div className="landing-cta-actions">
               {isLoggedIn ? (
                 <Link to="/tools" className="landing-cta-btn landing-cta-btn--primary">浏览工具</Link>
@@ -387,7 +388,7 @@ function Landing() {
         <div className="landing-footer-top">
           <div className="landing-footer-brand">
             <div className="landing-footer-logo">Oxelia51</div>
-            <p className="landing-footer-desc">集成 · 简洁 · 高效</p>
+            <p className="landing-footer-desc">集成·简洁·高效</p>
           </div>
           <div className="landing-footer-links">
             <div className="landing-footer-col">

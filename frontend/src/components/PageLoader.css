@@ -1,12 +1,28 @@
 /* ===== PageLoader — unified design language ===== */
 
 .page-loader {
+  /* Colors — derived from :root brand tokens */
   --pl-dark: var(--bg-dark, #1a1d24);
-  --pl-light: #fff;
+  --pl-dark-rgb: 26, 29, 36;
+  --pl-light: var(--bg, #fafaf7);
   --pl-warm: rgba(255, 248, 230, 0.85);
+  --pl-warm-soft: rgba(255, 245, 220, 0.25);
+  --pl-shadow: rgba(0, 0, 0, 0.35);
+
+  /* Timing — single source of truth (JS must sync) */
   --pl-ease: cubic-bezier(0.76, 0, 0.24, 1);
+  --pl-hold: 0.5s;
   --pl-reveal: 0.4s;
   --pl-fade: 0.25s;
+  --pl-logo-dur: 1s;
+  --pl-ink-dur: 0.75s;
+
+  /* Sizes */
+  --pl-logo-size: clamp(1.8rem, 4vw, 3rem);
+  --pl-blob-size: 30vmax;
+  --pl-beam-height: 28vh;
+
+  /* Layout */
   --pl-z: 1000;
 
   position: fixed;
@@ -28,14 +44,14 @@
   left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--heading, 'Noto Serif SC', Georgia, serif);
-  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-size: var(--pl-logo-size);
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--pl-light);
   opacity: 0;
   z-index: 5;
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
-  animation: page-loader-logo 1s var(--pl-ease) forwards;
+  text-shadow: 0 2px 20px var(--pl-shadow);
+  animation: page-loader-logo var(--pl-logo-dur) var(--pl-ease) forwards;
 }
 
 @keyframes page-loader-logo {
@@ -98,19 +114,19 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 30vmax;
-  height: 30vmax;
-  margin: -15vmax 0 0 -15vmax;
+  width: var(--pl-blob-size);
+  height: var(--pl-blob-size);
+  margin: calc(var(--pl-blob-size) * -0.5) 0 0 calc(var(--pl-blob-size) * -0.5);
   border-radius: 50%;
   background: radial-gradient(
     circle at 50% 50%,
     var(--pl-dark) 0%,
     var(--pl-dark) 40%,
-    rgba(26, 29, 36, 0.8) 65%,
-    rgba(26, 29, 36, 0) 100%
+    rgba(var(--pl-dark-rgb), 0.8) 65%,
+    rgba(var(--pl-dark-rgb), 0) 100%
   );
   transform: translate(var(--ink-x, 0), var(--ink-y, 0)) scale(0);
-  animation: ink-blob var(--ink-dur, 0.8s) var(--pl-ease) var(--ink-delay, 0s) forwards;
+  animation: ink-blob var(--pl-ink-dur) var(--pl-ease) var(--ink-delay, 0s) forwards;
   will-change: transform;
 }
 
@@ -121,15 +137,15 @@
 
 
 /* ================================================================
-   mist — white fog, opacity ease-out
+   mist — adaptive fog, opacity ease-out
    pages: /tools, /tools/:slug
    ================================================================ */
 .page-loader--mist {
-  background-color: rgba(255, 255, 255, 0.92);
+  background-color: rgba(var(--bg-rgb, 250, 250, 247), 0.92);
 }
 
 .page-loader--mist .page-loader__logo {
-  color: var(--pl-dark);
+  color: var(--text-h, #0d0d0d);
   text-shadow: none;
 }
 
@@ -165,17 +181,17 @@
   left: 0;
   right: 0;
   top: 0;
-  height: 28vh;
+  height: var(--pl-beam-height);
   background: linear-gradient(
     to bottom,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 245, 220, 0.25) 30%,
+    var(--pl-warm-soft) 30%,
     var(--pl-warm) 50%,
-    rgba(255, 245, 220, 0.25) 70%,
+    var(--pl-warm-soft) 70%,
     rgba(255, 255, 255, 0) 100%
   );
   filter: blur(2px);
-  animation: light-beam-sweep var(--pl-reveal) var(--pl-ease) 0.5s both;
+  animation: light-beam-sweep var(--pl-reveal) var(--pl-ease) var(--pl-hold) both;
   will-change: transform;
   pointer-events: none;
 }

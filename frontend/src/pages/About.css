@@ -296,3 +296,86 @@
     line-height: 1.7;
   }
 }
+
+/* ===== Avatar Edit ===== */
+.about-avatar-edit {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-avatar-edit-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.about-avatar-edit-tab {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.about-avatar-edit-tab:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+.about-avatar-edit-tab--active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.about-avatar-edit-error {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--danger, #dc3545);
+}
+
+.about-avatar-edit-preview {
+  display: flex;
+  justify-content: center;
+}
+
+.about-avatar-edit-preview img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.about-avatar-edit-preview--sm img {
+  width: 60px;
+  height: 60px;
+}
+
+.about-avatar-edit-file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.about-avatar-edit-file:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.about-avatar-edit-file input[type='file'] {
+  display: none;
+}

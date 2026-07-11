@@ -4,12 +4,12 @@ import './PageLoader.css'
 const VARIANTS = ['split', 'ink', 'mist', 'light']
 
 const INK_BLOBS = [
-  { delay: 0,    dur: '0.70s', x:  5, y: -8,  s: 1.10 },
-  { delay: 0.05, dur: '0.75s', x: -7, y:  6,  s: 0.95 },
-  { delay: 0.10, dur: '0.80s', x:  9, y:  4,  s: 1.05 },
-  { delay: 0.08, dur: '0.72s', x: -4, y: -9,  s: 1.00 },
-  { delay: 0.15, dur: '0.78s', x:  2, y: 10,  s: 0.90 },
-  { delay: 0.12, dur: '0.74s', x: -8, y:  2,  s: 1.08 },
+  { delay: 0,    x:  5, y: -8,  s: 1.10 },
+  { delay: 0.05, x: -7, y:  6,  s: 0.95 },
+  { delay: 0.10, x:  9, y:  4,  s: 1.05 },
+  { delay: 0.08, x: -4, y: -9,  s: 1.00 },
+  { delay: 0.15, x:  2, y: 10,  s: 0.90 },
+  { delay: 0.12, x: -8, y:  2,  s: 1.08 },
 ]
 
 function PageLoader({ variant = 'split', onDone }) {
@@ -17,13 +17,13 @@ function PageLoader({ variant = 'split', onDone }) {
   const safeVariant = VARIANTS.includes(variant) ? variant : 'split'
 
   useEffect(() => {
-    // hold 0.5s -> open 0.3s -> fade 0.2s = 1.0s total
+    // sync with CSS: --pl-hold 0.5s + --pl-reveal 0.4s + --pl-fade 0.25s = 1.15s
     const holdTimer  = setTimeout(() => setPhase('open'), 500)
-    const fadeTimer  = setTimeout(() => setPhase('fade'), 800)
+    const fadeTimer  = setTimeout(() => setPhase('fade'), 900)
     const doneTimer  = setTimeout(() => {
       setPhase('gone')
       if (typeof onDone === 'function') onDone()
-    }, 1000)
+    }, 1150)
 
     return () => {
       clearTimeout(holdTimer)
@@ -54,7 +54,6 @@ function PageLoader({ variant = 'split', onDone }) {
               className="page-loader__ink-blob"
               style={{
                 '--ink-delay': `${b.delay}s`,
-                '--ink-dur':   b.dur,
                 '--ink-x':     `${b.x}vw`,
                 '--ink-y':     `${b.y}vh`,
                 '--ink-s':     b.s,

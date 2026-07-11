@@ -53,7 +53,7 @@ function Register() {
         <div className="auth-brand-shape auth-brand-shape--3" />
         <div className="auth-brand-content">
           <span className="auth-brand-logo">Oxelia51</span>
-          <p className="auth-brand-tagline">探索 · 创造 · 分享</p>
+          <p className="auth-brand-tagline">集成·简洁·高效</p>
         </div>
       </aside>
       <div className="auth-page">

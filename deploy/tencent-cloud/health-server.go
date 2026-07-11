@@ -49,14 +49,19 @@ func (s *cpuSample) idleTotal() uint64 {
 }
 
 func main() {
+	host := os.Getenv("HEALTH_HOST")
+	if host == "" {
+		host = "127.0.0.1"
+	}
 	port := os.Getenv("HEALTH_PORT")
 	if port == "" {
 		port = "8090"
 	}
 
+	addr := host + ":" + port
 	http.HandleFunc("/api/health", handleHealth)
-	log.Printf("health-server listening on 127.0.0.1:%s", port)
-	if err := http.ListenAndServe("127.0.0.1:"+port, nil); err != nil {
+	log.Printf("health-server listening on %s", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }

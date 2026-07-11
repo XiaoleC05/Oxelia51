@@ -556,7 +556,7 @@ export default function SuperReadTool() {
       {activeTab === 'settings' && (
         <div className="sr-settings">
           <fieldset className="sr-fieldset">
-            <legend className="sr-fieldset-legend">AI 配置</legend>
+            <legend className="sr-fieldset-legend">高级设置</legend>
             <label className="sr-field">
               <span className="sr-field-label">API Key</span>
               <input

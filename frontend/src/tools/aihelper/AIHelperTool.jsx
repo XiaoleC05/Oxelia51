@@ -372,7 +372,7 @@ export default function AIHelperTool() {
                     onClick={enhancePrompt}
                     disabled={enhancing || !form.content.trim()}
                   >
-                    <SparklesIcon /> {enhancing ? '增强中…' : 'AI 增强'}
+                    <SparklesIcon /> {enhancing ? '增强中…' : '一键增强'}
                   </button>
                 </div>
                 <textarea
@@ -527,7 +527,7 @@ export default function AIHelperTool() {
       {/* ===== Settings View ===== */}
       {!editorOpen && viewMode === 'settings' && (
         <div className="ah-settings">
-          <h3 className="ah-section-title">AI 增强设置</h3>
+          <h3 className="ah-section-title">增强设置</h3>
 
           {settingsLoading ? (
             <div className="ah-loading"><div className="ah-spinner" /></div>

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { fetchDeveloperProfile, adminPatchDeveloperProfile, getToken, getStoredUser } from '../api'
+import { useState, useEffect, useRef } from 'react'
+import { fetchDeveloperProfile, adminPatchDeveloperProfile, adminUploadAvatar, getToken, getStoredUser } from '../api'
 import './About.css'
 
 function About() {
@@ -17,6 +17,11 @@ function About() {
   const [bioDraft, setBioDraft] = useState('')
   const [resumeDraft, setResumeDraft] = useState('')
   const [avatarDraft, setAvatarDraft] = useState('')
+  const [avatarMode, setAvatarMode] = useState('upload')
+  const [avatarFile, setAvatarFile] = useState(null)
+  const [avatarPreview, setAvatarPreview] = useState('')
+  const [avatarError, setAvatarError] = useState('')
+  const avatarInputRef = useRef(null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -38,7 +43,44 @@ function About() {
 
   const startEditAvatar = () => {
     setAvatarDraft(profile.avatar_url || '')
+    setAvatarFile(null)
+    setAvatarPreview(profile.avatar_url || '')
+    setAvatarError('')
+    setAvatarMode('upload')
     setEditingAvatar(true)
+  }
+
+  const handleAvatarFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      setAvatarError('文件不能超过 10MB')
+      return
+    }
+    setAvatarFile(file)
+    setAvatarError('')
+    const reader = new FileReader()
+    reader.onload = () => setAvatarPreview(reader.result)
+    reader.readAsDataURL(file)
+  }
+
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) {
+      setAvatarError('请先选择文件')
+      return
+    }
+    setSaving(true)
+    setAvatarError('')
+    try {
+      const { url } = await adminUploadAvatar(avatarFile)
+      const updated = await adminPatchDeveloperProfile({ avatar_url: url })
+      setProfile(updated)
+      cancelEdit()
+    } catch (err) {
+      setAvatarError(err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const cancelEdit = () => {
@@ -91,7 +133,7 @@ function About() {
         <div className="about-hero-text">
           <span className="about-eyebrow">关于开发者</span>
           <h1 className="about-title">Oxelia51</h1>
-          <p className="about-tagline">探索 · 创造 · 分享</p>
+          <p className="about-tagline">集成·简洁·高效</p>
         </div>
         <div className="about-avatar-wrap">
           {profile.avatar_url ? (
@@ -114,21 +156,67 @@ function About() {
             </button>
           )}
           {isAdmin && editingAvatar && (
-            <div className="about-inline-edit">
-              <input
-                type="text"
-                value={avatarDraft}
-                onChange={(e) => setAvatarDraft(e.target.value)}
-                placeholder="头像图片 URL"
-              />
-              <div className="about-inline-edit-actions">
+            <div className="about-avatar-edit">
+              <div className="about-avatar-edit-tabs">
                 <button
-                  className="about-save-btn"
-                  onClick={() => saveField('avatar_url', avatarDraft)}
-                  disabled={saving}
+                  className={`about-avatar-edit-tab ${avatarMode === 'upload' ? 'about-avatar-edit-tab--active' : ''}`}
+                  onClick={() => setAvatarMode('upload')}
                 >
-                  {saving ? '…' : '保存'}
+                  上传文件
                 </button>
+                <button
+                  className={`about-avatar-edit-tab ${avatarMode === 'url' ? 'about-avatar-edit-tab--active' : ''}`}
+                  onClick={() => setAvatarMode('url')}
+                >
+                  图片 URL
+                </button>
+              </div>
+
+              {avatarError && <p className="about-avatar-edit-error">{avatarError}</p>}
+
+              {avatarPreview && (
+                <div className="about-avatar-edit-preview">
+                  <img src={avatarPreview} alt="预览" />
+                </div>
+              )}
+
+              {avatarMode === 'upload' ? (
+                <label className="about-avatar-edit-file">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={avatarInputRef}
+                    onChange={handleAvatarFileChange}
+                  />
+                  <span>{avatarFile ? avatarFile.name : '选择图片（最大 10MB）'}</span>
+                </label>
+              ) : (
+                <input
+                  type="text"
+                  value={avatarDraft}
+                  onChange={(e) => { setAvatarDraft(e.target.value); setAvatarPreview(e.target.value) }}
+                  placeholder="头像图片 URL"
+                />
+              )}
+
+              <div className="about-inline-edit-actions">
+                {avatarMode === 'upload' ? (
+                  <button
+                    className="about-save-btn"
+                    onClick={handleAvatarUpload}
+                    disabled={saving || !avatarFile}
+                  >
+                    {saving ? '上传中…' : '上传并保存'}
+                  </button>
+                ) : (
+                  <button
+                    className="about-save-btn"
+                    onClick={() => saveField('avatar_url', avatarDraft)}
+                    disabled={saving}
+                  >
+                    {saving ? '保存中…' : '保存'}
+                  </button>
+                )}
                 <button className="about-cancel-btn" onClick={cancelEdit} disabled={saving}>
                   取消
                 </button>

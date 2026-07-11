@@ -123,6 +123,35 @@
   }
 }
 
+/* ---- iOS / Mobile Touch Fix ---- */
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a, button, input, textarea, select,
+[role="button"],
+[onclick] {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+input, textarea, select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-size: 16px;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
 /* ---- Reset ---- */
 body {
   margin: 0;
@@ -132,6 +161,7 @@ body {
   backdrop-filter: blur(16px) saturate(1.1);
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
   min-height: 100svh;
+  overscroll-behavior-y: none;
 }
 
 #root {
@@ -276,6 +306,8 @@ section {
 
   #root {
     padding: 0 16px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
   }
 
   h1 {
@@ -295,5 +327,40 @@ section {
   .about-content,
   .article-detail-content {
     text-align: justify;
+  }
+
+  button,
+  .navbar-btn,
+  .navbar-item,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 380px) {
+  :root {
+    font-size: 14px;
+  }
+
+  #root {
+    padding: 0 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  h1 {
+    font-size: 1.75rem;
   }
 }

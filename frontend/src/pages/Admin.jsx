@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle, adminFetchPages, adminUpdatePage } from '../api'
+import { apiGet, apiPost, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle, adminFetchPages, adminUpdatePage, fetchDeveloperProfile, adminPatchDeveloperProfile, adminUploadAvatar } from '../api'
 import './Admin.css'
 
 function Admin() {
@@ -14,6 +14,7 @@ function Admin() {
   const [heroImages, setHeroImages] = useState([])
   const [articles, setArticles] = useState([])
   const [pages, setPages] = useState([])
+  const [devProfile, setDevProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const tabRef = useRef(tab)
@@ -55,6 +56,9 @@ function Admin() {
       } else if (currentTab === 'pages') {
         const data = await adminFetchPages()
         setPages(data)
+      } else if (currentTab === 'profile') {
+        const data = await fetchDeveloperProfile()
+        setDevProfile(data)
       }
     } catch (err) {
       setError(err.message)
@@ -122,6 +126,12 @@ function Admin() {
           页面
         </button>
         <button
+          className={`admin-tab ${tab === 'profile' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('profile')}
+        >
+          资料
+        </button>
+        <button
           className={`admin-tab ${tab === 'server' ? 'admin-tab--active' : ''}`}
           onClick={() => setTab('server')}
         >
@@ -153,6 +163,9 @@ function Admin() {
           )}
           {!loading && !error && tab === 'pages' && (
             <PagesTab pages={pages} onUpdated={loadData} />
+          )}
+          {!loading && !error && tab === 'profile' && (
+            <ProfileTab profile={devProfile} onUpdated={loadData} />
           )}
         </>
       )}
@@ -1310,6 +1323,237 @@ function PagesTab({ pages, onUpdated }) {
   )
 }
 
+// ===== 开发者资料管理 =====
+function ProfileTab({ profile, onUpdated }) {
+  const [editingField, setEditingField] = useState(null)
+  const [draft, setDraft] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [avatarMode, setAvatarMode] = useState('upload')
+  const [avatarFile, setAvatarFile] = useState(null)
+  const [avatarPreview, setAvatarPreview] = useState('')
+  const [avatarError, setAvatarError] = useState('')
+  const avatarInputRef = useRef(null)
+
+  if (!profile) return <p className="admin-status">加载中…</p>
+
+  function startEdit(field) {
+    setDraft(profile[field] || '')
+    setEditingField(field)
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await adminPatchDeveloperProfile({ [editingField]: draft })
+      setEditingField(null)
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function handleAvatarFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      setAvatarError('文件不能超过 10MB')
+      return
+    }
+    setAvatarFile(file)
+    setAvatarError('')
+    const reader = new FileReader()
+    reader.onload = () => setAvatarPreview(reader.result)
+    reader.readAsDataURL(file)
+  }
+
+  async function handleAvatarUpload() {
+    if (!avatarFile) {
+      setAvatarError('请先选择文件')
+      return
+    }
+    setSaving(true)
+    setAvatarError('')
+    try {
+      const { url } = await adminUploadAvatar(avatarFile)
+      await adminPatchDeveloperProfile({ avatar_url: url })
+      setAvatarFile(null)
+      onUpdated()
+    } catch (err) {
+      setAvatarError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleAvatarUrl() {
+    setSaving(true)
+    try {
+      await adminPatchDeveloperProfile({ avatar_url: draft })
+      setEditingField(null)
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="admin-section">
+      <div className="profile-card">
+        <div className="profile-card-header">
+          <h3>头像</h3>
+        </div>
+        <div className="profile-avatar-area">
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt="头像" className="profile-avatar-img" />
+          ) : (
+            <div className="profile-avatar-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21c0-4.42 3.58-8 8-8s8 3.58 8 8" />
+              </svg>
+            </div>
+          )}
+
+          {editingField !== 'avatar_url' ? (
+            <button className="admin-btn admin-btn--sm" onClick={() => { setDraft(profile.avatar_url || ''); setAvatarPreview(profile.avatar_url || ''); setAvatarFile(null); setAvatarError(''); setAvatarMode('upload'); setEditingField('avatar_url') }}>
+              更换头像
+            </button>
+          ) : (
+            <div className="profile-avatar-edit">
+              <div className="about-avatar-edit-tabs">
+                <button
+                  className={`about-avatar-edit-tab ${avatarMode === 'upload' ? 'about-avatar-edit-tab--active' : ''}`}
+                  onClick={() => setAvatarMode('upload')}
+                >
+                  上传文件
+                </button>
+                <button
+                  className={`about-avatar-edit-tab ${avatarMode === 'url' ? 'about-avatar-edit-tab--active' : ''}`}
+                  onClick={() => setAvatarMode('url')}
+                >
+                  图片 URL
+                </button>
+              </div>
+
+              {avatarError && <p className="about-avatar-edit-error">{avatarError}</p>}
+
+              {avatarPreview && (
+                <div className="about-avatar-edit-preview about-avatar-edit-preview--sm">
+                  <img src={avatarPreview} alt="预览" />
+                </div>
+              )}
+
+              {avatarMode === 'upload' ? (
+                <>
+                  <label className="about-avatar-edit-file">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={avatarInputRef}
+                      onChange={handleAvatarFileChange}
+                    />
+                    <span>{avatarFile ? avatarFile.name : '选择图片（最大 10MB）'}</span>
+                  </label>
+                  <div className="admin-modal-actions" style={{ marginTop: 8 }}>
+                    <button className="admin-btn" onClick={handleAvatarUpload} disabled={saving || !avatarFile}>
+                      {saving ? '上传中…' : '上传并保存'}
+                    </button>
+                    <button className="admin-btn admin-btn--ghost" onClick={() => setEditingField(null)}>
+                      取消
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={draft}
+                    onChange={(e) => { setDraft(e.target.value); setAvatarPreview(e.target.value) }}
+                    placeholder="头像图片 URL"
+                    style={{ marginTop: 4 }}
+                  />
+                  <div className="admin-modal-actions" style={{ marginTop: 8 }}>
+                    <button className="admin-btn" onClick={handleAvatarUrl} disabled={saving}>
+                      {saving ? '保存中…' : '保存'}
+                    </button>
+                    <button className="admin-btn admin-btn--ghost" onClick={() => setEditingField(null)}>
+                      取消
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="profile-card">
+        <div className="profile-card-header">
+          <h3>简介</h3>
+          {editingField !== 'bio' && (
+            <button className="admin-btn admin-btn--sm" onClick={() => startEdit('bio')}>编辑</button>
+          )}
+        </div>
+        {editingField === 'bio' ? (
+          <div className="profile-edit-area">
+            <textarea
+              className="admin-textarea"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={6}
+              placeholder="开发者简介…"
+            />
+            <div className="admin-modal-actions">
+              <button className="admin-btn" onClick={handleSave} disabled={saving}>
+                {saving ? '保存中…' : '保存'}
+              </button>
+              <button className="admin-btn admin-btn--ghost" onClick={() => setEditingField(null)}>
+                取消
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="profile-text">{profile.bio || <span className="admin-muted">暂无简介。</span>}</p>
+        )}
+      </div>
+
+      <div className="profile-card">
+        <div className="profile-card-header">
+          <h3>履历</h3>
+          {editingField !== 'resume' && (
+            <button className="admin-btn admin-btn--sm" onClick={() => startEdit('resume')}>编辑</button>
+          )}
+        </div>
+        {editingField === 'resume' ? (
+          <div className="profile-edit-area">
+            <textarea
+              className="admin-textarea"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={12}
+              placeholder="开发者履历…"
+            />
+            <div className="admin-modal-actions">
+              <button className="admin-btn" onClick={handleSave} disabled={saving}>
+                {saving ? '保存中…' : '保存'}
+              </button>
+              <button className="admin-btn admin-btn--ghost" onClick={() => setEditingField(null)}>
+                取消
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="profile-text">{profile.resume || <span className="admin-muted">暂无履历。</span>}</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ===== 服务器监控 =====
 function ProgressBar({ percent }) {
   const clamped = Math.min(100, Math.max(0, percent))
@@ -1440,6 +1684,32 @@ function ServerTab() {
         <div className="server-card">
           <h4 className="server-card-title">Go 内存分配</h4>
           <p className="server-card-value">{stats.go_alloc_mb} MB</p>
+        </div>
+        <div className="server-card server-card--cloud">
+          <div className="cloud-card-header">
+            <svg className="cloud-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+            </svg>
+            <h4 className="server-card-title">云服务</h4>
+          </div>
+          <div className="cloud-card-rows">
+            <div className="cloud-card-row">
+              <span className="cloud-card-label">服务器</span>
+              <span className="cloud-card-value">阿里云 2C2G</span>
+            </div>
+            <div className="cloud-card-row">
+              <span className="cloud-card-label">地域</span>
+              <span className="cloud-card-value">华东 1</span>
+            </div>
+            <div className="cloud-card-row">
+              <span className="cloud-card-label">公网 IP</span>
+              <span className="cloud-card-value">47.108.202.199</span>
+            </div>
+            <div className="cloud-card-row">
+              <span className="cloud-card-label">存储</span>
+              <span className="cloud-card-value">40 GB</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
