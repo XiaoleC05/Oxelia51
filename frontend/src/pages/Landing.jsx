@@ -365,7 +365,7 @@ function Landing() {
         <section className="landing-cta" ref={reveal}>
           <div className="landing-cta-inner">
             <h2 className="landing-cta-title">准备好探索了吗？</h2>
-            <p className="landing-cta-desc">一个账号，全部工具，即开即用。</p>
+            <p className="landing-cta-desc">准备好了吗？开始使用</p>
             <div className="landing-cta-actions">
               {isLoggedIn ? (
                 <Link to="/tools" className="landing-cta-btn landing-cta-btn--primary">浏览工具</Link>
