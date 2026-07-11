@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { apiPost, setToken, setRefreshToken } from '../api'
+import AuthBrandPanel from '../components/AuthBrandPanel'
 import './Auth.css'
 
 function Login() {
@@ -35,16 +36,7 @@ function Login() {
 
   return (
     <div className="auth-wrapper">
-      <aside className="auth-brand">
-        <div className="auth-brand-bg" />
-        <div className="auth-brand-shape auth-brand-shape--1" />
-        <div className="auth-brand-shape auth-brand-shape--2" />
-        <div className="auth-brand-shape auth-brand-shape--3" />
-        <div className="auth-brand-content">
-          <span className="auth-brand-logo">Oxelia51</span>
-          <p className="auth-brand-tagline">集成·简洁·高效</p>
-        </div>
-      </aside>
+      <AuthBrandPanel />
       <div className="auth-page">
         <h1>登录</h1>
         <form onSubmit={handleSubmit}>

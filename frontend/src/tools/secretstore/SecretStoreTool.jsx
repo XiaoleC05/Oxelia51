@@ -17,10 +17,10 @@ function XIcon()      { return <svg width="16" height="16" viewBox="0 0 24 24" f
 function ChevronLeftIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg> }
 function CheckIcon()  { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> }
 
-/* ===== 8 Standard Templates ===== */
+/* ===== 7 Standard Templates (synced with B1 backend) ===== */
 const BUILTIN_TEMPLATES = [
   { type: 'api-config', name: 'API 配置', fields: [
-    { key: 'API Key', sensitive: true }, { key: 'Base URL' }, { key: 'Model Name' }, { key: 'Org ID' }
+    { key: 'Provider' }, { key: 'API Key', sensitive: true }, { key: 'Base URL' }, { key: 'Model Name' }, { key: 'Org ID' }
   ]},
   { type: 'login-credential', name: '登录凭证', fields: [
     { key: 'Website' }, { key: 'URL' }, { key: 'Username' }, { key: 'Password', sensitive: true }, { key: '2FA Secret', sensitive: true }
@@ -28,17 +28,14 @@ const BUILTIN_TEMPLATES = [
   { type: 'database', name: '数据库连接', fields: [
     { key: 'Type' }, { key: 'Host' }, { key: 'Port' }, { key: 'Username' }, { key: 'Password', sensitive: true }, { key: 'DB Name' }
   ]},
-  { type: 'ssh', name: '服务器 SSH', fields: [
-    { key: 'Host' }, { key: 'Port' }, { key: 'Username' }, { key: 'Auth Type' }, { key: 'Password/Key', sensitive: true }
-  ]},
-  { type: 'cloud-key', name: '云服务密钥', fields: [
-    { key: 'Provider' }, { key: 'Access Key', sensitive: true }, { key: 'Secret Key', sensitive: true }, { key: 'Region' }
+  { type: 'server-credential', name: '服务器凭据', fields: [
+    { key: 'Provider' }, { key: 'Host' }, { key: 'Port' }, { key: 'Username' }, { key: 'Password/Key', sensitive: true }
   ]},
   { type: 'email', name: '邮箱账户', fields: [
-    { key: 'Email' }, { key: 'Password', sensitive: true }, { key: 'SMTP Server' }, { key: 'Port' }, { key: 'SSL' }
+    { key: 'Email' }, { key: 'Password', sensitive: true }, { key: 'SMTP Server' }
   ]},
   { type: 'wifi', name: 'WiFi 网络', fields: [
-    { key: 'SSID' }, { key: 'Password', sensitive: true }, { key: 'Security Type' }
+    { key: 'SSID' }, { key: 'Password', sensitive: true }
   ]},
   { type: 'custom', name: '自定义', fields: [] },
 ]

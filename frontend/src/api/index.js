@@ -36,7 +36,11 @@ async function parseResponse(res) {
       : Array.isArray(detail)
         ? detail.map((d) => d?.msg || JSON.stringify(d)).join('; ')
         : null
-    throw new Error(data?.error || detailMsg || `请求失败 (${res.status})`)
+    const err = new Error(data?.error || detailMsg || `请求失败 (${res.status})`)
+    if (data && data.code) {
+      err.code = data.code
+    }
+    throw err
   }
   return data
 }
