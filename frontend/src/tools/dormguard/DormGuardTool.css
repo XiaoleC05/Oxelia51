@@ -380,6 +380,57 @@
   opacity: 0.6;
 }
 
+/* ---- 日期字段：日期选择器 + 文本回退切换 ---- */
+.dg-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dg-field-row .dg-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.dg-input--date {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  background: var(--bg);
+  font-family: var(--mono);
+  font-size: 14px;
+  min-height: 36px;
+}
+
+.dg-input--date:focus {
+  border-color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.dg-field-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.dg-field-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
 .dg-checkbox {
   width: 18px;
   height: 18px;

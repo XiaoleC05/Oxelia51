@@ -204,6 +204,7 @@ function DashboardTab() {
     finally { setLoading(false) }
   }, [])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadStats(since) }, [since, loadStats])
 
   const setPreset = (days) => {

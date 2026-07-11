@@ -237,6 +237,24 @@
   font-variant-numeric: tabular-nums;
 }
 
+.landing-stat-num--text {
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.landing-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.landing-stat--uptime {
+  min-width: 0;
+}
+
 .landing-stat-label {
   font-family: var(--sans);
   font-size: 0.8rem;
@@ -785,6 +803,10 @@
 
   .landing-stat-num {
     font-size: 1.5rem;
+  }
+
+  .landing-stat-num--text {
+    font-size: 0.95rem;
   }
 
   .landing-stat-label {

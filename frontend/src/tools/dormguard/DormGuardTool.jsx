@@ -34,8 +34,8 @@ const CONFIG_GROUPS = [
       {
         key: 'QQ_ALERT_PAUSE_UNTIL',
         label: 'QQ 告警暂停至',
-        type: 'text',
-        hint: 'ISO 时间，留空表示不暂停',
+        type: 'date',
+        hint: '选择日期或切换文本输入 ISO 时间，留空表示不暂停',
       },
       { key: 'CRAWLER_ALERT_THRESHOLD', label: '低余额阈值（元）', type: 'number', hint: '低于此值标红' },
     ],
@@ -54,6 +54,9 @@ const ALL_CONFIG_KEYS = CONFIG_GROUPS.flatMap((g) => g.fields.map((f) => f.key))
 const SENSITIVE_KEYS = new Set(
   CONFIG_GROUPS.flatMap((g) => g.fields.filter((f) => f.sensitive).map((f) => f.key))
 )
+const DATE_FIELDS = new Set(
+  CONFIG_GROUPS.flatMap((g) => g.fields.filter((f) => f.type === 'date').map((f) => f.key))
+)
 
 function emptySettings() {
   const obj = {}
@@ -64,11 +67,19 @@ function emptySettings() {
 // checkbox 后端存 'true'/'false' 字符串
 function toFormValue(key, raw) {
   if (key === 'QQ_BOT_ENABLED') return raw === 'true' || raw === true
+  // 日期字段：ISO 时间 → YYYY-MM-DD
+  if (DATE_FIELDS.has(key) && raw && typeof raw === 'string') {
+    return raw.slice(0, 10)
+  }
   return raw ?? ''
 }
 
 function toSubmissionValue(key, formValue) {
   if (key === 'QQ_BOT_ENABLED') return formValue ? 'true' : 'false'
+  // 日期字段：YYYY-MM-DD → ISO 时间戳
+  if (DATE_FIELDS.has(key) && formValue && /^\d{4}-\d{2}-\d{2}$/.test(formValue)) {
+    return `${formValue}T00:00:00Z`
+  }
   return String(formValue ?? '')
 }
 
@@ -318,6 +329,17 @@ function ConfigPanel({ initialSettings, onSettingsChange }) {
   const [saveResult, setSaveResult] = useState(null) // { type: 'success'|'error', message, restartRequired }
   const [actionBusy, setActionBusy] = useState('') // 'crawl' | 'report' | 'qq-status' | ''
   const [actionResult, setActionResult] = useState(null) // { type, message, detail? }
+  // 日期字段文本输入回退：记录正在使用文本输入的字段 key
+  const [textModeFields, setTextModeFields] = useState(() => new Set())
+
+  function toggleFieldMode(key) {
+    setTextModeFields((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   const lastSyncedRef = useRef(initialSettings)
   useEffect(() => {
@@ -454,6 +476,8 @@ function ConfigPanel({ initialSettings, onSettingsChange }) {
             {group.fields.map((field) => {
               const value = settings[field.key]
               const isSensitive = SENSITIVE_KEYS.has(field.key)
+              const isDateField = field.type === 'date'
+              const useTextMode = isDateField && textModeFields.has(field.key)
               return (
                 <label key={field.key} className="dg-field">
                   <span className="dg-field-label">
@@ -467,6 +491,25 @@ function ConfigPanel({ initialSettings, onSettingsChange }) {
                       checked={Boolean(value)}
                       onChange={(e) => updateField(field.key, e.target.checked)}
                     />
+                  ) : isDateField ? (
+                    <div className="dg-field-row">
+                      <input
+                        type={useTextMode ? 'text' : 'date'}
+                        className="dg-input dg-input--date"
+                        value={value}
+                        onChange={(e) => updateField(field.key, e.target.value)}
+                        placeholder={useTextMode ? '2024-12-25T10:30:00Z' : ''}
+                      />
+                      <button
+                        type="button"
+                        className="dg-field-toggle"
+                        onClick={() => toggleFieldMode(field.key)}
+                        title={useTextMode ? '切换到日期选择器' : '切换到文本输入'}
+                        aria-label={useTextMode ? '切换到日期选择器' : '切换到文本输入'}
+                      >
+                        {useTextMode ? '\u{1F4C5}' : 'Tx'}
+                      </button>
+                    </div>
                   ) : (
                     <input
                       type={field.type}

@@ -95,6 +95,7 @@ function Landing() {
   const [tools, setTools] = useState([])
   const [portfolio, setPortfolio] = useState([])
   const [articles, setArticles] = useState([])
+  const [uptime, setUptime] = useState(null) // { days, hours }
   const [loading, setLoading] = useState(true)
   const reveal = useReveal()
 
@@ -104,7 +105,8 @@ function Landing() {
       apiGet('/tools').catch(() => []),
       apiGet('/portfolio').catch(() => []),
       fetchArticles().catch(() => []),
-    ]).then(([hero, toolsData, portfolioData, articlesData]) => {
+      apiGet('/uptime').catch(() => null),
+    ]).then(([hero, toolsData, portfolioData, articlesData, uptimeData]) => {
       if (hero) {
         setImages(hero.images || [])
         if (hero.autoplay_interval_ms) setAutoplayMs(hero.autoplay_interval_ms)
@@ -112,6 +114,7 @@ function Landing() {
       setTools(toolsData || [])
       setPortfolio(portfolioData || [])
       setArticles(articlesData || [])
+      if (uptimeData) setUptime(uptimeData)
     }).finally(() => setLoading(false))
   }, [])
 
@@ -219,6 +222,22 @@ function Landing() {
 
       <section className="landing-stats" aria-label="数据概览">
         <div className="landing-stats-inner">
+          <div className="landing-stat landing-stat--uptime">
+            {loading ? (
+              <SkeletonLine width="120px" height="28px" />
+            ) : (
+              <span className="landing-stat-num landing-stat-num--text">
+                <span className="landing-stat-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                  </svg>
+                </span>
+                已运行 {uptime?.days ?? 0} 天 {uptime?.hours ?? 0} 小时
+              </span>
+            )}
+            <span className="landing-stat-label">运行时长</span>
+          </div>
+          <div className="landing-stat-divider" />
           <div className="landing-stat" ref={toolsCountRef}>
             {loading ? <SkeletonLine width="40px" height="28px" /> : <span className="landing-stat-num count-up">{toolsNum}</span>}
             <span className="landing-stat-label">在线工具</span>
