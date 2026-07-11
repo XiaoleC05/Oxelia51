@@ -269,7 +269,7 @@ function Landing() {
         <section className="landing-intro" id="landing-content" ref={reveal}>
           <h2 className="landing-intro-brand">Oxelia51</h2>
           <p className="landing-intro-desc">
-            一个账号，探索全部在线工具。从宿舍管理到阅读辅助，从代码实验到音乐创作——每一个工具都经过精心打磨。
+            集成 · 简洁 · 高效。集成的力量，简洁的体验。
           </p>
           <div className="landing-intro-links">
             <Link to="/tools" className="landing-intro-link">浏览工具</Link>
@@ -365,7 +365,7 @@ function Landing() {
         <section className="landing-cta" ref={reveal}>
           <div className="landing-cta-inner">
             <h2 className="landing-cta-title">准备好探索了吗？</h2>
-            <p className="landing-cta-desc">注册一个账号，即可使用全部在线工具。</p>
+            <p className="landing-cta-desc">一个账号，全部工具，即开即用。</p>
             <div className="landing-cta-actions">
               {isLoggedIn ? (
                 <Link to="/tools" className="landing-cta-btn landing-cta-btn--primary">浏览工具</Link>
@@ -386,7 +386,7 @@ function Landing() {
         <div className="landing-footer-top">
           <div className="landing-footer-brand">
             <div className="landing-footer-logo">Oxelia51</div>
-            <p className="landing-footer-desc">一个账号，探索全部在线工具。</p>
+            <p className="landing-footer-desc">集成 · 简洁 · 高效</p>
           </div>
           <div className="landing-footer-links">
             <div className="landing-footer-col">
