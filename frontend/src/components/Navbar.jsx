@@ -106,6 +106,13 @@ const IconLink = () => (
   </svg>
 )
 
+const IconKey = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="5" cy="11" r="3"/>
+    <path d="M7.5 8.5L14 2M14 2h-3M14 2v3"/>
+  </svg>
+)
+
 /* ===== Nav item with icon helper ===== */
 
 function NavItem({ to, icon: Icon, label }) {
@@ -261,6 +268,7 @@ function Navbar() {
         {token && user ? (
           <>
             <span className="navbar-user">{user.username}</span>
+            <NavItem to="/settings/keys" icon={IconKey} label="密钥" />
             <NavItem to="/profile" icon={IconProfile} label="资料" />
             <button onClick={handleLogout} className="navbar-btn">
               <span className="navbar-icon"><IconLogout /></span>

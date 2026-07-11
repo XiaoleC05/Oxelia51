@@ -21,6 +21,7 @@ import ArticleDetail from './pages/ArticleDetail'
 import About from './pages/About'
 import Friends from './pages/Friends'
 import Profile from './pages/Profile'
+import ApiKeysPage from './pages/ApiKeysPage'
 import './App.css'
 
 function variantFor(pathname) {
@@ -28,6 +29,7 @@ function variantFor(pathname) {
   if (pathname === '/blog' || pathname.startsWith('/blog/')) return 'ink'
   if (pathname === '/tools' || pathname.startsWith('/tools/')) return 'mist'
   if (pathname === '/portfolio' || pathname === '/friends' || pathname === '/about') return 'light'
+  if (pathname.startsWith('/settings')) return 'mist'
   return 'none'
 }
 
@@ -73,7 +75,7 @@ function GlobalFooter() {
       <div className="landing-footer-bottom">
         <span>&copy; {new Date().getFullYear()} Oxelia51</span>
         <span className="landing-footer-sep">·</span>
-        <span>集成·简洁·高效</span>
+        <span>写点有用的东西</span>
       </div>
       <div className="landing-footer-filing">
         <span>ICP备案号：蜀ICP备XXXXXXXX号-1</span>
@@ -107,6 +109,7 @@ function AnimatedRoutes() {
             <Route path="/about" element={<About />} />
             <Route path="/friends" element={<Friends />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/settings/keys" element={<ApiKeysPage />} />
           </Routes>
         </div>
       </Suspense>
