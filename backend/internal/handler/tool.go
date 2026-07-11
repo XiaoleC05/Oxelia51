@@ -316,37 +316,32 @@ func (h *AdminToolHandler) PatchUser(c *gin.Context) {
 }
 
 // DashboardStats GET /api/admin/dashboard-stats — 管理后台数据概览
+// ?since=YYYY-MM-DD 查询指定日期以来的新用户数
 type dashboardStatsResponse struct {
 	TotalUsers     int `json:"total_users"`
 	TotalTools     int `json:"total_tools"`
 	NewUsers7d     int `json:"new_users_7d"`
 	NewUsers30d    int `json:"new_users_30d"`
+	NewUsersSince  int `json:"new_users_since"`
 	TotalArticles  int `json:"total_articles"`
 	TotalPortfolio int `json:"total_portfolio"`
 }
 
 func (h *AdminToolHandler) DashboardStats(c *gin.Context) {
 	ctx := c.Request.Context()
+	since := c.Query("since")
 
 	var resp dashboardStatsResponse
 
-	queries := []struct {
-		query string
-		dest  *int
-	}{
-		{`SELECT COUNT(*) FROM users`, &resp.TotalUsers},
-		{`SELECT COUNT(*) FROM tools`, &resp.TotalTools},
-		{`SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'`, &resp.NewUsers7d},
-		{`SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '30 days'`, &resp.NewUsers30d},
-		{`SELECT COUNT(*) FROM articles`, &resp.TotalArticles},
-		{`SELECT COUNT(*) FROM portfolio_items`, &resp.TotalPortfolio},
-	}
+	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&resp.TotalUsers)
+	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM tools`).Scan(&resp.TotalTools)
+	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'`).Scan(&resp.NewUsers7d)
+	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '30 days'`).Scan(&resp.NewUsers30d)
+	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM articles`).Scan(&resp.TotalArticles)
+	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM portfolio_items`).Scan(&resp.TotalPortfolio)
 
-	for _, q := range queries {
-		if err := h.db.QueryRow(ctx, q.query).Scan(q.dest); err != nil {
-			apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "统计查询失败")
-			return
-		}
+	if since != "" {
+		h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE created_at >= $1`, since).Scan(&resp.NewUsersSince)
 	}
 
 	c.JSON(http.StatusOK, resp)

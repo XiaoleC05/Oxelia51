@@ -191,12 +191,14 @@ function DashboardTab() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [since, setSince] = useState('')
 
   useEffect(() => {
     let cancelled = false
     async function load() {
       try {
-        const data = await apiGet('/admin/dashboard-stats', { auth: true })
+        const qs = since ? '?since=' + encodeURIComponent(since) : ''
+        const data = await apiGet('/admin/dashboard-stats' + qs, { auth: true })
         if (!cancelled) setStats(data)
       } catch (err) {
         if (!cancelled) setError(err.message)
@@ -206,7 +208,7 @@ function DashboardTab() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [since])
 
   if (loading) return <p className="admin-status">加载中…</p>
   if (error) return <p className="admin-error">{error}</p>
@@ -216,13 +218,22 @@ function DashboardTab() {
     { icon: <DashboardIconUsers />, title: '用户总数', value: stats.total_users ?? 0 },
     { icon: <DashboardIconUsers />, title: '新增用户（7 天）', value: stats.new_users_7d ?? 0 },
     { icon: <DashboardIconUsers />, title: '新增用户（30 天）', value: stats.new_users_30d ?? 0 },
+  ]
+  if (stats.new_users_since !== undefined) {
+    cards.push({ icon: <DashboardIconUsers />, title: `新增用户（自 ${since}）`, value: stats.new_users_since ?? 0 })
+  }
+  cards.push(
     { icon: <DashboardIconTools />, title: '工具数量', value: stats.total_tools ?? 0 },
     { icon: <DashboardIconArticles />, title: '文章数量', value: stats.total_articles ?? 0 },
     { icon: <DashboardIconPortfolio />, title: '作品数量', value: stats.total_portfolio ?? 0 },
-  ]
+  )
 
   return (
     <div className="admin-section">
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ fontSize: 13, color: 'var(--text-muted)', marginRight: 8 }}>查看新增用户（自）：</label>
+        <input type="date" value={since} onChange={e => setSince(e.target.value)} style={{ fontSize: 13, padding: '4px 8px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--text)' }} />
+      </div>
       <div className="dashboard-grid">
         {cards.map((c) => (
           <div key={c.title} className="server-card dashboard-card">
