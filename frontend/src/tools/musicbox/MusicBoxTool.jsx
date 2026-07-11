@@ -645,6 +645,9 @@ export default function MusicBoxTool() {
       {viewMode === 'settings' && (
         <div className="mb-settings">
           <h3 className="mb-section-title">平台凭证</h3>
+          <div className="mb-cred-tip">
+            如何获取？前往音乐平台开发者中心创建应用，获取 API Key。
+          </div>
           <div className="mb-cred-status">
             {credLoading ? (
               <p className="mb-text-muted">检查中…</p>

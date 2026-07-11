@@ -7,7 +7,7 @@ function Admin() {
   const user = useMemo(() => getStoredUser(), [])
   const token = useMemo(() => getToken(), [])
   const navigate = useNavigate()
-  const [tab, setTab] = useState('tools')
+  const [tab, setTab] = useState('dashboard')
   const [tools, setTools] = useState([])
   const [users, setUsers] = useState([])
   const [heroImages, setHeroImages] = useState([])
@@ -30,7 +30,7 @@ function Admin() {
 
   const loadData = useCallback(async () => {
     const currentTab = tabRef.current
-    if (currentTab === 'server') return
+    if (currentTab === 'server' || currentTab === 'dashboard') return
     if (fetchingRef.current) return
     fetchingRef.current = true
     setLoading(true)
@@ -82,6 +82,12 @@ function Admin() {
 
       <div className="admin-tabs">
         <button
+          className={`admin-tab ${tab === 'dashboard' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('dashboard')}
+        >
+          概览
+        </button>
+        <button
           className={`admin-tab ${tab === 'tools' ? 'admin-tab--active' : ''}`}
           onClick={() => setTab('tools')}
         >
@@ -121,6 +127,8 @@ function Admin() {
 
       {tab === 'server' ? (
         <ServerTab />
+      ) : tab === 'dashboard' ? (
+        <DashboardTab />
       ) : (
         <>
           {loading && <p className="admin-status">加载中…</p>}
@@ -143,6 +151,89 @@ function Admin() {
           )}
         </>
       )}
+    </div>
+  )
+}
+
+// ===== 数据概览 =====
+function DashboardIconUsers() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  )
+}
+function DashboardIconTools() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </svg>
+  )
+}
+function DashboardIconArticles() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+    </svg>
+  )
+}
+function DashboardIconPortfolio() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+    </svg>
+  )
+}
+
+function DashboardTab() {
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const data = await apiGet('/admin/dashboard-stats', { auth: true })
+        if (!cancelled) setStats(data)
+      } catch (err) {
+        if (!cancelled) setError(err.message)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  if (loading) return <p className="admin-status">加载中…</p>
+  if (error) return <p className="admin-error">{error}</p>
+  if (!stats) return null
+
+  const cards = [
+    { icon: <DashboardIconUsers />, title: '用户总数', value: stats.users_total ?? 0 },
+    { icon: <DashboardIconUsers />, title: '新增用户（7 天）', value: stats.users_new_7d ?? 0 },
+    { icon: <DashboardIconUsers />, title: '新增用户（30 天）', value: stats.users_new_30d ?? 0 },
+    { icon: <DashboardIconTools />, title: '工具数量', value: stats.tools_total ?? 0 },
+    { icon: <DashboardIconArticles />, title: '文章数量', value: stats.articles_total ?? 0 },
+    { icon: <DashboardIconPortfolio />, title: '作品数量', value: stats.portfolio_total ?? 0 },
+  ]
+
+  return (
+    <div className="admin-section">
+      <div className="dashboard-grid">
+        {cards.map((c) => (
+          <div key={c.title} className="server-card dashboard-card">
+            <div className="dashboard-card-header">
+              <span className="dashboard-card-icon">{c.icon}</span>
+              <h4 className="server-card-title">{c.title}</h4>
+            </div>
+            <p className="server-card-value dashboard-card-value">{c.value}</p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

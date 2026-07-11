@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
-import { apiProxy } from '../../api'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { apiProxy, getStoredUser } from '../../api'
 import './CS2LabTool.css'
 
 /* ===== Inline SVG Icons (Lucide style, 16×16) ===== */
@@ -55,6 +55,13 @@ function ChevronRightIcon() {
     </svg>
   )
 }
+function PlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  )
+}
 
 /* ===== Type badge ===== */
 const TYPE_ICONS = {
@@ -75,6 +82,21 @@ export default function CS2LabTool() {
   // --- View ---
   const [viewMode, setViewMode] = useState('maps') // maps | browser | favorites
   const [error, setError] = useState('')
+
+  // --- Admin ---
+  const user = useMemo(() => getStoredUser(), [])
+  const isAdmin = user?.role === 'admin'
+  const [adminModal, setAdminModal] = useState(null) // 'map' | 'lineup' | null
+  const [adminBusy, setAdminBusy] = useState(false)
+  const [mapForm, setMapForm] = useState({ name: '', display_name: '' })
+  const [lineupForm, setLineupForm] = useState({
+    map_id: '',
+    title: '',
+    type: 'smoke',
+    description: '',
+    throw_type: '',
+    image_url: '',
+  })
 
   // --- Maps ---
   const [maps, setMaps] = useState([])
@@ -191,6 +213,67 @@ export default function CS2LabTool() {
     finally { setNoteSaving(false) }
   }, [selectedLineup, noteContent])
 
+  /* ===== Admin: 添加地图 / 道具 ===== */
+  const openMapModal = useCallback(() => {
+    setMapForm({ name: '', display_name: '' })
+    setAdminModal('map')
+  }, [])
+
+  const openLineupModal = useCallback(() => {
+    setLineupForm({
+      map_id: selectedMapId || (maps[0]?.id ? String(maps[0].id) : ''),
+      title: '',
+      type: 'smoke',
+      description: '',
+      throw_type: '',
+      image_url: '',
+    })
+    setAdminModal('lineup')
+  }, [selectedMapId, maps])
+
+  const submitMap = useCallback(async (e) => {
+    e.preventDefault()
+    if (!mapForm.name.trim()) return
+    setAdminBusy(true)
+    try {
+      await apiProxy('cs2lab', 'api/admin/maps', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: mapForm.name.trim(),
+          display_name: mapForm.display_name.trim() || undefined,
+        }),
+      })
+      setAdminModal(null)
+      await loadMaps()
+    } catch (err) { setError(err.message) }
+    finally { setAdminBusy(false) }
+  }, [mapForm, loadMaps])
+
+  const submitLineup = useCallback(async (e) => {
+    e.preventDefault()
+    if (!lineupForm.map_id || !lineupForm.title.trim()) return
+    setAdminBusy(true)
+    try {
+      const body = {
+        map_id: Number(lineupForm.map_id),
+        title: lineupForm.title.trim(),
+        type: lineupForm.type,
+        description: lineupForm.description.trim() || undefined,
+        throw_type: lineupForm.throw_type.trim() || undefined,
+        image_urls: lineupForm.image_url.trim() ? [lineupForm.image_url.trim()] : undefined,
+      }
+      await apiProxy('cs2lab', 'api/admin/lineups', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      })
+      setAdminModal(null)
+      if (viewMode === 'browser') {
+        loadLineups(selectedMapId, filterType, searchQuery)
+      }
+    } catch (err) { setError(err.message) }
+    finally { setAdminBusy(false) }
+  }, [lineupForm, viewMode, selectedMapId, filterType, searchQuery, loadLineups])
+
   /* ===== Init ===== */
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadMaps() }, [loadMaps])
@@ -265,6 +348,13 @@ export default function CS2LabTool() {
       {/* ===== Maps View ===== */}
       {viewMode === 'maps' && (
         <div className="cl-maps">
+          {isAdmin && (
+            <div className="cl-admin-bar">
+              <button className="cl-admin-btn" onClick={openMapModal}>
+                <PlusIcon /> 添加地图
+              </button>
+            </div>
+          )}
           {mapsLoading ? (
             <div className="cl-loading"><div className="cl-spinner" /><p>加载地图…</p></div>
           ) : maps.length === 0 ? (
@@ -329,6 +419,15 @@ export default function CS2LabTool() {
             {selectedMap && (
               <div className="cl-current-map">
                 <MapIcon /> {selectedMap.name || selectedMap.map_name}
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="cl-admin-bar cl-admin-bar--inline">
+                <button className="cl-admin-btn" onClick={openLineupModal} disabled={maps.length === 0}>
+                  <PlusIcon /> 添加道具
+                </button>
+                {maps.length === 0 && <span className="cl-admin-hint">需先添加地图</span>}
               </div>
             )}
           </div>
@@ -503,6 +602,132 @@ export default function CS2LabTool() {
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ===== Admin Modal: 添加地图 ===== */}
+      {adminModal === 'map' && (
+        <div className="cl-overlay" onClick={() => setAdminModal(null)}>
+          <form className="cl-admin-form" onClick={(e) => e.stopPropagation()} onSubmit={submitMap}>
+            <div className="cl-detail-header">
+              <h3 className="cl-detail-title">添加地图</h3>
+              <button type="button" className="cl-close-btn" onClick={() => setAdminModal(null)}><XIcon /></button>
+            </div>
+            <label className="cl-field">
+              <span className="cl-field-label">名称 *</span>
+              <input
+                type="text"
+                className="cl-input"
+                placeholder="如 de_dust2"
+                value={mapForm.name}
+                onChange={(e) => setMapForm({ ...mapForm, name: e.target.value })}
+                required
+                autoFocus
+              />
+            </label>
+            <label className="cl-field">
+              <span className="cl-field-label">显示名</span>
+              <input
+                type="text"
+                className="cl-input"
+                placeholder="如 沙漠 II（留空使用名称）"
+                value={mapForm.display_name}
+                onChange={(e) => setMapForm({ ...mapForm, display_name: e.target.value })}
+              />
+            </label>
+            <div className="cl-form-actions">
+              <button type="submit" className="cl-save-btn" disabled={adminBusy || !mapForm.name.trim()}>
+                {adminBusy ? '保存中…' : '添加'}
+              </button>
+              <button type="button" className="cl-back-btn" onClick={() => setAdminModal(null)}>取消</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ===== Admin Modal: 添加道具 ===== */}
+      {adminModal === 'lineup' && (
+        <div className="cl-overlay" onClick={() => setAdminModal(null)}>
+          <form className="cl-admin-form" onClick={(e) => e.stopPropagation()} onSubmit={submitLineup}>
+            <div className="cl-detail-header">
+              <h3 className="cl-detail-title">添加道具</h3>
+              <button type="button" className="cl-close-btn" onClick={() => setAdminModal(null)}><XIcon /></button>
+            </div>
+            <label className="cl-field">
+              <span className="cl-field-label">地图 *</span>
+              <select
+                className="cl-select"
+                value={lineupForm.map_id}
+                onChange={(e) => setLineupForm({ ...lineupForm, map_id: e.target.value })}
+                required
+              >
+                <option value="">选择地图…</option>
+                {maps.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name || m.map_name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="cl-field">
+              <span className="cl-field-label">标题 *</span>
+              <input
+                type="text"
+                className="cl-input"
+                placeholder="如 A 大道烟雾"
+                value={lineupForm.title}
+                onChange={(e) => setLineupForm({ ...lineupForm, title: e.target.value })}
+                required
+              />
+            </label>
+            <label className="cl-field">
+              <span className="cl-field-label">类型 *</span>
+              <select
+                className="cl-select"
+                value={lineupForm.type}
+                onChange={(e) => setLineupForm({ ...lineupForm, type: e.target.value })}
+              >
+                <option value="smoke">💨 烟雾</option>
+                <option value="flash">⚡ 闪光</option>
+                <option value="molotov">🔥 燃烧</option>
+                <option value="grenade">💣 手雷</option>
+              </select>
+            </label>
+            <label className="cl-field">
+              <span className="cl-field-label">描述</span>
+              <textarea
+                className="cl-notes-textarea"
+                placeholder="道具描述（可选）"
+                value={lineupForm.description}
+                onChange={(e) => setLineupForm({ ...lineupForm, description: e.target.value })}
+                rows={3}
+              />
+            </label>
+            <label className="cl-field">
+              <span className="cl-field-label">投掷方式</span>
+              <input
+                type="text"
+                className="cl-input"
+                placeholder="如 跳投 / 站投 / 蹲投"
+                value={lineupForm.throw_type}
+                onChange={(e) => setLineupForm({ ...lineupForm, throw_type: e.target.value })}
+              />
+            </label>
+            <label className="cl-field">
+              <span className="cl-field-label">图片 URL</span>
+              <input
+                type="url"
+                className="cl-input"
+                placeholder="https://example.com/lineup.jpg"
+                value={lineupForm.image_url}
+                onChange={(e) => setLineupForm({ ...lineupForm, image_url: e.target.value })}
+              />
+            </label>
+            <div className="cl-form-actions">
+              <button type="submit" className="cl-save-btn" disabled={adminBusy || !lineupForm.map_id || !lineupForm.title.trim()}>
+                {adminBusy ? '保存中…' : '添加'}
+              </button>
+              <button type="button" className="cl-back-btn" onClick={() => setAdminModal(null)}>取消</button>
+            </div>
+          </form>
         </div>
       )}
     </div>

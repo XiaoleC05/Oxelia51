@@ -376,6 +376,9 @@ export default function SuperReadTool() {
                   className="sr-input"
                   autoFocus
                 />
+                <p className="sr-feed-hint">
+                  示例：<code>https://feeds.feedburner.com/...</code> 或 <code>https://example.com/rss</code>
+                </p>
                 <div className="sr-modal-actions">
                   <button className="sr-btn sr-btn--secondary" onClick={() => setShowAddFeed(false)}>取消</button>
                   <button className="sr-btn sr-btn--primary" onClick={handleAddFeed} disabled={feedActionBusy === 'add'}>

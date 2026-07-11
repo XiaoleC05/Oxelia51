@@ -302,6 +302,43 @@ func (h *AdminToolHandler) PatchUser(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
+// DashboardStats GET /api/admin/dashboard-stats — 管理后台数据概览
+type dashboardStatsResponse struct {
+	TotalUsers     int `json:"total_users"`
+	TotalTools     int `json:"total_tools"`
+	NewUsers7d     int `json:"new_users_7d"`
+	NewUsers30d    int `json:"new_users_30d"`
+	TotalArticles  int `json:"total_articles"`
+	TotalPortfolio int `json:"total_portfolio"`
+}
+
+func (h *AdminToolHandler) DashboardStats(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	var resp dashboardStatsResponse
+
+	queries := []struct {
+		query string
+		dest  *int
+	}{
+		{`SELECT COUNT(*) FROM users`, &resp.TotalUsers},
+		{`SELECT COUNT(*) FROM tools`, &resp.TotalTools},
+		{`SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'`, &resp.NewUsers7d},
+		{`SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '30 days'`, &resp.NewUsers30d},
+		{`SELECT COUNT(*) FROM articles`, &resp.TotalArticles},
+		{`SELECT COUNT(*) FROM portfolio_items`, &resp.TotalPortfolio},
+	}
+
+	for _, q := range queries {
+		if err := h.db.QueryRow(ctx, q.query).Scan(q.dest); err != nil {
+			apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "统计查询失败")
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 // ScanLocal POST /api/admin/tools/scan-local
 func (h *AdminToolHandler) ScanLocal(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)

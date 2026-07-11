@@ -613,3 +613,108 @@
     padding: 20px 14px;
   }
 }
+
+/* ---- Admin Bar ---- */
+.cl-admin-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cl-admin-bar--inline {
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+.cl-admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border: 1px solid var(--text-h);
+  border-radius: 6px;
+  background: var(--text-h);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.cl-admin-btn:hover:not(:disabled) {
+  opacity: 0.88;
+  transform: scale(1.01);
+}
+
+.cl-admin-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cl-admin-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+}
+
+/* ---- Admin Form (Modal) ---- */
+.cl-admin-form {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 100%;
+  max-width: 520px;
+  padding: 20px 24px 24px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cl-field-label {
+  font-size: 13px;
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.cl-input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-h);
+  font-size: 14px;
+  font-family: var(--sans);
+  transition: border-color 0.2s;
+}
+
+.cl-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.cl-input::placeholder {
+  color: var(--text-muted);
+}
+
+.cl-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .cl-admin-form {
+    max-width: 100%;
+    border-radius: 0;
+  }
+}

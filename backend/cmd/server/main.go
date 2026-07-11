@@ -131,6 +131,7 @@ func main() {
 
 		statsH := handler.NewStatsHandler()
 		admin.GET("/server-stats", statsH.ServerStats)
+		admin.GET("/dashboard-stats", adminTool.DashboardStats)
 	}
 
 	addr := cfg.BindAddr()

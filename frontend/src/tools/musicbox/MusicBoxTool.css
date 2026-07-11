@@ -454,6 +454,17 @@
   max-width: 480px;
 }
 
+.mb-cred-tip {
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border-left: 3px solid var(--accent);
+  background: var(--code-bg);
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
 .mb-cred-status {
   margin-bottom: 20px;
 }
