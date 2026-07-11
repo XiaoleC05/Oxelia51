@@ -1629,12 +1629,6 @@ function ServerTab() {
 
   if (!stats) return null
 
-  const days = Math.floor(stats.uptime_seconds / 86400)
-  const hours = Math.floor((stats.uptime_seconds % 86400) / 3600)
-  const memPercent = stats.memory_total_mb > 0
-    ? (stats.memory_used_mb / stats.memory_total_mb) * 100
-    : 0
-
   return (
     <div className="admin-section">
       <div className="server-stats-header">
@@ -1664,14 +1658,13 @@ function ServerTab() {
 }
 
 function ServerStatsGrid({ stats: s, label, topMargin }) {
-  var memPct = s.memory_total_mb > 0 ? (s.memory_used_mb / s.memory_total_mb) * 100 : 0
-  var days = Math.floor(s.uptime_seconds / 86400)
-  var hours = Math.floor((s.uptime_seconds % 86400) / 3600)
+  const memPct = s.memory_total_mb > 0 ? (s.memory_used_mb / s.memory_total_mb) * 100 : 0
+  const days = Math.floor(s.uptime_seconds / 86400)
+  const hours = Math.floor((s.uptime_seconds % 86400) / 3600)
   return (
     <div>
       <div className="server-stats-header" style={{ marginTop: topMargin ? 40 : 0 }}>
-        <h2>服务器资源监控</h2>
-        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{label}</span>
+        <h3 className="server-stats-label">{label}</h3>
       </div>
       <div className="server-stats-grid">
         <div className="server-card"><h4 className="server-card-title">CPU 使用率</h4><p className="server-card-value">{s.cpu_percent.toFixed(1)}%</p><ProgressBar percent={s.cpu_percent} /></div>
