@@ -1,16 +1,15 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { useMemo, Component, Suspense } from 'react'
+import { BrowserRouter, Routes, Route, useLocation, Navigate, Link } from 'react-router-dom'
+import { Component, Suspense } from 'react'
 import Navbar from './components/Navbar'
 import ScrollProgress from './components/ScrollProgress'
 import BackToTop from './components/BackToTop'
-import PageLoader from './components/PageLoader'
+import PageSkeleton from './components/Skeleton'
 import BackgroundWave from './components/BackgroundWave'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Tools from './pages/Tools'
 import ToolShell from './pages/ToolShell'
-import Portfolio from './pages/Portfolio'
 import VerifyEmail from './pages/VerifyEmail'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
@@ -23,15 +22,6 @@ import Friends from './pages/Friends'
 import Profile from './pages/Profile'
 import ApiKeysPage from './pages/ApiKeysPage'
 import './App.css'
-
-function variantFor(pathname) {
-  if (pathname === '/') return 'split'
-  if (pathname === '/blog' || pathname.startsWith('/blog/')) return 'ink'
-  if (pathname === '/tools' || pathname.startsWith('/tools/')) return 'mist'
-  if (pathname === '/portfolio' || pathname === '/friends' || pathname === '/about') return 'light'
-  if (pathname.startsWith('/settings')) return 'mist'
-  return 'none'
-}
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -59,14 +49,6 @@ class ErrorBoundary extends Component {
   }
 }
 
-function RouteFallback() {
-  return (
-    <div className="route-fallback">
-      <div className="route-fallback-spinner" />
-    </div>
-  )
-}
-
 function GlobalFooter() {
   const location = useLocation()
   if (location.pathname === '/') return null
@@ -76,6 +58,8 @@ function GlobalFooter() {
         <span>&copy; {new Date().getFullYear()} Oxelia51</span>
         <span className="landing-footer-sep">·</span>
         <span>写点有用的东西</span>
+        <span className="landing-footer-sep">·</span>
+        <Link to="/friends" className="landing-footer-link">友情链接</Link>
       </div>
       <div className="landing-footer-filing">
         <span>ICP备案号：蜀ICP备XXXXXXXX号-1</span>
@@ -90,7 +74,7 @@ function AnimatedRoutes() {
   const location = useLocation()
   return (
     <ErrorBoundary>
-      <Suspense fallback={<RouteFallback />}>
+      <Suspense fallback={<PageSkeleton />}>
         <div key={location.pathname} className="route-fade">
           <Routes location={location}>
             <Route path="/" element={<Landing />} />
@@ -102,7 +86,7 @@ function AnimatedRoutes() {
             <Route path="/resend-verification" element={<ResendVerification />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/tools/:slug" element={<ToolShell />} />
-            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/portfolio" element={<Navigate to="/tools" replace />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:id" element={<ArticleDetail />} />
@@ -117,24 +101,12 @@ function AnimatedRoutes() {
   )
 }
 
-function LoaderGate() {
-  const location = useLocation()
-  const variant = useMemo(() => variantFor(location.pathname), [location.pathname])
-
-  if (variant === 'none') return null
-
-  return (
-    <PageLoader key={location.pathname} variant={variant} />
-  )
-}
-
 function App() {
   return (
     <BrowserRouter>
       <BackgroundWave />
       <ScrollProgress />
       <Navbar />
-      <LoaderGate />
       <AnimatedRoutes />
       <GlobalFooter />
       <BackToTop />

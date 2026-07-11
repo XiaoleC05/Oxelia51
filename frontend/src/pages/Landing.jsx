@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchHeroImages, fetchArticles, apiGet, getToken } from '../api'
+import { SkeletonLine } from '../components/Skeleton'
 import './Landing.css'
 
 const DEFAULT_INTERVAL = 5000
@@ -83,41 +84,6 @@ function Typewriter({ text, onComplete }) {
       <span>{displayed}</span>
       <span className="hero-cursor" style={{ opacity: cursor ? 1 : 0 }}>|</span>
     </span>
-  )
-}
-
-function SkeletonCards({ count = 4 }) {
-  return (
-    <div className="landing-card-grid">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="landing-card">
-          <div className="landing-card-body">
-            <div className="skeleton skeleton-title" />
-            <div className="skeleton skeleton-text" />
-            <div className="skeleton skeleton-text" style={{ width: '40%' }} />
-          </div>
-          <div className="landing-card-foot">
-            <div className="skeleton skeleton-text" style={{ width: '80px' }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function SkeletonArticles({ count = 4 }) {
-  return (
-    <div className="landing-article-list">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="landing-article-row" style={{ padding: '18px 0', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div className="skeleton skeleton-title" />
-            <div className="skeleton skeleton-text" />
-            <div className="skeleton skeleton-text" style={{ width: '70%' }} />
-          </div>
-        </div>
-      ))}
-    </div>
   )
 }
 
@@ -250,17 +216,17 @@ function Landing() {
       <section className="landing-stats" aria-label="数据概览">
         <div className="landing-stats-inner">
           <div className="landing-stat" ref={toolsCountRef}>
-            <span className="landing-stat-num count-up">{toolsNum}</span>
+            {loading ? <SkeletonLine width="40px" height="28px" /> : <span className="landing-stat-num count-up">{toolsNum}</span>}
             <span className="landing-stat-label">在线工具</span>
           </div>
           <div className="landing-stat-divider" />
           <div className="landing-stat" ref={portfolioCountRef}>
-            <span className="landing-stat-num count-up">{portfolioNum}</span>
+            {loading ? <SkeletonLine width="40px" height="28px" /> : <span className="landing-stat-num count-up">{portfolioNum}</span>}
             <span className="landing-stat-label">开源作品</span>
           </div>
           <div className="landing-stat-divider" />
           <div className="landing-stat" ref={articlesCountRef}>
-            <span className="landing-stat-num count-up">{articlesNum}</span>
+            {loading ? <SkeletonLine width="40px" height="28px" /> : <span className="landing-stat-num count-up">{articlesNum}</span>}
             <span className="landing-stat-label">技术文章</span>
           </div>
         </div>
@@ -274,7 +240,6 @@ function Landing() {
           </p>
           <div className="landing-intro-links">
             <Link to="/tools" className="landing-intro-link">浏览工具</Link>
-            <Link to="/portfolio" className="landing-intro-link">作品集</Link>
           </div>
         </section>
 
@@ -295,91 +260,6 @@ function Landing() {
           </div>
         </section>
 
-        <section className="landing-section landing-tools-section" ref={reveal}>
-          <div className="landing-section-inner">
-            <div className="landing-section-head">
-              <h2 className="landing-section-title">
-                热门工具
-                <span className="landing-section-count">
-                  {toolsNum > 0 && <span className="count-up"> {toolsNum} 个</span>}
-                </span>
-              </h2>
-              <Link to="/tools" className="landing-section-link">查看全部 &rarr;</Link>
-            </div>
-            {loading ? (
-              <SkeletonCards count={4} />
-            ) : tools.length > 0 ? (
-              <div className="landing-card-grid">
-                {tools.slice(0, 4).map((tool) => (
-                  <div key={tool.slug} className="landing-card">
-                    <div className="landing-card-body">
-                      <h3 className="landing-card-name">{tool.name}</h3>
-                      <p className="landing-card-desc">{tool.description || '\u2014'}</p>
-                      {tool.badge && (
-                        <span className="landing-card-badge">{tool.badge === 'open' ? '已开放' : tool.badge === 'closed_to_users' ? '暂未开放' : '已下线'}</span>
-                      )}
-                    </div>
-                    <div className="landing-card-foot">
-                      <Link to={`/tools/${tool.slug}`} className="landing-card-link">进入工具 &rarr;</Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
-
-        <section className="landing-section" ref={reveal}>
-          <div className="landing-section-inner">
-            <div className="landing-section-head">
-              <h2 className="landing-section-title">
-                最新文章
-                <span className="landing-section-count">
-                  {articlesNum > 0 && <span className="count-up"> {articlesNum} 篇</span>}
-                </span>
-              </h2>
-              <Link to="/blog" className="landing-section-link">
-                博客 &rarr;
-              </Link>
-            </div>
-            {loading ? (
-              <SkeletonArticles count={4} />
-            ) : articles.length > 0 ? (
-              <div className="landing-article-list">
-                {articles.slice(0, 1).map((article) => (
-                  <Link
-                    key={article.id}
-                    to={`/blog/${article.id}`}
-                    className="landing-article-row"
-                  >
-                    <div className="landing-article-main">
-                      <div className="landing-article-head">
-                        <h3 className="landing-article-title">
-                          {article.title}
-                          <svg className="landing-article-ext" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M6 2h8v8M14 2L4 12M11 8v4a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1h4"/>
-                          </svg>
-                        </h3>
-                        {article.published_at && (
-                          <span className="landing-article-date">
-                            {new Date(article.published_at).toLocaleDateString('zh-CN')}
-                          </span>
-                        )}
-                      </div>
-                      {article.category && (
-                        <span className="landing-article-cat">{article.category}</span>
-                      )}
-                      {article.summary && (
-                        <p className="landing-article-summary">{article.summary}</p>
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
-
       </div>
 
       <div className="landing-footer-transition" />
@@ -394,7 +274,6 @@ function Landing() {
             <div className="landing-footer-col">
               <span className="landing-footer-col-title">导航</span>
               <Link to="/tools">工具</Link>
-              <Link to="/portfolio">作品</Link>
               <Link to="/blog">博客</Link>
               <Link to="/about">关于</Link>
             </div>
@@ -402,6 +281,7 @@ function Landing() {
               <span className="landing-footer-col-title">链接</span>
               <a href="https://github.com/XiaoleC05/Oxelia51" target="_blank" rel="noreferrer">GitHub</a>
               <a href="https://xiaolec05.github.io" target="_blank" rel="noreferrer">Blog</a>
+              <Link to="/friends">友情链接</Link>
             </div>
           </div>
         </div>

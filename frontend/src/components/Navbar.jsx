@@ -21,14 +21,6 @@ const IconTools = () => (
   </svg>
 )
 
-const IconImage = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/>
-    <circle cx="5" cy="6" r="1.5"/>
-    <path d="M1.5 11.5l4-3 3 2.5 2.5-2 3.5 3"/>
-  </svg>
-)
-
 const IconGear = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="8" cy="8" r="2.5"/>
@@ -99,17 +91,16 @@ const IconSearch = () => (
   </svg>
 )
 
-const IconLink = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 10a3 3 0 010-4.24L8 3.76a3 3 0 014.24 4.24L10 10.24"/>
-    <path d="M10 6a3 3 0 010 4.24L8 12.24a3 3 0 01-4.24-4.24L6 5.76"/>
-  </svg>
-)
-
 const IconKey = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="5" cy="11" r="3"/>
     <path d="M7.5 8.5L14 2M14 2h-3M14 2v3"/>
+  </svg>
+)
+
+const IconChevronDown = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 4.5L6 7.5L9 4.5"/>
   </svg>
 )
 
@@ -134,9 +125,22 @@ function Navbar() {
 
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuRef = useRef(null)
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setMobileOpen(false) }, [location.pathname])
+  useEffect(() => { setMobileOpen(false); setUserMenuOpen(false) }, [location.pathname])
+
+  useEffect(() => {
+    if (!userMenuOpen) return
+    const handler = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [userMenuOpen])
 
   /* ---- Theme ---- */
   const getInitialTheme = () => {
@@ -152,9 +156,9 @@ function Navbar() {
     localStorage.setItem('theme', theme)
   }, [theme])
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
-  }
+  }, [])
 
   /* ---- Search ---- */
   const [searchOpen, setSearchOpen] = useState(false)
@@ -182,7 +186,6 @@ function Navbar() {
     return () => clearTimeout(timer)
   }, [searchQuery, doSearch])
 
-  // Close search on outside click or ESC
   useEffect(() => {
     if (!searchOpen) return
     const handler = (e) => {
@@ -201,16 +204,15 @@ function Navbar() {
     }
   }, [searchOpen])
 
-  const openSearch = () => {
+  const openSearch = useCallback(() => {
+    setMobileOpen(false)
     setSearchOpen(true)
     setTimeout(() => searchInputRef.current?.focus(), 50)
-  }
+  }, [])
 
   /* ---- Scroll ---- */
-
   useEffect(() => {
     const handleScroll = () => {
-      // hero 高度改为 50vh，导航栏在滚过 hero 后变色
       const heroH = window.innerHeight * 0.5
       setScrolled(window.scrollY > heroH - 64)
     }
@@ -228,12 +230,11 @@ function Navbar() {
     }
   })()
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await logout()
     navigate('/login')
-  }
+  }, [navigate])
 
-  // Class logic: home top → transparent hero; home scrolled → solid; other pages → solid
   let navClass = 'navbar'
   if (isHome && !scrolled) {
     navClass += ' navbar--hero'
@@ -241,11 +242,25 @@ function Navbar() {
     navClass += ' navbar--scrolled'
   }
 
+  const userMenuItems = token && user ? (
+    <>
+      <NavItem to="/profile" icon={IconProfile} label="资料" />
+      <NavItem to="/settings/keys" icon={IconKey} label="密钥" />
+      <button onClick={handleLogout} className="navbar-item navbar-item--btn">
+        <span className="navbar-icon"><IconLogout /></span>
+        <span>退出</span>
+      </button>
+    </>
+  ) : (
+    <>
+      <NavItem to="/login" icon={IconUser} label="登录" />
+      <NavItem to="/register" icon={IconUserPlus} label="注册" />
+    </>
+  )
+
   return (
     <nav className={navClass}>
-      <Link to="/" className="navbar-brand">
-        Oxelia51
-      </Link>
+      <Link to="/" className="navbar-brand">Oxelia51</Link>
 
       <button
         className={`navbar-hamburger${mobileOpen ? ' navbar-hamburger--open' : ''}`}
@@ -256,40 +271,58 @@ function Navbar() {
       </button>
 
       <div className={`navbar-links${mobileOpen ? ' navbar-links--open' : ''}`}>
+        {/* Main nav */}
         <NavItem to="/" icon={IconHome} label="首页" />
         <NavItem to="/tools" icon={IconTools} label="工具" />
-        <NavItem to="/portfolio" icon={IconImage} label="作品" />
         <NavItem to="/blog" icon={IconBook} label="博客" />
         <NavItem to="/about" icon={IconPerson} label="关于开发者" />
-        <NavItem to="/friends" icon={IconLink} label="友情链接" />
         {token && user?.role === 'admin' && (
           <NavItem to="/admin" icon={IconGear} label="管理" />
         )}
-        {token && user ? (
-          <>
-            <span className="navbar-user">{user.username}</span>
-            <NavItem to="/settings/keys" icon={IconKey} label="密钥" />
-            <NavItem to="/profile" icon={IconProfile} label="资料" />
-            <button onClick={handleLogout} className="navbar-btn">
-              <span className="navbar-icon"><IconLogout /></span>
-              退出
+
+        {/* Desktop: right toolbar */}
+        <div className="navbar-right">
+          <button className="navbar-icon-btn" onClick={openSearch} aria-label="搜索">
+            <IconSearch />
+          </button>
+          <button className="navbar-icon-btn" onClick={toggleTheme} aria-label="切换主题">
+            {theme === 'dark' ? <IconSun /> : <IconMoon />}
+          </button>
+
+          <div className="navbar-user-dropdown" ref={userMenuRef}>
+            <button
+              className="navbar-user-btn"
+              onClick={() => setUserMenuOpen((o) => !o)}
+            >
+              <IconUser />
+              <span>{token && user ? user.username : '账户'}</span>
+              <IconChevronDown />
             </button>
-          </>
-        ) : (
-          <>
-            <NavItem to="/login" icon={IconUser} label="登录" />
-            <NavItem to="/register" icon={IconUserPlus} label="注册" />
-          </>
-        )}
-        <button className="navbar-icon-btn" onClick={openSearch} aria-label="搜索">
-          <IconSearch />
-        </button>
-        <button className="navbar-icon-btn" onClick={toggleTheme} aria-label="切换主题">
-          {theme === 'dark' ? <IconSun /> : <IconMoon />}
-        </button>
+            {userMenuOpen && (
+              <div className="navbar-dropdown">
+                {userMenuItems}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile: user menu + tools */}
+        <div className="navbar-mobile-section">
+          <div className="navbar-menu-separator" />
+          {userMenuItems}
+          <div className="navbar-menu-separator" />
+          <div className="navbar-mobile-tools">
+            <button className="navbar-icon-btn" onClick={openSearch} aria-label="搜索">
+              <IconSearch />
+            </button>
+            <button className="navbar-icon-btn" onClick={toggleTheme} aria-label="切换主题">
+              {theme === 'dark' ? <IconSun /> : <IconMoon />}
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* ---- Search panel ---- */}
+      {/* Search panel */}
       {searchOpen && (
         <div className="navbar-search" ref={searchRef}>
           <input

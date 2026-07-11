@@ -1,0 +1,52 @@
+/* ===== Skeleton: pulse animation ===== */
+
+.sk-line,
+.sk-card,
+.sk-block {
+  background: var(--bg-alt);
+  border-radius: 4px;
+  animation: sk-pulse 1.2s ease-in-out infinite;
+}
+
+.sk-line {
+  margin-bottom: 8px;
+}
+
+.sk-line:last-child {
+  margin-bottom: 0;
+}
+
+.sk-card {
+  padding: 20px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sk-block {
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes sk-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.6; }
+}
+
+/* ===== Page Skeleton: route transition placeholder ===== */
+
+.page-skeleton {
+  padding: 32px 0;
+  max-width: 600px;
+  animation: sk-fade-in 0.6s ease-out;
+}
+
+.page-skeleton .sk-line {
+  margin-bottom: 16px;
+}
+
+@keyframes sk-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

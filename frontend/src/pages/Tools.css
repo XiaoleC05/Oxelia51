@@ -4,6 +4,37 @@
   padding: 32px 0 80px;
 }
 
+/* ---- Tabs ---- */
+.tools-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tools-tab {
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  border-radius: 0;
+  margin-bottom: -1px;
+}
+
+.tools-tab:hover {
+  color: var(--text-h);
+}
+
+.tools-tab--active {
+  color: var(--text-h);
+  border-bottom-color: var(--accent);
+}
+
 /* ---- Header ---- */
 .tools-header {
   margin-bottom: 48px;
