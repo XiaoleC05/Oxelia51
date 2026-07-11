@@ -1690,21 +1690,47 @@ function ServerTab() {
             <svg className="cloud-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
             </svg>
-            <h4 className="server-card-title">云服务</h4>
+            <h4 className="server-card-title">阿里云</h4>
           </div>
           <div className="cloud-card-rows">
             <div className="cloud-card-row">
-              <span className="cloud-card-label">服务器</span>
-              <span className="cloud-card-value">阿里云 2C2G</span>
+              <span className="cloud-card-label">配置</span>
+              <span className="cloud-card-value">2C2G 40GB</span>
             </div>
             <div className="cloud-card-row">
-              <span className="cloud-card-label">地域</span>
-              <span className="cloud-card-value">华东 1</span>
+              <span className="cloud-card-label">CPU</span>
+              <span className="cloud-card-value">{stats.cpu_percent.toFixed(1)}%</span>
             </div>
             <div className="cloud-card-row">
-              <span className="cloud-card-label">公网 IP</span>
-              <span className="cloud-card-value">47.108.202.199</span>
+              <span className="cloud-card-label">内存</span>
+              <span className="cloud-card-value">{stats.memory_used_mb}/{stats.memory_total_mb} MB</span>
             </div>
+          </div>
+        </div>
+        {stats.remote && (
+          <div className="server-card server-card--cloud">
+            <div className="cloud-card-header" style={{ borderColor: 'var(--accent)' }}>
+              <svg className="cloud-card-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+              </svg>
+              <h4 className="server-card-title">腾讯云</h4>
+            </div>
+            <div className="cloud-card-rows">
+              <div className="cloud-card-row">
+                <span className="cloud-card-label">配置</span>
+                <span className="cloud-card-value">4C4G 40GB</span>
+              </div>
+              <div className="cloud-card-row">
+                <span className="cloud-card-label">CPU</span>
+                <span className="cloud-card-value">{stats.remote.cpu_percent.toFixed(1)}%</span>
+              </div>
+              <div className="cloud-card-row">
+                <span className="cloud-card-label">内存</span>
+                <span className="cloud-card-value">{stats.remote.memory_used_mb}/{stats.remote.memory_total_mb} MB</span>
+              </div>
+            </div>
+          </div>
+        )}
             <div className="cloud-card-row">
               <span className="cloud-card-label">存储</span>
               <span className="cloud-card-value">40 GB</span>
