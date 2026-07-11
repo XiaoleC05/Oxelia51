@@ -11,7 +11,7 @@
 
 - **全站前端优化**（Trae Work）：slogan「集成·简洁·高效」、SEO meta/OG/JSON-LD、移动端汉堡菜单、ErrorBoundary、加载动画统一设计令牌
 - **关于开发者**：GET /api/developer/profile（公开）、PATCH /api/admin/developer/profile（管理员），developer_profile 单行表
-- **导航栏重构**：顺序首页→工具→资料→博客→关于开发者→友情链接，「作品」→「资料」
+- **导航栏重构**：顺序首页→工具→作品→博客→关于开发者→友情链接，「关于」→「关于开发者」
 - **页脚备案**：ICP 备案 + 公安备案占位
 
 ### Changed

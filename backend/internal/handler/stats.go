@@ -102,7 +102,7 @@ func (h *StatsHandler) fetchRemoteStats(rawURL string) (*serverStats, error) {
 		return nil, fmt.Errorf("unsupported scheme: %s", parsed.Scheme)
 	}
 	if parsed.Hostname() != "118.25.138.177" && parsed.Hostname() != "127.0.0.1" && parsed.Hostname() != "localhost" {
-		return nil, fmt.Errorf("untrusted host: %s", parsed.Host)
+		return nil, fmt.Errorf("untrusted host: %s", parsed.Hostname())
 	}
 
 	req, err := http.NewRequest(http.MethodGet, rawURL, nil)
