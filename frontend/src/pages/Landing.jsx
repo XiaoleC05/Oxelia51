@@ -328,7 +328,7 @@ function Landing() {
               <SkeletonArticles count={4} />
             ) : articles.length > 0 ? (
               <div className="landing-article-list">
-                {articles.slice(0, 6).map((article) => (
+                {articles.slice(0, 1).map((article) => (
                   <Link
                     key={article.id}
                     to={`/blog/${article.id}`}
