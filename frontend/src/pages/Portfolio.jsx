@@ -22,7 +22,7 @@ function Portfolio() {
     <div className="portfolio-page">
       <header className="portfolio-header">
         <h1>作品集</h1>
-        <p><code>code</code> 目录下的全部项目</p>
+        <p>精心挑选的项目与工具</p>
       </header>
 
       <div className="portfolio-list">

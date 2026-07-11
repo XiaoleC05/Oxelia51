@@ -251,7 +251,7 @@ function Navbar() {
       <div className={`navbar-links${mobileOpen ? ' navbar-links--open' : ''}`}>
         <NavItem to="/" icon={IconHome} label="首页" />
         <NavItem to="/tools" icon={IconTools} label="工具" />
-        <NavItem to="/portfolio" icon={IconImage} label="资料" />
+        <NavItem to="/portfolio" icon={IconImage} label="作品" />
         <NavItem to="/blog" icon={IconBook} label="博客" />
         <NavItem to="/about" icon={IconPerson} label="关于开发者" />
         <NavItem to="/friends" icon={IconLink} label="友情链接" />
