@@ -80,6 +80,14 @@ function XIcon() {
     </svg>
   )
 }
+function CopyIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  )
+}
 function TagIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -111,6 +119,9 @@ export default function AIHelperTool() {
   const [filterCategory, setFilterCategory] = useState('全部')
   const [filterTag, setFilterTag] = useState('')
   const [filterFavorite, setFilterFavorite] = useState(false)
+
+  // --- Copy feedback ---
+  const [copiedId, setCopiedId] = useState(null)
 
   // --- Editor form ---
   const [form, setForm] = useState(emptyPrompt())
@@ -160,6 +171,15 @@ export default function AIHelperTool() {
       await apiProxy('aihelper', `api/prompts/${id}`, { method: 'DELETE' })
       setPrompts((prev) => prev.filter((p) => p.id !== id))
     } catch (err) { setError(err.message) }
+  }, [])
+
+  /* ===== Copy prompt content ===== */
+  const copyPrompt = useCallback(async (p) => {
+    try {
+      await navigator.clipboard.writeText(p.content || '')
+      setCopiedId(p.id)
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch { /* fallback silently */ }
   }, [])
 
   /* ===== Open editor ===== */
@@ -472,6 +492,13 @@ export default function AIHelperTool() {
                     </div>
                   </div>
                   <div className="ah-prompt-card-actions">
+                    <button
+                      className={`ah-icon-btn ah-copy-btn ${copiedId === p.id ? 'ah-copy-btn--done' : ''}`}
+                      title={copiedId === p.id ? '已复制' : '复制内容'}
+                      onClick={() => copyPrompt(p)}
+                    >
+                      {copiedId === p.id ? <span className="ah-copy-check">✓</span> : <CopyIcon />}
+                    </button>
                     <button className="ah-icon-btn" title={p.favorite ? '取消收藏' : '收藏'} onClick={() => toggleFavorite(p.id, p.favorite)}>
                       <StarIcon filled={!!p.favorite} />
                     </button>

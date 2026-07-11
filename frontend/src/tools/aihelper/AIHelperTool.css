@@ -247,6 +247,10 @@
   display: flex; gap: 2px; flex-shrink: 0; padding-top: 4px;
 }
 
+.ah-copy-btn { position: relative; }
+.ah-copy-btn--done { color: var(--accent) !important; }
+.ah-copy-check { font-size: 13px; font-weight: 700; line-height: 1; }
+
 /* ===== Editor ===== */
 .ah-editor { margin-bottom: 24px; }
 
