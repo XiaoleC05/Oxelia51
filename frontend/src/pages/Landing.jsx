@@ -277,6 +277,23 @@ function Landing() {
           </div>
         </section>
 
+        <section className="landing-cta" ref={reveal}>
+          <div className="landing-cta-inner">
+            <h2 className="landing-cta-title">准备好探索了吗？</h2>
+            <p className="landing-cta-desc">准备好了吗？开始使用</p>
+            <div className="landing-cta-actions">
+              {isLoggedIn ? (
+                <Link to="/tools" className="landing-cta-btn landing-cta-btn--primary">浏览工具</Link>
+              ) : (
+                <>
+                  <Link to="/register" className="landing-cta-btn landing-cta-btn--primary">免费注册</Link>
+                  <Link to="/login" className="landing-cta-btn landing-cta-btn--ghost">已有账号？登录</Link>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+
         <section className="landing-section landing-tools-section" ref={reveal}>
           <div className="landing-section-inner">
             <div className="landing-section-head">
@@ -362,22 +379,6 @@ function Landing() {
           </div>
         </section>
 
-        <section className="landing-cta" ref={reveal}>
-          <div className="landing-cta-inner">
-            <h2 className="landing-cta-title">准备好探索了吗？</h2>
-            <p className="landing-cta-desc">准备好了吗？开始使用</p>
-            <div className="landing-cta-actions">
-              {isLoggedIn ? (
-                <Link to="/tools" className="landing-cta-btn landing-cta-btn--primary">浏览工具</Link>
-              ) : (
-                <>
-                  <Link to="/register" className="landing-cta-btn landing-cta-btn--primary">免费注册</Link>
-                  <Link to="/login" className="landing-cta-btn landing-cta-btn--ghost">已有账号？登录</Link>
-                </>
-              )}
-            </div>
-          </div>
-        </section>
       </div>
 
       <div className="landing-footer-transition" />
