@@ -60,6 +60,7 @@ func main() {
 
 	health := handler.NewHealthHandler(pool)
 	r.GET("/api/health", health.Health)
+			r.GET("/api/uptime", health.Uptime)
 
 	authH := handler.NewAuthHandlerWithDeps(pool, cfg, m, tokenSvc, rl, emailStore, refreshStore, blacklist)
 	r.POST("/api/auth/register", authH.Register)
