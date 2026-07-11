@@ -69,11 +69,15 @@ function GlobalFooter() {
   const location = useLocation()
   if (location.pathname === '/') return null
   return (
-    <footer className="global-footer">
-      <div className="global-footer-copy">&copy; {new Date().getFullYear()} Oxelia51</div>
-      <div className="global-footer-filing">
+    <footer className="landing-footer">
+      <div className="landing-footer-bottom">
+        <span>&copy; {new Date().getFullYear()} Oxelia51</span>
+        <span className="landing-footer-sep">·</span>
+        <span>集成 · 简洁 · 高效</span>
+      </div>
+      <div className="landing-footer-filing">
         <span>ICP备案号：蜀ICP备XXXXXXXX号-1</span>
-        <span className="global-footer-sep">|</span>
+        <span className="landing-footer-sep">|</span>
         <span>公安部备案号：川公网安备 XXXXXXXXXXXX号</span>
       </div>
     </footer>

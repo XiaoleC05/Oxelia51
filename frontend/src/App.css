@@ -179,35 +179,19 @@
   to { transform: rotate(360deg); }
 }
 
-/* ---- Global Footer (non-Landing pages) ---- */
-.global-footer {
-  border-top: 1px solid var(--border);
-  padding: 24px 20px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-muted);
-  background: var(--bg);
-}
-.global-footer-copy {
-  margin-bottom: 8px;
-}
-.global-footer-filing {
+/* ---- 非首页页脚 — 复用 Landing footer 结构 ---- */
+.landing-footer-bottom,
+.landing-footer-filing {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   flex-wrap: wrap;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-light);
 }
-.global-footer-sep {
-  color: var(--border);
-}
 @media (max-width: 640px) {
-  .global-footer {
-    padding: 20px 16px;
-  }
-  .global-footer-filing {
+  .landing-footer-filing {
     gap: 4px;
     font-size: 10px;
   }
