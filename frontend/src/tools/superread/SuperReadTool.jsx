@@ -174,6 +174,8 @@ export default function SuperReadTool() {
   const [newFeedName, setNewFeedName] = useState('')
   const [feedActionBusy, setFeedActionBusy] = useState(null)
   const [fetchAllBusy, setFetchAllBusy] = useState(false)
+  const [fetchAllResult, setFetchAllResult] = useState(null)
+  const fetchAllResultTimerRef = useRef(null)
 
   const [articleFilter, setArticleFilter] = useState('all')
   const [filterFeedId, setFilterFeedId] = useState('')
@@ -273,10 +275,24 @@ export default function SuperReadTool() {
   const handleFetchAll = async () => {
     if (feeds.length === 0) return
     setFetchAllBusy(true)
+    setFetchAllResult(null)
+    let totalAdded = 0, skipped = 0, failed = 0
     for (const feed of feeds) {
-      try { await apiProxy('superread', `api/feeds/${feed.id}/fetch`, { method: 'POST' }) } catch { /* continue on per-feed error */ }
+      // Per-feed status: mark as 'fetching' so UI can reflect in-progress state
+      setFeeds(prev => prev.map(f => f.id === feed.id ? { ...f, _fetchStatus: 'fetching' } : f))
+      try {
+        const r = await apiProxy('superread', `api/feeds/${feed.id}/fetch`, { method: 'POST' })
+        if (r?.skipped) { skipped++; setFeeds(prev => prev.map(f => f.id === feed.id ? { ...f, _fetchStatus: 'skipped' } : f)) }
+        else { totalAdded += (r?.added || 0); setFeeds(prev => prev.map(f => f.id === feed.id ? { ...f, _fetchStatus: 'ok' } : f)) }
+      } catch {
+        failed++
+        setFeeds(prev => prev.map(f => f.id === feed.id ? { ...f, _fetchStatus: 'failed' } : f))
+      }
     }
     setFetchAllBusy(false)
+    setFetchAllResult({ added: totalAdded, skipped, failed })
+    if (fetchAllResultTimerRef.current) clearTimeout(fetchAllResultTimerRef.current)
+    fetchAllResultTimerRef.current = setTimeout(() => setFetchAllResult(null), 5000)
     await loadFeeds()
     if (activeTab === 'articles') loadArticles()
   }
@@ -408,9 +424,9 @@ export default function SuperReadTool() {
 
       {activeTab === 'feeds' && (
         <div className="sr-feeds">
-          <div className="sr-feeds-actions"><button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}><IconPlus /> 添加源</button><label className="sr-btn sr-btn--secondary"><IconUpload /> 导入 OPML<input ref={fileInputRef} type="file" accept=".opml,.xml" onChange={handleImportOPML} style={{ display: 'none' }} /></label><button className="sr-btn sr-btn--secondary" onClick={handleFetchAll} disabled={fetchAllBusy || feeds.length === 0}><IconRefresh /> {fetchAllBusy ? '抓取中…' : '抓取全部'}</button></div>
+          <div className="sr-feeds-actions"><button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}><IconPlus /> 添加源</button><label className="sr-btn sr-btn--secondary"><IconUpload /> 导入 OPML<input ref={fileInputRef} type="file" accept=".opml,.xml" onChange={handleImportOPML} style={{ display: 'none' }} /></label><button className="sr-btn sr-btn--secondary" onClick={handleFetchAll} disabled={fetchAllBusy || feeds.length === 0}><IconRefresh /> {fetchAllBusy ? '抓取中…' : '抓取全部'}</button>{fetchAllResult && (<span style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: 'var(--mono)' }}>抓取完成：新增 {fetchAllResult.added} 篇，跳过 {fetchAllResult.skipped} 个，失败 {fetchAllResult.failed} 个</span>)}</div>
           {showAddFeed && (<div className="sr-modal-overlay" onClick={() => setShowAddFeed(false)}><div className="sr-modal" onClick={e => e.stopPropagation()}><h3>添加 RSS 源</h3><label className="sr-field-label">源名称（可选，留空则自动获取）</label><input type="text" placeholder="例如：阮一峰的网络日志" value={newFeedName} onChange={e => setNewFeedName(e.target.value)} className="sr-input" /><label className="sr-field-label" style={{ marginTop: 12 }}>RSS 地址</label><input type="url" placeholder="https://example.com/feed.xml" value={newFeedUrl} onChange={e => setNewFeedUrl(e.target.value)} className="sr-input" autoFocus /><p className="sr-feed-hint">示例：<code>https://feeds.feedburner.com/...</code></p><div className="sr-modal-actions"><button className="sr-btn sr-btn--secondary" onClick={() => setShowAddFeed(false)}>取消</button><button className="sr-btn sr-btn--primary" onClick={handleAddFeed} disabled={feedActionBusy === 'add'}>{feedActionBusy === 'add' ? '添加中…' : '添加'}</button></div></div></div>)}
-          {feeds.length === 0 ? (<div className="sr-empty"><p>暂无订阅源</p><p className="sr-hint">添加 RSS 源或导入 OPML 文件开始使用</p><div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 16 }}><button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}><IconPlus /> 添加源</button><button className="sr-btn sr-btn--secondary" onClick={() => fileInputRef.current?.click()} disabled={feedActionBusy === 'import'}><IconUpload /> 导入 OPML</button></div></div>) : (<><div className="sr-feed-list">{pagedFeeds.map(feed => (<div key={feed.id} className="sr-feed-card"><div className="sr-feed-info"><div className="sr-feed-title">{feed.title || feed.feed_url}</div><div className="sr-feed-url">{feed.feed_url}</div><div className="sr-feed-meta">{feed.last_fetched_at && <span>上次抓取: {formatDate(feed.last_fetched_at)}</span>}{feed.last_error && <span className="sr-feed-error">错误: {feed.last_error}</span>}</div></div><div className="sr-feed-actions"><button className="sr-icon-btn" onClick={() => handleFetchFeed(feed.id)} disabled={feedActionBusy === feed.id} title="手动抓取"><IconRefresh /></button><button className="sr-icon-btn sr-icon-btn--danger" onClick={() => handleDeleteFeed(feed.id)} disabled={feedActionBusy === feed.id} title="删除"><IconTrash /></button></div></div>))}</div><Pagination page={feedsSafePage} totalPages={feedsTotalPages} pageSize={pageSize} onPageChange={setPage} onSizeChange={setPageSize} /></>)}
+          {feeds.length === 0 ? (<div className="sr-empty"><p>暂无订阅源</p><p className="sr-hint">添加 RSS 源或导入 OPML 文件开始使用</p><div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 16 }}><button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}><IconPlus /> 添加源</button><button className="sr-btn sr-btn--secondary" onClick={() => fileInputRef.current?.click()} disabled={feedActionBusy === 'import'}><IconUpload /> 导入 OPML</button></div></div>) : (<><div className="sr-feed-list">{pagedFeeds.map(feed => (<div key={feed.id} className="sr-feed-card"><div className="sr-feed-info"><div className="sr-feed-title">{feed.title || feed.feed_url}</div><div className="sr-feed-url">{feed.feed_url}</div><div className="sr-feed-meta">{feed.last_fetched_at && <span>上次抓取: {formatDate(feed.last_fetched_at)}</span>}{feed.last_error && <span className="sr-feed-error">错误: {feed.last_error}</span>}{feed._fetchStatus === 'fetching' && <span style={{ color: 'var(--text-muted)' }}>⏳ 抓取中…</span>}{feed._fetchStatus === 'ok' && <span style={{ color: 'var(--accent-2)' }}>✅ 成功</span>}{feed._fetchStatus === 'skipped' && <span style={{ color: 'var(--text-muted)' }}>⏭ 跳过</span>}{feed._fetchStatus === 'failed' && <span style={{ color: '#c44' }}>❌ 失败</span>}</div></div><div className="sr-feed-actions"><button className="sr-icon-btn" onClick={() => handleFetchFeed(feed.id)} disabled={feedActionBusy === feed.id} title="手动抓取"><IconRefresh /></button><button className="sr-icon-btn sr-icon-btn--danger" onClick={() => handleDeleteFeed(feed.id)} disabled={feedActionBusy === feed.id} title="删除"><IconTrash /></button></div></div>))}</div><Pagination page={feedsSafePage} totalPages={feedsTotalPages} pageSize={pageSize} onPageChange={setPage} onSizeChange={setPageSize} /></>)}
         </div>)}
 
       {activeTab === 'articles' && (
