@@ -151,6 +151,16 @@
   border-color: #c44;
 }
 
+.sr-icon-btn--success {
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+}
+
+.sr-icon-btn--success:hover:not(:disabled) {
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+}
+
 /* ---- Feeds Tab ---- */
 .sr-feeds {
   display: flex;

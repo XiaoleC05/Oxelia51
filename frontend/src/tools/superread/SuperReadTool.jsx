@@ -96,11 +96,13 @@ export default function SuperReadTool() {
   const [filterFeedId, setFilterFeedId] = useState('')
   const [filterTag, setFilterTag] = useState('')
   const [expandedArticles, setExpandedArticles] = useState(new Set())
-  const [readArticles, setReadArticles] = useState(new Set())
+  const [readArticles] = useState(new Set())
 
   const [settingsForm, setSettingsForm] = useState({})
   const [showApiKey, setShowApiKey] = useState(false)
   const [hasSavedApiKey, setHasSavedApiKey] = useState(false)
+  const [apiKeyCopied, setApiKeyCopied] = useState(false)
+  const copyTimeoutRef = useRef(null)
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsResult, setSettingsResult] = useState(null)
   const [summarizing, setSummarizing] = useState(false)
@@ -132,8 +134,10 @@ export default function SuperReadTool() {
     try { const data = await apiProxy('superread', 'api/settings'); const s = data?.settings || data || {}; setSettingsForm(s); setHasSavedApiKey(!!s.api_key && s.api_key.length > 0) } catch (err) { console.error(err) }
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
   useEffect(() => { loadFeeds(); loadArticles(); loadSettings(); loadBriefing() }, [])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (activeTab !== 'articles') return; loadArticles() }, [articleFilter, filterFeedId, filterTag, activeTab, loadArticles])
 
   const handleAddFeed = async () => {
@@ -196,7 +200,24 @@ export default function SuperReadTool() {
   }
 
   const copyApiKey = async () => {
-    try { const data = await apiProxy('superread', 'api/settings'); const k = data?.settings?.api_key || data?.api_key || ''; if (k && k.length > 4) { try { await navigator.clipboard.writeText(k) } catch { const ta = document.createElement('textarea'); ta.value = k; ta.style.cssText = 'position:fixed;left:-9999px'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta) } alert('API Key 已复制') } } catch {}
+    try {
+      const data = await apiProxy('superread', 'api/settings')
+      const k = data?.settings?.api_key || data?.api_key || ''
+      if (k && k.length > 4) {
+        try { await navigator.clipboard.writeText(k) } catch {
+          const ta = document.createElement('textarea')
+          ta.value = k
+          ta.style.cssText = 'position:fixed;left:-9999px'
+          document.body.appendChild(ta)
+          ta.select()
+          document.execCommand('copy')
+          document.body.removeChild(ta)
+        }
+        setApiKeyCopied(true)
+        if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+        copyTimeoutRef.current = setTimeout(() => setApiKeyCopied(false), 2000)
+      }
+    } catch { /* ignore */ }
   }
 
   const handleTabChange = (tab) => { setActiveTab(tab); if (tab === 'articles') loadArticles(); if (tab === 'briefing') loadBriefing(); if (tab === 'settings') loadSettings() }
@@ -230,12 +251,12 @@ export default function SuperReadTool() {
           </div>
           <div className="sr-feeds-actions" style={{ marginBottom: 12 }}><button className="sr-btn sr-btn--secondary" onClick={handleSummarize} disabled={summarizing}><IconSparkles /> {summarizing ? 'AI 摘要生成中…' : 'AI 摘要今日文章'}</button></div>
           {error && <div className="sr-error-banner">{error}</div>}
-          {articles.length === 0 ? (<div className="sr-empty"><p>暂无文章</p><p className="sr-hint">在「源管理」中添加 RSS 源并抓取文章</p></div>) : (<div className="sr-article-list">{articles.map(article => { const isExpanded = expandedArticles.has(article.id); const isRead = article.is_read || readArticles.has(article.id); return (<div key={article.id} className={`sr-article-card ${isRead ? 'sr-article-card--read' : ''}`}><div className="sr-article-header" onClick={() => toggleArticleExpand(article.id)}><div className="sr-article-title">{article.title}</div><div className="sr-article-meta"><span className="sr-article-source">{article.feed_title || '未知源'}</span><span className="sr-article-time">{formatDate(article.published_at)}</span></div><IconChevronDown /></div><div className="sr-article-summary">{article.summary}</div>{isExpanded && (<div className="sr-article-expanded"><div className="sr-article-content">{article.content_text}</div><div className="sr-article-actions"><button className="sr-action-btn" onClick={() => markArticleRead(article)} disabled={isRead}><IconCheck /> {isRead ? '已读' : '标记已读'}</button><button className="sr-action-btn" onClick={() => toggleArticleStar(article)}><IconStar filled={article.is_starred} /> {article.is_starred ? '取消星标' : '星标'}</button></div></div>)}</div>) })})</div>)}
+          {articles.length === 0 ? (<div className="sr-empty"><p>暂无文章</p><p className="sr-hint">在「源管理」中添加 RSS 源并抓取文章</p></div>) : (<div className="sr-article-list">{articles.map(article => { const isExpanded = expandedArticles.has(article.id); const isRead = article.is_read || readArticles.has(article.id); return (<div key={article.id} className={`sr-article-card ${isRead ? 'sr-article-card--read' : ''}`}><div className="sr-article-header" onClick={() => toggleArticleExpand(article.id)}><div className="sr-article-title">{article.title}</div><div className="sr-article-meta"><span className="sr-article-source">{article.feed_title || '未知源'}</span><span className="sr-article-time">{formatDate(article.published_at)}</span></div><IconChevronDown /></div><div className="sr-article-summary">{article.summary}</div>{isExpanded && (<div className="sr-article-expanded"><div className="sr-article-content">{article.content_text}</div><div className="sr-article-actions"><button className="sr-action-btn" onClick={() => markArticleRead(article)} disabled={isRead}><IconCheck /> {isRead ? '已读' : '标记已读'}</button><button className="sr-action-btn" onClick={() => toggleArticleStar(article)}><IconStar filled={article.is_starred} /> {article.is_starred ? '取消星标' : '星标'}</button></div></div>)}</div>) })}</div>)}
         </div>)}
 
       {activeTab === 'briefing' && (<div className="sr-briefing"><h3 className="sr-section-title">今日简报</h3>{briefing.length === 0 ? (<div className="sr-empty"><p>今日暂无新文章</p><p className="sr-hint">抓取订阅源后，今日新文章将在此汇总</p></div>) : (<div className="sr-briefing-list">{briefing.map(article => (<div key={article.id} className="sr-briefing-card"><div className="sr-briefing-title">{article.title}</div><div className="sr-briefing-meta"><span>{article.feed_title}</span><span>{formatDate(article.published_at)}</span></div><div className="sr-briefing-summary">{article.summary}</div></div>))}</div>)}</div>)}
 
-      {activeTab === 'settings' && (<div className="sr-settings"><fieldset className="sr-fieldset"><legend className="sr-fieldset-legend">AI 配置</legend><label className="sr-field"><span className="sr-field-label">API Key</span><div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type={showApiKey ? 'text' : 'password'} className="sr-input" style={{ flex: 1 }} value={settingsForm.api_key || ''} onChange={e => { setSettingsForm({ ...settingsForm, api_key: e.target.value }); setHasSavedApiKey(false) }} placeholder={hasSavedApiKey ? '已保存 (点击编辑)' : 'sk-...'} /><button className="sr-icon-btn" onClick={() => setShowApiKey(!showApiKey)} title={showApiKey ? '隐藏' : '显示'}>{showApiKey ? '🙈' : '👁️'}</button><button className="sr-icon-btn" onClick={copyApiKey} title="复制"><IconCopy /></button></div></label><label className="sr-field"><span className="sr-field-label">API Base URL</span><input type="text" className="sr-input" value={settingsForm.api_base || ''} onChange={e => setSettingsForm({ ...settingsForm, api_base: e.target.value })} placeholder="https://api.openai.com/v1" /></label><label className="sr-field"><span className="sr-field-label">模型</span><input type="text" className="sr-input" value={settingsForm.model || ''} onChange={e => setSettingsForm({ ...settingsForm, model: e.target.value })} placeholder="gpt-4o-mini" /></label></fieldset><fieldset className="sr-fieldset"><legend className="sr-fieldset-legend">抓取配置</legend><div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}><label className="sr-field" style={{ flex: 1 }}><span className="sr-field-label">间隔数值</span><input type="number" className="sr-input" min="1" value={settingsForm.fetch_interval_min || 6} onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_min: parseInt(e.target.value) || 6 })} /></label><label className="sr-field" style={{ flex: 1 }}><span className="sr-field-label">间隔单位</span><select className="sr-input" value={settingsForm.fetch_interval_unit || 'hours'} onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_unit: e.target.value })}><option value="minutes">分钟</option><option value="hours">小时</option><option value="days">天</option></select></label></div></fieldset><div className="sr-settings-actions"><button className="sr-btn sr-btn--primary" onClick={handleSaveSettings} disabled={settingsSaving}>{settingsSaving ? '保存中…' : '保存设置'}</button></div>{settingsResult && (<div className={`sr-feedback sr-feedback--${settingsResult.type}`}>{settingsResult.message}</div>)}</div>)}
+      {activeTab === 'settings' && (<div className="sr-settings"><fieldset className="sr-fieldset"><legend className="sr-fieldset-legend">AI 配置</legend><label className="sr-field"><span className="sr-field-label">API Key</span><div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type={showApiKey ? 'text' : 'password'} className="sr-input" style={{ flex: 1 }} value={settingsForm.api_key || ''} onChange={e => { setSettingsForm({ ...settingsForm, api_key: e.target.value }); setHasSavedApiKey(false) }} placeholder={hasSavedApiKey ? '已保存 (点击编辑)' : 'sk-...'} /><button className="sr-icon-btn" onClick={() => setShowApiKey(!showApiKey)} title={showApiKey ? '隐藏' : '显示'}>{showApiKey ? '🙈' : '👁️'}</button><button className={`sr-icon-btn ${apiKeyCopied ? 'sr-icon-btn--success' : ''}`} onClick={copyApiKey} title={apiKeyCopied ? '已复制' : '复制'}>{apiKeyCopied ? <IconCheck /> : <IconCopy />}</button></div></label><label className="sr-field"><span className="sr-field-label">API Base URL</span><input type="text" className="sr-input" value={settingsForm.api_base || ''} onChange={e => setSettingsForm({ ...settingsForm, api_base: e.target.value })} placeholder="https://api.openai.com/v1" /></label><label className="sr-field"><span className="sr-field-label">模型</span><input type="text" className="sr-input" value={settingsForm.model || ''} onChange={e => setSettingsForm({ ...settingsForm, model: e.target.value })} placeholder="gpt-4o-mini" /></label></fieldset><fieldset className="sr-fieldset"><legend className="sr-fieldset-legend">抓取配置</legend><div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}><label className="sr-field" style={{ flex: 1 }}><span className="sr-field-label">间隔数值</span><input type="number" className="sr-input" min="1" value={settingsForm.fetch_interval_min || 6} onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_min: parseInt(e.target.value) || 6 })} /></label><label className="sr-field" style={{ flex: 1 }}><span className="sr-field-label">间隔单位</span><select className="sr-input" value={settingsForm.fetch_interval_unit || 'hours'} onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_unit: e.target.value })}><option value="minutes">分钟</option><option value="hours">小时</option><option value="days">天</option></select></label></div></fieldset><div className="sr-settings-actions"><button className="sr-btn sr-btn--primary" onClick={handleSaveSettings} disabled={settingsSaving}>{settingsSaving ? '保存中…' : '保存设置'}</button></div>{settingsResult && (<div className={`sr-feedback sr-feedback--${settingsResult.type}`}>{settingsResult.message}</div>)}</div>)}
     </div>
   )
 }
