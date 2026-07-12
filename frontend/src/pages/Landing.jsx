@@ -223,33 +223,46 @@ function Landing() {
       <section className="landing-stats" aria-label="数据概览">
         <div className="landing-stats-inner">
           <div className="landing-stat landing-stat--uptime">
+            <span className="landing-stat-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+            </span>
             {loading ? (
-              <SkeletonLine width="120px" height="28px" />
+              <SkeletonLine width="140px" height="36px" />
             ) : (
               <span className="landing-stat-num landing-stat-num--text">
-                <span className="landing-stat-icon" aria-hidden="true">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                  </svg>
-                </span>
-                已运行 {uptime?.days ?? 0} 天 {uptime?.hours ?? 0} 小时
+                {uptime?.days ?? 0}<span className="landing-stat-unit">天</span>
+                {uptime?.hours ?? 0}<span className="landing-stat-unit">小时</span>
               </span>
             )}
             <span className="landing-stat-label">运行时长</span>
           </div>
-          <div className="landing-stat-divider" />
           <div className="landing-stat" ref={toolsCountRef}>
-            {loading ? <SkeletonLine width="40px" height="28px" /> : <span className="landing-stat-num count-up">{toolsNum}</span>}
+            <span className="landing-stat-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+              </svg>
+            </span>
+            {loading ? <SkeletonLine width="60px" height="36px" /> : <span className="landing-stat-num count-up">{toolsNum}</span>}
             <span className="landing-stat-label">在线工具</span>
           </div>
-          <div className="landing-stat-divider" />
           <div className="landing-stat" ref={portfolioCountRef}>
-            {loading ? <SkeletonLine width="40px" height="28px" /> : <span className="landing-stat-num count-up">{portfolioNum}</span>}
+            <span className="landing-stat-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM6 14a8 8 0 0 1 8-8" /><circle cx="9" cy="9" r="1.5" fill="currentColor" /><circle cx="15" cy="15" r="1.5" fill="currentColor" />
+              </svg>
+            </span>
+            {loading ? <SkeletonLine width="60px" height="36px" /> : <span className="landing-stat-num count-up">{portfolioNum}</span>}
             <span className="landing-stat-label">开源作品</span>
           </div>
-          <div className="landing-stat-divider" />
           <div className="landing-stat" ref={articlesCountRef}>
-            {loading ? <SkeletonLine width="40px" height="28px" /> : <span className="landing-stat-num count-up">{articlesNum}</span>}
+            <span className="landing-stat-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" />
+              </svg>
+            </span>
+            {loading ? <SkeletonLine width="60px" height="36px" /> : <span className="landing-stat-num count-up">{articlesNum}</span>}
             <span className="landing-stat-label">技术文章</span>
           </div>
         </div>

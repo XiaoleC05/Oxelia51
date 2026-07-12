@@ -433,11 +433,20 @@ select.sr-input:focus option:checked {
   border-radius: 3px;
   background: var(--bg);
   padding: 20px 24px;
-  transition: opacity 0.2s, background 0.15s;
+  transition: opacity 0.2s, background 0.15s, border-color 0.15s;
 }
 
 .sr-article-card:hover {
   background: var(--bg-alt);
+}
+
+.sr-article-card--selected {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.sr-article-card--selected:hover {
+  background: var(--accent-bg);
 }
 
 .sr-article-card--read {
@@ -446,6 +455,84 @@ select.sr-input:focus option:checked {
 
 .sr-article-card--read:hover {
   opacity: 0.75;
+}
+
+/* Select-all bar */
+.sr-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.sr-select-all:hover {
+  background: var(--bg-alt);
+}
+
+.sr-select-count {
+  font-size: 13px;
+  color: var(--accent-2);
+  font-family: var(--mono);
+  padding: 4px 10px;
+  background: var(--accent-bg);
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+}
+
+/* Per-article checkbox */
+.sr-article-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.sr-article-checkbox input,
+.sr-select-all input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  cursor: pointer;
+  margin: 0;
+  position: relative;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.sr-article-checkbox input:hover,
+.sr-select-all input:hover {
+  border-color: var(--accent);
+}
+
+.sr-article-checkbox input:checked,
+.sr-select-all input:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.sr-article-checkbox input:checked::after,
+.sr-select-all input:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .sr-article-header {
