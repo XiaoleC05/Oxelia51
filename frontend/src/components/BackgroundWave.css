@@ -89,3 +89,11 @@
     animation: none;
   }
 }
+
+/* ---- Mobile: cap star sizes to avoid oversized dots ---- */
+@media (max-width: 640px) {
+  .background-wave__star {
+    max-width: 1.8px;
+    max-height: 1.8px;
+  }
+}
