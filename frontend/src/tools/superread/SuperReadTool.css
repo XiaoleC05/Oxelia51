@@ -638,6 +638,137 @@ select.sr-input:focus option:checked {
   line-height: 1.6;
 }
 
+/* ---- Briefing Header & Date Navigation ---- */
+.sr-briefing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sr-briefing-date-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sr-briefing-date-input {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--sans);
+}
+
+.sr-briefing-date-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ---- Briefing Integrated Report ---- */
+.sr-briefing-report {
+  padding: 20px 24px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent-2);
+  border-radius: 3px;
+  background: var(--bg);
+  margin-bottom: 24px;
+}
+
+.sr-briefing-report-title {
+  font-family: var(--heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0 0 12px;
+}
+
+.sr-briefing-report-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sr-briefing-section-title {
+  font-family: var(--heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0 0 16px;
+}
+
+/* ---- Pagination (unified, used by feeds/articles/briefing) ---- */
+.sr-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+}
+
+.sr-pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sr-pagination-info {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  min-width: 60px;
+  text-align: center;
+}
+
+.sr-pagination-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.sr-pagination-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.sr-pagination-select:hover {
+  border-color: var(--text-h);
+}
+
+.sr-pagination-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.sr-pagination-select option {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.sr-pagination-select option:checked,
+.sr-pagination-select:focus option:checked {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 /* ---- Settings ---- */
 .sr-settings {
   display: flex;
@@ -766,6 +897,16 @@ select.sr-input:focus option:checked {
   }
 
   .sr-article-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sr-pagination {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .sr-briefing-header {
     flex-direction: column;
     align-items: flex-start;
   }

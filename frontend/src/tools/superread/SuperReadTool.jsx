@@ -51,6 +51,18 @@ const IconChevronDown = () => (
   </svg>
 )
 
+const IconChevronLeft = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+)
+
+const IconChevronRight = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+)
+
 const IconCheck = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 6 9 17 4 12" />
@@ -69,6 +81,12 @@ const IconSparkles = () => (
   </svg>
 )
 
+const IconCalendar = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+)
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
@@ -80,6 +98,31 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('zh-CN')
 }
 
+const VALID_SIZES = [10, 20, 50]
+
+function Pagination({ page, totalPages, pageSize, onPageChange, onSizeChange }) {
+  return (
+    <div className="sr-pagination">
+      {totalPages > 1 && (
+        <div className="sr-pagination-nav">
+          <button className="sr-btn sr-btn--secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>上一页</button>
+          <span className="sr-pagination-info">{page} / {totalPages}</span>
+          <button className="sr-btn sr-btn--secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>下一页</button>
+        </div>
+      )}
+      <div className="sr-pagination-size">
+        <span>每页</span>
+        <select className="sr-pagination-select" value={pageSize} onChange={e => onSizeChange(parseInt(e.target.value))}>
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+        <span>条</span>
+      </div>
+    </div>
+  )
+}
+
 export default function SuperReadTool() {
   const [searchParams, setSearchParams] = useSearchParams()
   const validTabs = ['feeds', 'articles', 'briefing', 'settings']
@@ -87,13 +130,42 @@ export default function SuperReadTool() {
     const t = searchParams.get('tab')
     return t && validTabs.includes(t) ? t : 'feeds'
   })
+
+  // Pagination state (URL-persisted: ?page=N&size=M)
+  const [page, setPageState] = useState(() => {
+    const p = parseInt(searchParams.get('page'))
+    return p && p > 0 ? p : 1
+  })
+  const [pageSize, setPageSizeState] = useState(() => {
+    const s = parseInt(searchParams.get('size'))
+    return VALID_SIZES.includes(s) ? s : 20
+  })
+
+  // Helper: update URL params preserving siblings
+  const updateUrlParams = (overrides) => {
+    const next = new URLSearchParams(searchParams)
+    if (overrides.tab != null) next.set('tab', overrides.tab)
+    if (overrides.page != null) {
+      if (overrides.page === 1) next.delete('page')
+      else next.set('page', String(overrides.page))
+    }
+    if (overrides.size != null) {
+      if (overrides.size === 20) next.delete('size')
+      else next.set('size', String(overrides.size))
+    }
+    setSearchParams(next, { replace: true })
+  }
+
   const setActiveTab = (next) => {
     setActiveTabState(next)
-    setSearchParams({ tab: next }, { replace: true })
+    setPageState(1) // reset page on tab switch
+    updateUrlParams({ tab: next, page: 1 })
   }
+  const setPage = (p) => { setPageState(p); updateUrlParams({ page: p }) }
+  const setPageSize = (s) => { setPageSizeState(s); setPageState(1); updateUrlParams({ size: s, page: 1 }) }
+
   const [feeds, setFeeds] = useState([])
   const [articles, setArticles] = useState([])
-  const [briefing, setBriefing] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -107,8 +179,12 @@ export default function SuperReadTool() {
   const [filterTag, setFilterTag] = useState('')
   const [expandedArticles, setExpandedArticles] = useState(new Set())
   const [readArticles] = useState(new Set())
-  const [page, setPage] = useState(1)
-  const pageSize = 20
+
+  // Briefing (integrated report + related articles)
+  const [briefingDate, setBriefingDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [briefingReport, setBriefingReport] = useState('')
+  const [briefingArticles, setBriefingArticles] = useState([])
+  const [briefingLoading, setBriefingLoading] = useState(false)
 
   const [settingsForm, setSettingsForm] = useState({})
   const [showApiKey, setShowApiKey] = useState(false)
@@ -138,9 +214,18 @@ export default function SuperReadTool() {
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [articleFilter, filterFeedId, filterTag])
 
-  const loadBriefing = useCallback(async () => {
-    try { const data = await apiProxy('superread', 'api/daily-brief'); setBriefing(Array.isArray(data) ? data : data?.articles || []) } catch (err) { console.error(err) }
-  }, [])
+  const loadBriefing = useCallback(async (date) => {
+    const d = date || briefingDate
+    setBriefingLoading(true)
+    try {
+      const data = await apiProxy('superread', `api/daily-brief?date=${encodeURIComponent(d)}`)
+      // Support both new shape {report, articles} and legacy shape (array of articles)
+      const report = data?.report || data?.briefing || data?.summary || ''
+      const arts = data?.articles || (Array.isArray(data) ? data : [])
+      setBriefingReport(report)
+      setBriefingArticles(arts)
+    } catch (err) { console.error(err) } finally { setBriefingLoading(false) }
+  }, [briefingDate])
 
   const loadSettings = async () => {
     try { const data = await apiProxy('superread', 'api/settings'); const s = data?.settings || data || {}; setSettingsForm(s); setHasSavedApiKey(!!s.api_key && s.api_key.length > 0) } catch (err) { console.error(err) }
@@ -196,7 +281,7 @@ export default function SuperReadTool() {
   const toggleArticleExpand = (articleId) => { setExpandedArticles(prev => { const next = new Set(prev); if (next.has(articleId)) next.delete(articleId); else next.add(articleId); return next }) }
 
   const toggleArticleStar = async (article) => {
-    try { await apiProxy('superread', `api/articles/${article.id}`, { method: 'PATCH', body: JSON.stringify({ is_starred: !article.is_starred }) }); setArticles(prev => prev.map(a => a.id === article.id ? { ...a, is_starred: !a.is_starred } : a)) } catch (err) { alert('操作失败: ' + err.message) }
+    try { await apiProxy('superread', `api/articles/${article.id}`, { method: 'PATCH', body: JSON.stringify({ is_starred: !article.is_starred }) }); setArticles(prev => prev.map(a => a.id === article.id ? { ...a, is_starred: !article.is_starred } : a)) } catch (err) { alert('操作失败: ' + err.message) }
   }
 
   const markArticleRead = async (article) => {
@@ -245,12 +330,42 @@ export default function SuperReadTool() {
     } catch { /* ignore */ }
   }
 
+  // Briefing date navigation
+  const shiftBriefingDate = (deltaDays) => {
+    const d = new Date(briefingDate)
+    d.setDate(d.getDate() + deltaDays)
+    const newDate = d.toISOString().split('T')[0]
+    setBriefingDate(newDate)
+    setPage(1)
+    loadBriefing(newDate)
+  }
+  const handleBriefingDateChange = (newDate) => {
+    if (!newDate) return
+    setBriefingDate(newDate)
+    setPage(1)
+    loadBriefing(newDate)
+  }
+  const goToTodayBriefing = () => {
+    const today = new Date().toISOString().split('T')[0]
+    setBriefingDate(today)
+    setPage(1)
+    loadBriefing(today)
+  }
+
   const handleTabChange = (tab) => { setActiveTab(tab); if (tab === 'articles') loadArticles(); if (tab === 'briefing') loadBriefing(); if (tab === 'settings') loadSettings() }
 
-  // Pagination (client-side, articles tab only)
-  const totalPages = Math.ceil(articles.length / pageSize)
-  const safePage = Math.min(page, Math.max(1, totalPages))
-  const pagedArticles = articles.slice((safePage - 1) * pageSize, safePage * pageSize)
+  // Pagination derivation (per-tab, client-side)
+  const articlesTotalPages = Math.ceil(articles.length / pageSize)
+  const articlesSafePage = Math.min(page, Math.max(1, articlesTotalPages))
+  const pagedArticles = articles.slice((articlesSafePage - 1) * pageSize, articlesSafePage * pageSize)
+
+  const feedsTotalPages = Math.ceil(feeds.length / pageSize)
+  const feedsSafePage = Math.min(page, Math.max(1, feedsTotalPages))
+  const pagedFeeds = feeds.slice((feedsSafePage - 1) * pageSize, feedsSafePage * pageSize)
+
+  const briefingTotalPages = Math.ceil(briefingArticles.length / pageSize)
+  const briefingSafePage = Math.min(page, Math.max(1, briefingTotalPages))
+  const pagedBriefingArticles = briefingArticles.slice((briefingSafePage - 1) * pageSize, briefingSafePage * pageSize)
 
   if (loading && articles.length === 0) { return (<div className="sr-shell"><div className="sr-loading"><div className="sr-spinner" /><p>加载 SuperRead 数据…</p></div></div>) }
 
@@ -269,7 +384,7 @@ export default function SuperReadTool() {
         <div className="sr-feeds">
           <div className="sr-feeds-actions"><button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}><IconPlus /> 添加源</button><label className="sr-btn sr-btn--secondary"><IconUpload /> 导入 OPML<input ref={fileInputRef} type="file" accept=".opml,.xml" onChange={handleImportOPML} style={{ display: 'none' }} /></label></div>
           {showAddFeed && (<div className="sr-modal-overlay" onClick={() => setShowAddFeed(false)}><div className="sr-modal" onClick={e => e.stopPropagation()}><h3>添加 RSS 源</h3><label className="sr-field-label">源名称（可选，留空则自动获取）</label><input type="text" placeholder="例如：阮一峰的网络日志" value={newFeedName} onChange={e => setNewFeedName(e.target.value)} className="sr-input" /><label className="sr-field-label" style={{ marginTop: 12 }}>RSS 地址</label><input type="url" placeholder="https://example.com/feed.xml" value={newFeedUrl} onChange={e => setNewFeedUrl(e.target.value)} className="sr-input" autoFocus /><p className="sr-feed-hint">示例：<code>https://feeds.feedburner.com/...</code></p><div className="sr-modal-actions"><button className="sr-btn sr-btn--secondary" onClick={() => setShowAddFeed(false)}>取消</button><button className="sr-btn sr-btn--primary" onClick={handleAddFeed} disabled={feedActionBusy === 'add'}>{feedActionBusy === 'add' ? '添加中…' : '添加'}</button></div></div></div>)}
-          {feeds.length === 0 ? (<div className="sr-empty"><p>暂无订阅源</p><p className="sr-hint">添加 RSS 源或导入 OPML 文件开始使用</p><div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 16 }}><button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}><IconPlus /> 添加源</button><button className="sr-btn sr-btn--secondary" onClick={() => fileInputRef.current?.click()} disabled={feedActionBusy === 'import'}><IconUpload /> 导入 OPML</button></div></div>) : (<div className="sr-feed-list">{feeds.map(feed => (<div key={feed.id} className="sr-feed-card"><div className="sr-feed-info"><div className="sr-feed-title">{feed.title || feed.feed_url}</div><div className="sr-feed-url">{feed.feed_url}</div><div className="sr-feed-meta">{feed.last_fetched_at && <span>上次抓取: {formatDate(feed.last_fetched_at)}</span>}{feed.last_error && <span className="sr-feed-error">错误: {feed.last_error}</span>}</div></div><div className="sr-feed-actions"><button className="sr-icon-btn" onClick={() => handleFetchFeed(feed.id)} disabled={feedActionBusy === feed.id} title="手动抓取"><IconRefresh /></button><button className="sr-icon-btn sr-icon-btn--danger" onClick={() => handleDeleteFeed(feed.id)} disabled={feedActionBusy === feed.id} title="删除"><IconTrash /></button></div></div>))}</div>)}
+          {feeds.length === 0 ? (<div className="sr-empty"><p>暂无订阅源</p><p className="sr-hint">添加 RSS 源或导入 OPML 文件开始使用</p><div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 16 }}><button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}><IconPlus /> 添加源</button><button className="sr-btn sr-btn--secondary" onClick={() => fileInputRef.current?.click()} disabled={feedActionBusy === 'import'}><IconUpload /> 导入 OPML</button></div></div>) : (<><div className="sr-feed-list">{pagedFeeds.map(feed => (<div key={feed.id} className="sr-feed-card"><div className="sr-feed-info"><div className="sr-feed-title">{feed.title || feed.feed_url}</div><div className="sr-feed-url">{feed.feed_url}</div><div className="sr-feed-meta">{feed.last_fetched_at && <span>上次抓取: {formatDate(feed.last_fetched_at)}</span>}{feed.last_error && <span className="sr-feed-error">错误: {feed.last_error}</span>}</div></div><div className="sr-feed-actions"><button className="sr-icon-btn" onClick={() => handleFetchFeed(feed.id)} disabled={feedActionBusy === feed.id} title="手动抓取"><IconRefresh /></button><button className="sr-icon-btn sr-icon-btn--danger" onClick={() => handleDeleteFeed(feed.id)} disabled={feedActionBusy === feed.id} title="删除"><IconTrash /></button></div></div>))}</div><Pagination page={feedsSafePage} totalPages={feedsTotalPages} pageSize={pageSize} onPageChange={setPage} onSizeChange={setPageSize} /></>)}
         </div>)}
 
       {activeTab === 'articles' && (
@@ -281,12 +396,53 @@ export default function SuperReadTool() {
           </div>
           <div className="sr-feeds-actions" style={{ marginBottom: 12 }}><button className="sr-btn sr-btn--secondary" onClick={handleSummarize} disabled={summarizing}><IconSparkles /> {summarizing ? 'AI 摘要生成中…' : '生成简报'}</button></div>
           {error && <div className="sr-error-banner">{error}</div>}
-          {articles.length === 0 ? (<div className="sr-empty"><p>暂无文章</p><p className="sr-hint">在「源管理」中添加 RSS 源并抓取文章</p></div>) : (<><div className="sr-article-list">{pagedArticles.map(article => { const isExpanded = expandedArticles.has(article.id); const isRead = article.is_read || readArticles.has(article.id); return (<div key={article.id} className={`sr-article-card ${isRead ? 'sr-article-card--read' : ''}`}><div className="sr-article-header" onClick={() => toggleArticleExpand(article.id)}><a href={article.url} target="_blank" rel="noopener noreferrer" className="sr-article-title" onClick={e => e.stopPropagation()}>{article.title}</a><div className="sr-article-meta"><span className="sr-article-source">{article.feed_title || '未知源'}</span><span className="sr-article-time">{formatDate(article.published_at)}</span><span className={`sr-summary-badge ${article.summary ? 'sr-summary-badge--done' : ''}`}>{article.summary ? '已摘要' : '未摘要'}</span></div><IconChevronDown /></div><div className="sr-article-summary">{article.summary}</div>{isExpanded && (<div className="sr-article-expanded"><div className="sr-article-content">{article.content_text}</div><div className="sr-article-actions"><button className="sr-action-btn" onClick={() => markArticleRead(article)} disabled={isRead}><IconCheck /> {isRead ? '已读' : '标记已读'}</button><button className="sr-action-btn" onClick={() => toggleArticleStar(article)}><IconStar filled={article.is_starred} /> {article.is_starred ? '取消星标' : '星标'}</button></div></div>)}</div>) })}</div>{totalPages > 1 && (<div className="sr-pagination" style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', padding: '12px 0' }}><button className="sr-btn sr-btn--secondary" disabled={safePage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>上一页</button><span>{safePage} / {totalPages}</span><button className="sr-btn sr-btn--secondary" disabled={safePage >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>下一页</button></div>)}</>)}
+          {articles.length === 0 ? (<div className="sr-empty"><p>暂无文章</p><p className="sr-hint">在「源管理」中添加 RSS 源并抓取文章</p></div>) : (<><div className="sr-article-list">{pagedArticles.map(article => { const isExpanded = expandedArticles.has(article.id); const isRead = article.is_read || readArticles.has(article.id); return (<div key={article.id} className={`sr-article-card ${isRead ? 'sr-article-card--read' : ''}`}><div className="sr-article-header" onClick={() => toggleArticleExpand(article.id)}><a href={article.url} target="_blank" rel="noopener noreferrer" className="sr-article-title" onClick={e => e.stopPropagation()}>{article.title}</a><div className="sr-article-meta"><span className="sr-article-source">{article.feed_title || '未知源'}</span><span className="sr-article-time">{formatDate(article.published_at)}</span><span className={`sr-summary-badge ${article.summary ? 'sr-summary-badge--done' : ''}`}>{article.summary ? '已摘要' : '未摘要'}</span></div><IconChevronDown /></div><div className="sr-article-summary">{article.summary}</div>{isExpanded && (<div className="sr-article-expanded"><div className="sr-article-content">{article.content_text}</div><div className="sr-article-actions"><button className="sr-action-btn" onClick={() => markArticleRead(article)} disabled={isRead}><IconCheck /> {isRead ? '已读' : '标记已读'}</button><button className="sr-action-btn" onClick={() => toggleArticleStar(article)}><IconStar filled={article.is_starred} /> {article.is_starred ? '取消星标' : '星标'}</button></div></div>)}</div>) })}</div><Pagination page={articlesSafePage} totalPages={articlesTotalPages} pageSize={pageSize} onPageChange={setPage} onSizeChange={setPageSize} /></>)}
         </div>)}
 
-      {activeTab === 'briefing' && (<div className="sr-briefing"><h3 className="sr-section-title">今日简报</h3>{briefing.length === 0 ? (<div className="sr-empty"><p>今日暂无新文章</p><p className="sr-hint">抓取订阅源后，今日新文章将在此汇总</p></div>) : (<div className="sr-briefing-list">{briefing.map(article => (<div key={article.id} className="sr-briefing-card"><a href={article.url} target="_blank" rel="noopener noreferrer" className="sr-briefing-title">{article.title}</a><div className="sr-briefing-meta"><span>{article.feed_title}</span><span>{formatDate(article.published_at)}</span></div><div className="sr-briefing-summary">{article.summary}</div></div>))}</div>)}</div>)}
+      {activeTab === 'briefing' && (
+        <div className="sr-briefing">
+          <div className="sr-briefing-header">
+            <h3 className="sr-section-title">每日简报</h3>
+            <div className="sr-briefing-date-nav">
+              <button className="sr-icon-btn" onClick={() => shiftBriefingDate(-1)} title="前一天"><IconChevronLeft /></button>
+              <input type="date" className="sr-briefing-date-input" value={briefingDate} onChange={e => handleBriefingDateChange(e.target.value)} />
+              <button className="sr-icon-btn" onClick={() => shiftBriefingDate(1)} title="后一天"><IconChevronRight /></button>
+              <button className="sr-btn sr-btn--secondary" onClick={goToTodayBriefing}><IconCalendar /> 今天</button>
+            </div>
+          </div>
+          {briefingLoading ? (
+            <div className="sr-loading"><div className="sr-spinner" /><p>加载简报…</p></div>
+          ) : !briefingReport && briefingArticles.length === 0 ? (
+            <div className="sr-empty"><p>当日暂无简报</p><p className="sr-hint">抓取订阅源后，当日新文章将在此汇总</p></div>
+          ) : (
+            <>
+              {briefingReport && (
+                <div className="sr-briefing-report">
+                  <h4 className="sr-briefing-report-title">整合报告</h4>
+                  <div className="sr-briefing-report-text">{briefingReport}</div>
+                </div>
+              )}
+              {briefingArticles.length > 0 && (
+                <>
+                  <h4 className="sr-briefing-section-title">关联文章</h4>
+                  <div className="sr-briefing-list">
+                    {pagedBriefingArticles.map(article => (
+                      <div key={article.id} className="sr-briefing-card">
+                        <a href={article.url} target="_blank" rel="noopener noreferrer" className="sr-briefing-title">{article.title}</a>
+                        <div className="sr-briefing-meta"><span>{article.feed_title}</span><span>{formatDate(article.published_at)}</span></div>
+                        <div className="sr-briefing-summary">{article.summary}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <Pagination page={briefingSafePage} totalPages={briefingTotalPages} pageSize={pageSize} onPageChange={setPage} onSizeChange={setPageSize} />
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
-      {activeTab === 'settings' && (<div className="sr-settings"><fieldset className="sr-fieldset"><legend className="sr-fieldset-legend">AI 配置</legend><label className="sr-field"><span className="sr-field-label">API Key</span><div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type={showApiKey ? 'text' : 'password'} className="sr-input" style={{ flex: 1 }} value={settingsForm.api_key || ''} onChange={e => { setSettingsForm({ ...settingsForm, api_key: e.target.value }); setHasSavedApiKey(false) }} placeholder={hasSavedApiKey ? '已保存 (点击编辑)' : 'sk-...'} /><button className="sr-icon-btn" onClick={() => setShowApiKey(!showApiKey)} title={showApiKey ? '隐藏' : '显示'}>{showApiKey ? '🙈' : '👁️'}</button><button className={`sr-icon-btn ${apiKeyCopied ? 'sr-icon-btn--success' : ''}`} onClick={copyApiKey} title={apiKeyCopied ? '已复制' : '复制'}>{apiKeyCopied ? <IconCheck /> : <IconCopy />}</button></div></label><label className="sr-field"><span className="sr-field-label">API Base URL</span><input type="text" className="sr-input" value={settingsForm.api_base || ''} onChange={e => setSettingsForm({ ...settingsForm, api_base: e.target.value })} placeholder="https://api.openai.com/v1" /></label><label className="sr-field"><span className="sr-field-label">模型</span><input type="text" className="sr-input" value={settingsForm.model || ''} onChange={e => setSettingsForm({ ...settingsForm, model: e.target.value })} placeholder="gpt-4o-mini" /></label></fieldset><fieldset className="sr-fieldset"><legend className="sr-fieldset-legend">抓取配置</legend><div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}><label className="sr-field" style={{ flex: 1 }}><span className="sr-field-label">间隔数值</span><input type="number" className="sr-input" min="1" value={settingsForm.fetch_interval_min || 6} onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_min: parseInt(e.target.value) || 6 })} /></label><label className="sr-field" style={{ flex: 1 }}><span className="sr-field-label">间隔单位</span><select className="sr-input" value={settingsForm.fetch_interval_unit || 'hours'} onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_unit: e.target.value })}><option value="minutes">分钟</option><option value="hours">小时</option><option value="days">天</option></select></label></div></fieldset><div className="sr-settings-actions"><button className="sr-btn sr-btn--primary" onClick={handleSaveSettings} disabled={settingsSaving}>{settingsSaving ? '保存中…' : '保存设置'}</button></div>{settingsResult && (<div className={`sr-feedback sr-feedback--${settingsResult.type}`}>{settingsResult.message}</div>)}</div>)}
+      {activeTab === 'settings' && (<div className="sr-settings"><fieldset className="sr-fieldset"><legend className="sr-fieldset-legend">AI 配置</legend><label className="sr-field"><span className="sr-field-label">API Key</span><div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type={showApiKey ? 'text' : 'password'} className="sr-input" style={{ flex: 1 }} value={settingsForm.api_key || ''} onChange={e => { setSettingsForm({ ...settingsForm, api_key: e.target.value }); setHasSavedApiKey(false) }} placeholder={hasSavedApiKey ? '已保存 (点击编辑)' : 'sk-...'} /><button className="sr-icon-btn" onClick={() => setShowApiKey(!showApiKey)} title={showApiKey ? '隐藏' : '显示'}>{showApiKey ? '🙈' : '👁️'}</button><button className={`sr-icon-btn ${apiKeyCopied ? 'sr-icon-btn--success' : ''}`} onClick={copyApiKey} title={apiKeyCopied ? '已复制' : '复制'}>{apiKeyCopied ? <IconCheck /> : <IconCopy />}</button></div></label><label className="sr-field"><span className="sr-field-label">API Base URL</span><input type="text" className="sr-input" value={settingsForm.api_base || ''} onChange={e => setSettingsForm({ ...settingsForm, api_base: e.target.value })} placeholder="https://api.openai.com/v1" /></label><label className="sr-field"><span className="sr-field-label">模型</span><input type="text" className="sr-input" value={settingsForm.model || ''} onChange={e => setSettingsForm({ ...settingsForm, model: e.target.value })} placeholder="gpt-4o-mini" /></label></fieldset><fieldset className="sr-fieldset"><legend className="sr-fieldset-legend">抓取配置</legend><div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}><label className="sr-field" style={{ flex: 1 }}><span className="sr-field-label">间隔数值</span><input type="number" className="sr-input" min="1" value={settingsForm.fetch_interval_min || 6} onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_min: parseInt(e.target.value) || 6 })} /></label><label className="sr-field" style={{ flex: 1 }}><span className="sr-field-label">间隔单位</span><select className="sr-input" value={settingsForm.fetch_interval_unit || 'hours'} onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_unit: e.target.value })}><option value="minutes">分钟</option><option value="hours">小时</option><option value="days">天</option></select></label></div></fieldset><fieldset className="sr-fieldset"><legend className="sr-fieldset-legend">通知</legend><label className="sr-field"><span className="sr-field-label">接收简报邮箱</span><input type="email" className="sr-input" value={settingsForm.email || ''} onChange={e => setSettingsForm({ ...settingsForm, email: e.target.value })} placeholder="your@email.com" /></label></fieldset><div className="sr-settings-actions"><button className="sr-btn sr-btn--primary" onClick={handleSaveSettings} disabled={settingsSaving}>{settingsSaving ? '保存中…' : '保存设置'}</button></div>{settingsResult && (<div className={`sr-feedback sr-feedback--${settingsResult.type}`}>{settingsResult.message}</div>)}</div>)}
     </div>
   )
 }
