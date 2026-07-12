@@ -894,12 +894,19 @@
   background: transparent;
 }
 
-[data-theme="light"] .landing-stats {
+/* stats band — always dark bg with white text in both modes */
+.landing-stats {
   background: var(--bg-dark);
 }
-
-[data-theme="light"] .landing-stat-num {
+.landing-stat-num,
+.landing-stat-num--text {
   color: #fff;
+}
+.landing-stat-label {
+  color: rgba(255,255,255,0.45);
+}
+.landing-stat-icon {
+  color: rgba(255,255,255,0.7);
 }
 
 [data-theme="light"] .landing-cta {
