@@ -3,6 +3,15 @@ import { useSearchParams } from 'react-router-dom'
 import { apiProxy } from '../../api'
 import './SuperReadTool.css'
 
+function todayLocal() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function dateToLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 const IconRss = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 11a9 9 0 0 1 9 9" /><path d="M4 4a16 16 0 0 1 16 16" /><circle cx="5" cy="19" r="1" />
@@ -184,7 +193,7 @@ export default function SuperReadTool() {
   const [readArticles] = useState(new Set())
 
   // Briefing (integrated report + related articles)
-  const [briefingDate, setBriefingDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [briefingDate, setBriefingDate] = useState(() => todayLocal())
   const [briefingReport, setBriefingReport] = useState('')
   const [briefingArticles, setBriefingArticles] = useState([])
   const [briefingLoading, setBriefingLoading] = useState(false)
@@ -398,7 +407,7 @@ export default function SuperReadTool() {
   const shiftBriefingDate = (deltaDays) => {
     const d = new Date(briefingDate)
     d.setDate(d.getDate() + deltaDays)
-    const newDate = d.toISOString().split('T')[0]
+    const newDate = dateToLocal(d)
     setBriefingDate(newDate)
     setPage(1)
     loadBriefing(newDate)
@@ -410,7 +419,7 @@ export default function SuperReadTool() {
     loadBriefing(newDate)
   }
   const goToTodayBriefing = () => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = todayLocal()
     setBriefingDate(today)
     setPage(1)
     loadBriefing(today)
