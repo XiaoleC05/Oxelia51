@@ -201,7 +201,7 @@ export default function SuperReadTool() {
 
   const copyApiKey = async () => {
     try {
-      const data = await apiProxy('superread', 'api/settings')
+      const data = await apiProxy('superread', 'api/settings?full=true')
       const k = data?.settings?.api_key || data?.api_key || ''
       if (k && k.length > 4) {
         try { await navigator.clipboard.writeText(k) } catch {
