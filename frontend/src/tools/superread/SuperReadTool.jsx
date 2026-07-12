@@ -3,15 +3,6 @@ import { useSearchParams } from 'react-router-dom'
 import { apiProxy } from '../../api'
 import './SuperReadTool.css'
 
-function todayLocal() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function dateToLocal(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 const IconRss = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 11a9 9 0 0 1 9 9" /><path d="M4 4a16 16 0 0 1 16 16" /><circle cx="5" cy="19" r="1" />
@@ -60,18 +51,6 @@ const IconChevronDown = () => (
   </svg>
 )
 
-const IconChevronLeft = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="15 18 9 12 15 6" />
-  </svg>
-)
-
-const IconChevronRight = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 18 15 12 9 6" />
-  </svg>
-)
-
 const IconCheck = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 6 9 17 4 12" />
@@ -87,12 +66,6 @@ const IconCopy = () => (
 const IconSparkles = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5z" /><path d="M18 14l.6 2.4L21 17l-2.4.6L18 20l-.6-2.4L15 17l2.4-.6z" /><path d="M6 18l.4 1.6L8 20l-1.6.4L6 22l-.4-1.6L4 20l1.6-.4z" />
-  </svg>
-)
-
-const IconCalendar = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
   </svg>
 )
 
@@ -192,12 +165,13 @@ export default function SuperReadTool() {
   const [expandedArticles, setExpandedArticles] = useState(new Set())
   const [readArticles] = useState(new Set())
 
-  // Briefing (integrated report + related articles)
-  const [briefingDate, setBriefingDate] = useState(() => todayLocal())
-  const [briefingReport, setBriefingReport] = useState('')
-  const [briefingArticles, setBriefingArticles] = useState([])
-  const [briefingLoading, setBriefingLoading] = useState(false)
-  const [sendingEmail, setSendingEmail] = useState(false)
+  // Briefing list (per-day, accordion expand)
+  const [briefList, setBriefList] = useState([])
+  const [briefListLoading, setBriefListLoading] = useState(false)
+  const [expandedDate, setExpandedDate] = useState(null)
+  const [briefArticlesByDate, setBriefArticlesByDate] = useState({})
+  const [briefArticlesLoading, setBriefArticlesLoading] = useState({})
+  const [sendingEmailDate, setSendingEmailDate] = useState(null)
   const [emailResult, setEmailResult] = useState(null)
   const emailResultTimerRef = useRef(null)
 
@@ -229,18 +203,32 @@ export default function SuperReadTool() {
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [articleFilter, filterFeedId, filterTag])
 
-  const loadBriefing = useCallback(async (date) => {
-    const d = date || briefingDate
-    setBriefingLoading(true)
+  const loadBriefList = useCallback(async () => {
+    setBriefListLoading(true)
     try {
-      const data = await apiProxy('superread', `api/daily-brief?date=${encodeURIComponent(d)}`)
-      // Support both new shape {report, articles} and legacy shape (array of articles)
-      const report = data?.report || data?.briefing || data?.summary || ''
+      const data = await apiProxy('superread', 'api/daily-brief/list?limit=30')
+      setBriefList(Array.isArray(data) ? data : (data?.items || data?.list || []))
+    } catch (err) { console.error(err) } finally { setBriefListLoading(false) }
+  }, [])
+
+  // Toggle brief expand: load related articles on first expand
+  const toggleBriefExpand = useCallback(async (date) => {
+    if (!date) return
+    if (expandedDate === date) { setExpandedDate(null); return }
+    setExpandedDate(date)
+    if (briefArticlesByDate[date]) return
+    setBriefArticlesLoading(prev => ({ ...prev, [date]: true }))
+    try {
+      const data = await apiProxy('superread', `api/daily-brief?date=${encodeURIComponent(date)}`)
       const arts = data?.articles || (Array.isArray(data) ? data : [])
-      setBriefingReport(report)
-      setBriefingArticles(arts)
-    } catch (err) { console.error(err) } finally { setBriefingLoading(false) }
-  }, [briefingDate])
+      setBriefArticlesByDate(prev => ({ ...prev, [date]: arts }))
+    } catch (err) {
+      console.error(err)
+      setBriefArticlesByDate(prev => ({ ...prev, [date]: [] }))
+    } finally {
+      setBriefArticlesLoading(prev => ({ ...prev, [date]: false }))
+    }
+  }, [expandedDate, briefArticlesByDate])
 
   const loadSettings = async () => {
     try {
@@ -263,7 +251,7 @@ export default function SuperReadTool() {
   }
 
   // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
-  useEffect(() => { loadFeeds(); loadArticles(); loadSettings(); loadBriefing() }, [])
+  useEffect(() => { loadFeeds(); loadArticles(); loadSettings(); loadBriefList() }, [])
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (activeTab !== 'articles') return; loadArticles() }, [articleFilter, filterFeedId, filterTag, activeTab, loadArticles])
@@ -379,22 +367,23 @@ export default function SuperReadTool() {
     try {
       const range = settingsForm.briefing_range || '24h'
       await apiProxy('superread', `api/daily-brief/generate?range=${encodeURIComponent(range)}`, { method: 'POST' })
-      // 生成成功后加载简报内容
-      await loadBriefing(briefingDate)
+      // 生成成功后刷新简报列表
+      await loadBriefList()
       // 切换到简报 Tab
       setActiveTab('briefing')
     } catch (err) { alert('简报生成失败: ' + err.message) } finally { setSummarizing(false) }
   }
 
-  const handleSendToEmail = async () => {
-    setSendingEmail(true)
+  const handleSendToEmail = async (date) => {
+    if (!date) return
+    setSendingEmailDate(date)
     try {
-      const r = await apiProxy('superread', 'api/daily-brief/send', { method: 'POST' })
-      setEmailResult(r?.sent ? { type: 'success', message: `已发送 ${r.count} 篇文章到 ${r.to}` } : { type: 'error', message: r?.message || '发送失败' })
+      const r = await apiProxy('superread', `api/daily-brief/send?date=${encodeURIComponent(date)}`, { method: 'POST' })
+      setEmailResult(r?.sent ? { date, type: 'success', message: `已发送 ${r.count || 0} 篇文章到 ${r.to}` } : { date, type: 'error', message: r?.message || '发送失败' })
     } catch (err) {
-      setEmailResult({ type: 'error', message: '发送失败: ' + err.message })
+      setEmailResult({ date, type: 'error', message: '发送失败: ' + err.message })
     } finally {
-      setSendingEmail(false)
+      setSendingEmailDate(null)
       if (emailResultTimerRef.current) clearTimeout(emailResultTimerRef.current)
       emailResultTimerRef.current = setTimeout(() => setEmailResult(null), 5000)
     }
@@ -421,29 +410,7 @@ export default function SuperReadTool() {
     } catch { /* ignore */ }
   }
 
-  // Briefing date navigation
-  const shiftBriefingDate = (deltaDays) => {
-    const d = new Date(briefingDate)
-    d.setDate(d.getDate() + deltaDays)
-    const newDate = dateToLocal(d)
-    setBriefingDate(newDate)
-    setPage(1)
-    loadBriefing(newDate)
-  }
-  const handleBriefingDateChange = (newDate) => {
-    if (!newDate) return
-    setBriefingDate(newDate)
-    setPage(1)
-    loadBriefing(newDate)
-  }
-  const goToTodayBriefing = () => {
-    const today = todayLocal()
-    setBriefingDate(today)
-    setPage(1)
-    loadBriefing(today)
-  }
-
-  const handleTabChange = (tab) => { setActiveTab(tab); if (tab === 'articles') loadArticles(); if (tab === 'briefing') loadBriefing(); if (tab === 'settings') loadSettings() }
+  const handleTabChange = (tab) => { setActiveTab(tab); if (tab === 'articles') loadArticles(); if (tab === 'briefing') loadBriefList(); if (tab === 'settings') loadSettings() }
 
   // Pagination derivation (per-tab, client-side)
   const articlesTotalPages = Math.ceil(articles.length / pageSize)
@@ -453,10 +420,6 @@ export default function SuperReadTool() {
   const feedsTotalPages = Math.ceil(feeds.length / pageSize)
   const feedsSafePage = Math.min(page, Math.max(1, feedsTotalPages))
   const pagedFeeds = feeds.slice((feedsSafePage - 1) * pageSize, feedsSafePage * pageSize)
-
-  const briefingTotalPages = Math.ceil(briefingArticles.length / pageSize)
-  const briefingSafePage = Math.min(page, Math.max(1, briefingTotalPages))
-  const pagedBriefingArticles = briefingArticles.slice((briefingSafePage - 1) * pageSize, briefingSafePage * pageSize)
 
   if (loading && articles.length === 0) { return (<div className="sr-shell"><div className="sr-loading"><div className="sr-spinner" /><p>加载 SuperRead 数据…</p></div></div>) }
 
@@ -494,47 +457,60 @@ export default function SuperReadTool() {
         <div className="sr-briefing">
           <div className="sr-briefing-header">
             <h3 className="sr-section-title">新闻简报</h3>
-            <div className="sr-briefing-date-nav">
-              <button className="sr-icon-btn" onClick={() => shiftBriefingDate(-1)} title="前一天"><IconChevronLeft /></button>
-              <input type="date" className="sr-briefing-date-input" value={briefingDate} onChange={e => handleBriefingDateChange(e.target.value)} />
-              <button className="sr-icon-btn" onClick={() => shiftBriefingDate(1)} title="后一天"><IconChevronRight /></button>
-              <button className="sr-btn sr-btn--secondary" onClick={goToTodayBriefing}><IconCalendar /> 今天</button>
-            </div>
           </div>
-          {briefingLoading ? (
-            <div className="sr-loading"><div className="sr-spinner" /><p>加载简报…</p></div>
-          ) : !briefingReport && briefingArticles.length === 0 ? (
-            <div className="sr-empty"><p>当日暂无简报</p><p className="sr-hint">抓取订阅源后，当日新文章将在此汇总</p></div>
+          {briefListLoading ? (
+            <div className="sr-loading"><div className="sr-spinner" /><p>加载简报列表…</p></div>
+          ) : briefList.length === 0 ? (
+            <div className="sr-empty"><p>暂无简报</p><p className="sr-hint">在「文章列表」中点击「生成新闻简报」创建第一份</p></div>
           ) : (
-            <>
-              {briefingReport && (
-                <div className="sr-briefing-report">
-                  <h4 className="sr-briefing-report-title">整合报告</h4>
-                  <div className="sr-briefing-report-text">{briefingReport}</div>
-                  {settingsForm.email && (
-                    <div style={{ marginTop: 12 }}>
-                      <button className="sr-btn sr-btn--secondary" onClick={handleSendToEmail} disabled={sendingEmail}>✉ {sendingEmail ? '发送中…' : '发送到邮箱'}</button>
-                      {emailResult && (<span style={{ marginLeft: 10, fontSize: 13, color: emailResult.type === 'success' ? 'var(--accent-2)' : '#c44' }}>{emailResult.message}</span>)}
+            <div className="sr-brief-list">
+              {briefList.map(brief => {
+                const date = brief.date || brief.brief_date
+                const content = brief.content || brief.report || brief.briefing || brief.summary || ''
+                const preview = content.replace(/\s+/g, ' ').trim().slice(0, 150)
+                const articleCount = brief.article_count || brief.count || brief.articles_count || 0
+                const isExpanded = expandedDate === date
+                const articles = (date && briefArticlesByDate[date]) || []
+                const articlesLoading = date && briefArticlesLoading[date]
+                const isSending = sendingEmailDate === date
+                const result = emailResult && emailResult.date === date ? emailResult : null
+                return (
+                  <div key={date} className={`sr-brief-item ${isExpanded ? 'sr-brief-item--expanded' : ''}`}>
+                    <div className="sr-brief-item-header" onClick={() => toggleBriefExpand(date)}>
+                      <span className="sr-brief-item-icon">📰</span>
+                      <span className="sr-brief-item-date">{date}</span>
+                      <span className="sr-brief-item-count">{articleCount} 篇文章</span>
+                      {settingsForm.email && (
+                        <button className="sr-icon-btn" onClick={e => { e.stopPropagation(); handleSendToEmail(date) }} disabled={isSending} title="发送到邮箱">{isSending ? '⏳' : '✉'}</button>
+                      )}
+                      {result && (<span className="sr-brief-item-result" style={{ color: result.type === 'success' ? 'var(--accent-2)' : '#c44' }}>{result.message}</span>)}
+                      <span className="sr-brief-item-chevron"><IconChevronDown /></span>
                     </div>
-                  )}
-                </div>
-              )}
-              {briefingArticles.length > 0 && (
-                <>
-                  <h4 className="sr-briefing-section-title">关联文章</h4>
-                  <div className="sr-briefing-list">
-                    {pagedBriefingArticles.map(article => (
-                      <div key={article.id} className="sr-briefing-card">
-                        <a href={article.url} target="_blank" rel="noopener noreferrer" className="sr-briefing-title">{article.title}</a>
-                        <div className="sr-briefing-meta"><span>{article.feed_title}</span><span>{formatDate(article.published_at)}</span></div>
-                        <div className="sr-briefing-summary">{article.summary}</div>
+                    {preview && <div className="sr-brief-item-preview">{preview}{preview.length >= 150 ? '…' : ''}</div>}
+                    {isExpanded && (
+                      <div className="sr-brief-item-detail">
+                        <div className="sr-brief-item-content">{content}</div>
+                        {articlesLoading ? (
+                          <p className="sr-hint" style={{ marginTop: 12 }}>加载关联文章…</p>
+                        ) : articles.length > 0 ? (
+                          <details className="sr-brief-item-articles">
+                            <summary>关联文章 ({articles.length})</summary>
+                            <div className="sr-brief-item-articles-list">
+                              {articles.map(a => (
+                                <div key={a.id} className="sr-brief-item-article">
+                                  <a href={a.url} target="_blank" rel="noopener noreferrer">{a.title}</a>
+                                  {a.summary && <div className="sr-brief-item-article-summary">{a.summary}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        ) : null}
                       </div>
-                    ))}
+                    )}
                   </div>
-                  <Pagination page={briefingSafePage} totalPages={briefingTotalPages} pageSize={pageSize} onPageChange={setPage} onSizeChange={setPageSize} />
-                </>
-              )}
-            </>
+                )
+              })}
+            </div>
           )}
         </div>
       )}
