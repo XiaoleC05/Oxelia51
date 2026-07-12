@@ -378,9 +378,11 @@ export default function SuperReadTool() {
     setSummarizing(true)
     try {
       const range = settingsForm.briefing_range || '24h'
-      const data = await apiProxy('superread', `api/daily-brief/generate?range=${encodeURIComponent(range)}`, { method: 'POST' })
-      alert(`新闻简报生成完成：${data.summarized || 0}/${data.total || 0} 篇文章已纳入简报`)
-      await loadArticles()
+      await apiProxy('superread', `api/daily-brief/generate?range=${encodeURIComponent(range)}`, { method: 'POST' })
+      // 生成成功后加载简报内容
+      await loadBriefing(briefingDate)
+      // 切换到简报 Tab
+      setActiveTab('briefing')
     } catch (err) { alert('简报生成失败: ' + err.message) } finally { setSummarizing(false) }
   }
 
@@ -483,7 +485,7 @@ export default function SuperReadTool() {
             <button className={`sr-filter-btn ${articleFilter === 'starred' ? 'sr-filter-btn--active' : ''}`} onClick={() => { setArticleFilter('starred'); setFilterFeedId(''); setFilterTag(''); setPage(1) }}><IconStar filled={articleFilter === 'starred'} /> 星标</button>
             <select className={`sr-filter-select ${articleFilter === 'feed' ? 'sr-filter-select--active' : ''}`} value={filterFeedId} onChange={e => { setArticleFilter('feed'); setFilterFeedId(e.target.value); setFilterTag(''); setPage(1) }}><option value="">按源筛选</option>{feeds.map(f => <option key={f.id} value={f.id}>{f.title || f.feed_url}</option>)}</select>
           </div>
-          <div className="sr-feeds-actions" style={{ marginBottom: 12 }}><button className="sr-btn sr-btn--secondary" onClick={handleSummarize} disabled={summarizing}><IconSparkles /> {summarizing ? 'AI 摘要生成中…' : '生成新闻简报'}</button></div>
+          <div className="sr-feeds-actions" style={{ marginBottom: 12 }}><button className="sr-btn sr-btn--secondary" onClick={handleSummarize} disabled={summarizing}><IconSparkles /> {summarizing ? '生成中…' : '生成新闻简报'}</button></div>
           {error && <div className="sr-error-banner">{error}</div>}
           {articles.length === 0 ? (<div className="sr-empty"><p>暂无文章</p><p className="sr-hint">在「源管理」中添加 RSS 源并抓取文章</p></div>) : (<><div className="sr-article-list">{pagedArticles.map(article => { const isExpanded = expandedArticles.has(article.id); const isRead = article.is_read || readArticles.has(article.id); return (<div key={article.id} className={`sr-article-card ${isRead ? 'sr-article-card--read' : ''}`}><div className="sr-article-header" onClick={() => toggleArticleExpand(article.id)}><a href={article.url} target="_blank" rel="noopener noreferrer" className="sr-article-title" onClick={e => e.stopPropagation()}>{article.title}</a><div className="sr-article-meta"><span className="sr-article-source">{article.feed_title || '未知源'}</span><span className="sr-article-time">{formatDate(article.published_at)}</span><span className={`sr-summary-badge ${article.summary ? 'sr-summary-badge--done' : ''}`}>{article.summary ? '已摘要' : '未摘要'}</span></div><IconChevronDown /></div><div className="sr-article-summary">{article.summary}</div>{isExpanded && (<div className="sr-article-expanded"><div className="sr-article-content">{article.content_text}</div><div className="sr-article-actions"><button className="sr-action-btn" onClick={() => markArticleRead(article)} disabled={isRead}><IconCheck /> {isRead ? '已读' : '标记已读'}</button><button className="sr-action-btn" onClick={() => toggleArticleStar(article)}><IconStar filled={article.is_starred} /> {article.is_starred ? '取消星标' : '星标'}</button></div></div>)}</div>) })}</div><Pagination page={articlesSafePage} totalPages={articlesTotalPages} pageSize={pageSize} onPageChange={setPage} onSizeChange={setPageSize} /></>)}
         </div>)}
