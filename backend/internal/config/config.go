@@ -46,6 +46,7 @@ type Config struct {
 
 	GatewayUpstreamTimeout time.Duration
 	GatewayMaxBodyBytes    int64
+	GatewayHMACSecret     string
 }
 
 func Load() *Config {
@@ -83,6 +84,7 @@ func Load() *Config {
 
 		GatewayUpstreamTimeout: getEnvDuration("GATEWAY_UPSTREAM_TIMEOUT", 30*time.Second),
 		GatewayMaxBodyBytes:    getEnvInt64("GATEWAY_MAX_BODY_BYTES", 10<<20),
+		GatewayHMACSecret:     getEnv("GATEWAY_HMAC_SECRET", ""),
 	}
 }
 

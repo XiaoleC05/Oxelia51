@@ -2,11 +2,15 @@ package gateway
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -120,7 +124,7 @@ func (h *Handler) Proxy(c *gin.Context) {
 	}
 
 	copyHeaders(upReq.Header, c.Request.Header)
-	if err := injectGatewayHeaders(upReq, c); err != nil {
+	if err := injectGatewayHeaders(upReq, c, h.cfg); err != nil {
 		apiError(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
 		return
 	}
@@ -233,7 +237,7 @@ func copyResponseHeaders(dst, src http.Header) {
 	}
 }
 
-func injectGatewayHeaders(req *http.Request, c *gin.Context) error {
+func injectGatewayHeaders(req *http.Request, c *gin.Context, cfg *config.Config) error {
 	userID, _ := c.Get("userID")
 	username, _ := c.Get("username")
 	role, _ := c.Get("userRole")
@@ -259,6 +263,16 @@ func injectGatewayHeaders(req *http.Request, c *gin.Context) error {
 	req.Header.Set("X-User-Id", uid)
 	req.Header.Set("X-Username", uname)
 	req.Header.Set("X-Role", r)
+
+	// HMAC-SHA256 signature for gateway authentication
+	if cfg.GatewayHMACSecret != "" {
+		ts := strconv.FormatInt(time.Now().Unix(), 10)
+		mac := hmac.New(sha256.New, []byte(cfg.GatewayHMACSecret))
+		mac.Write([]byte(ts + uid + cfg.GatewayHMACSecret))
+		sig := hex.EncodeToString(mac.Sum(nil))
+		req.Header.Set("X-Gateway-Timestamp", ts)
+		req.Header.Set("X-Gateway-Signature", sig)
+	}
 
 	return nil
 }
