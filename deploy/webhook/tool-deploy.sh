@@ -25,14 +25,14 @@ fi
 echo "=== $(date -Iseconds) tool deploy start: $TOOL_NAME ($REPO_FULL) ==="
 
 # ============================================
-# 配置（按工具不同而不同）
+# 配置
 # ============================================
 INSTALL_DIR="/opt/${TOOL_NAME}"
 BINARY_NAME="${TOOL_NAME}-server"
 SRC_DIR="/opt/tool-src/${TOOL_NAME}"
 REPO_URL="git@github.com:${REPO_FULL}.git"
-
 TARBALL_NAME="${TOOL_NAME}-release.tar.gz"
+
 WORK="/tmp/tool-deploy-${TOOL_NAME}-$$"
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK" "$INSTALL_DIR"
@@ -64,7 +64,7 @@ fi
 tar xzf "$TARBALL_NAME" -C "$WORK"
 
 # ============================================
-# 3. 安装二进制
+# 3. 安装二进制（先停服务避免 "Text file busy"）
 # ============================================
 if [ ! -f "$WORK/$BINARY_NAME" ]; then
     echo "  错误：tarball 中未找到 $BINARY_NAME" >&2
@@ -72,28 +72,24 @@ if [ ! -f "$WORK/$BINARY_NAME" ]; then
     exit 1
 fi
 
+echo "  停止服务 $TOOL_NAME ..."
+systemctl stop "$TOOL_NAME" 2>/dev/null || true
+sleep 1
+
 cp "$WORK/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
 chmod +x "$INSTALL_DIR/$BINARY_NAME"
 echo "  二进制已安装: $INSTALL_DIR/$BINARY_NAME"
 
 # ============================================
-# 4. 重启服务
+# 4. 启动服务
 # ============================================
-if systemctl is-active --quiet "$TOOL_NAME" 2>/dev/null; then
-    systemctl restart "$TOOL_NAME"
-    echo "  服务已重启: $TOOL_NAME"
-else
-    echo "  注意：$TOOL_NAME 服务未运行（可能首次部署，需手动 systemctl enable --now）"
-fi
-
-# ============================================
-# 5. 健康检查
-# ============================================
+systemctl start "$TOOL_NAME"
 sleep 1
+
 if systemctl is-active --quiet "$TOOL_NAME" 2>/dev/null; then
     echo "  $TOOL_NAME: active"
 else
-    echo "  $TOOL_NAME: WARNING - not active"
+    echo "  $TOOL_NAME: WARNING - not active, check journalctl -u $TOOL_NAME"
 fi
 
 echo "=== $(date -Iseconds) tool deploy done: $TOOL_NAME ==="
