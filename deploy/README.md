@@ -136,4 +136,4 @@ tail -f /var/log/oxelia51-webhook-deploy.log
 
 ### 并发控制
 
-同一分支新 push 会取消旧的 build-test run。服务器侧 deploy.sh 串行执行。
+新 push 排队等待，不会取消正在运行的构建（cancel-in-progress: false）。服务器侧 deploy.sh 串行执行。
