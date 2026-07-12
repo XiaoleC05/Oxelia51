@@ -896,14 +896,14 @@
 
 /* stats band — always dark bg with white text in both modes */
 .landing-stats {
-  background: #1a1d24;
+  background: #1a1d24 !important;
 }
 .landing-stat-num,
 .landing-stat-num--text {
-  color: #fff;
+  color: #fff !important;
 }
 .landing-stat-label {
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.45) !important;
 }
 .landing-stat-icon {
   color: rgba(255,255,255,0.7);
