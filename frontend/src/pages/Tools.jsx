@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { apiGet, getToken, getStoredUser, canUseTool, BADGE_LABEL } from '../api'
 import './Tools.css'
 import './Portfolio.css'
@@ -11,7 +11,15 @@ function Tools() {
   const [tools, setTools] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState('tools')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [activeTab, setActiveTabState] = useState(() => {
+    const t = searchParams.get('tab')
+    return t === 'portfolio' ? 'portfolio' : 'tools'
+  })
+  const setActiveTab = (next) => {
+    setActiveTabState(next)
+    setSearchParams({ tab: next }, { replace: true })
+  }
   const [portfolio, setPortfolio] = useState([])
   const [portfolioLoading, setPortfolioLoading] = useState(false)
 

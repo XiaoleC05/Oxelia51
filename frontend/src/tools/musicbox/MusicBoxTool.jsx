@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { apiProxy } from '../../api'
 import './MusicBoxTool.css'
 
@@ -54,7 +55,16 @@ function buildTrackKey(t) {
 }
 
 export default function MusicBoxTool() {
-  const [viewMode, setViewMode] = useState('search')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const validModes = ['search', 'playlists', 'settings']
+  const [viewMode, setViewModeState] = useState(() => {
+    const t = searchParams.get('tab')
+    return t && validModes.includes(t) ? t : 'search'
+  })
+  const setViewMode = (next) => {
+    setViewModeState(next)
+    setSearchParams({ tab: next }, { replace: true })
+  }
   const audioRef = useRef(null)
   const [currentTrack, setCurrentTrack] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)

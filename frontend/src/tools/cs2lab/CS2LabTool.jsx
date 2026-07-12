@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { apiProxy, getStoredUser } from '../../api'
 import './CS2LabTool.css'
 
@@ -80,7 +81,16 @@ const TYPE_LABELS = {
 
 export default function CS2LabTool() {
   // --- View ---
-  const [viewMode, setViewMode] = useState('maps') // maps | browser | favorites
+  const [searchParams, setSearchParams] = useSearchParams()
+  const validModes = ['maps', 'browser', 'favorites']
+  const [viewMode, setViewModeState] = useState(() => {
+    const t = searchParams.get('tab')
+    return t && validModes.includes(t) ? t : 'maps'
+  })
+  const setViewMode = (next) => {
+    setViewModeState(next)
+    setSearchParams({ tab: next }, { replace: true })
+  }
   const [error, setError] = useState('')
 
   // --- Admin ---

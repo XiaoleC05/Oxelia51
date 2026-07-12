@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { apiGet, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle, fetchDeveloperProfile, adminPatchDeveloperProfile, adminUploadAvatar } from '../api'
 import './Admin.css'
 
@@ -7,7 +7,16 @@ function Admin() {
   const user = useMemo(() => getStoredUser(), [])
   const token = useMemo(() => getToken(), [])
   const navigate = useNavigate()
-  const [tab, setTab] = useState('dashboard')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const validTabs = ['dashboard', 'tools', 'users', 'heroes', 'articles', 'profile', 'server']
+  const [tab, setTabState] = useState(() => {
+    const t = searchParams.get('tab')
+    return t && validTabs.includes(t) ? t : 'dashboard'
+  })
+  const setTab = (next) => {
+    setTabState(next)
+    setSearchParams({ tab: next }, { replace: true })
+  }
   const [tools, setTools] = useState([])
   const [users, setUsers] = useState([])
   const [heroImages, setHeroImages] = useState([])

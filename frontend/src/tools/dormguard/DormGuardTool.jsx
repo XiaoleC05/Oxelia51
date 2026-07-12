@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { apiProxy } from '../../api'
 import './DormGuardTool.css'
 
@@ -89,7 +90,16 @@ function DormGuardTool() {
   const [records, setRecords] = useState([])
   const [settings, setSettings] = useState({})
   const threshold = Number(settings?.CRAWLER_ALERT_THRESHOLD) || 20
-  const [viewMode, setViewMode] = useState('latest')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const validModes = ['latest', 'history', 'config']
+  const [viewMode, setViewModeState] = useState(() => {
+    const t = searchParams.get('tab')
+    return t && validModes.includes(t) ? t : 'latest'
+  })
+  const setViewMode = (next) => {
+    setViewModeState(next)
+    setSearchParams({ tab: next }, { replace: true })
+  }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 

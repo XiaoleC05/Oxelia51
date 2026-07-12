@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { apiProxy } from '../../api'
 import './SuperReadTool.css'
 
@@ -80,7 +81,16 @@ function formatDate(dateStr) {
 }
 
 export default function SuperReadTool() {
-  const [activeTab, setActiveTab] = useState('feeds')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const validTabs = ['feeds', 'articles', 'briefing', 'settings']
+  const [activeTab, setActiveTabState] = useState(() => {
+    const t = searchParams.get('tab')
+    return t && validTabs.includes(t) ? t : 'feeds'
+  })
+  const setActiveTab = (next) => {
+    setActiveTabState(next)
+    setSearchParams({ tab: next }, { replace: true })
+  }
   const [feeds, setFeeds] = useState([])
   const [articles, setArticles] = useState([])
   const [briefing, setBriefing] = useState([])
