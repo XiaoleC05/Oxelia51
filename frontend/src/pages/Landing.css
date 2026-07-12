@@ -896,7 +896,7 @@
 
 /* stats band — always dark bg with white text in both modes */
 .landing-stats {
-  background: var(--bg-dark);
+  background: #1a1d24;
 }
 .landing-stat-num,
 .landing-stat-num--text {
