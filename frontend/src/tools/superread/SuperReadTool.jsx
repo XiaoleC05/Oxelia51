@@ -366,7 +366,7 @@ export default function SuperReadTool() {
     setSummarizing(true)
     try {
       const range = settingsForm.briefing_range || '24h'
-      await apiProxy('superread', `api/daily-brief/generate?range=${encodeURIComponent(range)}`, { method: 'POST' })
+      const data = await apiProxy('superread', `api/daily-brief/generate?range=${encodeURIComponent(range)}&force=true`, { method: 'POST' })
       // 生成成功后刷新简报列表
       await loadBriefList()
       // 切换到简报 Tab
