@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { apiProxy } from '../../api'
 import './SuperReadTool.css'
 
-// Icon components (Lucide-style inline SVGs)
 const IconRss = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 11a9 9 0 0 1 9 9" /><path d="M4 4a16 16 0 0 1 16 16" /><circle cx="5" cy="19" r="1" />
@@ -57,7 +56,20 @@ const IconCheck = () => (
   </svg>
 )
 
-// Utility functions
+const IconCopy = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+)
+
+const IconSparkles = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5z" />
+    <path d="M18 14l.6 2.4L21 17l-2.4.6L18 20l-.6-2.4L15 17l2.4-.6z" />
+    <path d="M6 18l.4 1.6L8 20l-1.6.4L6 22l-.4-1.6L4 20l1.6-.4z" />
+  </svg>
+)
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
@@ -69,39 +81,30 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('zh-CN')
 }
 
-function extractAllTags(articles) {
-  const tagSet = new Set()
-  articles.forEach(a => {
-    if (Array.isArray(a.tags)) a.tags.forEach(t => tagSet.add(t))
-    else if (typeof a.tags === 'string' && a.tags) a.tags.split(',').forEach(t => tagSet.add(t.trim()))
-  })
-  return Array.from(tagSet).sort()
-}
-
 export default function SuperReadTool() {
   const [activeTab, setActiveTab] = useState('feeds')
   const [feeds, setFeeds] = useState([])
   const [articles, setArticles] = useState([])
-  const [briefing, setBriefing] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Feed management state
   const [showAddFeed, setShowAddFeed] = useState(false)
   const [newFeedUrl, setNewFeedUrl] = useState('')
+  const [newFeedName, setNewFeedName] = useState('')
   const [feedActionBusy, setFeedActionBusy] = useState(null)
 
-  // Article filters
   const [articleFilter, setArticleFilter] = useState('all')
   const [filterFeedId, setFilterFeedId] = useState('')
   const [filterTag, setFilterTag] = useState('')
   const [expandedArticles, setExpandedArticles] = useState(new Set())
   const [readArticles, setReadArticles] = useState(new Set())
 
-  // Settings form
   const [settingsForm, setSettingsForm] = useState({})
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [hasSavedApiKey, setHasSavedApiKey] = useState(false)
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsResult, setSettingsResult] = useState(null)
+  const [summarizing, setSummarizing] = useState(false)
 
   const fileInputRef = useRef(null)
 
@@ -114,7 +117,7 @@ export default function SuperReadTool() {
     }
   }
 
-  const loadArticles = async () => {
+  const loadArticles = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
@@ -130,46 +133,43 @@ export default function SuperReadTool() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [articleFilter, filterFeedId, filterTag])
 
   const loadSettings = async () => {
     try {
       const data = await apiProxy('superread', 'api/settings')
-      setSettingsForm(data || {})
+      const s = data?.settings || data || {}
+      setSettingsForm(s)
+      setHasSavedApiKey(!!s.api_key && s.api_key.length > 0)
     } catch (err) {
       console.error('Failed to load settings:', err)
     }
   }
 
-  /* eslint-disable react-hooks/set-state-in-effect */
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     loadFeeds()
     loadArticles()
     loadSettings()
   }, [])
-  /* eslint-enable react-hooks/set-state-in-effect */
-  /* eslint-enable react-hooks/exhaustive-deps */
 
-  const loadBriefing = useCallback(async () => {
-    try {
-      const data = await apiProxy('superread', 'api/daily-brief')
-      setBriefing(Array.isArray(data) ? data : data?.articles || [])
-    } catch (err) {
-      console.error('Failed to load briefing:', err)
-    }
-  }, [])
+  useEffect(() => {
+    if (activeTab !== 'articles') return
+    loadArticles()
+  }, [articleFilter, filterFeedId, filterTag, activeTab, loadArticles])
 
   // Feed handlers
   const handleAddFeed = async () => {
     if (!newFeedUrl.trim()) return
     setFeedActionBusy('add')
     try {
+      const body = { feed_url: newFeedUrl.trim() }
+      if (newFeedName.trim()) body.title = newFeedName.trim()
       await apiProxy('superread', 'api/feeds', {
         method: 'POST',
-        body: JSON.stringify({ feed_url: newFeedUrl.trim() })
+        body: JSON.stringify(body)
       })
       setNewFeedUrl('')
+      setNewFeedName('')
       setShowAddFeed(false)
       await loadFeeds()
     } catch (err) {
@@ -185,6 +185,7 @@ export default function SuperReadTool() {
     try {
       await apiProxy('superread', `api/feeds/${feedId}`, { method: 'DELETE' })
       await loadFeeds()
+      await loadArticles()
     } catch (err) {
       alert('删除失败: ' + err.message)
     } finally {
@@ -195,8 +196,8 @@ export default function SuperReadTool() {
   const handleFetchFeed = async (feedId) => {
     setFeedActionBusy(feedId)
     try {
-      await apiProxy('superread', `api/feeds/${feedId}/fetch`, { method: 'POST' })
-      alert('抓取成功')
+      const result = await apiProxy('superread', `api/feeds/${feedId}/fetch`, { method: 'POST' })
+      alert(`抓取完成，新增 ${result?.added || 0} 篇文章`)
       await loadFeeds()
       await loadArticles()
     } catch (err) {
@@ -216,13 +217,12 @@ export default function SuperReadTool() {
       const token = localStorage.getItem('token')
       const res = await fetch(`/api/tools/superread/proxy/api/feeds/import`, {
         method: 'POST',
-        headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
+        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         body: formData
       })
       if (!res.ok) throw new Error('导入失败')
-      alert('导入成功')
+      const data = await res.json()
+      alert(`导入成功，${data?.imported || 0} 个源`)
       await loadFeeds()
     } catch (err) {
       alert('导入失败: ' + err.message)
@@ -232,7 +232,6 @@ export default function SuperReadTool() {
     }
   }
 
-  // Article handlers
   const toggleArticleExpand = (articleId) => {
     setExpandedArticles(prev => {
       const next = new Set(prev)
@@ -265,7 +264,6 @@ export default function SuperReadTool() {
       setArticles(prev => prev.map(a =>
         a.id === article.id ? { ...a, is_read: true } : a
       ))
-      setReadArticles(prev => new Set(prev).add(article.id))
     } catch (err) {
       alert('操作失败: ' + err.message)
     }
@@ -285,14 +283,18 @@ export default function SuperReadTool() {
     }
   }
 
-  // Settings handler
   const handleSaveSettings = async () => {
     setSettingsSaving(true)
     setSettingsResult(null)
     try {
+      const body = { ...settingsForm }
+      // If API key is masked and user didn't change it, don't send it
+      if (body.api_key && body.api_key.startsWith('sk-...') && body.api_key.length <= 12) {
+        delete body.api_key
+      }
       await apiProxy('superread', 'api/settings', {
         method: 'PUT',
-        body: JSON.stringify(settingsForm)
+        body: JSON.stringify(body)
       })
       setSettingsResult({ type: 'success', message: '设置已保存' })
       await loadSettings()
@@ -303,17 +305,39 @@ export default function SuperReadTool() {
     }
   }
 
-  // Tab change handler
+  const handleSummarize = async () => {
+    setSummarizing(true)
+    try {
+      const data = await apiProxy('superread', 'api/summarize', { method: 'POST' })
+      alert(`AI 摘要完成：${data.summarized}/${data.total} 篇文章已生成摘要`)
+      await loadArticles()
+    } catch (err) {
+      alert('摘要失败: ' + err.message)
+    } finally {
+      setSummarizing(false)
+    }
+  }
+
+  const copyApiKey = async () => {
+    try {
+      const data = await apiProxy('superread', 'api/settings')
+      const realKey = data?.settings?.api_key || ''
+      if (realKey && !realKey.startsWith('sk-...')) {
+        await navigator.clipboard.writeText(realKey)
+        alert('API Key 已复制')
+      }
+    } catch {
+      // settings api already returns masked key
+    }
+  }
+
   const handleTabChange = (tab) => {
     setActiveTab(tab)
     if (tab === 'articles') loadArticles()
-    if (tab === 'briefing') loadBriefing()
     if (tab === 'settings') loadSettings()
   }
 
-  const allTags = extractAllTags(articles)
-
-  if (loading && activeTab === 'articles' && articles.length === 0) {
+  if (loading && articles.length === 0) {
     return (
       <div className="sr-shell">
         <div className="sr-loading">
@@ -326,74 +350,44 @@ export default function SuperReadTool() {
 
   return (
     <div className="sr-shell">
-      {/* Header */}
       <div className="sr-header">
         <div className="sr-title">
           <IconRss />
           <span>SuperRead</span>
         </div>
         <div className="sr-tabs">
-          <button className={`sr-tab ${activeTab === 'feeds' ? 'sr-tab--active' : ''}`} onClick={() => handleTabChange('feeds')}>
-            源管理
-          </button>
-          <button className={`sr-tab ${activeTab === 'articles' ? 'sr-tab--active' : ''}`} onClick={() => handleTabChange('articles')}>
-            文章列表
-          </button>
-          <button className={`sr-tab ${activeTab === 'briefing' ? 'sr-tab--active' : ''}`} onClick={() => handleTabChange('briefing')}>
-            每日简报
-          </button>
-          <button className={`sr-tab ${activeTab === 'settings' ? 'sr-tab--active' : ''}`} onClick={() => handleTabChange('settings')}>
-            <IconSettings />
-            设置
-          </button>
+          <button className={`sr-tab ${activeTab === 'feeds' ? 'sr-tab--active' : ''}`} onClick={() => handleTabChange('feeds')}>源管理</button>
+          <button className={`sr-tab ${activeTab === 'articles' ? 'sr-tab--active' : ''}`} onClick={() => handleTabChange('articles')}>文章列表</button>
+          <button className={`sr-tab ${activeTab === 'settings' ? 'sr-tab--active' : ''}`} onClick={() => handleTabChange('settings')}><IconSettings /> 设置</button>
         </div>
       </div>
 
-      {/* Feeds Tab */}
       {activeTab === 'feeds' && (
         <div className="sr-feeds">
           <div className="sr-feeds-actions">
-            <button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}>
-              <IconPlus />
-              添加源
-            </button>
-            <label className="sr-btn sr-btn--secondary">
-              <IconUpload />
-              导入 OPML
-              <input ref={fileInputRef} type="file" accept=".opml,.xml" onChange={handleImportOPML} style={{ display: 'none' }} />
-            </label>
+            <button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}><IconPlus /> 添加源</button>
+            <label className="sr-btn sr-btn--secondary"><IconUpload /> 导入 OPML<input ref={fileInputRef} type="file" accept=".opml,.xml" onChange={handleImportOPML} style={{ display: 'none' }} /></label>
           </div>
 
           {showAddFeed && (
             <div className="sr-modal-overlay" onClick={() => setShowAddFeed(false)}>
               <div className="sr-modal" onClick={e => e.stopPropagation()}>
                 <h3>添加 RSS 源</h3>
-                <input
-                  type="url"
-                  placeholder="https://example.com/feed.xml"
-                  value={newFeedUrl}
-                  onChange={e => setNewFeedUrl(e.target.value)}
-                  className="sr-input"
-                  autoFocus
-                />
-                <p className="sr-feed-hint">
-                  示例：<code>https://feeds.feedburner.com/...</code> 或 <code>https://example.com/rss</code>
-                </p>
+                <label className="sr-field-label">源名称（可选，留空则自动获取）</label>
+                <input type="text" placeholder="例如：阮一峰的网络日志" value={newFeedName} onChange={e => setNewFeedName(e.target.value)} className="sr-input" />
+                <label className="sr-field-label" style={{ marginTop: 12 }}>RSS 地址</label>
+                <input type="url" placeholder="https://example.com/feed.xml" value={newFeedUrl} onChange={e => setNewFeedUrl(e.target.value)} className="sr-input" autoFocus />
+                <p className="sr-feed-hint">示例：<code>https://feeds.feedburner.com/...</code> 或 <code>https://example.com/rss</code></p>
                 <div className="sr-modal-actions">
                   <button className="sr-btn sr-btn--secondary" onClick={() => setShowAddFeed(false)}>取消</button>
-                  <button className="sr-btn sr-btn--primary" onClick={handleAddFeed} disabled={feedActionBusy === 'add'}>
-                    {feedActionBusy === 'add' ? '添加中…' : '添加'}
-                  </button>
+                  <button className="sr-btn sr-btn--primary" onClick={handleAddFeed} disabled={feedActionBusy === 'add'}>{feedActionBusy === 'add' ? '添加中…' : '添加'}</button>
                 </div>
               </div>
             </div>
           )}
 
           {feeds.length === 0 ? (
-            <div className="sr-empty">
-              <p>暂无订阅源</p>
-              <p className="sr-hint">点击上方按钮添加 RSS 源或导入 OPML 文件</p>
-            </div>
+            <div className="sr-empty"><p>暂无订阅源</p><p className="sr-hint">点击上方按钮添加 RSS 源或导入 OPML 文件</p></div>
           ) : (
             <div className="sr-feed-list">
               {feeds.map(feed => (
@@ -407,22 +401,8 @@ export default function SuperReadTool() {
                     </div>
                   </div>
                   <div className="sr-feed-actions">
-                    <button
-                      className="sr-icon-btn"
-                      onClick={() => handleFetchFeed(feed.id)}
-                      disabled={feedActionBusy === feed.id}
-                      title="手动抓取"
-                    >
-                      <IconRefresh />
-                    </button>
-                    <button
-                      className="sr-icon-btn sr-icon-btn--danger"
-                      onClick={() => handleDeleteFeed(feed.id)}
-                      disabled={feedActionBusy === feed.id}
-                      title="删除"
-                    >
-                      <IconTrash />
-                    </button>
+                    <button className="sr-icon-btn" onClick={() => handleFetchFeed(feed.id)} disabled={feedActionBusy === feed.id} title="手动抓取"><IconRefresh /></button>
+                    <button className="sr-icon-btn sr-icon-btn--danger" onClick={() => handleDeleteFeed(feed.id)} disabled={feedActionBusy === feed.id} title="删除"><IconTrash /></button>
                   </div>
                 </div>
               ))}
@@ -431,48 +411,32 @@ export default function SuperReadTool() {
         </div>
       )}
 
-      {/* Articles Tab */}
       {activeTab === 'articles' && (
         <div className="sr-articles">
           <div className="sr-filters">
-            <button className={`sr-filter-btn ${articleFilter === 'all' ? 'sr-filter-btn--active' : ''}`} onClick={() => { setArticleFilter('all'); setFilterFeedId(''); setFilterTag('') }}>
-              全部
-            </button>
-            <button className={`sr-filter-btn ${articleFilter === 'starred' ? 'sr-filter-btn--active' : ''}`} onClick={() => { setArticleFilter('starred'); setFilterFeedId(''); setFilterTag('') }}>
-              <IconStar filled={articleFilter === 'starred'} />
-              星标
-            </button>
-            <select
-              className={`sr-filter-select ${articleFilter === 'feed' ? 'sr-filter-select--active' : ''}`}
-              value={filterFeedId}
-              onChange={e => { setArticleFilter('feed'); setFilterFeedId(e.target.value); setFilterTag('') }}
-            >
+            <button className={`sr-filter-btn ${articleFilter === 'all' ? 'sr-filter-btn--active' : ''}`} onClick={() => { setArticleFilter('all'); setFilterFeedId(''); setFilterTag('') }}>全部</button>
+            <button className={`sr-filter-btn ${articleFilter === 'starred' ? 'sr-filter-btn--active' : ''}`} onClick={() => { setArticleFilter('starred'); setFilterFeedId(''); setFilterTag('') }}><IconStar filled={articleFilter === 'starred'} /> 星标</button>
+            <select className={`sr-filter-select ${articleFilter === 'feed' ? 'sr-filter-select--active' : ''}`} value={filterFeedId} onChange={e => { setArticleFilter('feed'); setFilterFeedId(e.target.value); setFilterTag('') }}>
               <option value="">按源筛选</option>
               {feeds.map(f => <option key={f.id} value={f.id}>{f.title || f.feed_url}</option>)}
             </select>
-            <select
-              className={`sr-filter-select ${articleFilter === 'tag' ? 'sr-filter-select--active' : ''}`}
-              value={filterTag}
-              onChange={e => { setArticleFilter('tag'); setFilterTag(e.target.value); setFilterFeedId('') }}
-            >
-              <option value="">按标签筛选</option>
-              {allTags.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+          </div>
+
+          <div className="sr-feeds-actions" style={{ marginBottom: 12 }}>
+            <button className="sr-btn sr-btn--secondary" onClick={handleSummarize} disabled={summarizing}>
+              <IconSparkles /> {summarizing ? 'AI 摘要生成中…' : 'AI 摘要今日文章'}
+            </button>
           </div>
 
           {error && <div className="sr-error-banner">{error}</div>}
 
           {articles.length === 0 ? (
-            <div className="sr-empty">
-              <p>暂无文章</p>
-              <p className="sr-hint">在「源管理」中添加 RSS 源并抓取文章</p>
-            </div>
+            <div className="sr-empty"><p>暂无文章</p><p className="sr-hint">在「源管理」中添加 RSS 源并抓取文章</p></div>
           ) : (
             <div className="sr-article-list">
               {articles.map(article => {
                 const isExpanded = expandedArticles.has(article.id)
                 const isRead = article.is_read || readArticles.has(article.id)
-                const tags = Array.isArray(article.tags) ? article.tags : (article.tags ? article.tags.split(',').map(t => t.trim()) : [])
 
                 return (
                   <div key={article.id} className={`sr-article-card ${isRead ? 'sr-article-card--read' : ''}`}>
@@ -485,40 +449,14 @@ export default function SuperReadTool() {
                       <IconChevronDown />
                     </div>
 
-                    <div className="sr-article-summary">{article.ai_summary}</div>
-
-                    {tags.length > 0 && (
-                      <div className="sr-article-tags">
-                        {tags.map((tag, i) => <span key={i} className="sr-tag">{tag}</span>)}
-                      </div>
-                    )}
+                    <div className="sr-article-summary">{article.summary}</div>
 
                     {isExpanded && (
                       <div className="sr-article-expanded">
-                        <div className="sr-article-content">{article.content}</div>
+                        <div className="sr-article-content">{article.content_text}</div>
                         <div className="sr-article-actions">
-                          <button className="sr-action-btn" onClick={() => markArticleRead(article)} disabled={isRead}>
-                            <IconCheck />
-                            {isRead ? '已读' : '标记已读'}
-                          </button>
-                          <button className="sr-action-btn" onClick={() => toggleArticleStar(article)}>
-                            <IconStar filled={article.is_starred} />
-                            {article.is_starred ? '取消星标' : '星标'}
-                          </button>
-                          <div className="sr-tag-input-group">
-                            <input
-                              type="text"
-                              placeholder="添加标签后回车"
-                              className="sr-tag-input"
-                              onKeyDown={e => {
-                                if (e.key === 'Enter' && e.target.value.trim()) {
-                                  const newTags = [...tags, e.target.value.trim()]
-                                  updateArticleTags(article, newTags)
-                                  e.target.value = ''
-                                }
-                              }}
-                            />
-                          </div>
+                          <button className="sr-action-btn" onClick={() => markArticleRead(article)} disabled={isRead}><IconCheck /> {isRead ? '已读' : '标记已读'}</button>
+                          <button className="sr-action-btn" onClick={() => toggleArticleStar(article)}><IconStar filled={article.is_starred} /> {article.is_starred ? '取消星标' : '星标'}</button>
                         </div>
                       </div>
                     )}
@@ -530,92 +468,59 @@ export default function SuperReadTool() {
         </div>
       )}
 
-      {/* Briefing Tab */}
-      {activeTab === 'briefing' && (
-        <div className="sr-briefing">
-          {briefing.length === 0 ? (
-            <div className="sr-empty">
-              <p>今日暂无新文章</p>
-              <p className="sr-hint">抓取订阅源后，今日新文章将在此汇总</p>
-            </div>
-          ) : (
-            <div className="sr-briefing-list">
-              {briefing.map(article => (
-                <div key={article.id} className="sr-briefing-card">
-                  <div className="sr-briefing-title">{article.title}</div>
-                  <div className="sr-briefing-meta">
-                    <span>{article.feed_title}</span>
-                    <span>{formatDate(article.published_at)}</span>
-                  </div>
-                  <div className="sr-briefing-summary">{article.ai_summary}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Settings Tab */}
       {activeTab === 'settings' && (
         <div className="sr-settings">
           <fieldset className="sr-fieldset">
-            <legend className="sr-fieldset-legend">高级设置</legend>
+            <legend className="sr-fieldset-legend">AI 配置</legend>
             <label className="sr-field">
               <span className="sr-field-label">API Key</span>
-              <input
-                type="password"
-                className="sr-input"
-                value={settingsForm.api_key || ''}
-                onChange={e => setSettingsForm({ ...settingsForm, api_key: e.target.value })}
-                placeholder="sk-..."
-              />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type={showApiKey ? 'text' : 'password'}
+                  className="sr-input"
+                  style={{ flex: 1 }}
+                  value={settingsForm.api_key || ''}
+                  onChange={e => { setSettingsForm({ ...settingsForm, api_key: e.target.value }); setHasSavedApiKey(false) }}
+                  placeholder={hasSavedApiKey ? '已保存 (点击编辑)' : 'sk-...'}
+                />
+                <button className="sr-icon-btn" onClick={() => setShowApiKey(!showApiKey)} title={showApiKey ? '隐藏' : '显示'}>{showApiKey ? '🙈' : '👁️'}</button>
+                <button className="sr-icon-btn" onClick={copyApiKey} title="复制"><IconCopy /></button>
+              </div>
             </label>
             <label className="sr-field">
               <span className="sr-field-label">API Base URL</span>
-              <input
-                type="text"
-                className="sr-input"
-                value={settingsForm.api_base || ''}
-                onChange={e => setSettingsForm({ ...settingsForm, api_base: e.target.value })}
-                placeholder="https://api.openai.com/v1"
-              />
+              <input type="text" className="sr-input" value={settingsForm.api_base || ''} onChange={e => setSettingsForm({ ...settingsForm, api_base: e.target.value })} placeholder="https://api.openai.com/v1" />
             </label>
             <label className="sr-field">
               <span className="sr-field-label">模型</span>
-              <input
-                type="text"
-                className="sr-input"
-                value={settingsForm.model || ''}
-                onChange={e => setSettingsForm({ ...settingsForm, model: e.target.value })}
-                placeholder="gpt-4o-mini"
-              />
+              <input type="text" className="sr-input" value={settingsForm.model || ''} onChange={e => setSettingsForm({ ...settingsForm, model: e.target.value })} placeholder="gpt-4o-mini" />
             </label>
           </fieldset>
 
           <fieldset className="sr-fieldset">
             <legend className="sr-fieldset-legend">抓取配置</legend>
-            <label className="sr-field">
-              <span className="sr-field-label">抓取间隔（分钟）</span>
-              <input
-                type="number"
-                className="sr-input"
-                value={settingsForm.fetch_interval_minutes || ''}
-                onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_minutes: parseInt(e.target.value) || 0 })}
-                placeholder="60"
-              />
-            </label>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+              <label className="sr-field" style={{ flex: 1 }}>
+                <span className="sr-field-label">间隔数值</span>
+                <input type="number" className="sr-input" min="1" value={settingsForm.fetch_interval_min || 6} onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_min: parseInt(e.target.value) || 6 })} />
+              </label>
+              <label className="sr-field" style={{ flex: 1 }}>
+                <span className="sr-field-label">间隔单位</span>
+                <select className="sr-input" value={settingsForm.fetch_interval_unit || 'hours'} onChange={e => setSettingsForm({ ...settingsForm, fetch_interval_unit: e.target.value })}>
+                  <option value="minutes">分钟</option>
+                  <option value="hours">小时</option>
+                  <option value="days">天</option>
+                </select>
+              </label>
+            </div>
           </fieldset>
 
           <div className="sr-settings-actions">
-            <button className="sr-btn sr-btn--primary" onClick={handleSaveSettings} disabled={settingsSaving}>
-              {settingsSaving ? '保存中…' : '保存设置'}
-            </button>
+            <button className="sr-btn sr-btn--primary" onClick={handleSaveSettings} disabled={settingsSaving}>{settingsSaving ? '保存中…' : '保存设置'}</button>
           </div>
 
           {settingsResult && (
-            <div className={`sr-feedback sr-feedback--${settingsResult.type}`}>
-              {settingsResult.message}
-            </div>
+            <div className={`sr-feedback sr-feedback--${settingsResult.type}`}>{settingsResult.message}</div>
           )}
         </div>
       )}
