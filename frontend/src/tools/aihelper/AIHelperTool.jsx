@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { apiProxy } from '../../api'
 import './AIHelperTool.css'
 
-/* ===== Inline SVG Icons (Lucide style, 16×16) ===== */
+/* ===== Inline SVG Icons (Lucide style, 16x16) ===== */
 function SparklesIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -80,22 +80,6 @@ function XIcon() {
     </svg>
   )
 }
-function CopyIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  )
-}
-function TagIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2H2v10l9.17 9.17a2 2 0 0 0 2.83 0l7-7a2 2 0 0 0 0-2.83L12 2z" />
-      <path d="M7 7h.01" />
-    </svg>
-  )
-}
 
 /* ===== Constants ===== */
 const CATEGORIES = ['编程', '写作', '翻译', '分析', '创意', '通用']
@@ -107,9 +91,9 @@ function emptyPrompt() {
 
 export default function AIHelperTool() {
   // --- View ---
-  const [viewMode, setViewMode] = useState('list') // list | templates | settings
+  const [viewMode, setViewMode] = useState('list')
   const [editorOpen, setEditorOpen] = useState(false)
-  const [editingPrompt, setEditingPrompt] = useState(null) // null = creating
+  const [editingPrompt, setEditingPrompt] = useState(null)
   const [error, setError] = useState('')
 
   // --- List ---
@@ -139,6 +123,8 @@ export default function AIHelperTool() {
   const [settingsLoading, setSettingsLoading] = useState(false)
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsSaved, setSettingsSaved] = useState(false)
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [hasSavedApiKey, setHasSavedApiKey] = useState(false)
 
   /* ===== Load prompts ===== */
   const loadPrompts = useCallback(async (q, cat, tag, fav) => {
@@ -277,6 +263,7 @@ export default function AIHelperTool() {
     try {
       const data = await apiProxy('aihelper', 'api/settings')
       if (data) {
+        setHasSavedApiKey(!!(data.api_key && data.api_key.length > 0))
         setSettings({
           api_key: data.api_key || '',
           api_base: data.api_base || '',
@@ -291,8 +278,12 @@ export default function AIHelperTool() {
     e.preventDefault()
     setSettingsSaving(true)
     try {
+      const body = { ...settings }
+      if (body.api_key && body.api_key.startsWith('sk-...') && body.api_key.length <= 12) {
+        delete body.api_key
+      }
       await apiProxy('aihelper', 'api/settings', {
-        method: 'PUT', body: JSON.stringify(settings),
+        method: 'PUT', body: JSON.stringify(body),
       })
       setSettingsSaved(true)
       setTimeout(() => setSettingsSaved(false), 2000)
@@ -301,14 +292,11 @@ export default function AIHelperTool() {
   }, [settings])
 
   /* ===== Init ===== */
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadPrompts('', '', '', false) }, [loadPrompts])
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (viewMode === 'templates') loadTemplates(templateCategory)
   }, [viewMode, templateCategory, loadTemplates])
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (viewMode === 'settings') loadSettings()
   }, [viewMode, loadSettings])
 
@@ -317,11 +305,9 @@ export default function AIHelperTool() {
     loadPrompts(searchQuery, filterCategory, filterTag, filterFavorite)
   }, [searchQuery, filterCategory, filterTag, filterFavorite, loadPrompts])
 
-  /* ===== Render ===== */
   return (
     <div className="ah-shell">
 
-      {/* ---- Error Banner ---- */}
       {error && (
         <div className="ah-error-banner">
           <p>{error}</p>
@@ -333,7 +319,6 @@ export default function AIHelperTool() {
         <div className="ah-copy-error-banner">{copyError}</div>
       )}
 
-      {/* ---- Tabs ---- */}
       {!editorOpen && (
         <div className="ah-tabs">
           <button className={`ah-tab ${viewMode === 'list' ? 'ah-tab--active' : ''}`} onClick={() => setViewMode('list')}>
@@ -348,7 +333,6 @@ export default function AIHelperTool() {
         </div>
       )}
 
-      {/* ===== Editor View ===== */}
       {editorOpen && (
         <div className="ah-editor">
           <div className="ah-editor-header">
@@ -360,59 +344,25 @@ export default function AIHelperTool() {
 
           <form className="ah-editor-form" onSubmit={savePrompt}>
             <div className="ah-editor-fields">
-              <input
-                type="text"
-                className="ah-input ah-input--lg"
-                placeholder="提示词标题"
-                value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              />
+              <input type="text" className="ah-input ah-input--lg" placeholder="提示词标题" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
 
               <div className="ah-editor-row">
-                <select
-                  className="ah-select"
-                  value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                >
+                <select className="ah-select" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}>
                   {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
-
-                <input
-                  type="text"
-                  className="ah-input"
-                  placeholder="标签，逗号分隔"
-                  value={form.tags}
-                  onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
-                />
+                <input type="text" className="ah-input" placeholder="标签，逗号分隔" value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} />
               </div>
 
-              <input
-                type="text"
-                className="ah-input"
-                placeholder="变量，逗号分隔（如：语言, 框架, 目标）"
-                value={form.variables}
-                onChange={(e) => setForm((f) => ({ ...f, variables: e.target.value }))}
-              />
+              <input type="text" className="ah-input" placeholder="变量，逗号分隔" value={form.variables} onChange={(e) => setForm((f) => ({ ...f, variables: e.target.value }))} />
 
               <div className="ah-content-wrap">
                 <div className="ah-content-toolbar">
                   <span className="ah-content-label">提示词内容</span>
-                  <button
-                    type="button"
-                    className="ah-enhance-btn"
-                    onClick={enhancePrompt}
-                    disabled={enhancing || !form.content.trim()}
-                  >
+                  <button type="button" className="ah-enhance-btn" onClick={enhancePrompt} disabled={enhancing || !form.content.trim()}>
                     <SparklesIcon /> {enhancing ? '增强中…' : '一键增强'}
                   </button>
                 </div>
-                <textarea
-                  className="ah-content-textarea"
-                  placeholder="输入提示词内容…&#10;&#10;使用 {{变量名}} 标记可替换部分"
-                  value={form.content}
-                  onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-                  rows={16}
-                />
+                <textarea className="ah-content-textarea" placeholder="输入提示词内容…" value={form.content} onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))} rows={16} />
               </div>
             </div>
 
@@ -420,48 +370,31 @@ export default function AIHelperTool() {
               <button type="submit" className="ah-save-btn" disabled={saving || !form.title.trim() || !form.content.trim()}>
                 {saving ? '保存中…' : '保存'}
               </button>
-              <button type="button" className="ah-cancel-btn" onClick={() => setEditorOpen(false)}>
-                取消
-              </button>
+              <button type="button" className="ah-cancel-btn" onClick={() => setEditorOpen(false)}>取消</button>
             </div>
           </form>
         </div>
       )}
 
-      {/* ===== Prompt List ===== */}
       {!editorOpen && viewMode === 'list' && (
         <div className="ah-list">
           <div className="ah-list-toolbar">
             <form className="ah-search-form" onSubmit={handleSearch}>
               <div className="ah-search-wrap">
                 <SearchIcon />
-                <input
-                  type="text"
-                  className="ah-search-input"
-                  placeholder="搜索提示词…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+                <input type="text" className="ah-search-input" placeholder="搜索提示词…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
               </div>
               <select className="ah-select ah-select--sm" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
                 {CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
-              <input
-                type="text"
-                className="ah-input ah-input--sm"
-                placeholder="标签…"
-                value={filterTag}
-                onChange={(e) => setFilterTag(e.target.value)}
-              />
+              <input type="text" className="ah-input ah-input--sm" placeholder="标签…" value={filterTag} onChange={(e) => setFilterTag(e.target.value)} />
               <label className="ah-fav-toggle">
                 <input type="checkbox" checked={filterFavorite} onChange={(e) => setFilterFavorite(e.target.checked)} />
                 <StarIcon filled={filterFavorite} /> 收藏
               </label>
               <button type="submit" className="ah-search-btn">筛选</button>
             </form>
-            <button className="ah-new-btn" onClick={() => openEditor(null)}>
-              <PlusIcon /> 新建提示词
-            </button>
+            <button className="ah-new-btn" onClick={() => openEditor(null)}><PlusIcon /> 新建提示词</button>
           </div>
 
           {promptsLoading ? (
@@ -477,45 +410,19 @@ export default function AIHelperTool() {
                       <h3 className="ah-prompt-card-title">{p.title}</h3>
                       {p.category && <span className="ah-category-tag">{p.category}</span>}
                     </div>
-                    <p className="ah-prompt-card-preview">
-                      {p.content?.slice(0, 120)}{(p.content?.length > 120) ? '…' : ''}
-                    </p>
+                    <p className="ah-prompt-card-preview">{p.content?.slice(0, 120)}{(p.content?.length > 120) ? '…' : ''}</p>
                     <div className="ah-prompt-card-meta">
-                      {p.variables && (Array.isArray(p.variables) ? p.variables : [p.variables]).filter(Boolean).length > 0 && (
-                        <span className="ah-var-tag">
-                          <TagIcon />
-                          {(Array.isArray(p.variables) ? p.variables : String(p.variables).split(',').filter(Boolean).map(s => s.trim())).join(', ')}
-                        </span>
-                      )}
                       {p.tags && (Array.isArray(p.tags) ? p.tags : []).length > 0 && (
-                        <span className="ah-tags">
-                          {(Array.isArray(p.tags) ? p.tags : String(p.tags).split(',').filter(Boolean).map(s => s.trim())).map((t) => (
-                            <span key={t} className="ah-tag">{t}</span>
-                          ))}
-                        </span>
+                        <span className="ah-tags">{(Array.isArray(p.tags) ? p.tags : String(p.tags).split(',').filter(Boolean).map(s => s.trim())).map((t) => (<span key={t} className="ah-tag">{t}</span>))}</span>
                       )}
-                      {p.updated_at && (
-                        <span className="ah-time">{new Date(p.updated_at).toLocaleDateString('zh-CN')}</span>
-                      )}
+                      {p.updated_at && (<span className="ah-time">{new Date(p.updated_at).toLocaleDateString('zh-CN')}</span>)}
                     </div>
                   </div>
                   <div className="ah-prompt-card-actions">
-                    <button
-                      className={`ah-icon-btn ah-copy-btn ${copiedId === p.id ? 'ah-copy-btn--done' : ''}`}
-                      title={copiedId === p.id ? '已复制' : '复制内容'}
-                      onClick={() => copyPrompt(p)}
-                    >
-                      {copiedId === p.id ? <span className="ah-copy-check">✓</span> : <CopyIcon />}
-                    </button>
-                    <button className="ah-icon-btn" title={p.favorite ? '取消收藏' : '收藏'} onClick={() => toggleFavorite(p.id, p.favorite)}>
-                      <StarIcon filled={!!p.favorite} />
-                    </button>
-                    <button className="ah-icon-btn" title="编辑" onClick={() => openEditor(p)}>
-                      <Edit3Icon />
-                    </button>
-                    <button className="ah-icon-btn ah-icon-btn--danger" title="删除" onClick={() => deletePrompt(p.id)}>
-                      <Trash2Icon />
-                    </button>
+                    <button className={`ah-icon-btn ah-copy-btn ${copiedId === p.id ? 'ah-copy-btn--done' : ''}`} onClick={() => copyPrompt(p)}>{copiedId === p.id ? <span className="ah-copy-check">✓</span> : '📋'}</button>
+                    <button className="ah-icon-btn" onClick={() => toggleFavorite(p.id, p.favorite)}><StarIcon filled={!!p.favorite} /></button>
+                    <button className="ah-icon-btn" onClick={() => openEditor(p)}><Edit3Icon /></button>
+                    <button className="ah-icon-btn ah-icon-btn--danger" onClick={() => deletePrompt(p.id)}><Trash2Icon /></button>
                   </div>
                 </div>
               ))}
@@ -524,36 +431,19 @@ export default function AIHelperTool() {
         </div>
       )}
 
-      {/* ===== Templates View ===== */}
       {!editorOpen && viewMode === 'templates' && (
         <div className="ah-templates">
           <div className="ah-templates-filter">
             {CATEGORY_OPTIONS.map((c) => (
-              <button
-                key={c}
-                className={`ah-cat-btn ${templateCategory === c ? 'ah-cat-btn--active' : ''}`}
-                onClick={() => setTemplateCategory(c)}
-              >
-                {c}
-              </button>
+              <button key={c} className={`ah-cat-btn ${templateCategory === c ? 'ah-cat-btn--active' : ''}`} onClick={() => setTemplateCategory(c)}>{c}</button>
             ))}
           </div>
-
-          {templatesLoading ? (
-            <div className="ah-loading"><div className="ah-spinner" /><p>加载模板…</p></div>
-          ) : templates.length === 0 ? (
-            <p className="ah-empty-text">暂无模板</p>
-          ) : (
+          {templatesLoading ? (<div className="ah-loading"><div className="ah-spinner" /><p>加载模板…</p></div>) : templates.length === 0 ? (<p className="ah-empty-text">暂无模板</p>) : (
             <div className="ah-template-list">
               {templates.map((tpl) => (
                 <div key={tpl.id} className="ah-template-card" onClick={() => applyTemplate(tpl)}>
-                  <div className="ah-template-card-header">
-                    <h3 className="ah-template-card-title">{tpl.title}</h3>
-                    {tpl.category && <span className="ah-category-tag">{tpl.category}</span>}
-                  </div>
-                  <p className="ah-template-card-preview">
-                    {tpl.content?.slice(0, 100)}{(tpl.content?.length > 100) ? '…' : ''}
-                  </p>
+                  <div className="ah-template-card-header"><h3 className="ah-template-card-title">{tpl.title}</h3>{tpl.category && <span className="ah-category-tag">{tpl.category}</span>}</div>
+                  <p className="ah-template-card-preview">{tpl.content?.slice(0, 100)}{(tpl.content?.length > 100) ? '…' : ''}</p>
                   <span className="ah-template-hint">点击使用此模板</span>
                 </div>
               ))}
@@ -562,51 +452,28 @@ export default function AIHelperTool() {
         </div>
       )}
 
-      {/* ===== Settings View ===== */}
       {!editorOpen && viewMode === 'settings' && (
         <div className="ah-settings">
           <h3 className="ah-section-title">增强设置</h3>
-
-          {settingsLoading ? (
-            <div className="ah-loading"><div className="ah-spinner" /></div>
-          ) : (
+          {settingsLoading ? (<div className="ah-loading"><div className="ah-spinner" /></div>) : (
             <form className="ah-settings-form" onSubmit={saveSettings}>
               <label className="ah-field">
                 <span className="ah-field-label">API Key</span>
-                <input
-                  type="password"
-                  className="ah-input"
-                  placeholder="sk-…"
-                  value={settings.api_key}
-                  onChange={(e) => setSettings((s) => ({ ...s, api_key: e.target.value }))}
-                />
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input type={showApiKey ? 'text' : 'password'} className="ah-input" style={{ flex: 1 }} placeholder={hasSavedApiKey ? '已保存 (点击编辑)' : 'sk-…'} value={settings.api_key} onChange={(e) => { setSettings((s) => ({ ...s, api_key: e.target.value })); setHasSavedApiKey(false) }} />
+                  <button type="button" className="ah-icon-btn" onClick={() => setShowApiKey(!showApiKey)} title={showApiKey ? '隐藏' : '显示'}>{showApiKey ? '🙈' : '👁️'}</button>
+                  <button type="button" className="ah-icon-btn" onClick={() => navigator.clipboard.writeText(settings.api_key).catch(() => {})} title="复制">📋</button>
+                </div>
               </label>
-
               <label className="ah-field">
                 <span className="ah-field-label">API Base URL</span>
-                <input
-                  type="text"
-                  className="ah-input"
-                  placeholder="https://api.openai.com/v1"
-                  value={settings.api_base}
-                  onChange={(e) => setSettings((s) => ({ ...s, api_base: e.target.value }))}
-                />
+                <input type="text" className="ah-input" placeholder="https://api.openai.com/v1" value={settings.api_base} onChange={(e) => setSettings((s) => ({ ...s, api_base: e.target.value }))} />
               </label>
-
               <label className="ah-field">
                 <span className="ah-field-label">模型</span>
-                <input
-                  type="text"
-                  className="ah-input"
-                  placeholder="gpt-4o"
-                  value={settings.model}
-                  onChange={(e) => setSettings((s) => ({ ...s, model: e.target.value }))}
-                />
+                <input type="text" className="ah-input" placeholder="gpt-4o" value={settings.model} onChange={(e) => setSettings((s) => ({ ...s, model: e.target.value }))} />
               </label>
-
-              <button type="submit" className="ah-save-btn" disabled={settingsSaving}>
-                {settingsSaving ? '保存中…' : settingsSaved ? '✓ 已保存' : '保存设置'}
-              </button>
+              <button type="submit" className="ah-save-btn" disabled={settingsSaving}>{settingsSaving ? '保存中…' : settingsSaved ? '✓ 已保存' : '保存设置'}</button>
             </form>
           )}
         </div>
