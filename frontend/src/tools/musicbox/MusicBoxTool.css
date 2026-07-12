@@ -170,6 +170,17 @@
   border-color: var(--accent);
 }
 
+.mb-platform-select option {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.mb-platform-select option:checked,
+.mb-platform-select:focus option:checked {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 .mb-search-btn {
   display: inline-flex;
   align-items: center;

@@ -108,6 +108,17 @@
 .ah-select:focus { outline: none; border-color: var(--accent); }
 .ah-select--sm { font-size: 13px; padding: 5px 8px; }
 
+.ah-select option {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.ah-select option:checked,
+.ah-select:focus option:checked {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 /* ---- Icon button ---- */
 .ah-icon-btn {
   display: inline-flex; align-items: center; justify-content: center;

@@ -310,6 +310,17 @@
   border-bottom-color: var(--accent);
 }
 
+.admin-field select option {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.admin-field select option:checked,
+.admin-field select:focus option:checked {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 .admin-field input[type="checkbox"] {
   width: 18px;
   height: 18px;
