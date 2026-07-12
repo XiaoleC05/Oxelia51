@@ -188,6 +188,9 @@ export default function SuperReadTool() {
   const [briefingReport, setBriefingReport] = useState('')
   const [briefingArticles, setBriefingArticles] = useState([])
   const [briefingLoading, setBriefingLoading] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [emailResult, setEmailResult] = useState(null)
+  const emailResultTimerRef = useRef(null)
 
   const [settingsForm, setSettingsForm] = useState({})
   const [showApiKey, setShowApiKey] = useState(false)
@@ -351,6 +354,20 @@ export default function SuperReadTool() {
     try { const data = await apiProxy('superread', 'api/summarize', { method: 'POST' }); alert(`AI 摘要完成：${data.summarized}/${data.total} 篇文章已生成摘要`); await loadArticles() } catch (err) { alert('摘要失败: ' + err.message) } finally { setSummarizing(false) }
   }
 
+  const handleSendToEmail = async () => {
+    setSendingEmail(true)
+    try {
+      const r = await apiProxy('superread', 'api/daily-brief/send', { method: 'POST' })
+      setEmailResult(r?.sent ? { type: 'success', message: `已发送 ${r.count} 篇文章到 ${r.to}` } : { type: 'error', message: r?.message || '发送失败' })
+    } catch (err) {
+      setEmailResult({ type: 'error', message: '发送失败: ' + err.message })
+    } finally {
+      setSendingEmail(false)
+      if (emailResultTimerRef.current) clearTimeout(emailResultTimerRef.current)
+      emailResultTimerRef.current = setTimeout(() => setEmailResult(null), 5000)
+    }
+  }
+
   const copyApiKey = async () => {
     try {
       const data = await apiProxy('superread', 'api/settings?full=true')
@@ -462,6 +479,12 @@ export default function SuperReadTool() {
                 <div className="sr-briefing-report">
                   <h4 className="sr-briefing-report-title">整合报告</h4>
                   <div className="sr-briefing-report-text">{briefingReport}</div>
+                  {settingsForm.email && (
+                    <div style={{ marginTop: 12 }}>
+                      <button className="sr-btn sr-btn--secondary" onClick={handleSendToEmail} disabled={sendingEmail}>✉ {sendingEmail ? '发送中…' : '发送到邮箱'}</button>
+                      {emailResult && (<span style={{ marginLeft: 10, fontSize: 13, color: emailResult.type === 'success' ? 'var(--accent-2)' : '#c44' }}>{emailResult.message}</span>)}
+                    </div>
+                  )}
                 </div>
               )}
               {briefingArticles.length > 0 && (
