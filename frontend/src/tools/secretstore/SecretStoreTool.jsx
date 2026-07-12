@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { apiProxy } from '../../api'
 import './SecretStoreTool.css'
 
@@ -46,8 +47,15 @@ function isSensitive(key) {
 }
 
 export default function SecretStoreTool() {
-  // --- View ---
-  const [viewMode, setViewMode] = useState('list') // list | editor | detail | combos
+  // --- View (URL-persisted: list | editor | detail | combos) ---
+  const [searchParams, setSearchParams] = useSearchParams()
+  const validModes = ['list', 'editor', 'detail', 'combos']
+  const viewMode = validModes.includes(searchParams.get('tab'))
+    ? searchParams.get('tab')
+    : 'list'
+  const setViewMode = (mode) => {
+    setSearchParams({ tab: mode }, { replace: true })
+  }
   const [error, setError] = useState('')
 
   // --- Entries ---
@@ -238,6 +246,21 @@ export default function SecretStoreTool() {
   useEffect(() => { loadEntries() }, [loadEntries])
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (viewMode === 'combos') { loadEntries(); loadCombos() } }, [viewMode, loadEntries, loadCombos])
+
+  // editor/detail fallback: URL points to a context-dependent view but no data loaded → return to list.
+  // Only runs once on mount to handle stale URLs from refresh; normal navigation sets context before switching view.
+  const didInitFallback = useRef(false)
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    if (didInitFallback.current) return
+    didInitFallback.current = true
+    if (viewMode === 'editor' && !editingId && !selectedTemplate) {
+      setViewMode('list')
+    } else if (viewMode === 'detail' && !detailEntry && !detailLoading) {
+      setViewMode('list')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const filtered = entries.filter((e) =>
     !searchQuery || e.title?.toLowerCase().includes(searchQuery.toLowerCase())

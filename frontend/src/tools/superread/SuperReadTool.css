@@ -470,6 +470,23 @@ select.sr-input:focus option:checked {
   gap: 12px;
   font-size: 12px;
   color: var(--text-muted);
+  align-items: center;
+}
+
+.sr-summary-badge {
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  background: var(--code-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.sr-summary-badge--done {
+  background: var(--accent-bg);
+  color: var(--accent-2);
+  border-color: var(--accent-2);
 }
 
 .sr-article-header svg {

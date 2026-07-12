@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { apiProxy } from '../../api'
 import './AgentCanvasTool.css'
 
@@ -42,8 +43,15 @@ function connPoint(node, side) {
 }
 
 export default function AgentCanvasTool() {
-  // --- View ---
-  const [viewMode, setViewMode] = useState('projects')
+  // --- View (URL-persisted: projects | canvas) ---
+  const [searchParams, setSearchParams] = useSearchParams()
+  const validModes = ['projects', 'canvas']
+  const viewMode = validModes.includes(searchParams.get('tab'))
+    ? searchParams.get('tab')
+    : 'projects'
+  const setViewMode = (mode) => {
+    setSearchParams({ tab: mode }, { replace: true })
+  }
   const [error, setError] = useState('')
 
   // --- Projects ---
@@ -278,6 +286,14 @@ export default function AgentCanvasTool() {
   /* ===== Init ===== */
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadProjects() }, [loadProjects])
+
+  // canvas view fallback: URL says canvas but no project loaded → return to projects list
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    if (viewMode === 'canvas' && !project) {
+      setViewMode('projects')
+    }
+  }, [viewMode, project])
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId)
 
