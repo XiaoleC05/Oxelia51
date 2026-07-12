@@ -1,19 +1,42 @@
-# Oxelia51 生产部署（ADR-006 阶段 2）
+# Oxelia51 生产部署
 
 ## 架构
 
 ```text
-公网 Nginx (oxelia51.com)
+公网 Nginx (oxelia51.com, 阿里云 47.108.202.199)
   ├─ /        → /opt/Oxelia51/frontend/dist
-  └─ /api/    → 127.0.0.1:8080 (Oxelia51 Go)
-                    └─ /api/tools/dormguard/proxy/* → 127.0.0.1:8000 (DormGuard, 网关模式)
+  ├─ /api/    → 127.0.0.1:8080 (Oxelia51 Go)
+  │              └─ /api/tools/:slug/proxy/* → 各工具内网端口
+  └─ /webhook → 127.0.0.1:9000 (receiver.py)
 
-DormGuard :8000  — 仅 loopback（MySQL 独立）
-NoneBot  :8089  — 释放 8080 给平台
-PostgreSQL/Redis — Docker 127.0.0.1
+
+内部工具 (均仅 loopback，通过 API 网关访问)：
+  DormGuard   :8000  — Go+Gin，MySQL 独立
+  SuperRead   :8002  — Go+Gin
+  MusicBox    :8003  — Go+Gin
+  CS2Lab      :8001  — Go+Gin
+  AIHelper    :8004  — Go+Gin
+  SecretStore :8006  — Go+Gin，AES-256-GCM
+  AgentCanvas :8005  — Go+Gin
+
+
+PostgreSQL / Redis — Docker 127.0.0.1
+
+
+腾讯云 118.25.138.177 (4C4G, Ubuntu 24.04)：
+  health-server :8090  — 系统健康数据采集 (CPU/内存/磁盘)
+  ↑ 仅允许阿里云 IP 访问 (UFW)
+  ↑ 阿里云管理后台通过 TENCENT_HEALTH_URL 定时拉取
 ```
 
-## 首次切换（在服务器上）
+## 服务器清单
+
+| 服务器 | IP | 配置 | 角色 |
+|--------|-----|------|------|
+| 阿里云 | 47.108.202.199 | 2C2G | 主服务器，运行全部业务 |
+| 腾讯云 | 118.25.138.177 | 4C4G | 健康检查，不部署业务工具 |
+
+## 首次切换（在阿里云服务器上）
 
 ```bash
 # 1. 依赖（若未装 Docker/Nginx）
@@ -32,6 +55,7 @@ sudo bash /opt/Oxelia51/deploy/platform-cutover.sh
 - `DB_PASSWORD` / `JWT_SECRET` / `ADMIN_INITIAL_PASSWORD`
 - `APP_PUBLIC_URL=https://oxelia51.com`
 - `LISTEN_ADDR=127.0.0.1:8080`
+- `TENCENT_HEALTH_URL=http://118.25.138.177:8090/api/health`
 - `TOOL_API_BASE_DORMGUARD=http://127.0.0.1:8000`
 
 ## 登录
@@ -45,6 +69,15 @@ sudo bash /opt/Oxelia51/deploy/platform-cutover.sh
 /opt/Oxelia51/deploy/monitor/oxelia51-healthcheck.sh
 /opt/DormGuard/deploy/monitor/dormguard-healthcheck.sh
 ```
+
+## 腾讯云 health-server 部署
+
+```bash
+# 在腾讯云服务器上执行一次
+sudo bash /opt/Oxelia51/deploy/tencent-cloud/init-server.sh
+```
+
+health-server 仅暴露系统资源指标（CPU/内存/磁盘），不包含业务数据。UFW 防火墙仅允许阿里云 IP 访问 8090 端口。
 
 ## GitHub Webhook 自动化部署
 
