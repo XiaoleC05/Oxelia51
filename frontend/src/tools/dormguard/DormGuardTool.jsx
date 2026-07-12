@@ -485,12 +485,15 @@ function ConfigPanel({ initialSettings, onSettingsChange }) {
                     {isSensitive && <span className="dg-field-sensitive" title="敏感字段">●</span>}
                   </span>
                   {field.type === 'checkbox' ? (
-                    <input
-                      type="checkbox"
-                      className="dg-checkbox"
-                      checked={Boolean(value)}
-                      onChange={(e) => updateField(field.key, e.target.checked)}
-                    />
+                    <label className="dg-toggle">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(value)}
+                        onChange={(e) => updateField(field.key, e.target.checked)}
+                      />
+                      <span className="dg-toggle-track" />
+                      <span>{Boolean(value) ? '已启用' : '已禁用'}</span>
+                    </label>
                   ) : isDateField ? (
                     <div className="dg-field-row">
                       <input

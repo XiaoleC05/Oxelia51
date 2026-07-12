@@ -440,6 +440,44 @@
   accent-color: var(--accent);
 }
 
+.dg-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+}
+.dg-toggle input {
+  display: none;
+}
+.dg-toggle-track {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--border);
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.dg-toggle input:checked + .dg-toggle-track {
+  background: var(--accent);
+}
+.dg-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+.dg-toggle input:checked + .dg-toggle-track::after {
+  transform: translateX(18px);
+}
+
 .dg-config-actions {
   display: flex;
   gap: 16px;
