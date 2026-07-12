@@ -894,16 +894,12 @@
   background: transparent;
 }
 
-/* stats band — always dark bg with white text in both modes */
-.landing-stats {
-  background: #1a1d24 !important;
-}
 .landing-stat-num,
 .landing-stat-num--text {
-  color: #fff !important;
+  color: var(--text-h);
 }
 .landing-stat-label {
-  color: rgba(255,255,255,0.45) !important;
+  color: var(--text-muted);
 }
 .landing-stat-icon {
   color: rgba(255,255,255,0.7);
