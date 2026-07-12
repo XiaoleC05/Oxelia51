@@ -902,7 +902,7 @@
   color: var(--text-muted);
 }
 .landing-stat-icon {
-  color: rgba(255,255,255,0.7);
+  color: var(--accent);
 }
 
 [data-theme="light"] .landing-cta {
