@@ -72,6 +72,9 @@ ln -sf /etc/nginx/sites-available/default-ip /etc/nginx/sites-enabled/default-ip
 nginx -t
 systemctl reload nginx
 
+# 确保 uploads 目录 Nginx 可读
+chmod -R o+rX /opt/Oxelia51/uploads/ 2>/dev/null || true
+
 "$APP_DIR/deploy/monitor/oxelia51-healthcheck.sh"
 
 if [ -d /opt/DormGuard/backend ] && [ -f "$APP_DIR/deploy/fix-dormguard-gateway.sh" ]; then
