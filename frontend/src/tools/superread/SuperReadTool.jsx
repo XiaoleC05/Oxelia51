@@ -150,6 +150,13 @@ export default function SuperReadTool() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (activeTab !== 'articles') return; loadArticles() }, [articleFilter, filterFeedId, filterTag, activeTab, loadArticles])
 
+  // Auto-dismiss settings feedback after 3 seconds
+  useEffect(() => {
+    if (!settingsResult) return
+    const t = setTimeout(() => setSettingsResult(null), 3000)
+    return () => clearTimeout(t)
+  }, [settingsResult])
+
   const handleAddFeed = async () => {
     if (!newFeedUrl.trim()) return
     setFeedActionBusy('add')
@@ -199,6 +206,12 @@ export default function SuperReadTool() {
     try {
       const body = { ...settingsForm }
       if (body.api_key && body.api_key.startsWith('sk-...') && body.api_key.length <= 12) delete body.api_key
+      // Convert fetch_interval_min + fetch_interval_unit to minutes before sending to backend
+      const unit = body.fetch_interval_unit || 'hours'
+      const rawValue = parseInt(body.fetch_interval_min) || 6
+      const factor = unit === 'minutes' ? 1 : unit === 'hours' ? 60 : 1440
+      body.fetch_interval_min = rawValue * factor
+      delete body.fetch_interval_unit
       await apiProxy('superread', 'api/settings', { method: 'PUT', body: JSON.stringify(body) })
       setSettingsResult({ type: 'success', message: '设置已保存' }); await loadSettings()
     } catch (err) { setSettingsResult({ type: 'error', message: err.message }) } finally { setSettingsSaving(false) }
@@ -249,7 +262,7 @@ export default function SuperReadTool() {
         <div className="sr-feeds">
           <div className="sr-feeds-actions"><button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}><IconPlus /> 添加源</button><label className="sr-btn sr-btn--secondary"><IconUpload /> 导入 OPML<input ref={fileInputRef} type="file" accept=".opml,.xml" onChange={handleImportOPML} style={{ display: 'none' }} /></label></div>
           {showAddFeed && (<div className="sr-modal-overlay" onClick={() => setShowAddFeed(false)}><div className="sr-modal" onClick={e => e.stopPropagation()}><h3>添加 RSS 源</h3><label className="sr-field-label">源名称（可选，留空则自动获取）</label><input type="text" placeholder="例如：阮一峰的网络日志" value={newFeedName} onChange={e => setNewFeedName(e.target.value)} className="sr-input" /><label className="sr-field-label" style={{ marginTop: 12 }}>RSS 地址</label><input type="url" placeholder="https://example.com/feed.xml" value={newFeedUrl} onChange={e => setNewFeedUrl(e.target.value)} className="sr-input" autoFocus /><p className="sr-feed-hint">示例：<code>https://feeds.feedburner.com/...</code></p><div className="sr-modal-actions"><button className="sr-btn sr-btn--secondary" onClick={() => setShowAddFeed(false)}>取消</button><button className="sr-btn sr-btn--primary" onClick={handleAddFeed} disabled={feedActionBusy === 'add'}>{feedActionBusy === 'add' ? '添加中…' : '添加'}</button></div></div></div>)}
-          {feeds.length === 0 ? (<div className="sr-empty"><p>暂无订阅源</p><p className="sr-hint">点击上方按钮添加 RSS 源或导入 OPML 文件</p></div>) : (<div className="sr-feed-list">{feeds.map(feed => (<div key={feed.id} className="sr-feed-card"><div className="sr-feed-info"><div className="sr-feed-title">{feed.title || feed.feed_url}</div><div className="sr-feed-url">{feed.feed_url}</div><div className="sr-feed-meta">{feed.last_fetched_at && <span>上次抓取: {formatDate(feed.last_fetched_at)}</span>}{feed.last_error && <span className="sr-feed-error">错误: {feed.last_error}</span>}</div></div><div className="sr-feed-actions"><button className="sr-icon-btn" onClick={() => handleFetchFeed(feed.id)} disabled={feedActionBusy === feed.id} title="手动抓取"><IconRefresh /></button><button className="sr-icon-btn sr-icon-btn--danger" onClick={() => handleDeleteFeed(feed.id)} disabled={feedActionBusy === feed.id} title="删除"><IconTrash /></button></div></div>))}</div>)}
+          {feeds.length === 0 ? (<div className="sr-empty"><p>暂无订阅源</p><p className="sr-hint">添加 RSS 源或导入 OPML 文件开始使用</p><div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 16 }}><button className="sr-btn sr-btn--primary" onClick={() => setShowAddFeed(true)}><IconPlus /> 添加源</button><button className="sr-btn sr-btn--secondary" onClick={() => fileInputRef.current?.click()} disabled={feedActionBusy === 'import'}><IconUpload /> 导入 OPML</button></div></div>) : (<div className="sr-feed-list">{feeds.map(feed => (<div key={feed.id} className="sr-feed-card"><div className="sr-feed-info"><div className="sr-feed-title">{feed.title || feed.feed_url}</div><div className="sr-feed-url">{feed.feed_url}</div><div className="sr-feed-meta">{feed.last_fetched_at && <span>上次抓取: {formatDate(feed.last_fetched_at)}</span>}{feed.last_error && <span className="sr-feed-error">错误: {feed.last_error}</span>}</div></div><div className="sr-feed-actions"><button className="sr-icon-btn" onClick={() => handleFetchFeed(feed.id)} disabled={feedActionBusy === feed.id} title="手动抓取"><IconRefresh /></button><button className="sr-icon-btn sr-icon-btn--danger" onClick={() => handleDeleteFeed(feed.id)} disabled={feedActionBusy === feed.id} title="删除"><IconTrash /></button></div></div>))}</div>)}
         </div>)}
 
       {activeTab === 'articles' && (

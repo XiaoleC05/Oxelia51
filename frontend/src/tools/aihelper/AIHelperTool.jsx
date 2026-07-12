@@ -4,7 +4,7 @@ import './AIHelperTool.css'
 
 function copyToClipboard(text) {
   if (!text) return
-  try { navigator.clipboard.writeText(text) } catch {}
+  try { navigator.clipboard.writeText(text) } catch { /* ignore */ }
   const ta = document.createElement('textarea')
   ta.value = text
   ta.style.cssText = 'position:fixed;left:-9999px'
@@ -127,7 +127,7 @@ export default function AIHelperTool(){
     try{
       const d=await apiProxy('aihelper','api/settings')
       if(d){const s=d.settings||d;setHasSavedApiKey(!!(s.api_key&&s.api_key.length>0));setSettings({api_key:s.api_key||'',api_base:s.api_base||'',model:s.model||''})}
-    }catch{}finally{setSettingsLoading(false)}
+    }catch{ /* ignore */ }finally{setSettingsLoading(false)}
   },[])
 
   const saveSettings=useCallback(async(e)=>{
@@ -141,8 +141,11 @@ export default function AIHelperTool(){
     }catch(err){setError(err.message)}finally{setSettingsSaving(false)}
   },[settings])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(()=>{loadPrompts('','','',false)},[loadPrompts])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(()=>{if(viewMode==='templates')loadTemplates(templateCategory)},[viewMode,templateCategory,loadTemplates])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(()=>{if(viewMode==='settings')loadSettings()},[viewMode,loadSettings])
 
   const handleSearch=useCallback((e)=>{e.preventDefault();loadPrompts(searchQuery,filterCategory,filterTag,filterFavorite)},[searchQuery,filterCategory,filterTag,filterFavorite,loadPrompts])
