@@ -796,6 +796,10 @@
     bottom: 40px;
     right: 24px;
   }
+  .hero-dot {
+    width: 6px;
+    height: 6px;
+  }
 
   .landing-stats {
     padding: 24px 16px;
