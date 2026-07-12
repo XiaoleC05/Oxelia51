@@ -243,7 +243,23 @@ export default function SuperReadTool() {
   }, [briefingDate])
 
   const loadSettings = async () => {
-    try { const data = await apiProxy('superread', 'api/settings'); const s = data?.settings || data || {}; setSettingsForm(s); setHasSavedApiKey(!!s.api_key && s.api_key.length > 0) } catch (err) { console.error(err) }
+    try {
+      const data = await apiProxy('superread', 'api/settings')
+      const s = data?.settings || data || {}
+      // 反向转换：分钟 → 数值 + 单位
+      const rawMin = s.fetch_interval_min || 30
+      if (rawMin % 1440 === 0) {
+        s.fetch_interval_min = rawMin / 1440
+        s.fetch_interval_unit = 'days'
+      } else if (rawMin % 60 === 0) {
+        s.fetch_interval_min = rawMin / 60
+        s.fetch_interval_unit = 'hours'
+      } else {
+        s.fetch_interval_unit = 'minutes'
+      }
+      setSettingsForm(s)
+      setHasSavedApiKey(!!s.api_key && s.api_key.length > 0)
+    } catch (err) { console.error(err) }
   }
 
   // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
