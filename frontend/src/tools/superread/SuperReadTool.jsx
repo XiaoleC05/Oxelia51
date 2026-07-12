@@ -102,6 +102,8 @@ export default function SuperReadTool() {
   const [settingsForm, setSettingsForm] = useState({})
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsResult, setSettingsResult] = useState(null)
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [apiKeyCopied, setApiKeyCopied] = useState(false)
 
   const fileInputRef = useRef(null)
 
@@ -562,13 +564,44 @@ export default function SuperReadTool() {
             <legend className="sr-fieldset-legend">高级设置</legend>
             <label className="sr-field">
               <span className="sr-field-label">API Key</span>
-              <input
-                type="password"
-                className="sr-input"
-                value={settingsForm.api_key || ''}
-                onChange={e => setSettingsForm({ ...settingsForm, api_key: e.target.value })}
-                placeholder="sk-..."
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type={showApiKey ? 'text' : 'password'}
+                  className="sr-input"
+                  value={settingsForm.api_key || ''}
+                  onChange={e => setSettingsForm({ ...settingsForm, api_key: e.target.value })}
+                  placeholder="sk-..."
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="sr-icon-btn"
+                  title={showApiKey ? '隐藏' : '显示'}
+                  onClick={() => setShowApiKey(!showApiKey)}
+                >
+                  {showApiKey ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="sr-icon-btn"
+                  title="复制"
+                  onClick={() => {
+                    navigator.clipboard.writeText(settingsForm.api_key || '')
+                    setApiKeyCopied(true)
+                    setTimeout(() => setApiKeyCopied(false), 2000)
+                  }}
+                >
+                  {apiKeyCopied ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  )}
+                </button>
+              </div>
             </label>
             <label className="sr-field">
               <span className="sr-field-label">API Base URL</span>
