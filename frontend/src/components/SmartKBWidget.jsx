@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { getToken } from '../api'
+import { getToken, apiProxy } from '../api'
 import './SmartKBWidget.css'
 
 /* ===== 常量 ===== */
@@ -22,7 +22,7 @@ const STORAGE_KEY_SIZE = 'oxelia51_smartkb_widget_size'
 async function streamChat(query, { onToken, onSources, onDone, onError }) {
   let res
   try {
-    res = await fetch('/api/smartkb/chat', {
+    res = await fetch('/api/tools/superread/proxy/api/smartkb/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -487,28 +487,12 @@ function SmartKBWidget({ open, onClose }) {
   )
 }
 
-/* ===== 检索 API（平台 API，非工具 proxy） ===== */
+/* ===== 检索 API（经平台网关代理至 superread 工具） ===== */
 async function apiSearch(query) {
-  const res = await fetch('/api/smartkb/search', {
+  return apiProxy('superread', 'api/smartkb/search', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken() || ''}`,
-      'X-Oxelia51-Access-Token': getToken() || '',
-    },
     body: JSON.stringify({ query }),
   })
-  if (!res.ok) {
-    let msg = `请求失败 (${res.status})`
-    try {
-      const data = await res.json()
-      msg = data?.error || data?.detail || msg
-    } catch {
-      // ignore
-    }
-    throw new Error(msg)
-  }
-  return res.json()
 }
 
 export default SmartKBWidget
