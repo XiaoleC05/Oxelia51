@@ -5,6 +5,7 @@ import ScrollProgress from './components/ScrollProgress'
 import BackToTop from './components/BackToTop'
 import ToolFAB from './components/ToolFAB'
 import SmartKBFAB from './components/SmartKBFAB'
+import SmartKBWidget from './components/SmartKBWidget'
 import PageSkeleton from './components/Skeleton'
 import BackgroundWave from './components/BackgroundWave'
 import Landing from './pages/Landing'
@@ -115,6 +116,7 @@ function App() {
       <BackToTop />
       <ToolFAB />
       <SmartKBFAB onToggle={() => setKbOpen((o) => !o)} />
+      <SmartKBWidget open={kbOpen} onClose={() => setKbOpen(false)} />
     </BrowserRouter>
   )
 }
