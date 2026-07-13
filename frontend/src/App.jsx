@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, useLocation, Navigate, Link } from 'react-router-dom'
-import { Component, Suspense } from 'react'
+import { Component, Suspense, useState } from 'react'
 import Navbar from './components/Navbar'
 import ScrollProgress from './components/ScrollProgress'
 import BackToTop from './components/BackToTop'
+import ToolFAB from './components/ToolFAB'
+import SmartKBFAB from './components/SmartKBFAB'
 import PageSkeleton from './components/Skeleton'
 import BackgroundWave from './components/BackgroundWave'
 import Landing from './pages/Landing'
@@ -102,6 +104,7 @@ function AnimatedRoutes() {
 }
 
 function App() {
+  const [kbOpen, setKbOpen] = useState(false)
   return (
     <BrowserRouter>
       <BackgroundWave />
@@ -110,6 +113,8 @@ function App() {
       <AnimatedRoutes />
       <GlobalFooter />
       <BackToTop />
+      <ToolFAB />
+      <SmartKBFAB onToggle={() => setKbOpen((o) => !o)} />
     </BrowserRouter>
   )
 }

@@ -1,5 +1,26 @@
 /* ===== App-level layout ===== */
 
+/* ===== z-index 层级体系（从低到高） =====
+ * 10    #root section / .landing-section       — 内容区玻璃层
+ * 90    .back-to-top                          — 回到顶部按钮
+ * 100   .navbar                               — 导航栏（默认）
+ * 110   .scroll-progress                      — 滚动进度条
+ * 9998  .smartkb-fab                          — SmartKB 浮球
+ * 9999  .tool-fab                             — 工具浮球
+ * 10000+ modal / overlay（未来扩展）
+ *
+ * 浮球均使用 React Portal 挂 <body>，脱离路由树，
+ * 页面切换时不重载不闪烁。
+ */
+:root {
+  --z-content: 10;
+  --z-back-to-top: 90;
+  --z-navbar: 100;
+  --z-scroll-progress: 110;
+  --z-smartkb-fab: 9998;
+  --z-tool-fab: 9999;
+}
+
 .app-main {
   flex: 1;
   display: flex;

@@ -1,0 +1,367 @@
+/* ===== ToolFAB 浮球组件 ===== */
+
+.tool-fab {
+  position: fixed;
+  z-index: 9999;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  outline: none;
+}
+
+.tool-fab:focus-visible .tool-fab-btn {
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--accent-border);
+}
+
+/* ---- 浮球按钮 ---- */
+.tool-fab-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease,
+              background 0.25s ease;
+  position: relative;
+}
+
+.tool-fab:hover .tool-fab-btn {
+  transform: scale(1.06);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.26), 0 3px 10px rgba(0, 0, 0, 0.18);
+}
+
+.tool-fab--dragging {
+  cursor: grabbing;
+}
+
+.tool-fab--dragging .tool-fab-btn {
+  transform: scale(1.04);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tool-fab--expanded .tool-fab-btn {
+  background: var(--accent-2);
+  transform: scale(1.04);
+}
+
+/* ---- 静止态：呼吸光晕（accent 色 ripple） ---- */
+.tool-fab-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  z-index: -1;
+  animation: tool-fab-pulse 2s ease-in-out infinite;
+}
+
+.tool-fab--expanded .tool-fab-btn::before,
+.tool-fab--dragging .tool-fab-btn::before {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes tool-fab-pulse {
+  0%, 100% { transform: scale(1); opacity: 0; }
+  50% { transform: scale(1.6); opacity: 0.35; }
+}
+
+/* ---- 首次进入：弹跳 ×2 ---- */
+.tool-fab--first-tip .tool-fab-btn {
+  animation: tool-fab-bounce 0.6s ease-in-out 2;
+}
+
+@keyframes tool-fab-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+/* ===== 扳手拧螺母 SVG 动画 ===== */
+
+.tool-fab-icon .tool-fab-wrench {
+  transform-origin: 32px 32px;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tool-fab-icon .tool-fab-nut {
+  transition: stroke 0.3s ease, fill 0.3s ease;
+  fill: transparent;
+}
+
+/* 静止态：扳手不动 */
+.tool-fab-icon--idle .tool-fab-wrench {
+  transform: rotate(0deg);
+}
+
+/* 悬停态：扳手循环旋转 60° → 弹回 */
+.tool-fab-icon--hover .tool-fab-wrench {
+  animation: tool-fab-wrench-turn 1.4s ease-in-out infinite;
+}
+
+@keyframes tool-fab-wrench-turn {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(60deg); }
+  40% { transform: rotate(60deg) translate(-1px, 1px); }
+  60% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* 展开态：扳手旋转 180° 停住，螺母变绿高亮 */
+.tool-fab-icon--expanded .tool-fab-wrench {
+  transform: rotate(180deg);
+}
+
+.tool-fab-icon--expanded .tool-fab-nut {
+  stroke: var(--bg);
+  fill: rgba(255, 255, 255, 0.25);
+}
+
+/* ===== 首次提示气泡 ===== */
+.tool-fab-tip {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 14px;
+  background: var(--bg-alt);
+  color: var(--text-h);
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-size: 13px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: tool-fab-tip-in 0.4s ease-out;
+}
+
+.tool-fab-tip-text {
+  font-weight: 500;
+}
+
+.tool-fab-tip-arrow {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* 气泡尾部小三角 */
+.tool-fab-tip::after {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-left-color: var(--bg-alt);
+}
+
+@keyframes tool-fab-tip-in {
+  from { opacity: 0; transform: translateY(-50%) translateX(8px); }
+  to { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+/* ===== 工具菜单 ===== */
+.tool-fab-menu {
+  position: absolute;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  min-width: 220px;
+  max-width: 280px;
+  animation: tool-fab-menu-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tool-fab-menu-header {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 6px 10px 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.tool-fab-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+@keyframes tool-fab-menu-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ---- 工具项卡片 ---- */
+.tool-fab-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  color: var(--text);
+  font: inherit;
+  opacity: 0;
+  transform: scale(0.6) translateY(8px);
+  animation: tool-fab-item-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.tool-fab-item:hover {
+  background: var(--accent-bg);
+  transform: translateX(2px);
+}
+
+.tool-fab-item:active {
+  transform: scale(0.98);
+}
+
+.tool-fab-item-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.tool-fab-item-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+@keyframes tool-fab-item-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ---- 展开方向定位（桌面） ---- */
+.tool-fab--dir-down .tool-fab-menu {
+  top: calc(100% + 12px);
+  right: 0;
+  transform-origin: top right;
+}
+
+.tool-fab--dir-up .tool-fab-menu {
+  bottom: calc(100% + 12px);
+  right: 0;
+  transform-origin: bottom right;
+}
+
+.tool-fab--dir-left .tool-fab-menu {
+  right: calc(100% + 12px);
+  top: 0;
+  transform-origin: top right;
+}
+
+.tool-fab--dir-right .tool-fab-menu {
+  left: calc(100% + 12px);
+  top: 0;
+  transform-origin: top left;
+}
+
+/* ===== 移动端：底部抽屉 ===== */
+.tool-fab--mobile {
+  right: 16px !important;
+  bottom: 16px !important;
+  position: fixed !important;
+}
+
+.tool-fab--mobile .tool-fab-btn {
+  width: 48px;
+  height: 48px;
+}
+
+.tool-fab--mobile .tool-fab-icon {
+  width: 26px;
+  height: 26px;
+}
+
+/* 移动端展开 → 底部抽屉式面板 */
+.tool-fab--mobile .tool-fab-menu,
+.tool-fab--dir-drawer .tool-fab-menu {
+  position: fixed;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 76px !important;
+  top: auto !important;
+  max-width: none;
+  width: auto;
+  transform-origin: bottom center;
+  animation: tool-fab-drawer-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tool-fab-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ===== 暗色模式适配 ===== */
+[data-theme="dark"] .tool-fab-btn {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .tool-fab-menu {
+  background: var(--bg-alt);
+  border-color: var(--border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .tool-fab-tip {
+  background: var(--bg-alt);
+  border-color: var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .tool-fab-tip::after {
+  border-left-color: var(--bg-alt);
+}
+
+/* ===== 减弱动画偏好 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .tool-fab-btn,
+  .tool-fab-btn::before,
+  .tool-fab-icon .tool-fab-wrench,
+  .tool-fab--first-tip .tool-fab-btn,
+  .tool-fab-menu,
+  .tool-fab-item,
+  .tool-fab-tip {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .tool-fab-icon .tool-fab-wrench {
+    transform: rotate(0deg) !important;
+  }
+
+  .tool-fab-icon--expanded .tool-fab-wrench {
+    transform: rotate(180deg) !important;
+  }
+}

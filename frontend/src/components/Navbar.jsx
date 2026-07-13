@@ -273,7 +273,6 @@ function Navbar() {
       <div className={`navbar-links${mobileOpen ? ' navbar-links--open' : ''}`}>
         {/* Main nav */}
         <NavItem to="/" icon={IconHome} label="首页" />
-        <NavItem to="/tools" icon={IconTools} label="工具" />
         <NavItem to="/blog" icon={IconBook} label="博客" />
         <NavItem to="/about" icon={IconPerson} label="关于开发者" />
         {token && user?.role === 'admin' && (

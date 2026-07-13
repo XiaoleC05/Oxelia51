@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- 螺母：六边形 + 中心圆 -->
+  <g class="tool-fab-nut">
+    <polygon points="32,16 46,24 46,40 32,48 18,40 18,24" />
+    <circle cx="32" cy="32" r="6" />
+  </g>
+  <!-- 扳手：手柄 + 叉头（围绕螺母中心 32,32 旋转） -->
+  <g class="tool-fab-wrench">
+    <line x1="32" y1="32" x2="54" y2="54" />
+    <path d="M 26 26 L 32 32 L 38 26" />
+  </g>
+</svg>

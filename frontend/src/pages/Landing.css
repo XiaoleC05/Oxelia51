@@ -336,6 +336,28 @@
 }
 
 /* ===== 内容区：Fluid 极简 ===== */
+.landing-content-sections .landing-intro .landing-logo {
+  max-width: 120px;
+  margin: 0 auto 16px;
+  display: block;
+  background: transparent;
+  width: 120px;
+  height: auto;
+  filter: drop-shadow(0 4px 12px rgba(134, 59, 255, 0.25));
+  animation: landing-logo-in 0.6s ease-out;
+}
+
+@keyframes landing-logo-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .landing-content-sections .landing-intro {
   background: var(--bg);
   padding-top: 80px;
