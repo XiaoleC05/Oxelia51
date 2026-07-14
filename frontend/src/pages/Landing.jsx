@@ -328,9 +328,14 @@ function Landing() {
           <span>by 陈晓乐</span>
         </div>
         <div className="landing-footer-filing">
-          <span>ICP备案号：蜀ICP备XXXXXXXX号-1</span>
-          <span className="landing-footer-sep">|</span>
-          <span>公安部备案号：川公网安备 XXXXXXXXXXXX号</span>
+          <a
+            href="https://beian.miit.gov.cn/"
+            rel="noreferrer"
+            target="_blank"
+            className="landing-footer-filing-link"
+          >
+            鲁ICP备2026038838号-1
+          </a>
         </div>
       </footer>
     </main>
