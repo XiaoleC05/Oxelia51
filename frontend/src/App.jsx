@@ -3,7 +3,6 @@ import { Component, Suspense, useState } from 'react'
 import Navbar from './components/Navbar'
 import ScrollProgress from './components/ScrollProgress'
 import BackToTop from './components/BackToTop'
-import ToolFAB from './components/ToolFAB'
 import SmartKBFAB from './components/SmartKBFAB'
 import SmartKBWidget from './components/SmartKBWidget'
 import GlobalFooter from './components/GlobalFooter'
@@ -94,7 +93,6 @@ function App() {
       <AnimatedRoutes />
       <GlobalFooter />
       <BackToTop />
-      <ToolFAB />
       <SmartKBFAB onToggle={() => setKbOpen((o) => !o)} />
       <SmartKBWidget open={kbOpen} onClose={() => setKbOpen(false)} />
     </BrowserRouter>
