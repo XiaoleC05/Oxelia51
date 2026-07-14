@@ -127,7 +127,7 @@ function SmartKBFAB({ onToggle }) {
       startY = e.clientY
     }
 
-    e.preventDefault()
+    try { e.preventDefault() } catch {}
     const startPos = { ...pos }
     const fabSize = isMobile ? FAB_SIZE_MOBILE : FAB_SIZE_DESKTOP
     let moved = false
@@ -186,7 +186,7 @@ function SmartKBFAB({ onToggle }) {
     /* ---- Touch 事件监听器（移动端，需 passive: false 才能 preventDefault） ---- */
     const onTouchMove = (ev) => {
       if (ev.touches.length !== 1) return
-      ev.preventDefault() // 阻止页面滚动
+      try { ev.preventDefault() } catch {} // 阻止页面滚动
       handleMove(ev.touches[0].clientX, ev.touches[0].clientY)
     }
     const onTouchEnd = () => handleEnd()
@@ -225,7 +225,7 @@ function SmartKBFAB({ onToggle }) {
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
+          try { e.preventDefault() } catch {}
           triggerBurst()
           if (typeof onToggle === 'function') onToggle()
         }
