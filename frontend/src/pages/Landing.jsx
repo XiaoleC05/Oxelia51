@@ -152,9 +152,8 @@ function Landing() {
         <div className="hero-content">
           <img src="/assets/image/head-logo.png" className="hero-logo" alt="Oxelia51" />
           <span className="hero-brand">Oxelia51</span>
-          <h1 className="hero-title">集成 · 简洁 · 高效</h1>
-          <p className="hero-subtitle">在线工具平台，多 Agent 协作开发</p>
-          <Link to="/tools" className="hero-cta-btn">浏览工具</Link>
+          {images[current]?.title && <h1 className="hero-title">{images[current].title}</h1>}
+          {images[current]?.subtitle && <p className="hero-subtitle">{images[current].subtitle}</p>}
         </div>
 
         {hasImages && (
