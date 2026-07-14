@@ -24,20 +24,21 @@
   justify-content: center;
 }
 
-/* ===== 玻璃光晕（脉冲呼吸） ===== */
+/* ===== 玻璃光晕（脉冲呼吸） — 加大加亮 ===== */
 .smartkb-fab-glow {
   position: absolute;
-  inset: -8px;
+  inset: -12px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(134, 59, 255, 0.15), transparent 70%);
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.25), transparent 70%);
+  filter: blur(24px);
   pointer-events: none;
   z-index: 0;
   animation: smartkb-glow-pulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes smartkb-glow-pulse {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.2); }
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.4); }
 }
 
 /* ===== 星球 + 「51」徽标 — 品牌紫蓝渐变 + 毛玻璃 + 白色边框 + 内发光 ===== */
@@ -104,19 +105,19 @@
   border: 1px dotted rgba(124, 58, 237, 0.5);
 }
 
-/* ===== 悬停：星轨旋转 + 「51」浮动 + 光晕脉冲加强 ===== */
+/* ===== 悬停：星轨加速旋转 + 「51」浮动 + 光晕脉冲加强 ===== */
 .smartkb-fab--hover .smartkb-fab-orbit {
   opacity: 1;
 }
 
-/* 内圈：3s 顺时针 */
+/* 内圈：1.5s 顺时针（加速） */
 .smartkb-fab--hover .smartkb-fab-orbit--1 {
-  animation: orbit-spin 3s linear infinite;
+  animation: orbit-spin 1.5s linear infinite;
 }
 
-/* 外圈：4.5s 逆时针（视差效果） */
+/* 外圈：2s 逆时针（加速，视差效果） */
 .smartkb-fab--hover .smartkb-fab-orbit--2 {
-  animation: orbit-spin 4.5s linear infinite reverse;
+  animation: orbit-spin 2s linear infinite reverse;
 }
 
 @keyframes orbit-spin {
@@ -124,8 +125,9 @@
   to { transform: rotate(360deg); }
 }
 
-/* 悬停：星球光晕加强 */
+/* 悬停：星球光晕加强 + 放大 */
 .smartkb-fab--hover .smartkb-fab-planet {
+  transform: scale(1.08);
   box-shadow: 0 6px 24px rgba(124, 58, 237, 0.45),
               0 3px 12px rgba(59, 130, 246, 0.25),
               inset 0 1px 0 rgba(255, 255, 255, 0.5),
@@ -168,7 +170,7 @@
               inset 0 0 12px rgba(255, 255, 255, 0.15);
 }
 
-/* ===== 粒子飞散 ===== */
+/* ===== 粒子飞散 — 拖尾光晕 ===== */
 .smartkb-fab-particle {
   position: absolute;
   top: 50%;
@@ -178,7 +180,8 @@
   margin: -2.5px 0 0 -2.5px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 8px rgba(124, 58, 237, 0.7);
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.8),
+              0 0 20px rgba(59, 130, 246, 0.4);
   pointer-events: none;
   z-index: 2;
   /* 挂载时自动播放粒子飞散动画 */

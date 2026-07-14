@@ -13,10 +13,10 @@
   --text-muted: #6b6b6b;
   --border: #e0ddd5;
   --code-bg: #f4f3ec;
-  --accent: #c8553d;
-  --accent-2: #2c6e49;
-  --accent-bg: rgba(200, 85, 61, 0.07);
-  --accent-border: rgba(200, 85, 61, 0.35);
+  --accent: #7c3aed;
+  --accent-2: #3b82f6;
+  --accent-bg: rgba(124, 58, 237, 0.07);
+  --accent-border: rgba(124, 58, 237, 0.35);
   --social-bg: rgba(240, 239, 233, 0.5);
   --shadow: none;
 
@@ -50,13 +50,13 @@
   --text: #c4c4c4;
   --text-h: #f0f0f0;
   --text-muted: #888;
-  --accent: #d96b5a;
-  --accent-2: #3d8b5f;
+  --accent: #7c3aed;
+  --accent-2: #3b82f6;
   --border: #2e323a;
   --code-bg: #282c34;
   --social-bg: rgba(34, 38, 46, 0.5);
-  --accent-bg: rgba(217, 107, 90, 0.12);
-  --accent-border: rgba(217, 107, 90, 0.4);
+  --accent-bg: rgba(124, 58, 237, 0.12);
+  --accent-border: rgba(124, 58, 237, 0.4);
   color-scheme: dark;
   color: var(--text);
   background: var(--bg);
@@ -99,7 +99,7 @@
 }
 
 [data-theme="light"] .landing-footer-transition {
-  background: linear-gradient(to bottom, var(--bg), var(--bg-dark));
+  background: linear-gradient(to bottom, var(--bg), var(--bg-alt));
 }
 
 /* system dark as default (overridden by manual toggle) */
@@ -112,13 +112,13 @@
     --text: #c4c4c4;
     --text-h: #f0f0f0;
     --text-muted: #888;
-    --accent: #d96b5a;
-    --accent-2: #3d8b5f;
+    --accent: #7c3aed;
+    --accent-2: #3b82f6;
     --border: #2e323a;
     --code-bg: #282c34;
     --social-bg: rgba(34, 38, 46, 0.5);
-    --accent-bg: rgba(217, 107, 90, 0.12);
-    --accent-border: rgba(217, 107, 90, 0.4);
+    --accent-bg: rgba(124, 58, 237, 0.12);
+    --accent-border: rgba(124, 58, 237, 0.4);
     color-scheme: dark;
   }
 }
