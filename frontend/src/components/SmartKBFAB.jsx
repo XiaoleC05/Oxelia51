@@ -204,6 +204,14 @@ function SmartKBFAB({ onToggle }) {
     }
   }, [isMobile, pos, onToggle, triggerBurst])
 
+  useEffect(() => {
+    const el = fabRef.current
+    if (!el) return
+    const onTouch = (e) => { if (e.touches.length === 1) handleDragStart(e) }
+    el.addEventListener('touchstart', onTouch, { passive: false })
+    return () => el.removeEventListener('touchstart', onTouch)
+  }, [handleDragStart])
+
   if (!mounted) return null
 
   return createPortal(
@@ -217,7 +225,6 @@ function SmartKBFAB({ onToggle }) {
       ].filter(Boolean).join(' ')}
       style={{ right: `${pos.right}px`, bottom: `${pos.bottom}px` }}
       onPointerDown={handleDragStart}
-      onTouchStart={handleDragStart}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       role="button"
