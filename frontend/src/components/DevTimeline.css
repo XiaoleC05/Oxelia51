@@ -3,7 +3,13 @@
 .dev-timeline {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 60px clamp(24px, 5vw, 80px);
+  padding: 80px clamp(24px, 5vw, 80px) 60px;
+}
+
+.dev-timeline::after {
+  content: '';
+  display: block;
+  height: 32px;
 }
 
 .dev-timeline-title {

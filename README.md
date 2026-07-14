@@ -90,12 +90,11 @@ Oxelia51/
 │   ├── tencent-cloud/ # 腾讯云 health-server
 │   └── webhook/      # 自动部署 webhook
 ├── docs/             # 项目文档
-│   ├── adr/          # 架构决策记录
-│   ├── api/          # API 契约
-│   ├── tools/        # 工具设计文档
-│   ├── ui/           # UI 报告
-│   ├── reviews/      # 审查报告
-│   └── archive/      # 历史文档归档
+│   ├── user/         # 用户文档（使用指南、工具简介）
+│   ├── dev/          # 开发者文档（ADR/API/审查/部署）
+│   ├── superpowers/  # 设计规范 + Bug 案例
+│   ├── archive/      # 历史归档
+│   └── ui/           # UI 评审报告
 ├── scripts/          # 辅助脚本
 ├── AGENTS.md         # 多 Agent 协作规范
 ├── CHANGELOG.md      # 版本变更日志

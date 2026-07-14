@@ -26,6 +26,20 @@
 
 ### Documentation
 
+- **全项目文档重构**：`docs/` 分层——`user/`（使用指南+工具简介）、`dev/`（ADR/API契约/审查报告/部署指南/样式标准）、`superpowers/`（设计规范+Bug案例）、`archive/`（历史归档）、`ui/`（UI报告）
+- 新增 [用户使用指南](docs/user/guide.md) 和 [工具简介](docs/user/tools.md)
+- 新增 [部署指南](docs/dev/deployment.md)（合并 00-deployment-context.md + deploy/README.md）
+- 新增 [8 个工具仓库 README 中文模板](docs/dev/tool-readme-templates.md)
+- P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
+- P8 多用户并发+权限隔离审查（Codex）：1 严重 + 5 建议
+- P9 全平台安全审查（Codex）：2 严重 + 6 建议
+- Bug 案例新增 009，总计 9 个
+- README 工具数 7→8，添加 SmartKB
+
+### Changed
+
+- AGENTS.md 更新至 v2.3
+
 - P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
 - Bug 案例新增 009，总计 9 个
 - README 工具数 7→8，添加 SmartKB
@@ -53,10 +67,23 @@
 
 ### Documentation
 
+- **全项目文档重构**：`docs/` 分层——`user/`（使用指南+工具简介）、`dev/`（ADR/API契约/审查报告/部署指南/样式标准）、`superpowers/`（设计规范+Bug案例）、`archive/`（历史归档）、`ui/`（UI报告）
+- 新增 [用户使用指南](docs/user/guide.md) 和 [工具简介](docs/user/tools.md)
+- 新增 [部署指南](docs/dev/deployment.md)（合并 00-deployment-context.md + deploy/README.md）
+- 新增 [8 个工具仓库 README 中文模板](docs/dev/tool-readme-templates.md)
+- P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
+- P8 多用户并发+权限隔离审查（Codex）：1 严重 + 5 建议
+- P9 全平台安全审查（Codex）：2 严重 + 6 建议
+- Bug 案例新增 009，总计 9 个
+- README 工具数 7→8，添加 SmartKB
+
+### Changed
+
+- AGENTS.md 更新至 v2.3
+
 - AGENTS.md v2.1 智能体分配更新
 - .gitignore 移除 docs/ 排除，全部文档入库（35 文件，4008 行）
 - 新增迁移 011_login_logs
-
 
 ## [v2.2] — 2026-07-11
 
@@ -81,9 +108,22 @@
 
 ### Documentation
 
+- **全项目文档重构**：`docs/` 分层——`user/`（使用指南+工具简介）、`dev/`（ADR/API契约/审查报告/部署指南/样式标准）、`superpowers/`（设计规范+Bug案例）、`archive/`（历史归档）、`ui/`（UI报告）
+- 新增 [用户使用指南](docs/user/guide.md) 和 [工具简介](docs/user/tools.md)
+- 新增 [部署指南](docs/dev/deployment.md)（合并 00-deployment-context.md + deploy/README.md）
+- 新增 [8 个工具仓库 README 中文模板](docs/dev/tool-readme-templates.md)
+- P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
+- P8 多用户并发+权限隔离审查（Codex）：1 严重 + 5 建议
+- P9 全平台安全审查（Codex）：2 严重 + 6 建议
+- Bug 案例新增 009，总计 9 个
+- README 工具数 7→8，添加 SmartKB
+
+### Changed
+
+- AGENTS.md 更新至 v2.3
+
 - docs/00-deployment-context.md 更新服务器信息
 - deploy/tencent-cloud/ 完整部署套件
-
 
 ## [v2.1] — 2026-07-09
 
@@ -103,7 +143,6 @@
 
 - REV-06 P0 全量修复：鉴权后门移除、CORS 加固、MusicBox 凭证串用、SecretStore Combo 越权、CS2Lab 测试降级、AIHelper Authorization 缺失
 - REV-06 P1 安全加固：SSRF 白名单、错误脱敏、API Key 隐藏、响应体限制、AI 摘要闭环
-
 
 ## [v2.0] — 2026-07-08
 
@@ -146,6 +185,20 @@
 - 移除所有页面中面向访客的管理端技术细节文案
 
 ### Documentation
+
+- **全项目文档重构**：`docs/` 分层——`user/`（使用指南+工具简介）、`dev/`（ADR/API契约/审查报告/部署指南/样式标准）、`superpowers/`（设计规范+Bug案例）、`archive/`（历史归档）、`ui/`（UI报告）
+- 新增 [用户使用指南](docs/user/guide.md) 和 [工具简介](docs/user/tools.md)
+- 新增 [部署指南](docs/dev/deployment.md)（合并 00-deployment-context.md + deploy/README.md）
+- 新增 [8 个工具仓库 README 中文模板](docs/dev/tool-readme-templates.md)
+- P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
+- P8 多用户并发+权限隔离审查（Codex）：1 严重 + 5 建议
+- P9 全平台安全审查（Codex）：2 严重 + 6 建议
+- Bug 案例新增 009，总计 9 个
+- README 工具数 7→8，添加 SmartKB
+
+### Changed
+
+- AGENTS.md 更新至 v2.3
 
 - `docs/01~04` 归档至 `docs/archive/`
 - README 与 `.trae/rules/project_rules.md` 同步 v2.0 信息

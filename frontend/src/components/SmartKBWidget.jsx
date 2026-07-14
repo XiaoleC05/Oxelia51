@@ -456,7 +456,7 @@ function SmartKBWidget({ open, onClose }) {
         {/* 右：回答 */}
         <div className="smartkb-panel smartkb-panel--right">
           <div className="smartkb-panel-header">
-            AI 回答
+            回答
             {streaming && <span className="smartkb-stream-indicator">流式中</span>}
           </div>
           <div className="smartkb-panel-content" ref={answerRef}>
