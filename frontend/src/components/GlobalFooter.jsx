@@ -12,7 +12,6 @@ function GlobalFooter() {
       <div className="landing-footer-bottom">
         <span>&copy; {new Date().getFullYear()} Oxelia51</span>
         <span className="landing-footer-sep">·</span>
-        <span>集成·简洁·高效</span>
         <span className="landing-footer-sep">·</span>
         <Link to="/friends" className="landing-footer-link">友情链接</Link>
       </div>

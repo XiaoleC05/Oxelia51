@@ -274,7 +274,6 @@ function Landing() {
         <div className="landing-footer-top">
           <div className="landing-footer-brand">
             <div className="landing-footer-logo">Oxelia51</div>
-            <p className="landing-footer-desc">集成·简洁·高效</p>
           </div>
           <div className="landing-footer-links">
             <div className="landing-footer-col">

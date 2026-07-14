@@ -133,7 +133,6 @@ function About() {
         <div className="about-hero-text">
           <span className="about-eyebrow">关于开发者</span>
           <h1 className="about-title">陈晓乐</h1>
-          <p className="about-tagline">集成·简洁·高效</p>
         </div>
         <div className="about-avatar-wrap">
           {profile.avatar_url ? (
