@@ -134,6 +134,7 @@
   font-size: 1.35rem;
   font-weight: 600;
   margin: 0;
+  padding-left: 40px;
   color: var(--text-h);
 }
 

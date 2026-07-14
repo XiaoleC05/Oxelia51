@@ -5,6 +5,8 @@
   z-index: 9998;
   cursor: pointer;
   user-select: none;
+  will-change: right, bottom;
+  transform: translateZ(0);
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
   outline: none;
