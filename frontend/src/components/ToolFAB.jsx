@@ -15,7 +15,7 @@ const TOOLS = [
 ]
 
 const DEFAULT_POS = { right: 24, bottom: 80 }
-const FAB_SIZE_DESKTOP = 56
+const FAB_SIZE_DESKTOP = 60
 const FAB_SIZE_MOBILE = 48
 const DRAG_THRESHOLD = 4
 const DOUBLE_CLICK_MS = 300
@@ -25,21 +25,27 @@ const STORAGE_KEY_POS = 'oxelia51_fab_pos'
 const STORAGE_KEY_LAST_TOOL = 'oxelia51_last_tool'
 const STORAGE_KEY_FIRST_SEEN = 'oxelia51_fab_first_seen'
 
-/* ===== 扳手拧螺母 SVG 图标 ===== */
+/* ===== 扳手拧螺母 SVG 图标（品牌色渐变描边） ===== */
 function ToolFabIcon({ state }) {
   return (
     <svg
       className={`tool-fab-icon tool-fab-icon--${state}`}
       viewBox="0 0 64 64"
-      width="30"
-      height="30"
+      width="32"
+      height="32"
       fill="none"
-      stroke="currentColor"
+      stroke="url(#toolFabGrad)"
       strokeWidth="2.6"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
     >
+      <defs>
+        <linearGradient id="toolFabGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#863bff" />
+          <stop offset="100%" stopColor="#47bfff" />
+        </linearGradient>
+      </defs>
       <g className="tool-fab-nut">
         <polygon points="32,16 46,24 46,40 32,48 18,40 18,24" />
         <circle cx="32" cy="32" r="6" />
@@ -248,8 +254,10 @@ function ToolFAB() {
         }
       }}
     >
-      {/* 浮球按钮（onPointerDown 绑定在此，避免菜单项点击被吞） */}
+      {/* Liquid Glass 浮球按钮（onPointerDown 绑定在此，避免菜单项点击被吞） */}
       <div className="tool-fab-btn" onPointerDown={handlePointerDown}>
+        {/* 旋转虚线光轨（悬停出现） */}
+        <span className="tool-fab-ring" aria-hidden="true" />
         <ToolFabIcon state={fabState} />
       </div>
 
@@ -261,7 +269,7 @@ function ToolFAB() {
         </div>
       )}
 
-      {/* 展开工具列表 */}
+      {/* 展开工具列表（stagger spring 弹出） */}
       {expanded && (
         <div className={`tool-fab-menu tool-fab-menu--${expandDir}`}>
           <div className="tool-fab-menu-header">工具</div>
@@ -271,7 +279,7 @@ function ToolFAB() {
                 key={tool.slug}
                 type="button"
                 className="tool-fab-item"
-                style={{ animationDelay: `${i * 60}ms` }}
+                style={{ '--index': i }}
                 onClick={(e) => {
                   e.stopPropagation()
                   handleToolClick(tool.slug)

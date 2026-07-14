@@ -4,7 +4,7 @@ import './SmartKBFAB.css'
 
 /* ===== 常量 ===== */
 const DEFAULT_POS = { right: 24, bottom: 400 }
-const FAB_SIZE_DESKTOP = 56
+const FAB_SIZE_DESKTOP = 60
 const FAB_SIZE_MOBILE = 48
 const DRAG_THRESHOLD = 4
 const PARTICLE_COUNT_MIN = 8
@@ -14,7 +14,7 @@ const PARTICLE_DIST_MAX = 40
 const BURST_DURATION_MS = 700
 const STORAGE_KEY_POS = 'oxelia51_smartkb_pos'
 
-/* ===== SmartKBFAB 浮球组件 =====
+/* ===== SmartKBFAB 浮球组件 — Orbiting Glass =====
  * onToggle: function — 点击浮球时触发（展开/隐藏 SmartKB 浮窗，浮窗在 P6 实现）
  */
 function SmartKBFAB({ onToggle }) {
@@ -163,11 +163,16 @@ function SmartKBFAB({ onToggle }) {
     >
       {/* key 重新挂载 → 重启 CSS 动画（连续点击也能播放） */}
       <div className="smartkb-fab-inner" key={burstKey}>
+        {/* 玻璃光晕（脉冲） */}
+        <div className="smartkb-fab-glow" aria-hidden="true" />
+        {/* 双层星轨（内快外慢，不同颜色） */}
         <div className="smartkb-fab-orbit smartkb-fab-orbit--1" aria-hidden="true" />
         <div className="smartkb-fab-orbit smartkb-fab-orbit--2" aria-hidden="true" />
+        {/* 星球 + 「51」徽标 */}
         <div className="smartkb-fab-planet">
           <span className="smartkb-fab-num">51</span>
         </div>
+        {/* 粒子飞散 */}
         {particles.map((p) => (
           <span
             key={p.id}

@@ -1,4 +1,4 @@
-/* ===== SmartKBFAB 浮球组件 ===== */
+/* ===== SmartKBFAB 浮球组件 — Orbiting Glass 风格 ===== */
 
 .smartkb-fab {
   position: fixed;
@@ -8,8 +8,8 @@
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
   outline: none;
-  width: 56px;
-  height: 56px;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -24,17 +24,28 @@
   justify-content: center;
 }
 
-.smartkb-fab:focus-visible .smartkb-fab-planet {
-  box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--accent-border),
-              0 6px 20px rgba(134, 59, 255, 0.3);
+/* ===== 玻璃光晕（脉冲呼吸） ===== */
+.smartkb-fab-glow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(134, 59, 255, 0.15), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: smartkb-glow-pulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes smartkb-glow-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
 }
 
 /* ===== 星球 + 「51」徽标 ===== */
 .smartkb-fab-planet {
   position: relative;
-  z-index: 2;
-  width: 40px;
-  height: 40px;
+  z-index: 3;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #a878ff 0%, #863bff 50%, #4a1f8a 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -46,10 +57,12 @@
   font-size: 13px;
   letter-spacing: -0.02em;
   font-family: var(--mono);
-  box-shadow: 0 4px 16px rgba(134, 59, 255, 0.3),
-              0 2px 8px rgba(0, 0, 0, 0.12),
-              inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(134, 59, 255, 0.25),
+              0 2px 8px rgba(0, 0, 0, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   /* 挂载时自动播放 burst 动画（一次） */
   animation: smartkb-planet-burst 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -61,33 +74,35 @@
   100% { transform: scale(1); }
 }
 
-/* ===== 星轨（两条椭圆边框，悬停时旋转） ===== */
+/* ===== 星轨（双层，不同颜色不同速度） ===== */
 .smartkb-fab-orbit {
   position: absolute;
   top: 50%;
   left: 50%;
-  border: 1px dashed rgba(134, 59, 255, 0.3);
   border-radius: 50%;
   pointer-events: none;
-  opacity: 0;
+  opacity: 0.4;
+  z-index: 1;
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 内圈：紫色虚线 */
 .smartkb-fab-orbit--1 {
-  width: 48px;
-  height: 48px;
-  margin: -24px 0 0 -24px;
+  width: 50px;
+  height: 50px;
+  margin: -25px 0 0 -25px;
+  border: 1.5px dashed rgba(134, 59, 255, 0.4);
 }
 
+/* 外圈：蓝色点线 */
 .smartkb-fab-orbit--2 {
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
-  border-color: rgba(71, 191, 255, 0.35);
-  border-style: dotted;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border: 1px dotted rgba(71, 191, 255, 0.45);
 }
 
-/* ===== 悬停：星轨旋转 + 「51」浮动 ===== */
+/* ===== 悬停：星轨旋转 + 「51」浮动 + 光晕脉冲加强 ===== */
 .smartkb-fab--hover .smartkb-fab-orbit {
   opacity: 1;
 }
@@ -107,12 +122,13 @@
   to { transform: rotate(360deg); }
 }
 
-/* 悬停：星球光晕加深 */
+/* 悬停：星球光晕加强 */
 .smartkb-fab--hover .smartkb-fab-planet {
-  box-shadow: 0 6px 24px rgba(134, 59, 255, 0.4),
-              0 3px 12px rgba(0, 0, 0, 0.15),
+  box-shadow: 0 6px 24px rgba(134, 59, 255, 0.35),
+              0 3px 12px rgba(0, 0, 0, 0.12),
               inset 0 1px 0 rgba(255, 255, 255, 0.3),
-              0 0 0 2px rgba(71, 191, 255, 0.2);
+              inset 0 -2px 4px rgba(0, 0, 0, 0.15),
+              0 0 0 2px rgba(71, 191, 255, 0.15);
 }
 
 /* 悬停：「51」上下浮动 ±3px */
@@ -125,14 +141,25 @@
   50% { transform: translateY(-3px); }
 }
 
+/* 悬停：光晕脉冲加速 */
+.smartkb-fab--hover .smartkb-fab-glow {
+  animation-duration: 1.5s;
+}
+
+/* ===== focus 可见 ===== */
+.smartkb-fab:focus-visible .smartkb-fab-planet {
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px rgba(134, 59, 255, 0.4),
+              0 6px 20px rgba(134, 59, 255, 0.3);
+}
+
 /* ===== 拖动 ===== */
 .smartkb-fab--dragging {
   cursor: grabbing;
 }
 
 .smartkb-fab--dragging .smartkb-fab-planet {
-  box-shadow: 0 8px 28px rgba(134, 59, 255, 0.45),
-              0 4px 16px rgba(0, 0, 0, 0.2),
+  box-shadow: 0 8px 28px rgba(134, 59, 255, 0.4),
+              0 4px 16px rgba(0, 0, 0, 0.15),
               inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -141,14 +168,14 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 4px;
-  height: 4px;
-  margin: -2px 0 0 -2px;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 6px rgba(134, 59, 255, 0.7);
+  box-shadow: 0 0 8px rgba(134, 59, 255, 0.7);
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
   /* 挂载时自动播放粒子飞散动画 */
   animation: particle-burst 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
@@ -178,8 +205,8 @@
 }
 
 .smartkb-fab--mobile .smartkb-fab-planet {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   font-size: 12px;
 }
 
@@ -190,18 +217,28 @@
 }
 
 .smartkb-fab--mobile .smartkb-fab-orbit--2 {
-  width: 48px;
-  height: 48px;
-  margin: -24px 0 0 -24px;
+  width: 50px;
+  height: 50px;
+  margin: -25px 0 0 -25px;
+}
+
+/* ===== 亮色模式适配 ===== */
+[data-theme="light"] .smartkb-fab-orbit--1 {
+  border-color: rgba(134, 59, 255, 0.3);
+}
+
+[data-theme="light"] .smartkb-fab-orbit--2 {
+  border-color: rgba(71, 191, 255, 0.35);
 }
 
 /* ===== 暗色模式适配 ===== */
 [data-theme="dark"] .smartkb-fab-planet {
   background: radial-gradient(circle at 35% 30%, #a878ff 0%, #863bff 50%, #2a1250 100%);
   border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 16px rgba(134, 59, 255, 0.35),
+  box-shadow: 0 4px 16px rgba(134, 59, 255, 0.3),
               0 2px 8px rgba(0, 0, 0, 0.4),
-              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+              inset 0 1px 0 rgba(255, 255, 255, 0.12),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.2);
 }
 
 [data-theme="dark"] .smartkb-fab-orbit--1 {
@@ -213,10 +250,11 @@
 }
 
 [data-theme="dark"] .smartkb-fab--hover .smartkb-fab-planet {
-  box-shadow: 0 6px 24px rgba(134, 59, 255, 0.5),
+  box-shadow: 0 6px 24px rgba(134, 59, 255, 0.45),
               0 3px 12px rgba(0, 0, 0, 0.5),
               inset 0 1px 0 rgba(255, 255, 255, 0.15),
-              0 0 0 2px rgba(71, 191, 255, 0.25);
+              inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+              0 0 0 2px rgba(71, 191, 255, 0.2);
 }
 
 /* ===== 减弱动画偏好 ===== */
@@ -224,7 +262,8 @@
   .smartkb-fab-planet,
   .smartkb-fab-orbit,
   .smartkb-fab-num,
-  .smartkb-fab-particle {
+  .smartkb-fab-particle,
+  .smartkb-fab-glow {
     animation: none !important;
   }
 
