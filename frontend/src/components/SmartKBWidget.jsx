@@ -22,7 +22,7 @@ const STORAGE_KEY_SIZE = 'oxelia51_smartkb_widget_size'
 async function streamChat(query, { onToken, onSources, onDone, onError }) {
   let res
   try {
-    res = await fetch('/api/tools/superread/proxy/api/smartkb/chat', {
+    res = await fetch('/api/tools/smartkb/proxy/api/smartkb/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -489,7 +489,7 @@ function SmartKBWidget({ open, onClose }) {
 
 /* ===== 检索 API（经平台网关代理至 superread 工具） ===== */
 async function apiSearch(query) {
-  return apiProxy('superread', 'api/smartkb/search', {
+  return apiProxy('smartkb', 'api/smartkb/search', {
     method: 'POST',
     body: JSON.stringify({ query }),
   })
