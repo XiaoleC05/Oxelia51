@@ -5,6 +5,31 @@
 
 ---
 
+
+## [v2.3.1] — 2026-07-15
+
+### Added
+
+- **SmartKB 独立工具**：知识库检索，108 文档 444 片段已索引，基于 pgvector + PG16
+- **第 9 个 Bug 案例**：pgvector PG16/PG18 库版本冲突（`docs/superpowers/bugs/009-*.md`）
+
+### Changed
+
+- **首页重构（P2–P6）**：AI 协作时间线 + Bug 案例卡片 + 统计数据栏 + 分割线过渡（Trae Work + Codex）
+- **全站品牌色统一**：accent 从紫色 `#863bff` 迁移为暖橙 `#c8553d`，暗色模式 `#d96b5a`；全局 CSS 变量完整覆盖亮/暗双模式
+- **AGENTS.md v2.2**：更新智能体模型为 4-agent（Claude Code + Qoder + Trae Work + Codex），补充 §7.1 字体约定
+
+### Fixed
+
+- 首页统计栏亮/暗模式颜色正确（`var(--text-h)` 覆盖硬编码 `#fff`）
+- 导航栏移动端字体大小与安全区适配
+
+### Documentation
+
+- P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
+- Bug 案例新增 009，总计 9 个
+- README 工具数 7→8，添加 SmartKB
+
 ## [v2.3] — 2026-07-11
 
 ### Added

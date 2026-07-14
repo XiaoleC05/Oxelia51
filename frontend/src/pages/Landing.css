@@ -226,6 +226,38 @@
   box-sizing: border-box;
 }
 
+/* ===== 全宽背景带：DevTimeline + BugCards =====
+ * 突破 #root max-width 1200px 限制，背景延伸到屏幕边缘
+ * 内容居中在 1200px 内
+ */
+.dev-timeline,
+.bug-cards {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  max-width: none;
+  padding-left: calc(50vw - 600px);
+  padding-right: calc(50vw - 600px);
+  box-sizing: border-box;
+}
+
+/* 三个区域各自微妙背景色区分 */
+.dev-timeline {
+  background: var(--bg);
+}
+
+.bug-cards {
+  background: var(--bg-alt);
+}
+
+/* 移动端：calc(50vw - 600px) 为负，回退到常规 padding */
+@media (max-width: 1200px) {
+  .dev-timeline,
+  .bug-cards {
+    padding-left: clamp(16px, 5vw, 80px);
+    padding-right: clamp(16px, 5vw, 80px);
+  }
+}
+
 .landing-stats-inner {
   /* 白色/半透明背景卡片：圆角 + 阴影 */
   max-width: 920px;

@@ -6,6 +6,12 @@
   padding: 60px clamp(24px, 5vw, 80px) 60px;
 }
 
+/* 内容居中容器（全宽背景下内容限制在 1200px 内） */
+.bug-cards-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 .bug-cards-title {
   font-family: var(--heading);
   font-size: 24px;
@@ -30,9 +36,9 @@
   gap: 16px;
 }
 
-/* 卡片 */
+/* 卡片 — 用 --bg 主背景与 --bg-alt 区域背景形成对比 */
 .bug-card {
-  background: var(--bg-alt);
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 18px 20px;
@@ -55,13 +61,13 @@
 
 .bug-card:focus-visible {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(134, 59, 255, 0.2);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
 }
 
 .bug-card--open {
   transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: 0 12px 32px rgba(134, 59, 255, 0.12),
+  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.12),
               0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
@@ -132,7 +138,7 @@
   align-items: center;
   padding: 3px 8px;
   border-radius: 10px;
-  background: var(--bg);
+  background: var(--bg-alt);
   color: var(--text-muted);
   font-family: var(--mono);
 }
@@ -204,6 +210,95 @@
   font-weight: 500;
 }
 
+/* ===== 分页 ===== */
+.bug-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px 0 0;
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+
+.bug-pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bug-pagination-btn {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, opacity 0.2s;
+}
+
+.bug-pagination-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.bug-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bug-pagination-info {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  min-width: 60px;
+  text-align: center;
+}
+
+.bug-pagination-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.bug-pagination-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.bug-pagination-select:hover {
+  border-color: var(--text-h);
+}
+
+.bug-pagination-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.bug-pagination-select option {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.bug-pagination-select option:checked,
+.bug-pagination-select:focus option:checked {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 /* 移动端 */
 @media (max-width: 640px) {
   .bug-cards {
@@ -212,5 +307,9 @@
 
   .bug-cards-grid {
     grid-template-columns: 1fr;
+  }
+
+  .bug-pagination {
+    justify-content: center;
   }
 }

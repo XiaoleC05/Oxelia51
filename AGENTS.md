@@ -201,17 +201,18 @@ Claude Code 拥有完整项目理解并执行服务器操作。Qoder、Trae Work
 
 ### 7.1 标题字体约定
 
-所有页面与组件的标题（h1/h2/h3）统一使用 CSS 变量 `var(--heading)`，不硬编码字体族：
+所有页面与组件的标题（h1/h2/h3）统一使用 CSS 变量，不硬编码字体族：
 
-- `--heading: 'Noto Serif SC', 'Source Han Serif SC', Georgia, serif`（见 `frontend/src/index.css` `:root`）
-- 中文标题（首页 Hero、数据栏标题、Bug 卡片标题、DevTimeline 标题等）继承 `Noto Serif SC` 衬线字体
+- 全局默认 `h1-h4 { font-family: var(--sans) }`（`index.css`），用于页面级主标题（Hero、CTA、intro-brand 等）
+- `--heading: 'Noto Serif SC', 'Source Han Serif SC', Georgia, serif`（`index.css` `:root`）
+- 内嵌板块标题（DevTimeline 时间线、BugCards 卡片）显式使用 `var(--heading)`，以衬线体提供视觉区分
 - 等宽/数字场景使用 `var(--mono)`（JetBrains Mono）
 - 正文使用 `var(--sans)`（Inter）
-- 新增组件的标题样式应 `font-family: var(--heading)`，不引入新字体族
+- 新增组件：页面级标题默认跟随全局 `var(--sans)`；若为内嵌内容板块标题，使用 `var(--heading)`，两者均不引入新字体族
+
+**设计依据**：页面标题用 sans-serif 保持简洁现代的阅读节奏，内嵌板块标题用衬线体在视觉上标识内容边界。这一区分是有意的设计决策。
 
 变更字体族属于架构决策，需上报架构智能体裁定。
-
----
 
 ## 8. Git 工作流
 

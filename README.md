@@ -1,7 +1,7 @@
 <!--
 ============================================================
   Oxelia51 —— 在线工具平台
-  版本：v2.3.1  |  更新：2026-07-12
+  版本：v2.3.1  |  更新：2026-07-15
 ============================================================
 -->
 
@@ -50,6 +50,7 @@ PostgreSQL    Redis
              → AIHelper  :8004  （内网）
              → SecretStore :8006（内网）
              → AgentCanvas :8005（内网）
+             → SmartKB    :8007（内网）
 
 腾讯云 (118.25.138.177)：
   health-server :8090  ← 阿里云管理后台定时拉取 CPU/内存/磁盘
@@ -174,6 +175,7 @@ npm run dev
 | AIHelper | [XiaoleC05/AIHelper](https://github.com/XiaoleC05/AIHelper) | 提示词管理与增强 | :8004 |
 | SecretStore | [XiaoleC05/SecretStore](https://github.com/XiaoleC05/SecretStore) | AES-256-GCM 加密保险箱 | :8006 |
 | AgentCanvas | [XiaoleC05/AgentCanvas](https://github.com/XiaoleC05/AgentCanvas) | Agent 执行流程可视化 | :8005 |
+| SmartKB | [XiaoleC05/SuperRead](https://github.com/XiaoleC05/SuperRead) | 知识库检索（pgvector + RAG） | :8007 |
 
 > 各工具为独立 GitHub 仓库，通过本平台 API 网关统一接入。
 
@@ -197,6 +199,7 @@ npm run dev
 | CS2Lab CS2 道具教学（9 张地图） | ✅ 已完成 |
 | AIHelper 提示词助手 | ✅ 已完成 |
 | AgentCanvas Agent 可视化画布 | ✅ 已完成 |
+| SmartKB 知识库检索 | ✅ 已完成 |
 | 腾讯云 health-server + 双服监控 | ✅ 已完成 |
 
 ## 部署
@@ -232,6 +235,7 @@ docker compose -f deploy/docker/docker-compose.yml up -d --build
 - [x] CS2Lab CS2 道具教学
 - [x] AIHelper 提示词助手
 - [x] AgentCanvas Agent 可视化画布
+- [x] SmartKB 知识库检索（pgvector + RAG）
 
 ## AI 协作模型
 
