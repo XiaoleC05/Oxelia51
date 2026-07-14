@@ -90,7 +90,7 @@ function App() {
       <BackgroundWave />
       <ScrollProgress />
       <Navbar />
-      <AnimatedRoutes />
+      <main id="main-content"><AnimatedRoutes /></main>
       <GlobalFooter />
       <BackToTop />
       <SmartKBFAB onToggle={() => setKbOpen((o) => !o)} />

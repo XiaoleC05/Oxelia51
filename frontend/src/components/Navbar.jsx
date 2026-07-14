@@ -259,6 +259,8 @@ function Navbar() {
   )
 
   return (
+    <>
+    <a href="#main-content" className="skip-link">跳到主内容</a>
     <nav className={navClass}>
       <Link to="/" className="navbar-brand">Oxelia51</Link>
 
@@ -376,6 +378,7 @@ function Navbar() {
         </div>
       )}
     </nav>
+    </>
   )
 }
 
