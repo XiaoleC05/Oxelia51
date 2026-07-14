@@ -36,6 +36,9 @@
   max-height: 720px;
   overflow: hidden;
   background: #1a1d24;
+  /* 底部渐变融入页面背景 */
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
 }
 
 .hero-slide {
