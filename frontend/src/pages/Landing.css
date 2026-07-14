@@ -121,15 +121,23 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.hero-desc {
+.hero-title {
   font-family: var(--sans);
-  font-size: clamp(0.85rem, 1.4vw, 1rem);
+  font-size: clamp(1.1rem, 1.6vw, 1.35rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 4px 0 0;
+  letter-spacing: 0.05em;
+  animation: hero-brand-in 0.8s ease 0.25s both;
+}
+
+.hero-subtitle {
+  font-family: var(--sans);
+  font-size: clamp(0.8rem, 1.2vw, 0.9rem);
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.75);
-  margin: 0;
-  letter-spacing: 0.03em;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
-  animation: hero-brand-in 0.8s ease 0.3s both;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 2px 0 0;
+  animation: hero-brand-in 0.8s ease 0.35s both;
 }
 
 .hero-cta-btn {

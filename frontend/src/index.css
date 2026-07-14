@@ -135,11 +135,12 @@
 .skip-link:focus { top:16px; }
 a:focus-visible, button:focus-visible, [role="button"]:focus-visible, [tabindex]:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 
-/* Dark mode: dropdown readability */
-[data-theme="dark"] select option,
-[data-theme="dark"] .navbar-dropdown,
-[data-theme="dark"] .navbar-dropdown .navbar-item { background: var(--bg); color: var(--text); }
-[data-theme="dark"] .navbar-dropdown .navbar-item:hover { background: var(--bg-alt); color: var(--text-h); }
+/* Dropdown readability: light + dark */
+.navbar-dropdown,
+.navbar-dropdown .navbar-item,
+.navbar-dropdown .navbar-item--btn { background: var(--bg); color: var(--text); }
+.navbar-dropdown .navbar-item:hover,
+.navbar-dropdown .navbar-item--btn:hover { background: var(--bg-alt); color: var(--text-h); }
 
 a, button, input, textarea, select,
 [role="button"],
