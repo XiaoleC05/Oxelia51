@@ -1,0 +1,154 @@
+/* ===== AI 协作时间线 ===== */
+
+.dev-timeline {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 60px clamp(24px, 5vw, 80px);
+}
+
+.dev-timeline-title {
+  font-family: var(--heading);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-h);
+  text-align: center;
+  margin: 0 0 40px;
+  letter-spacing: 0.02em;
+}
+
+/* 横向滚动轨道 */
+.dev-timeline-track {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  padding: 8px 0 24px;
+  scrollbar-width: thin;
+}
+
+.dev-timeline-track::-webkit-scrollbar {
+  height: 6px;
+}
+
+.dev-timeline-track::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* 节点 */
+.dev-timeline-node {
+  flex: 1 0 180px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 8px;
+  /* stagger 入场动画 */
+  animation: dev-timeline-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(var(--idx) * 80ms);
+}
+
+@keyframes dev-timeline-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 连接线 */
+.dev-timeline-line {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, var(--border), var(--accent));
+  z-index: 0;
+}
+
+.dev-timeline-node:last-child .dev-timeline-line {
+  display: none;
+}
+
+/* 节点圆点 */
+.dev-timeline-dot {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+  font-family: var(--mono);
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  box-shadow: 0 2px 8px rgba(134, 59, 255, 0.3);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dev-timeline-node:hover .dev-timeline-dot {
+  transform: scale(1.15);
+  box-shadow: 0 4px 16px rgba(134, 59, 255, 0.4);
+}
+
+/* 不同 Agent 颜色 */
+.dev-timeline-dot--Claude {
+  background: #d97757;
+  box-shadow: 0 2px 8px rgba(217, 119, 87, 0.4);
+}
+
+.dev-timeline-dot--Trae {
+  background: linear-gradient(135deg, #863bff, #47bfff);
+  box-shadow: 0 2px 8px rgba(71, 191, 255, 0.4);
+}
+
+.dev-timeline-dot--Qoder {
+  background: #6366f1;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.dev-timeline-dot--Codex {
+  background: #10a37f;
+  box-shadow: 0 2px 8px rgba(16, 163, 127, 0.4);
+}
+
+/* 节点内容 */
+.dev-timeline-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.dev-timeline-phase {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.dev-timeline-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+}
+
+.dev-timeline-desc {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+/* 移动端：横向滚动而非压缩 */
+@media (max-width: 640px) {
+  .dev-timeline {
+    padding: 40px 16px;
+  }
+
+  .dev-timeline-node {
+    flex: 0 0 140px;
+  }
+}

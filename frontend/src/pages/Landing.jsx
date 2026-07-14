@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchHeroImages, fetchArticles, apiGet, getToken } from '../api'
 import { SkeletonLine } from '../components/Skeleton'
+import DevTimeline from '../components/DevTimeline'
+import BugCards from '../components/BugCards'
 import './Landing.css'
 
 const DEFAULT_INTERVAL = 5000
@@ -298,13 +300,13 @@ function Landing() {
         </div>
       </section>
 
+      <DevTimeline />
+      <BugCards />
+
       <div className="landing-content-sections">
         <section className="landing-intro" id="landing-content" ref={reveal}>
           <img src="/assets/image/head-logo.png" className="landing-logo" alt="Oxelia51" />
           <h2 className="landing-intro-brand">Oxelia51</h2>
-          <p className="landing-intro-desc">
-            一个开发者的站点。工具、作品、笔记，都放在一起。
-          </p>
           <div className="landing-intro-links">
             <Link to="/tools" className="landing-intro-link">浏览工具</Link>
           </div>

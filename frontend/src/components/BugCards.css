@@ -1,0 +1,216 @@
+/* ===== Bug 案例卡片 ===== */
+
+.bug-cards {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px clamp(24px, 5vw, 80px) 60px;
+}
+
+.bug-cards-title {
+  font-family: var(--heading);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-h);
+  text-align: center;
+  margin: 0 0 8px;
+  letter-spacing: 0.02em;
+}
+
+.bug-cards-sub {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 32px;
+}
+
+/* 网格 */
+.bug-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* 卡片 */
+.bug-card {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  outline: none;
+}
+
+.bug-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08),
+              0 2px 8px rgba(0, 0, 0, 0.04);
+  border-color: var(--accent);
+}
+
+.bug-card:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(134, 59, 255, 0.2);
+}
+
+.bug-card--open {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 12px 32px rgba(134, 59, 255, 0.12),
+              0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* 头部 */
+.bug-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.bug-card-id {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.bug-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.4;
+  margin: 0;
+  flex: 1;
+}
+
+/* 元数据标签 */
+.bug-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.bug-agent {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.bug-agent--claude {
+  background: rgba(217, 119, 87, 0.12);
+  color: #d97757;
+}
+
+.bug-agent--trae {
+  background: rgba(71, 191, 255, 0.12);
+  color: #47bfff;
+}
+
+.bug-agent--qoder {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+}
+
+.bug-agent--codex {
+  background: rgba(16, 163, 127, 0.12);
+  color: #10a37f;
+}
+
+.bug-date {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-family: var(--mono);
+}
+
+/* 场景描述 */
+.bug-card-scenario {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* 展开详情 */
+.bug-card-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  animation: bug-detail-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bug-detail-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.bug-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bug-detail-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bug-detail-value {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.bug-commit {
+  display: inline-block;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--accent);
+  text-decoration: none;
+  margin-top: 4px;
+}
+
+.bug-commit:hover {
+  text-decoration: underline;
+}
+
+/* 展开/收起按钮 */
+.bug-card-toggle {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: auto;
+  padding-top: 4px;
+  font-weight: 500;
+}
+
+/* 移动端 */
+@media (max-width: 640px) {
+  .bug-cards {
+    padding: 32px 16px 48px;
+  }
+
+  .bug-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
