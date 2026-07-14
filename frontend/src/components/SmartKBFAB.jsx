@@ -140,7 +140,6 @@ function SmartKBFAB({ onToggle }) {
       startY = e.clientY
     }
 
-    try { e.preventDefault() } catch {}
     const startPos = { ...pos }
     const fabSize = isMobile ? FAB_SIZE_MOBILE : FAB_SIZE_DESKTOP
     let moved = false
