@@ -11,7 +11,8 @@
 }
 
 .tool-fab:focus-visible .tool-fab-btn {
-  box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--accent-border);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--accent-border),
+              0 6px 20px rgba(134, 59, 255, 0.3);
 }
 
 /* ---- 浮球按钮 ---- */
@@ -19,21 +20,26 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--bg);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.12);
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.25s ease,
-              background 0.25s ease;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(134, 59, 255, 0.25),
+              0 2px 8px rgba(0, 0, 0, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
 .tool-fab:hover .tool-fab-btn {
-  transform: scale(1.06);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.26), 0 3px 10px rgba(0, 0, 0, 0.18);
+  transform: scale(1.08);
+  box-shadow: 0 8px 28px rgba(134, 59, 255, 0.35),
+              0 4px 12px rgba(0, 0, 0, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .tool-fab--dragging {
@@ -41,25 +47,30 @@
 }
 
 .tool-fab--dragging .tool-fab-btn {
-  transform: scale(1.04);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+  box-shadow: 0 10px 32px rgba(134, 59, 255, 0.4),
+              0 6px 16px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .tool-fab--expanded .tool-fab-btn {
-  background: var(--accent-2);
-  transform: scale(1.04);
+  background: linear-gradient(135deg, var(--accent-2) 0%, var(--accent) 100%);
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(71, 191, 255, 0.35),
+              0 3px 10px rgba(0, 0, 0, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* ---- 静止态：呼吸光晕（accent 色 ripple） ---- */
 .tool-fab-btn::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -2px;
   border-radius: 50%;
   background: var(--accent);
   opacity: 0;
   z-index: -1;
-  animation: tool-fab-pulse 2s ease-in-out infinite;
+  animation: tool-fab-pulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .tool-fab--expanded .tool-fab-btn::before,
@@ -70,28 +81,29 @@
 
 @keyframes tool-fab-pulse {
   0%, 100% { transform: scale(1); opacity: 0; }
-  50% { transform: scale(1.6); opacity: 0.35; }
+  50% { transform: scale(1.5); opacity: 0.2; }
 }
 
 /* ---- 首次进入：弹跳 ×2 ---- */
 .tool-fab--first-tip .tool-fab-btn {
-  animation: tool-fab-bounce 0.6s ease-in-out 2;
+  animation: tool-fab-bounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2;
 }
 
 @keyframes tool-fab-bounce {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-14px); }
+  50% { transform: translateY(-16px); }
 }
 
 /* ===== 扳手拧螺母 SVG 动画 ===== */
 
 .tool-fab-icon .tool-fab-wrench {
   transform-origin: 32px 32px;
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tool-fab-icon .tool-fab-nut {
-  transition: stroke 0.3s ease, fill 0.3s ease;
+  transition: stroke 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              fill 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   fill: transparent;
 }
 
@@ -102,7 +114,7 @@
 
 /* 悬停态：扳手循环旋转 60° → 弹回 */
 .tool-fab-icon--hover .tool-fab-wrench {
-  animation: tool-fab-wrench-turn 1.4s ease-in-out infinite;
+  animation: tool-fab-wrench-turn 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes tool-fab-wrench-turn {
@@ -113,13 +125,13 @@
   100% { transform: rotate(0deg); }
 }
 
-/* 展开态：扳手旋转 180° 停住，螺母变绿高亮 */
+/* 展开态：扳手旋转 180° 停住，螺母高亮 */
 .tool-fab-icon--expanded .tool-fab-wrench {
   transform: rotate(180deg);
 }
 
 .tool-fab-icon--expanded .tool-fab-nut {
-  stroke: var(--bg);
+  stroke: #fff;
   fill: rgba(255, 255, 255, 0.25);
 }
 
@@ -135,13 +147,13 @@
   padding: 8px 14px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
   font-size: 13px;
   white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 6px;
-  animation: tool-fab-tip-in 0.4s ease-out;
+  animation: tool-fab-tip-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tool-fab-tip-text {
@@ -176,11 +188,13 @@
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15),
+              0 4px 16px rgba(0, 0, 0, 0.08),
+              0 0 0 1px rgba(134, 59, 255, 0.05);
   padding: 8px;
   min-width: 220px;
   max-width: 280px;
-  animation: tool-fab-menu-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: tool-fab-menu-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tool-fab-menu-header {
@@ -201,7 +215,7 @@
 }
 
 @keyframes tool-fab-menu-in {
-  from { opacity: 0; transform: scale(0.92); }
+  from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }
 }
 
@@ -221,8 +235,9 @@
   font: inherit;
   opacity: 0;
   transform: scale(0.6) translateY(8px);
-  animation: tool-fab-item-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  transition: background 0.15s ease, transform 0.15s ease;
+  animation: tool-fab-item-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tool-fab-item:hover {
@@ -309,7 +324,7 @@
   max-width: none;
   width: auto;
   transform-origin: bottom center;
-  animation: tool-fab-drawer-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: tool-fab-drawer-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes tool-fab-drawer-in {
@@ -325,19 +340,30 @@
 
 /* ===== 暗色模式适配 ===== */
 [data-theme="dark"] .tool-fab-btn {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(134, 59, 255, 0.3),
+              0 2px 8px rgba(0, 0, 0, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .tool-fab:hover .tool-fab-btn {
+  box-shadow: 0 8px 28px rgba(134, 59, 255, 0.4),
+              0 4px 12px rgba(0, 0, 0, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 [data-theme="dark"] .tool-fab-menu {
   background: var(--bg-alt);
   border-color: var(--border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5),
+              0 4px 16px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(134, 59, 255, 0.08);
 }
 
 [data-theme="dark"] .tool-fab-tip {
   background: var(--bg-alt);
   border-color: var(--border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="dark"] .tool-fab-tip::after {

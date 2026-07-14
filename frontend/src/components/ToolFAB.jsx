@@ -235,7 +235,6 @@ function ToolFAB() {
         `tool-fab--dir-${expandDir}`,
       ].filter(Boolean).join(' ')}
       style={isMobile ? undefined : { right: `${pos.right}px`, bottom: `${pos.bottom}px` }}
-      onPointerDown={handlePointerDown}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       role="button"
@@ -249,8 +248,8 @@ function ToolFAB() {
         }
       }}
     >
-      {/* 浮球按钮 */}
-      <div className="tool-fab-btn">
+      {/* 浮球按钮（onPointerDown 绑定在此，避免菜单项点击被吞） */}
+      <div className="tool-fab-btn" onPointerDown={handlePointerDown}>
         <ToolFabIcon state={fabState} />
       </div>
 

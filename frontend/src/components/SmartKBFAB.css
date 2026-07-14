@@ -26,7 +26,7 @@
 
 .smartkb-fab:focus-visible .smartkb-fab-planet {
   box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--accent-border),
-              0 2px 10px rgba(45, 110, 73, 0.4), inset 0 -2px 6px rgba(0, 0, 0, 0.25);
+              0 6px 20px rgba(134, 59, 255, 0.3);
 }
 
 /* ===== 星球 + 「51」徽标 ===== */
@@ -36,7 +36,8 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #6db5ff 0%, #3d8b5f 55%, #1a3a2a 100%);
+  background: radial-gradient(circle at 35% 30%, #a878ff 0%, #863bff 50%, #4a1f8a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,8 +46,10 @@
   font-size: 13px;
   letter-spacing: -0.02em;
   font-family: var(--mono);
-  box-shadow: 0 2px 10px rgba(45, 110, 73, 0.4), inset 0 -2px 6px rgba(0, 0, 0, 0.25);
-  transition: box-shadow 0.3s ease;
+  box-shadow: 0 4px 16px rgba(134, 59, 255, 0.3),
+              0 2px 8px rgba(0, 0, 0, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   /* 挂载时自动播放 burst 动画（一次） */
   animation: smartkb-planet-burst 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -63,11 +66,11 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  border: 1px dashed rgba(200, 85, 61, 0.35);
+  border: 1px dashed rgba(134, 59, 255, 0.3);
   border-radius: 50%;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .smartkb-fab-orbit--1 {
@@ -80,7 +83,7 @@
   width: 56px;
   height: 56px;
   margin: -28px 0 0 -28px;
-  border-color: rgba(45, 110, 73, 0.4);
+  border-color: rgba(71, 191, 255, 0.35);
   border-style: dotted;
 }
 
@@ -106,14 +109,15 @@
 
 /* 悬停：星球光晕加深 */
 .smartkb-fab--hover .smartkb-fab-planet {
-  box-shadow: 0 4px 18px rgba(45, 110, 73, 0.55),
-              inset 0 -2px 6px rgba(0, 0, 0, 0.3),
-              0 0 0 2px rgba(109, 181, 255, 0.25);
+  box-shadow: 0 6px 24px rgba(134, 59, 255, 0.4),
+              0 3px 12px rgba(0, 0, 0, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3),
+              0 0 0 2px rgba(71, 191, 255, 0.2);
 }
 
 /* 悬停：「51」上下浮动 ±3px */
 .smartkb-fab--hover .smartkb-fab-num {
-  animation: smartkb-num-float 1.6s ease-in-out infinite;
+  animation: smartkb-num-float 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes smartkb-num-float {
@@ -127,7 +131,9 @@
 }
 
 .smartkb-fab--dragging .smartkb-fab-planet {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), inset 0 -2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 28px rgba(134, 59, 255, 0.45),
+              0 4px 16px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* ===== 粒子飞散 ===== */
@@ -140,11 +146,11 @@
   margin: -2px 0 0 -2px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 6px rgba(200, 85, 61, 0.6);
+  box-shadow: 0 0 6px rgba(134, 59, 255, 0.7);
   pointer-events: none;
   z-index: 1;
   /* 挂载时自动播放粒子飞散动画 */
-  animation: particle-burst 0.6s ease-out forwards;
+  animation: particle-burst 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes particle-burst {
@@ -191,22 +197,26 @@
 
 /* ===== 暗色模式适配 ===== */
 [data-theme="dark"] .smartkb-fab-planet {
-  background: radial-gradient(circle at 35% 30%, #6db5ff 0%, #3d8b5f 55%, #0f2a1f 100%);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), inset 0 -2px 6px rgba(0, 0, 0, 0.4);
+  background: radial-gradient(circle at 35% 30%, #a878ff 0%, #863bff 50%, #2a1250 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(134, 59, 255, 0.35),
+              0 2px 8px rgba(0, 0, 0, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 [data-theme="dark"] .smartkb-fab-orbit--1 {
-  border-color: rgba(217, 107, 90, 0.5);
+  border-color: rgba(134, 59, 255, 0.5);
 }
 
 [data-theme="dark"] .smartkb-fab-orbit--2 {
-  border-color: rgba(61, 139, 95, 0.5);
+  border-color: rgba(71, 191, 255, 0.45);
 }
 
 [data-theme="dark"] .smartkb-fab--hover .smartkb-fab-planet {
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6),
-              inset 0 -2px 6px rgba(0, 0, 0, 0.4),
-              0 0 0 2px rgba(109, 181, 255, 0.3);
+  box-shadow: 0 6px 24px rgba(134, 59, 255, 0.5),
+              0 3px 12px rgba(0, 0, 0, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15),
+              0 0 0 2px rgba(71, 191, 255, 0.25);
 }
 
 /* ===== 减弱动画偏好 ===== */
