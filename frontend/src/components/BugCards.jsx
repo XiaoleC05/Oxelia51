@@ -102,7 +102,7 @@ function BugCards() {
   return (
     <section className="bug-cards" aria-label="Bug 案例">
       <div className="bug-cards-inner">
-        <h2 className="bug-cards-title">Bug 案例 · AI 协作修复</h2>
+        <h2 className="bug-cards-title">Bug 案例 · 多 Agent 协作修复</h2>
         <p className="bug-cards-sub">
           以下案例来自实际开发中由 Claude Code 发现、Qoder 修复的真实问题
         </p>

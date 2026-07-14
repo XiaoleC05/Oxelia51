@@ -453,7 +453,7 @@ function SmartKBWidget({ open, onClose }) {
           </div>
         </div>
 
-        {/* 右：AI 回答 */}
+        {/* 右：回答 */}
         <div className="smartkb-panel smartkb-panel--right">
           <div className="smartkb-panel-header">
             AI 回答
@@ -465,7 +465,7 @@ function SmartKBWidget({ open, onClose }) {
             )}
             {!error && !answer && !streaming && (
               <div className="smartkb-empty">
-                AI 回答会在这里流式呈现
+                回答会在这里流式呈现
               </div>
             )}
             {answer && (

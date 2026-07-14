@@ -1,6 +1,6 @@
 import './DevTimeline.css'
 
-/* ===== AI 协作时间线 — Agent 职责描述 =====
+/* ===== 多 Agent 协作时间线 — Agent 职责描述 =====
  * 6 个节点对应 Oxelia51 多 Agent 协作流程
  * 每个节点展示阶段名 + Agent + 一行职责描述
  */
@@ -9,7 +9,7 @@ const TIMELINE = [
     phase: '需求分析',
     agent: 'Claude',
     role: 'Claude Code',
-    desc: '理解需求、拆分任务、分配给各智能体',
+    desc: '理解需求、拆分任务、分配给各 Agent',
   },
   {
     phase: '架构设计',
@@ -52,8 +52,8 @@ const AGENT_ICON = {
 
 function DevTimeline() {
   return (
-    <section className="dev-timeline" aria-label="AI 协作时间线">
-      <h2 className="dev-timeline-title">AI 协作时间线</h2>
+    <section className="dev-timeline" aria-label="多 Agent 协作时间线">
+      <h2 className="dev-timeline-title">多 Agent 协作时间线</h2>
       <div className="dev-timeline-track">
         {TIMELINE.map((node, i) => (
           <div

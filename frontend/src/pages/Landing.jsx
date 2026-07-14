@@ -152,7 +152,6 @@ function Landing() {
         <div className="hero-content">
           <img src="/assets/image/head-logo.png" className="hero-logo" alt="Oxelia51" />
           <span className="hero-brand">Oxelia51</span>
-          <p className="hero-desc">8 个在线工具 · AI 协作开发 · 开源</p>
           <Link to="/tools" className="hero-cta-btn">浏览工具</Link>
         </div>
 
@@ -240,7 +239,7 @@ function Landing() {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
           </span>
           <span className="guide-title">工具</span>
-          <span className="guide-desc">8 个在线工具 · RSS · 监控 · AI</span>
+          <span className="guide-desc">8 个在线工具 · RSS · 监控 · 自动化</span>
         </Link>
         <Link to="/blog" className="guide-card">
           <span className="guide-icon" aria-hidden="true">
