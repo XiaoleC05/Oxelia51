@@ -37,6 +37,8 @@ function SmartKBFAB({ onToggle }) {
   )
 
   const burstTimerRef = useRef(null)
+  // 用于移动端覆盖 CSS !important 定位（CSS 文件不可修改，用 setProperty('important') 覆盖）
+  const fabRef = useRef(null)
 
   /* ---- 挂载标记（防止 SSR 警告） ---- */
   useEffect(() => {
@@ -60,6 +62,26 @@ function SmartKBFAB({ onToggle }) {
   useEffect(() => () => {
     if (burstTimerRef.current) clearTimeout(burstTimerRef.current)
   }, [])
+
+  /* ---- 移动端位置同步：用 setProperty('important') 覆盖 CSS 的 !important ----
+   * CSS .smartkb-fab--mobile { right: 16px !important; bottom: 360px !important }
+   * 内联 style 属性（React style prop）无法覆盖 !important
+   * 必须用 element.style.setProperty(prop, val, 'important') 设置内联 !important（优先级最高）
+   */
+  useEffect(() => {
+    if (!fabRef.current) return
+    if (isMobile) {
+      // 移动端：设置 !important 内联样式覆盖 CSS
+      fabRef.current.style.setProperty('right', `${pos.right}px`, 'important')
+      fabRef.current.style.setProperty('bottom', `${pos.bottom}px`, 'important')
+    } else {
+      // 桌面端：清除可能残留的 !important 内联样式，让 React style prop 生效
+      fabRef.current.style.setProperty('right', '')
+      fabRef.current.style.setProperty('bottom', '')
+      fabRef.current.style.setProperty('right', `${pos.right}px`)
+      fabRef.current.style.setProperty('bottom', `${pos.bottom}px`)
+    }
+  }, [isMobile, pos])
 
   /* ---- 触发粒子飞散 + 星球缩放动画 ---- */
   const triggerBurst = useCallback(() => {
@@ -86,19 +108,35 @@ function SmartKBFAB({ onToggle }) {
     }, BURST_DURATION_MS)
   }, [])
 
-  /* ---- 拖动逻辑（与 ToolFAB 一致） ---- */
-  const handlePointerDown = useCallback((e) => {
-    if (isMobile) return
-    if (e.button !== 0) return
-    e.preventDefault()
-    const startX = e.clientX
-    const startY = e.clientY
-    const startPos = { ...pos }
-    let moved = false
+  /* ---- 统一拖动逻辑（同时支持 PointerEvent 和 TouchEvent） ---- */
+  const handleDragStart = useCallback((e) => {
+    // 跳过触摸来源的 pointerdown（touchstart 已处理，避免重复触发）
+    if (!e.touches && e.pointerType === 'touch') return
 
-    const onMove = (ev) => {
-      const dx = ev.clientX - startX
-      const dy = ev.clientY - startY
+    // 从 pointer 或 touch 事件中提取起始坐标
+    let startX, startY
+    if (e.touches) {
+      // TouchEvent
+      if (e.touches.length !== 1) return
+      startX = e.touches[0].clientX
+      startY = e.touches[0].clientY
+    } else {
+      // PointerEvent / MouseEvent
+      if (e.button !== undefined && e.button !== 0) return
+      startX = e.clientX
+      startY = e.clientY
+    }
+
+    e.preventDefault()
+    const startPos = { ...pos }
+    const fabSize = isMobile ? FAB_SIZE_MOBILE : FAB_SIZE_DESKTOP
+    let moved = false
+    let ended = false
+
+    /* ---- 通用移动处理 ---- */
+    const handleMove = (cx, cy) => {
+      const dx = cx - startX
+      const dy = cy - startY
       if (!moved) {
         if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
           moved = true
@@ -107,8 +145,8 @@ function SmartKBFAB({ onToggle }) {
           return
         }
       }
-      const maxX = window.innerWidth - FAB_SIZE_DESKTOP - 8
-      const maxY = window.innerHeight - FAB_SIZE_DESKTOP - 8
+      const maxX = window.innerWidth - fabSize - 8
+      const maxY = window.innerHeight - fabSize - 8
       const newPos = {
         right: Math.max(0, Math.min(startPos.right - dx, maxX)),
         bottom: Math.max(0, Math.min(startPos.bottom - dy, maxY)),
@@ -116,9 +154,17 @@ function SmartKBFAB({ onToggle }) {
       setPos(newPos)
     }
 
-    const onUp = () => {
-      document.removeEventListener('pointermove', onMove)
-      document.removeEventListener('pointerup', onUp)
+    /* ---- 通用结束处理 ---- */
+    const handleEnd = () => {
+      if (ended) return
+      ended = true
+      // 移除所有监听器（pointer + touch）
+      document.removeEventListener('pointermove', onPointerMove)
+      document.removeEventListener('pointerup', onPointerUp)
+      document.removeEventListener('touchmove', onTouchMove)
+      document.removeEventListener('touchend', onTouchEnd)
+      document.removeEventListener('touchcancel', onTouchEnd)
+
       if (moved) {
         setDragging(false)
         setPos((currentPos) => {
@@ -127,27 +173,51 @@ function SmartKBFAB({ onToggle }) {
         })
         return
       }
+      // 未移动 → 点击行为
       setDragging(false)
       triggerBurst()
       if (typeof onToggle === 'function') onToggle()
     }
 
-    document.addEventListener('pointermove', onMove)
-    document.addEventListener('pointerup', onUp)
+    /* ---- Pointer 事件监听器（桌面端） ---- */
+    const onPointerMove = (ev) => handleMove(ev.clientX, ev.clientY)
+    const onPointerUp = () => handleEnd()
+
+    /* ---- Touch 事件监听器（移动端，需 passive: false 才能 preventDefault） ---- */
+    const onTouchMove = (ev) => {
+      if (ev.touches.length !== 1) return
+      ev.preventDefault() // 阻止页面滚动
+      handleMove(ev.touches[0].clientX, ev.touches[0].clientY)
+    }
+    const onTouchEnd = () => handleEnd()
+
+    // 根据事件类型注册对应的监听器
+    if (e.touches) {
+      // Touch 事件 → 注册 touch 监听器
+      document.addEventListener('touchmove', onTouchMove, { passive: false })
+      document.addEventListener('touchend', onTouchEnd)
+      document.addEventListener('touchcancel', onTouchEnd)
+    } else {
+      // Pointer 事件 → 注册 pointer 监听器
+      document.addEventListener('pointermove', onPointerMove)
+      document.addEventListener('pointerup', onPointerUp)
+    }
   }, [isMobile, pos, onToggle, triggerBurst])
 
   if (!mounted) return null
 
   return createPortal(
     <div
+      ref={fabRef}
       className={[
         'smartkb-fab',
         hovered ? 'smartkb-fab--hover' : '',
         dragging ? 'smartkb-fab--dragging' : '',
         isMobile ? 'smartkb-fab--mobile' : '',
       ].filter(Boolean).join(' ')}
-      style={isMobile ? undefined : { right: `${pos.right}px`, bottom: `${pos.bottom}px` }}
-      onPointerDown={handlePointerDown}
+      style={{ right: `${pos.right}px`, bottom: `${pos.bottom}px` }}
+      onPointerDown={handleDragStart}
+      onTouchStart={handleDragStart}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       role="button"
