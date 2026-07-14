@@ -270,7 +270,7 @@ function Landing() {
 
       <div className="landing-content-sections">
         <section className="landing-intro" id="landing-content" ref={reveal}>
-          <img src="/logo.svg" className="landing-logo" alt="Oxelia51" />
+          <img src="/logo-icon.jpg" className="landing-logo" alt="Oxelia51" />
           <h2 className="landing-intro-brand">Oxelia51</h2>
           <p className="landing-intro-desc">
             一个开发者的站点。工具、作品、笔记，都放在一起。
