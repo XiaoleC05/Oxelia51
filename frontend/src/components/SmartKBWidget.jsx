@@ -171,6 +171,12 @@ function SmartKBWidget({ open, onClose }) {
     }
   })
   const [mounted, setMounted] = useState(false)
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches
+  )
+  const [hasSavedPos, setHasSavedPos] = useState(() => {
+    try { return !!localStorage.getItem(STORAGE_KEY_POS) } catch { return false }
+  })
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
@@ -181,6 +187,7 @@ function SmartKBWidget({ open, onClose }) {
   const [highlightIdx, setHighlightIdx] = useState(null)
 
   const widgetRef = useRef(null)
+  const headerRef = useRef(null)
   const answerRef = useRef(null)
   const chunkRefs = useRef({})
   const abortRef = useRef(null)
@@ -189,6 +196,19 @@ function SmartKBWidget({ open, onClose }) {
   /* ---- 挂载标记 ---- */
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  /* ---- 监听窗口尺寸变化（移动端判定） ---- */
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(max-width: 640px)')
+    const handler = (e) => setIsMobile(e.matches)
+    if (mq.addEventListener) mq.addEventListener('change', handler)
+    else mq.addListener(handler)
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', handler)
+      else mq.removeListener(handler)
+    }
   }, [])
 
   /* ---- 关闭浮窗时中断进行中的流 ---- */
@@ -211,36 +231,31 @@ function SmartKBWidget({ open, onClose }) {
     return () => document.removeEventListener('keydown', handler)
   }, [open, onClose])
 
-  /* ---- 拖动 / resize ---- */
+  /* ---- 拖动 / resize ----
+   * move 模式：同时支持 PointerEvent（桌面）和 TouchEvent（移动端）
+   * resize 模式：仅支持 PointerEvent（桌面端 resize handle）
+   * 复用 SmartKBFAB 的双事件拖动逻辑 + localStorage 持久化
+   */
   const handleDragStart = useCallback((e, mode) => {
-    if (e.button !== 0) return
-    e.preventDefault()
-    e.stopPropagation()
-    dragState.current = {
-      mode,
-      startX: e.clientX,
-      startY: e.clientY,
-      startPos: { ...pos },
-      startSize: { ...size },
-    }
-
-    const onMove = (ev) => {
-      const ds = dragState.current
-      if (!ds.mode) return
-      const dx = ev.clientX - ds.startX
-      const dy = ev.clientY - ds.startY
-      if (ds.mode === 'move') {
-        const maxX = window.innerWidth - 80
-        const maxY = window.innerHeight - 60
-        const newPos = {
-          right: Math.max(0, Math.min(ds.startPos.right - dx, maxX)),
-          bottom: Math.max(0, Math.min(ds.startPos.bottom - dy, maxY)),
-        }
-        setPos(newPos)
-      } else if (ds.mode === 'resize') {
+    /* ---- resize 模式：仅 PointerEvent ---- */
+    if (mode === 'resize') {
+      if (e.button !== 0) return
+      e.preventDefault()
+      e.stopPropagation()
+      dragState.current = {
+        mode,
+        startX: e.clientX,
+        startY: e.clientY,
+        startPos: { ...pos },
+        startSize: { ...size },
+      }
+      const onMove = (ev) => {
+        const ds = dragState.current
+        if (!ds.mode) return
+        const dx = ev.clientX - ds.startX
+        const dy = ev.clientY - ds.startY
         const newWidth = Math.max(MIN_SIZE.width, ds.startSize.width + dx)
         const newHeight = Math.max(MIN_SIZE.height, ds.startSize.height + dy)
-        // 限制不超过视口
         const maxW = window.innerWidth - ds.startPos.right - 16
         const maxH = window.innerHeight - ds.startPos.bottom - 16
         setSize({
@@ -248,30 +263,134 @@ function SmartKBWidget({ open, onClose }) {
           height: Math.min(newHeight, maxH),
         })
       }
-    }
-
-    const onUp = () => {
-      document.removeEventListener('pointermove', onMove)
-      document.removeEventListener('pointerup', onUp)
-      const ds = dragState.current
-      if (!ds.mode) return
-      if (ds.mode === 'move') {
-        setPos((p) => {
-          localStorage.setItem(STORAGE_KEY_POS, JSON.stringify(p))
-          return p
-        })
-      } else if (ds.mode === 'resize') {
+      const onUp = () => {
+        document.removeEventListener('pointermove', onMove)
+        document.removeEventListener('pointerup', onUp)
+        const ds = dragState.current
+        if (!ds.mode) return
         setSize((s) => {
           localStorage.setItem(STORAGE_KEY_SIZE, JSON.stringify(s))
           return s
         })
+        dragState.current = { mode: null }
       }
+      document.addEventListener('pointermove', onMove)
+      document.addEventListener('pointerup', onUp)
+      return
+    }
+
+    /* ---- move 模式：Pointer + Touch 双事件 ---- */
+    // 跳过触摸来源的 pointerdown（touchstart 已处理，避免重复触发）
+    if (!e.touches && e.pointerType === 'touch') return
+
+    // 从 pointer 或 touch 事件中提取起始坐标
+    let startX, startY
+    if (e.touches) {
+      if (e.touches.length !== 1) return
+      startX = e.touches[0].clientX
+      startY = e.touches[0].clientY
+    } else {
+      if (e.button !== undefined && e.button !== 0) return
+      startX = e.clientX
+      startY = e.clientY
+    }
+
+    try { e.preventDefault() } catch {}
+    e.stopPropagation()
+
+    const startPos = { ...pos }
+    dragState.current = { mode, startPos, startSize: { ...size } }
+
+    /* ---- 通用移动处理 ---- */
+    const handleMove = (cx, cy) => {
+      const dx = cx - startX
+      const dy = cy - startY
+      const maxX = window.innerWidth - 80
+      const maxY = window.innerHeight - 60
+      const newPos = {
+        right: Math.max(0, Math.min(startPos.right - dx, maxX)),
+        bottom: Math.max(0, Math.min(startPos.bottom - dy, maxY)),
+      }
+      setPos(newPos)
+    }
+
+    /* ---- 通用结束处理 ---- */
+    const handleEnd = () => {
+      document.removeEventListener('pointermove', onPointerMove)
+      document.removeEventListener('pointerup', onPointerUp)
+      document.removeEventListener('touchmove', onTouchMove)
+      document.removeEventListener('touchend', onTouchEnd)
+      document.removeEventListener('touchcancel', onTouchEnd)
+      setHasSavedPos(true)
+      setPos((currentPos) => {
+        localStorage.setItem(STORAGE_KEY_POS, JSON.stringify(currentPos))
+        return currentPos
+      })
       dragState.current = { mode: null }
     }
 
-    document.addEventListener('pointermove', onMove)
-    document.addEventListener('pointerup', onUp)
+    /* ---- Pointer 事件监听器（桌面端） ---- */
+    const onPointerMove = (ev) => handleMove(ev.clientX, ev.clientY)
+    const onPointerUp = () => handleEnd()
+
+    /* ---- Touch 事件监听器（移动端，passive: false 才能 preventDefault） ---- */
+    const onTouchMove = (ev) => {
+      if (ev.touches.length !== 1) return
+      try { ev.preventDefault() } catch {} // 阻止页面滚动
+      handleMove(ev.touches[0].clientX, ev.touches[0].clientY)
+    }
+    const onTouchEnd = () => handleEnd()
+
+    // 根据事件类型注册对应的监听器
+    if (e.touches) {
+      document.addEventListener('touchmove', onTouchMove, { passive: false })
+      document.addEventListener('touchend', onTouchEnd)
+      document.addEventListener('touchcancel', onTouchEnd)
+    } else {
+      document.addEventListener('pointermove', onPointerMove)
+      document.addEventListener('pointerup', onPointerUp)
+    }
   }, [pos, size])
+
+  /* ---- 移动端位置同步：用 setProperty('important') 覆盖 CSS 全屏抽屉 ----
+   * 移动端 CSS .smartkb-widget { right/bottom/left/top/width/height !important }
+   * 内联 style prop 无法覆盖 !important，必须用 element.style.setProperty(val, 'important')
+   * 仅在用户曾拖动过（hasSavedPos）时覆盖，首次打开保持全屏抽屉
+   */
+  useEffect(() => {
+    if (!widgetRef.current) return
+    if (isMobile && hasSavedPos) {
+      const w = Math.min(size.width, window.innerWidth - 16)
+      const h = Math.min(size.height, window.innerHeight - 60)
+      widgetRef.current.style.setProperty('right', `${pos.right}px`, 'important')
+      widgetRef.current.style.setProperty('bottom', `${pos.bottom}px`, 'important')
+      widgetRef.current.style.setProperty('left', 'auto', 'important')
+      widgetRef.current.style.setProperty('top', 'auto', 'important')
+      widgetRef.current.style.setProperty('width', `${w}px`, 'important')
+      widgetRef.current.style.setProperty('height', `${h}px`, 'important')
+    } else if (isMobile) {
+      // 移动端首次打开：清除内联 !important，让 CSS 全屏抽屉生效
+      widgetRef.current.style.setProperty('right', '')
+      widgetRef.current.style.setProperty('bottom', '')
+      widgetRef.current.style.setProperty('left', '')
+      widgetRef.current.style.setProperty('top', '')
+      widgetRef.current.style.setProperty('width', '')
+      widgetRef.current.style.setProperty('height', '')
+    }
+    // 桌面端：React style prop 生效，无需 setProperty
+  }, [isMobile, pos, size, hasSavedPos])
+
+  /* ---- 标题栏 touchstart 注册（passive: false 支持 preventDefault） ----
+   * React onTouchStart 绑定在 root 上，touchstart 默认 passive，无法 preventDefault
+   * 必须用 addEventListener 注册到具体 DOM 元素
+   */
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const onTouch = (e) => { if (e.touches.length === 1) handleDragStart(e, 'move') }
+    el.addEventListener('touchstart', onTouch, { passive: false })
+    return () => el.removeEventListener('touchstart', onTouch)
+  }, [handleDragStart])
 
   /* ---- 引用点击 → 左侧高亮滚动 ---- */
   const handleCitationClick = useCallback((idx) => {
@@ -361,6 +480,7 @@ function SmartKBWidget({ open, onClose }) {
     >
       {/* 标题栏（拖动区） */}
       <div
+        ref={headerRef}
         className="smartkb-widget-header"
         onPointerDown={(e) => handleDragStart(e, 'move')}
       >

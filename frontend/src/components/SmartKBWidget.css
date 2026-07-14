@@ -33,9 +33,13 @@
   padding: 12px 16px;
   background: var(--bg-alt);
   border-bottom: 1px solid var(--border);
-  cursor: move;
+  cursor: grab;
   user-select: none;
   flex-shrink: 0;
+}
+
+.smartkb-widget-header:active {
+  cursor: grabbing;
 }
 
 .smartkb-widget-title {

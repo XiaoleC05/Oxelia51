@@ -186,11 +186,12 @@ function SmartKBFAB({ onToggle }) {
         })
         return
       }
-      // 未移动 → 点击行为
+      // 未移动 → 保存位置
       setDragging(false)
-      if (showHint) { setShowHint(false); try { localStorage.setItem('oxelia51_smartkb_seen', '1') } catch {} }
-      triggerBurst()
-      if (typeof onToggle === 'function') onToggle()
+      setPos((currentPos) => {
+        localStorage.setItem(STORAGE_KEY_POS, JSON.stringify(currentPos))
+        return currentPos
+      })
     }
 
     /* ---- Pointer 事件监听器（桌面端） ---- */
@@ -239,6 +240,11 @@ function SmartKBFAB({ onToggle }) {
       ].filter(Boolean).join(' ')}
       style={{ right: `${pos.right}px`, bottom: `${pos.bottom}px` }}
       onPointerDown={handleDragStart}
+      onClick={() => {
+        if (showHint) { setShowHint(false); try { localStorage.setItem('oxelia51_smartkb_seen', '1') } catch {} }
+        triggerBurst()
+        if (typeof onToggle === 'function') onToggle()
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       role="button"
