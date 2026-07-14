@@ -199,6 +199,18 @@ Claude Code 拥有完整项目理解并执行服务器操作。Qoder、Trae Work
 9. **移除死代码**——不保留未使用变量/函数、不可达分支、被注释掉的旧实现
 10. **自我审查**——提交前每个智能体必须审查自己的实现
 
+### 7.1 标题字体约定
+
+所有页面与组件的标题（h1/h2/h3）统一使用 CSS 变量 `var(--heading)`，不硬编码字体族：
+
+- `--heading: 'Noto Serif SC', 'Source Han Serif SC', Georgia, serif`（见 `frontend/src/index.css` `:root`）
+- 中文标题（首页 Hero、数据栏标题、Bug 卡片标题、DevTimeline 标题等）继承 `Noto Serif SC` 衬线字体
+- 等宽/数字场景使用 `var(--mono)`（JetBrains Mono）
+- 正文使用 `var(--sans)`（Inter）
+- 新增组件的标题样式应 `font-family: var(--heading)`，不引入新字体族
+
+变更字体族属于架构决策，需上报架构智能体裁定。
+
 ---
 
 ## 8. Git 工作流

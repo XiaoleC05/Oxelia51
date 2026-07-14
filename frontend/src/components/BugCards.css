@@ -3,7 +3,7 @@
 .bug-cards {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 40px clamp(24px, 5vw, 80px) 60px;
+  padding: 60px clamp(24px, 5vw, 80px) 60px;
 }
 
 .bug-cards-title {

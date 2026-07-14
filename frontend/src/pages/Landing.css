@@ -26,7 +26,13 @@
   transform: translateY(0);
 }
 
-/* ===== Hero: Full-width left-aligned ===== */
+/* ===== Hero: Full-width left-aligned =====
+ * 注意：background 与文字颜色在此有意硬编码为暗色（#1a1d24 / 白色），
+ * 不随主题变量变化。原因：头图轮播为全屏视觉，深色背景能保证任何
+ * 亮色头图上的文字对比度。亮色模式下整页背景变浅时，hero 仍保持暗色
+ * 以维持头图可读性。如果未来要让 hero 随主题切换，改用 var(--bg-dark)
+ * 并测试所有头图在亮色背景下的可读性。
+ */
 .hero {
   position: relative;
   width: 100vw;
@@ -215,7 +221,7 @@
   margin-top: -32px;
   position: relative;
   z-index: 1;
-  background: var(--bg-dark);
+  background: var(--bg-alt);
   padding: 36px clamp(24px, 5vw, 80px);
   box-sizing: border-box;
 }
@@ -308,7 +314,8 @@
 }
 
 .landing-stat-unit {
-  font-size: 0.65em;
+  /* max() 保证最小可读字号（11px），避免父级缩小时单位字号缩到看不清 */
+  font-size: max(0.65em, 11px);
   color: rgba(255, 255, 255, 0.5);
   font-weight: 400;
   margin-right: 2px;
@@ -741,17 +748,19 @@
   color: var(--accent);
 }
 
-/* ===== Footer transition ===== */
+/* ===== Footer transition =====
+ * 底部颜色过渡：使用 CSS 变量，跟随主题切换
+ */
 .landing-footer-transition {
   height: 48px;
-  background: linear-gradient(to bottom, var(--bg), var(--bg-dark));
+  background: linear-gradient(to bottom, var(--bg), var(--bg-alt));
   width: 100vw;
   margin-left: calc(-50vw + 50%);
 }
 
 /* ===== Footer ===== */
 .landing-footer {
-  background: var(--bg-dark);
+  background: var(--bg-alt);
   color: rgba(255, 255, 255, 0.7);
   padding: 48px clamp(24px, 5vw, 80px) 32px;
   width: 100vw;
