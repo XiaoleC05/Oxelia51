@@ -8,8 +8,8 @@
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
   outline: none;
-  width: 60px;
-  height: 60px;
+  width: 90px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,8 +45,8 @@
 .smartkb-fab-planet {
   position: relative;
   z-index: 3;
-  width: 42px;
-  height: 42px;
+  width: 63px;
+  height: 63px;
   border-radius: 50%;
   background: linear-gradient(135deg, #7c3aed, #3b82f6);
   backdrop-filter: blur(20px);
@@ -91,17 +91,17 @@
 
 /* 内圈：半透明白色虚线 */
 .smartkb-fab-orbit--1 {
-  width: 50px;
-  height: 50px;
-  margin: -25px 0 0 -25px;
+  width: 75px;
+  height: 75px;
+  margin: -37px 0 0 -37px;
   border: 1.5px dashed rgba(255, 255, 255, 0.4);
 }
 
 /* 外圈：紫色点线 */
 .smartkb-fab-orbit--2 {
-  width: 60px;
-  height: 60px;
-  margin: -30px 0 0 -30px;
+  width: 90px;
+  height: 90px;
+  margin: -45px 0 0 -45px;
   border: 1px dotted rgba(124, 58, 237, 0.5);
 }
 
@@ -208,26 +208,26 @@
   right: 16px !important;
   bottom: 360px !important;
   position: fixed !important;
-  width: 48px;
-  height: 48px;
+  width: 72px;
+  height: 72px;
 }
 
 .smartkb-fab--mobile .smartkb-fab-planet {
-  width: 36px;
-  height: 36px;
-  font-size: 12px;
+  width: 54px;
+  height: 54px;
+  font-size: 16px;
 }
 
 .smartkb-fab--mobile .smartkb-fab-orbit--1 {
-  width: 42px;
-  height: 42px;
-  margin: -21px 0 0 -21px;
+  width: 63px;
+  height: 63px;
+  margin: -31px 0 0 -31px;
 }
 
 .smartkb-fab--mobile .smartkb-fab-orbit--2 {
-  width: 50px;
-  height: 50px;
-  margin: -25px 0 0 -25px;
+  width: 75px;
+  height: 75px;
+  margin: -37px 0 0 -37px;
 }
 
 /* ===== 亮色模式适配 ===== */

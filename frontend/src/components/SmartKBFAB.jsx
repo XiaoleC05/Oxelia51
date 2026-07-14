@@ -4,8 +4,8 @@ import './SmartKBFAB.css'
 
 /* ===== 常量 ===== */
 const DEFAULT_POS = { right: 24, bottom: 400 }
-const FAB_SIZE_DESKTOP = 60
-const FAB_SIZE_MOBILE = 48
+const FAB_SIZE_DESKTOP = 90
+const FAB_SIZE_MOBILE = 72
 const DRAG_THRESHOLD = 10
 const PARTICLE_COUNT_MIN = 16
 const PARTICLE_COUNT_MAX = 20
