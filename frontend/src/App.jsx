@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation, Navigate, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { Component, Suspense, useState } from 'react'
 import Navbar from './components/Navbar'
 import ScrollProgress from './components/ScrollProgress'
@@ -6,6 +6,7 @@ import BackToTop from './components/BackToTop'
 import ToolFAB from './components/ToolFAB'
 import SmartKBFAB from './components/SmartKBFAB'
 import SmartKBWidget from './components/SmartKBWidget'
+import GlobalFooter from './components/GlobalFooter'
 import PageSkeleton from './components/Skeleton'
 import BackgroundWave from './components/BackgroundWave'
 import Landing from './pages/Landing'
@@ -50,27 +51,6 @@ class ErrorBoundary extends Component {
     }
     return this.props.children
   }
-}
-
-function GlobalFooter() {
-  const location = useLocation()
-  if (location.pathname === '/') return null
-  return (
-    <footer className="landing-footer">
-      <div className="landing-footer-bottom">
-        <span>&copy; {new Date().getFullYear()} Oxelia51</span>
-        <span className="landing-footer-sep">·</span>
-        <span>集成·简洁·高效</span>
-        <span className="landing-footer-sep">·</span>
-        <Link to="/friends" className="landing-footer-link">友情链接</Link>
-      </div>
-      <div className="landing-footer-filing">
-        <span>ICP备案号：蜀ICP备XXXXXXXX号-1</span>
-        <span className="landing-footer-sep">|</span>
-        <span>公安部备案号：川公网安备 XXXXXXXXXXXX号</span>
-      </div>
-    </footer>
-  )
 }
 
 function AnimatedRoutes() {

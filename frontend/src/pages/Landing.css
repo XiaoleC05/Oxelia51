@@ -823,12 +823,23 @@
   max-width: 1200px;
   margin: 12px auto 0;
   padding-top: 12px;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.25);
+  font-size: 12px;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.landing-footer-filing-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.landing-footer-filing-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 /* ===== Responsive ===== */
