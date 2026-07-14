@@ -326,20 +326,12 @@
 }
 
 .landing-stats-inner {
-  /* 白色/半透明背景卡片：圆角 + 阴影 */
   max-width: 920px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   padding: 20px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12),
-              0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .landing-stat {

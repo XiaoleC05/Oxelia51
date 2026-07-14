@@ -215,24 +215,6 @@
   right: 16px !important;
   bottom: 360px !important;
   position: fixed !important;
-  width: 72px;
-  height: 72px;
-}
-
-.smartkb-fab--mobile .smartkb-fab-planet {
-  width: 54px;
-  height: 54px;
-  font-size: 16px;
-}
-
-.smartkb-fab--mobile .smartkb-fab-orbit--1 {
-  width: 90px;
-  height: 90px;
-}
-
-.smartkb-fab--mobile .smartkb-fab-orbit--2 {
-  width: 100px;
-  height: 100px;
 }
 
 /* ===== 亮色模式适配 ===== */
