@@ -144,7 +144,8 @@
   color: var(--text);
   word-break: break-word;
   white-space: pre-line;
-  text-align: center;
+  text-align: left;
+  padding-left: 40px;
   max-width: 700px;
   margin: 0 auto;
 }
@@ -155,7 +156,8 @@
 }
 
 .about-text {
-  text-align: center;
+  text-align: left;
+  padding-left: 40px;
   max-width: 700px;
   margin: 0 auto;
 }
