@@ -21,7 +21,17 @@ function SmartKBFAB({ onToggle }) {
   const [pos, setPos] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_POS)
-      return saved ? JSON.parse(saved) : DEFAULT_POS
+      if (saved) {
+        const p = JSON.parse(saved)
+        const w = typeof window !== 'undefined' ? window.innerWidth : 1920
+        const h = typeof window !== 'undefined' ? window.innerHeight : 1080
+        const s = w <= 640 ? FAB_SIZE_MOBILE : FAB_SIZE_DESKTOP
+        return {
+          right: Math.min(Math.max(0, p.right || 24), w - s - 8),
+          bottom: Math.min(Math.max(0, p.bottom || 400), h - s - 8),
+        }
+      }
+      return DEFAULT_POS
     } catch {
       return DEFAULT_POS
     }
