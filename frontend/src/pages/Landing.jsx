@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchHeroImages, fetchArticles, apiGet, getToken } from '../api'
+import { fetchHeroImages, fetchArticles, apiGet } from '../api'
 import { SkeletonLine } from '../components/Skeleton'
 import DevTimeline from '../components/DevTimeline'
 import BugCards from '../components/BugCards'
@@ -40,55 +40,6 @@ function useCountUp(target, duration = 1500) {
   return [count, ref]
 }
 
-function useReveal() {
-  return useCallback((node) => {
-    if (!node) return
-    const io = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        node.classList.add('reveal--visible')
-        io.disconnect()
-      }
-    }, { rootMargin: '0px 0px -60px 0px', threshold: 0.12 })
-    io.observe(node)
-  }, [])
-}
-
-function Typewriter({ text, onComplete }) {
-  const [displayed, setDisplayed] = useState(() => (text || '').charAt(0))
-  const idxRef = useRef(1)
-  const timerRef = useRef(null)
-  const [cursor, setCursor] = useState(true)
-
-  useEffect(() => {
-    idxRef.current = 0
-    const textToType = text || ''
-
-    timerRef.current = setInterval(() => {
-      idxRef.current++
-      if (idxRef.current <= textToType.length) {
-        setDisplayed(textToType.slice(0, idxRef.current))
-      } else {
-        clearInterval(timerRef.current)
-        onComplete?.()
-      }
-    }, 80)
-
-    return () => clearInterval(timerRef.current)
-  }, [text, onComplete])
-
-  useEffect(() => {
-    const cursorTimer = setInterval(() => setCursor((c) => !c), 500)
-    return () => clearInterval(cursorTimer)
-  }, [])
-
-  return (
-    <span>
-      <span>{displayed}</span>
-      <span className="hero-cursor" style={{ opacity: cursor ? 1 : 0 }}>|</span>
-    </span>
-  )
-}
-
 function Landing() {
   const [images, setImages] = useState([])
   const [current, setCurrent] = useState(0)
@@ -99,7 +50,6 @@ function Landing() {
   const [articles, setArticles] = useState([])
   const [uptime, setUptime] = useState(null) // { days, hours }
   const [loading, setLoading] = useState(true)
-  const reveal = useReveal()
 
   useEffect(() => {
     Promise.all([
@@ -164,21 +114,9 @@ function Landing() {
   const goPrev = () => { setCurrent((prev) => (prev - 1 + total) % total); startTimer() }
   const goNext = () => { setCurrent((prev) => (prev + 1) % total); startTimer() }
 
-  const heroText = hasImages && images[current]?.title
-    ? images[current].title
-    : '集成·简洁·高效'
-
-  const heroSub = hasImages && images[current]?.subtitle
-    ? images[current].subtitle
-    : ''
-
-  const onTypewriterComplete = useCallback(() => {}, [])
-
   const [toolsNum, toolsCountRef] = useCountUp(loading ? 0 : tools.length)
   const [portfolioNum, portfolioCountRef] = useCountUp(loading ? 0 : portfolio.length)
   const [articlesNum, articlesCountRef] = useCountUp(loading ? 0 : articles.length)
-
-  const isLoggedIn = !!getToken()
 
   return (
     <main className="landing">
@@ -212,15 +150,10 @@ function Landing() {
         <div className="hero-overlay" />
 
         <div className="hero-content">
+          <img src="/assets/image/head-logo.png" className="hero-logo" alt="Oxelia51" />
           <span className="hero-brand">Oxelia51</span>
-          <h1 className="hero-title">
-            <Typewriter
-              key={`${current}-${heroText}`}
-              text={heroText}
-              onComplete={onTypewriterComplete}
-            />
-          </h1>
-          {heroSub && <p className="hero-subtitle">{heroSub}</p>}
+          <p className="hero-desc">8 个在线工具 · AI 协作开发 · 开源</p>
+          <Link to="/tools" className="hero-cta-btn">浏览工具</Link>
         </div>
 
         {hasImages && (
@@ -252,7 +185,7 @@ function Landing() {
         </button>
       </section>
 
-      <section className="landing-stats" aria-label="数据概览">
+      <section className="landing-stats" id="landing-content" aria-label="数据概览">
         <div className="landing-stats-inner">
           <div className="landing-stat landing-stat--uptime">
             <span className="landing-stat-icon" aria-hidden="true">
@@ -300,36 +233,40 @@ function Landing() {
         </div>
       </section>
 
+      {/* 网站导览 */}
+      <section className="landing-guide" aria-label="网站导览">
+        <Link to="/tools" className="guide-card">
+          <span className="guide-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
+          </span>
+          <span className="guide-title">工具</span>
+          <span className="guide-desc">8 个在线工具 · RSS · 监控 · AI</span>
+        </Link>
+        <Link to="/blog" className="guide-card">
+          <span className="guide-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" /></svg>
+          </span>
+          <span className="guide-title">博客</span>
+          <span className="guide-desc">技术文章 · 项目笔记</span>
+        </Link>
+        <Link to="/about" className="guide-card">
+          <span className="guide-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+          </span>
+          <span className="guide-title">关于</span>
+          <span className="guide-desc">开发者介绍 · 联系方式</span>
+        </Link>
+        <Link to="/admin" className="guide-card">
+          <span className="guide-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+          </span>
+          <span className="guide-title">管理</span>
+          <span className="guide-desc">后台管理 · 仅管理员</span>
+        </Link>
+      </section>
+
       <DevTimeline />
       <BugCards />
-
-      <div className="landing-content-sections">
-        <section className="landing-intro" id="landing-content" ref={reveal}>
-          <img src="/assets/image/head-logo.png" className="landing-logo" alt="Oxelia51" />
-          <h2 className="landing-intro-brand">Oxelia51</h2>
-          <div className="landing-intro-links">
-            <Link to="/tools" className="landing-intro-link">浏览工具</Link>
-          </div>
-        </section>
-
-        <section className="landing-cta" ref={reveal}>
-          <div className="landing-cta-inner">
-            <h2 className="landing-cta-title">注册一个账号</h2>
-            <p className="landing-cta-desc">注册后可以在线使用全部工具。</p>
-            <div className="landing-cta-actions">
-              {isLoggedIn ? (
-                <Link to="/tools" className="landing-cta-btn landing-cta-btn--primary">浏览工具</Link>
-              ) : (
-                <>
-                  <Link to="/register" className="landing-cta-btn landing-cta-btn--primary">免费注册</Link>
-                  <Link to="/login" className="landing-cta-btn landing-cta-btn--ghost">已有账号？登录</Link>
-                </>
-              )}
-            </div>
-          </div>
-        </section>
-
-      </div>
 
       <div className="landing-footer-transition" />
 

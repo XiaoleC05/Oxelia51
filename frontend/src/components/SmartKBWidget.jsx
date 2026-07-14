@@ -376,6 +376,9 @@ function SmartKBWidget({ open, onClose }) {
       </div>
 
       {/* 搜索框 */}
+      <p className="smartkb-widget-hint">
+        💡 我可以回答 Oxelia51 平台文档、架构决策、API 契约、工具实现和开发历史相关的问题
+      </p>
       <form className="smartkb-widget-search" onSubmit={handleSubmit}>
         <input
           type="text"

@@ -68,6 +68,15 @@
 }
 
 /* ===== 搜索框 ===== */
+.smartkb-widget-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  padding: 10px 16px 0;
+  line-height: 1.5;
+  background: var(--bg);
+}
+
 .smartkb-widget-search {
   display: flex;
   gap: 8px;
