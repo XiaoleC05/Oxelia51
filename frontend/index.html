@@ -26,6 +26,8 @@
     <meta name="twitter:title" content="Oxelia51 - 统一在线工具平台" />
     <meta name="twitter:description" content="一个账号，探索全部在线工具。集成·简洁·高效。" />
     <link rel="canonical" href="https://oxelia51.com" />
+    <!-- 预加载首页头图 API 响应（JSON），让浏览器尽早发起请求获取图片 URL -->
+    <link rel="preload" as="fetch" href="/api/hero-images" crossorigin="anonymous" fetchpriority="high" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..600&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet" />
