@@ -4,8 +4,8 @@ import './SmartKBFAB.css'
 
 /* ===== 常量 ===== */
 const DEFAULT_POS = { right: 24, bottom: 400 }
-const FAB_SIZE_DESKTOP = 90
-const FAB_SIZE_MOBILE = 72
+const FAB_SIZE_DESKTOP = 120
+const FAB_SIZE_MOBILE = 96
 const DRAG_THRESHOLD = 10
 const PARTICLE_COUNT_MIN = 16
 const PARTICLE_COUNT_MAX = 20
@@ -39,6 +39,9 @@ function SmartKBFAB({ onToggle }) {
   const [hovered, setHovered] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [showHint, setShowHint] = useState(() => {
+    try { return !localStorage.getItem('oxelia51_smartkb_seen') } catch { return true }
+  })
   // burstKey 用于强制重新挂载内部 DOM，从而重启 CSS 动画（连续点击也能重播）
   const [burstKey, setBurstKey] = useState(0)
   const [particles, setParticles] = useState([])
@@ -185,6 +188,7 @@ function SmartKBFAB({ onToggle }) {
       }
       // 未移动 → 点击行为
       setDragging(false)
+      if (showHint) { setShowHint(false); try { localStorage.setItem('oxelia51_smartkb_seen', '1') } catch {} }
       triggerBurst()
       if (typeof onToggle === 'function') onToggle()
     }
@@ -255,10 +259,17 @@ function SmartKBFAB({ onToggle }) {
         {/* 双层星轨（内快外慢，不同颜色） */}
         <div className="smartkb-fab-orbit smartkb-fab-orbit--1" aria-hidden="true" />
         <div className="smartkb-fab-orbit smartkb-fab-orbit--2" aria-hidden="true" />
-        {/* 星球 + 「51」徽标 */}
+        {/* 星球 + 「Oxelia51」 */}
         <div className="smartkb-fab-planet">
-          <span className="smartkb-fab-num">51</span>
+          <span className="smartkb-fab-num">Oxelia51</span>
         </div>
+        {/* 首次引导提示 */}
+        {showHint && (
+          <div className="smartkb-fab-hint">
+            <span>项目知识库</span>
+            <span>点击提问</span>
+          </div>
+        )}
         {/* 粒子飞散 */}
         {particles.map((p) => (
           <span
