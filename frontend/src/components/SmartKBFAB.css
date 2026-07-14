@@ -43,9 +43,12 @@
   50% { opacity: 0.7; transform: scale(1.4); }
 }
 
-/* ===== 星球 + 「51」徽标 — 品牌紫蓝渐变 + 毛玻璃 + 白色边框 + 内发光 ===== */
+/* ===== 星球 + 「51」徽标 — 品牌紫蓝渐变 + 毛玻璃 + 白色边框 + 内发光 =====
+ * position: absolute 仅做 z-index 层叠；居中靠父级 .smartkb-fab-inner flex 静态位置。
+ * 父级已有 width/height: 100%，无需 in-flow 子元素撑尺寸。
+ */
 .smartkb-fab-planet {
-  position: relative;
+  position: absolute;
   z-index: 3;
   width: 80px;
   height: 80px;
@@ -79,12 +82,15 @@
   100% { transform: scale(1); }
 }
 
-/* ===== 星轨（双层，不同颜色不同速度） ===== */
+/* ===== 星轨（双层，不同颜色不同速度） =====
+ * position: absolute 仅做 z-index 层叠；
+ * 居中依赖父级 .smartkb-fab-inner 的 flex 静态位置
+ * （absolute 子元素 top/left 为 auto 时，flex 容器按 justify/align 定位其静态位置）。
+ * 不再用 top:50%/left:50%/translate(-50%,-50%)，避免与 orbit-spin 动画的
+ * transform: rotate() 冲突，并消除拖动时 React 重渲染导致的定位延迟。
+ */
 .smartkb-fab-orbit {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   border-radius: 50%;
   pointer-events: none;
   opacity: 0.4;
