@@ -134,3 +134,25 @@ func (s *PendingRegistrationStore) Get(ctx context.Context, token string) ([]byt
 func (s *PendingRegistrationStore) Delete(ctx context.Context, token string) error {
 	return s.rdb.Del(ctx, "pending_reg:"+token).Err()
 }
+
+// ScanKeys 扫描所有 pending_reg:* 键（最多 limit 个）
+func (s *PendingRegistrationStore) ScanKeys(ctx context.Context, limit int) ([]string, error) {
+	keys, err := s.rdb.Keys(ctx, "pending_reg:*").Result()
+	if err != nil {
+		return nil, err
+	}
+	if limit > 0 && len(keys) > limit {
+		keys = keys[:limit]
+	}
+	return keys, nil
+}
+
+// GetByKey 按完整 Redis 键获取待注册数据
+func (s *PendingRegistrationStore) GetByKey(ctx context.Context, key string) ([]byte, error) {
+	return s.rdb.Get(ctx, key).Bytes()
+}
+
+// DeleteByKey 按完整 Redis 键删除待注册数据
+func (s *PendingRegistrationStore) DeleteByKey(ctx context.Context, key string) error {
+	return s.rdb.Del(ctx, key).Err()
+}

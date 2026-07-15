@@ -518,7 +518,17 @@ function UsersTab({ users, onUpdated }) {
                   <select
                     className="admin-role-select"
                     value={u.role}
-                    onChange={(e) => patchUser(u.id, { role: e.target.value })}
+                    onChange={(e) => {
+                      const newRole = e.target.value
+                      // 降级（admin→user）需二次确认，防止误操作
+                      if (u.role === 'admin' && newRole !== 'admin') {
+                        if (!window.confirm('确认将 ' + u.username + ' 从管理员降级为普通用户？')) {
+                          // 拒绝后 select 视觉回退由 value 绑定保证
+                          return
+                        }
+                      }
+                      patchUser(u.id, { role: newRole })
+                    }}
                     disabled={patching === u.id}
                   >
                     <option value="user">user</option>

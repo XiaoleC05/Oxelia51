@@ -360,6 +360,9 @@ func (h *AdminToolHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
+	// 同步清理关联数据：login_logs（防御性清理，FK 级联亦会处理）
+	_, _ = h.db.Exec(ctx, `DELETE FROM login_logs WHERE user_id = $1`, id)
+
 	_, err = h.db.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
 	if err != nil {
 		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "删除失败")

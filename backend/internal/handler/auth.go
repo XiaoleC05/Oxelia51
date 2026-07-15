@@ -178,14 +178,22 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 
 	// Double-check no race condition: account_id/email still available?
 	var existing int
-	h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE account_id = $1`, pending.AccountID).Scan(&existing)
+	err = h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE account_id = $1`, pending.AccountID).Scan(&existing)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
+		return
+	}
 	if existing == 1 {
 		_ = h.pending.Delete(ctx, token)
 		apiError(c, http.StatusConflict, "ACCOUNT_ID_TAKEN", "账号 ID 已被使用，请重新注册")
 		return
 	}
 	existing = 0
-	h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE email = $1`, pending.Email).Scan(&existing)
+	err = h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE email = $1`, pending.Email).Scan(&existing)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
+		return
+	}
 	if existing == 1 {
 		_ = h.pending.Delete(ctx, token)
 		apiError(c, http.StatusConflict, "EMAIL_TAKEN", "邮箱已被注册，请重新注册")
@@ -239,6 +247,55 @@ func (h *AuthHandler) ResendVerification(c *gin.Context) {
 		return
 	}
 
+	// 1. 先从 Redis pending 中查找匹配 email 的待注册数据
+	// （新用户尚未写入 DB，只能从 pending 暂存中查找）
+	keys, scanErr := h.pending.ScanKeys(ctx, 100)
+	if scanErr != nil {
+		log.Printf("resend: scan pending keys error: %v", scanErr)
+	}
+	var foundData []byte
+	var foundToken string
+	for _, key := range keys {
+		raw, getErr := h.pending.GetByKey(ctx, key)
+		if getErr != nil {
+			continue
+		}
+		var p model.PendingRegistration
+		if json.Unmarshal(raw, &p) != nil {
+			continue
+		}
+		if strings.EqualFold(p.Email, req.Email) {
+			foundData = raw
+			foundToken = strings.TrimPrefix(key, "pending_reg:")
+			break
+		}
+	}
+
+	if foundData != nil {
+		// 删除旧 token，生成新 token，覆盖旧验证链接
+		_ = h.pending.Delete(ctx, foundToken)
+		newToken, err := auth.RandomToken()
+		if err != nil {
+			apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "令牌生成失败")
+			return
+		}
+		if err := h.pending.Set(ctx, newToken, foundData); err != nil {
+			apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "注册暂存失败")
+			return
+		}
+		link := fmt.Sprintf("%s/verify-email?token=%s", strings.TrimRight(h.cfg.AppPublicURL, "/"), newToken)
+		subject := "Oxelia51 邮箱验证"
+		body := fmt.Sprintf("请点击以下链接验证邮箱（24小时内有效）：\n%s\n", link)
+		if err := h.mail.Send(ctx, req.Email, subject, body); err != nil {
+			_ = h.pending.Delete(ctx, newToken)
+			apiError(c, http.StatusInternalServerError, "MAIL_ERROR", "验证邮件发送失败")
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+		return
+	}
+
+	// 2. 回退到查 DB（兼容旧流程：已入库但未验证的用户）
 	var userID int64
 	var verified bool
 	err = h.db.QueryRow(ctx,
