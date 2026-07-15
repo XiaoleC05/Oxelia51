@@ -323,7 +323,7 @@ section {
   }
 
   #root {
-    padding: 0 16px;
+    padding: 50px 16px 0;
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
   }

@@ -218,6 +218,18 @@
   50% { transform: translateX(-50%) translateY(6px); }
 }
 
+/* ===== Section Dividers =====
+ * 背景色交替提供微妙区域分隔，底部边框加强边界感
+ */
+.landing-stats,
+.landing-guide {
+  border-bottom: 1px solid var(--border);
+}
+
+.dev-timeline {
+  border-top: 1px solid var(--border);
+}
+
 /* ===== Stats Band ===== */
 .landing-stats {
   width: 100vw;
@@ -796,6 +808,10 @@
 
 /* ===== Responsive ===== */
 @media (max-width: 640px) {
+  .landing {
+    margin-top: -50px;
+  }
+
   .hero {
     height: 50vh;
     min-height: 340px;

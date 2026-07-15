@@ -347,9 +347,9 @@
 
   .navbar-menu-separator {
     display: block;
-    width: 100% !important;
+    width: calc(100% + 40px) !important;
     max-width: none;
-    margin: 8px 0;
+    margin: 8px -20px;
     border-top: 1px solid var(--border);
   }
 
