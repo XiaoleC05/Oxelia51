@@ -18,11 +18,12 @@
 内部工具 (均仅 loopback，通过 API 网关访问)：
   DormGuard   :8000  — Go+Gin，MySQL 独立
   SuperRead   :8002  — Go+Gin
-  MusicBox    :8003  — Go+Gin
-  CS2Lab      :8001  — Go+Gin
   AIHelper    :8004  — Go+Gin
-  SecretStore :8006  — Go+Gin，AES-256-GCM
   AgentCanvas :8005  — Go+Gin
+  SecretStore :8006  — Go+Gin，AES-256-GCM
+
+SmartKB :8007  — Go+Gin，腾讯云 118.25.138.177
+  ↑ Ollama qwen2.5:1.5b 本地推理，零 Token 费
 
 PostgreSQL / Redis — Docker 127.0.0.1
 
@@ -57,7 +58,7 @@ git push master → GitHub Actions 构建 → push tarball 到 release 分支
 3. 打包 tarball 并 push 到本仓库的 `release` 分支
 4. GitHub webhook 触发服务器 `tool-deploy.sh` 拉取并部署
 
-各仓库: [DormGuard](https://github.com/XiaoleC05/DormGuard) · [SuperRead](https://github.com/XiaoleC05/SuperRead) · [MusicBox](https://github.com/XiaoleC05/MusicBox) · [CS2Lab](https://github.com/XiaoleC05/CS2Lab) · [AIHelper](https://github.com/XiaoleC05/AIHelper) · [AgentCanvas](https://github.com/XiaoleC05/AgentCanvas) · [SecretStore](https://github.com/XiaoleC05/SecretStore)
+各仓库: [DormGuard](https://github.com/XiaoleC05/DormGuard) · [SuperRead](https://github.com/XiaoleC05/SuperRead) · [AIHelper](https://github.com/XiaoleC05/AIHelper) · [AgentCanvas](https://github.com/XiaoleC05/AgentCanvas) · [SecretStore](https://github.com/XiaoleC05/SecretStore) · [SmartKB](https://github.com/XiaoleC05/SmartKB)
 
 ### GitHub Webhook 配置（每个工具仓库需配置一次）
 

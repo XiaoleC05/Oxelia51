@@ -18,7 +18,7 @@ set CGO_ENABLED=0
 
 
 
-echo [1/6] SuperRead...
+echo [1/4] SuperRead...
 
 cd /d D:\07_Projects\code\SuperRead
 
@@ -28,27 +28,7 @@ echo   OK
 
 
 
-echo [2/6] MusicBox...
-
-cd /d D:\07_Projects\code\MusicBox
-
-go build -ldflags="-s -w" -o "%OUTDIR%\musicbox-server" .\cmd\server || goto :fail
-
-echo   OK
-
-
-
-echo [3/6] CS2Lab...
-
-cd /d D:\07_Projects\code\CS2Lab
-
-go build -ldflags="-s -w" -o "%OUTDIR%\cs2lab-server" .\cmd\server || goto :fail
-
-echo   OK
-
-
-
-echo [4/6] AIHelper...
+echo [2/4] AIHelper...
 
 cd /d D:\07_Projects\code\AIHelper
 
@@ -58,7 +38,7 @@ echo   OK
 
 
 
-echo [5/6] AgentCanvas...
+echo [3/4] AgentCanvas...
 
 cd /d D:\07_Projects\code\AgentCanvas
 
@@ -68,7 +48,7 @@ echo   OK
 
 
 
-echo [6/6] SecretStore...
+echo [4/4] SecretStore...
 
 cd /d D:\07_Projects\code\SecretStore
 
