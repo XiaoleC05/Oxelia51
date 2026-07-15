@@ -19,7 +19,11 @@ const STORAGE_KEY_SIZE = 'oxelia51_smartkb_widget_size'
  *   - {"type":"done"}                     → 结束
  *   - {"type":"error","message":"xxx"}    → 错误
  */
-async function streamChat(query, { onToken, onSources, onDone, onError }) {
+async function streamChat(query, opts, { onToken, onSources, onDone, onError }) {
+  const body = { query }
+  if (opts.model) body.model = opts.model
+  if (opts.apiKey) body.api_key = opts.apiKey
+  if (opts.apiBase) body.api_base = opts.apiBase
   let res
   try {
     res = await fetch('/api/tools/smartkb/proxy/api/smartkb/chat', {
@@ -30,7 +34,7 @@ async function streamChat(query, { onToken, onSources, onDone, onError }) {
         'X-Oxelia51-Access-Token': getToken() || '',
         Accept: 'text/event-stream',
       },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify(body),
     })
   } catch (e) {
     onError?.(new Error('网络错误：' + e.message))
@@ -185,6 +189,16 @@ function SmartKBWidget({ open, onClose }) {
   const [streaming, setStreaming] = useState(false)
   const [error, setError] = useState('')
   const [highlightIdx, setHighlightIdx] = useState(null)
+  const [showSettings, setShowSettings] = useState(false)
+  const [customModel, setCustomModel] = useState(() => {
+    try { return localStorage.getItem('oxelia51_smartkb_model') || '' } catch { return '' }
+  })
+  const [customApiBase, setCustomApiBase] = useState(() => {
+    try { return localStorage.getItem('oxelia51_smartkb_apibase') || '' } catch { return '' }
+  })
+  const [customApiKey, setCustomApiKey] = useState(() => {
+    try { return localStorage.getItem('oxelia51_smartkb_apikey') || '' } catch { return '' }
+  })
 
   const widgetRef = useRef(null)
   const headerRef = useRef(null)
@@ -431,8 +445,9 @@ function SmartKBWidget({ open, onClose }) {
     // 2) chat：流式接收
     const controller = new AbortController()
     abortRef.current = controller
+    const chatOpts = { model: customModel, apiKey: customApiKey, apiBase: customApiBase }
     let firstToken = true
-    await streamChat(q, {
+    await streamChat(q, chatOpts, {
       onToken: (token) => {
         if (firstToken) {
           firstToken = false
@@ -517,6 +532,72 @@ function SmartKBWidget({ open, onClose }) {
           {streaming ? '回答中…' : '发送'}
         </button>
       </form>
+
+      {/* 模型设置 */}
+      <div className="smartkb-widget-settings">
+        <button
+          type="button"
+          className={`smartkb-settings-toggle ${showSettings ? 'smartkb-settings-toggle--open' : ''}`}
+          onClick={() => setShowSettings((s) => !s)}
+          title="模型设置"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v1.5M8 13v1.5M3.4 3.4l1.06 1.06M11.54 11.54l1.06 1.06M1.5 8H3M13 8h1.5M3.4 12.6l1.06-1.06M11.54 4.46l1.06-1.06"/></svg>
+          <span>{customModel ? customModel : '模型'}</span>
+        </button>
+        {showSettings && (
+          <div className="smartkb-settings-panel">
+            <div className="smartkb-settings-row">
+              <label className="smartkb-settings-label">模型</label>
+              <select
+                className="smartkb-settings-select"
+                value={customModel}
+                onChange={(e) => { setCustomModel(e.target.value); localStorage.setItem('oxelia51_smartkb_model', e.target.value) }}
+              >
+                <option value="">服务器免费 (qwen2.5:1.5b)</option>
+                <option value="gpt-4o-mini">OpenAI: gpt-4o-mini</option>
+                <option value="gpt-4o">OpenAI: gpt-4o</option>
+                <option value="deepseek-chat">DeepSeek: V3</option>
+                <option value="deepseek-reasoner">DeepSeek: R1</option>
+                <option value="qwen2.5:3b">Ollama: qwen2.5:3b</option>
+                <option value="qwen2.5:7b">Ollama: qwen2.5:7b</option>
+                <option value="__custom__">自定义…</option>
+              </select>
+            </div>
+            {customModel === '__custom__' && (
+              <div className="smartkb-settings-row">
+                <label className="smartkb-settings-label">自定义模型名</label>
+                <input
+                  className="smartkb-settings-input"
+                  type="text"
+                  placeholder="输入模型名…"
+                  value={customModel === '__custom__' ? '' : customModel}
+                  onChange={(e) => { setCustomModel(e.target.value); localStorage.setItem('oxelia51_smartkb_model', e.target.value) }}
+                />
+              </div>
+            )}
+            <div className="smartkb-settings-row">
+              <label className="smartkb-settings-label">API 地址</label>
+              <input
+                className="smartkb-settings-input"
+                type="text"
+                placeholder="默认 Ollama"
+                value={customApiBase}
+                onChange={(e) => { setCustomApiBase(e.target.value); localStorage.setItem('oxelia51_smartkb_apibase', e.target.value) }}
+              />
+            </div>
+            <div className="smartkb-settings-row">
+              <label className="smartkb-settings-label">API Key</label>
+              <input
+                className="smartkb-settings-input"
+                type="password"
+                placeholder="自定义模型必填"
+                value={customApiKey}
+                onChange={(e) => { setCustomApiKey(e.target.value); localStorage.setItem('oxelia51_smartkb_apikey', e.target.value) }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* 双栏内容区 */}
       <div className="smartkb-widget-body">

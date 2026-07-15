@@ -440,3 +440,77 @@
     transition: none !important;
   }
 }
+
+/* ===== Model Settings ===== */
+.smartkb-widget-settings {
+  padding: 0 16px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.smartkb-settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.smartkb-settings-toggle:hover {
+  color: var(--text-h);
+  border-color: var(--text-muted);
+}
+
+.smartkb-settings-toggle--open {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.smartkb-settings-panel {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg-alt);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.smartkb-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.smartkb-settings-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 56px;
+  flex-shrink: 0;
+}
+
+.smartkb-settings-select,
+.smartkb-settings-input {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: inherit;
+  outline: none;
+}
+
+.smartkb-settings-select:focus,
+.smartkb-settings-input:focus {
+  border-color: var(--accent);
+}
