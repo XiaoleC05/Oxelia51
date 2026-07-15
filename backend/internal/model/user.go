@@ -78,8 +78,6 @@ type AdminUserItem struct {
 type PatchUserRequest struct {
 	EmailVerified *bool   `json:"email_verified"`
 	Role          *string `json:"role"`
-	Username      *string `json:"username"`
-	Email         *string `json:"email"`
 }
 
 // DeleteUserRequest 管理端 DELETE 用户（需确认）

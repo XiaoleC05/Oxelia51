@@ -190,8 +190,16 @@ function SmartKBWidget({ open, onClose }) {
   const [error, setError] = useState('')
   const [highlightIdx, setHighlightIdx] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
+  const PRESET_MODELS = ['', 'gpt-4o-mini', 'gpt-4o', 'deepseek-chat', 'deepseek-reasoner', 'qwen2.5:3b', 'qwen2.5:7b']
   const [customModel, setCustomModel] = useState(() => {
     try { return localStorage.getItem('oxelia51_smartkb_model') || '' } catch { return '' }
+  })
+  // 独立 state 控制自定义输入框显隐，避免 customModel 被覆盖为 '__custom__' 后打字即消失
+  const [isCustomModel, setIsCustomModel] = useState(() => {
+    try {
+      const saved = localStorage.getItem('oxelia51_smartkb_model') || ''
+      return saved !== '' && !PRESET_MODELS.includes(saved)
+    } catch { return false }
   })
   const [customApiBase, setCustomApiBase] = useState(() => {
     try { return localStorage.getItem('oxelia51_smartkb_apibase') || '' } catch { return '' }
@@ -550,8 +558,19 @@ function SmartKBWidget({ open, onClose }) {
               <label className="smartkb-settings-label">模型</label>
               <select
                 className="smartkb-settings-select"
-                value={customModel}
-                onChange={(e) => { setCustomModel(e.target.value); localStorage.setItem('oxelia51_smartkb_model', e.target.value) }}
+                value={isCustomModel ? '__custom__' : customModel}
+                onChange={(e) => {
+                  const v = e.target.value
+                  if (v === '__custom__') {
+                    setIsCustomModel(true)
+                    setCustomModel('')
+                    localStorage.setItem('oxelia51_smartkb_model', '')
+                  } else {
+                    setIsCustomModel(false)
+                    setCustomModel(v)
+                    localStorage.setItem('oxelia51_smartkb_model', v)
+                  }
+                }}
               >
                 <option value="">服务器免费 (qwen2.5:1.5b)</option>
                 <option value="gpt-4o-mini">OpenAI: gpt-4o-mini</option>
@@ -563,14 +582,14 @@ function SmartKBWidget({ open, onClose }) {
                 <option value="__custom__">自定义…</option>
               </select>
             </div>
-            {customModel === '__custom__' && (
+            {isCustomModel && (
               <div className="smartkb-settings-row">
                 <label className="smartkb-settings-label">自定义模型名</label>
                 <input
                   className="smartkb-settings-input"
                   type="text"
                   placeholder="输入模型名…"
-                  value={customModel === '__custom__' ? '' : customModel}
+                  value={customModel}
                   onChange={(e) => { setCustomModel(e.target.value); localStorage.setItem('oxelia51_smartkb_model', e.target.value) }}
                 />
               </div>

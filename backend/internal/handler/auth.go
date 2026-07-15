@@ -87,13 +87,21 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	// Check for existing account_id and email BEFORE creating anything
 	var existing int
-	h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE account_id = $1`, req.AccountID).Scan(&existing)
+	err = h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE account_id = $1`, req.AccountID).Scan(&existing)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
+		return
+	}
 	if existing == 1 {
 		apiError(c, http.StatusConflict, "ACCOUNT_ID_TAKEN", "账号 ID 已被使用")
 		return
 	}
 	existing = 0
-	h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE email = $1`, req.Email).Scan(&existing)
+	err = h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE email = $1`, req.Email).Scan(&existing)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
+		return
+	}
 	if existing == 1 {
 		apiError(c, http.StatusConflict, "EMAIL_TAKEN", "邮箱已被注册")
 		return
@@ -527,11 +535,6 @@ func (h *AuthHandler) PatchProfile(c *gin.Context) {
 		&updated.CreatedAt, &updated.UpdatedAt,
 	)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			apiError(c, http.StatusConflict, "USERNAME_TAKEN", "用户名已被注册")
-			return
-		}
 		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "更新失败")
 		return
 	}
