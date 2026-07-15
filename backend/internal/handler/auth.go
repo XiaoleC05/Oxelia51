@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -23,14 +24,15 @@ import (
 )
 
 type AuthHandler struct {
-	db     *pgxpool.Pool
-	cfg    *config.Config
-	mail   mailer.Mailer
-	tokens *auth.TokenService
-	rl     *auth.RateLimiter
-	email  *auth.EmailTokenStore
-	refresh *auth.RefreshStore
+	db        *pgxpool.Pool
+	cfg       *config.Config
+	mail      mailer.Mailer
+	tokens    *auth.TokenService
+	rl        *auth.RateLimiter
+	email     *auth.EmailTokenStore
+	refresh   *auth.RefreshStore
 	blacklist *auth.JWTBlacklist
+	pending   *auth.PendingRegistrationStore
 }
 
 func NewAuthHandlerWithDeps(
@@ -42,11 +44,13 @@ func NewAuthHandlerWithDeps(
 	email *auth.EmailTokenStore,
 	refresh *auth.RefreshStore,
 	blacklist *auth.JWTBlacklist,
+	pending *auth.PendingRegistrationStore,
 ) *AuthHandler {
 	return &AuthHandler{
 		db: db, cfg: cfg, mail: m,
 		tokens: tokens, rl: rl, email: email,
 		refresh: refresh, blacklist: blacklist,
+		pending: pending,
 	}
 }
 
@@ -61,7 +65,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// account_id 格式验证：字母数字下划线
 	if !isValidAccountID(req.AccountID) {
 		apiError(c, http.StatusBadRequest, "INVALID_ACCOUNT_ID", "账号 ID 只能包含字母、数字和下划线")
 		return
@@ -82,39 +85,56 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Check for existing account_id and email BEFORE creating anything
+	var existing int
+	h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE account_id = $1`, req.AccountID).Scan(&existing)
+	if existing == 1 {
+		apiError(c, http.StatusConflict, "ACCOUNT_ID_TAKEN", "账号 ID 已被使用")
+		return
+	}
+	existing = 0
+	h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE email = $1`, req.Email).Scan(&existing)
+	if existing == 1 {
+		apiError(c, http.StatusConflict, "EMAIL_TAKEN", "邮箱已被注册")
+		return
+	}
+
+	// Hash password and store pending registration in Redis
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "密码处理失败")
 		return
 	}
 
-	var userID int64
-	err = h.db.QueryRow(ctx,
-		`INSERT INTO users (account_id, username, password, email, email_verified)
-		 VALUES ($1, $2, $3, $4, FALSE)
-		 RETURNING id`,
-		req.AccountID, req.Username, string(hash), req.Email,
-	).Scan(&userID)
+	data, err := json.Marshal(model.PendingRegistration{
+		AccountID: req.AccountID,
+		Username:  req.Username,
+		Password:  string(hash),
+		Email:     req.Email,
+	})
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			constraint := pgErr.ConstraintName
-			if strings.Contains(constraint, "email") {
-				apiError(c, http.StatusConflict, "EMAIL_TAKEN", "邮箱已被注册")
-				return
-			}
-			if strings.Contains(constraint, "account_id") {
-				apiError(c, http.StatusConflict, "ACCOUNT_ID_TAKEN", "账号 ID 已被使用")
-				return
-			}
-			apiError(c, http.StatusConflict, "USERNAME_TAKEN", "用户名已被注册")
-			return
-		}
-		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "注册失败")
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "数据处理失败")
 		return
 	}
 
-	if err := h.sendVerificationEmail(ctx, userID, req.Email); err != nil {
+	// Generate verification token and link to pending data
+	token, err := auth.RandomToken()
+	if err != nil {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "令牌生成失败")
+		return
+	}
+
+	if err := h.pending.Set(ctx, token, data); err != nil {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "注册暂存失败")
+		return
+	}
+
+	// Send verification email
+	link := fmt.Sprintf("%s/verify-email?token=%s", strings.TrimRight(h.cfg.AppPublicURL, "/"), token)
+	subject := "Oxelia51 邮箱验证"
+	body := fmt.Sprintf("请点击以下链接验证邮箱（24小时内有效）：\n%s\n", link)
+	if err := h.mail.Send(ctx, req.Email, subject, body); err != nil {
+		_ = h.pending.Delete(ctx, token)
 		apiError(c, http.StatusInternalServerError, "MAIL_ERROR", "验证邮件发送失败")
 		return
 	}
@@ -132,24 +152,59 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	userID, err := h.email.Get(ctx, "verify", token)
-	if err != nil {
-		apiError(c, http.StatusBadRequest, "TOKEN_INVALID", "验证链接无效")
+	// Get pending registration data from Redis
+	raw, err := h.pending.Get(ctx, token)
+	if err != nil || len(raw) == 0 {
+		apiError(c, http.StatusBadRequest, "TOKEN_INVALID", "验证链接无效或已过期，请重新注册")
 		return
 	}
 
-	_, err = h.db.Exec(ctx,
-		`UPDATE users SET email_verified = TRUE, updated_at = NOW() WHERE id = $1`,
-		userID,
-	)
-	if err != nil {
-		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "验证失败")
+	var pending model.PendingRegistration
+	if err := json.Unmarshal(raw, &pending); err != nil {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "数据解析失败")
 		return
 	}
-	_ = h.email.Delete(ctx, "verify", token)
+
+	// Double-check no race condition: account_id/email still available?
+	var existing int
+	h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE account_id = $1`, pending.AccountID).Scan(&existing)
+	if existing == 1 {
+		_ = h.pending.Delete(ctx, token)
+		apiError(c, http.StatusConflict, "ACCOUNT_ID_TAKEN", "账号 ID 已被使用，请重新注册")
+		return
+	}
+	existing = 0
+	h.db.QueryRow(ctx, `SELECT 1 FROM users WHERE email = $1`, pending.Email).Scan(&existing)
+	if existing == 1 {
+		_ = h.pending.Delete(ctx, token)
+		apiError(c, http.StatusConflict, "EMAIL_TAKEN", "邮箱已被注册，请重新注册")
+		return
+	}
+
+	// Create user in DB with email_verified = TRUE
+	var userID int64
+	err = h.db.QueryRow(ctx,
+		`INSERT INTO users (account_id, username, password, email, email_verified)
+		 VALUES ($1, $2, $3, $4, TRUE)
+		 RETURNING id`,
+		pending.AccountID, pending.Username, pending.Password, pending.Email,
+	).Scan(&userID)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			_ = h.pending.Delete(ctx, token)
+			apiError(c, http.StatusConflict, "DUPLICATE", "注册信息冲突，请重新注册")
+			return
+		}
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "创建用户失败")
+		return
+	}
+
+	// Clean up pending data
+	_ = h.pending.Delete(ctx, token)
 
 	c.JSON(http.StatusOK, gin.H{"message": "email_verified"})
 }

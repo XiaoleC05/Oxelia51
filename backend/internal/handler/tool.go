@@ -315,6 +315,60 @@ func (h *AdminToolHandler) PatchUser(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
+// DeleteUser DELETE /api/admin/users/:id — 删除用户（多重确认）
+func (h *AdminToolHandler) DeleteUser(c *gin.Context) {
+	id := c.Param("id")
+
+	var req model.DeleteUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apiError(c, http.StatusBadRequest, "INVALID_REQUEST", "请求格式错误: "+err.Error())
+		return
+	}
+
+	// 多重确认：必须输入 "DELETE <account_id>" 才执行
+	expected := "DELETE " + req.AccountID
+	if req.Confirm != expected {
+		apiError(c, http.StatusBadRequest, "CONFIRM_MISMATCH",
+			"确认文本不匹配，请输入 'DELETE "+req.AccountID+"' 以确认删除")
+		return
+	}
+
+	// 防止管理员删除自己
+	currentUserID := c.GetInt64("userID")
+	var targetID int64
+	if _, err := fmt.Sscanf(id, "%d", &targetID); err == nil && targetID == currentUserID {
+		apiError(c, http.StatusUnprocessableEntity, "CANNOT_DELETE_SELF", "不能删除自己的账户")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	// Verify target account_id matches
+	var dbAccountID string
+	err := h.db.QueryRow(ctx, `SELECT account_id FROM users WHERE id = $1`, id).Scan(&dbAccountID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apiError(c, http.StatusNotFound, "USER_NOT_FOUND", "用户不存在")
+			return
+		}
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
+		return
+	}
+	if dbAccountID != req.AccountID {
+		apiError(c, http.StatusBadRequest, "ACCOUNT_ID_MISMATCH", "账号 ID 不匹配")
+		return
+	}
+
+	_, err = h.db.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
+	if err != nil {
+		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "删除失败")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "user_deleted"})
+}
+
 // DashboardStats GET /api/admin/dashboard-stats — 管理后台数据概览
 // ?since=YYYY-MM-DD 查询指定日期以来的新用户数
 type dashboardStatsResponse struct {

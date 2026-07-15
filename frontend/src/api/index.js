@@ -289,3 +289,14 @@ export async function adminUploadAvatar(file) {
   return adminUploadHeroImage(file)
 }
 
+/* ---- Admin User Management ---- */
+
+export async function adminDeleteUser(id, data) {
+  const res = await fetch(`${API_BASE}/admin/users/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(data),
+  })
+  return parseResponse(res)
+}
+

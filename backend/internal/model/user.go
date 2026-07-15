@@ -78,4 +78,20 @@ type AdminUserItem struct {
 type PatchUserRequest struct {
 	EmailVerified *bool   `json:"email_verified"`
 	Role          *string `json:"role"`
+	Username      *string `json:"username"`
+	Email         *string `json:"email"`
+}
+
+// DeleteUserRequest 管理端 DELETE 用户（需确认）
+type DeleteUserRequest struct {
+	Confirm     string `json:"confirm" binding:"required"`
+	AccountID   string `json:"account_id" binding:"required"`
+}
+
+// PendingRegistration 暂存注册数据（Redis），邮箱验证后写入 DB
+type PendingRegistration struct {
+	AccountID string `json:"account_id"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	Email     string `json:"email"`
 }

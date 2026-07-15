@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { apiGet, apiPatch, getStoredUser, getToken, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle, fetchDeveloperProfile, adminPatchDeveloperProfile, adminUploadAvatar } from '../api'
+import { apiGet, apiPatch, getStoredUser, getToken, adminDeleteUser, adminFetchHeroImages, adminCreateHeroImage, adminUpdateHeroImage, adminDeleteHeroImage, adminUploadHeroImage, adminUpdateCarouselSettings, adminFetchArticles, adminCreateArticle, adminUpdateArticle, adminDeleteArticle, fetchDeveloperProfile, adminPatchDeveloperProfile, adminUploadAvatar } from '../api'
 import './Admin.css'
 
 function Admin() {
@@ -409,6 +409,7 @@ function ToolsTab({ tools, onUpdated }) {
 // ===== 用户管理 =====
 function UsersTab({ users, onUpdated }) {
   const [patching, setPatching] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredUsers, setFilteredUsers] = useState(null)
   const [searching, setSearching] = useState(false)
@@ -418,6 +419,24 @@ function UsersTab({ users, onUpdated }) {
     setPatching(id)
     try {
       await apiPatch(`/admin/users/${id}`, patch)
+      onUpdated()
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setPatching(null)
+    }
+  }
+
+  async function doDeleteUser(id, accountId) {
+    const confirmText = 'DELETE ' + accountId
+    const input = window.prompt('输入 "' + confirmText + '" 确认删除用户 ' + accountId)
+    if (input !== confirmText) {
+      if (input !== null) alert('确认文本不匹配，操作已取消')
+      return
+    }
+    setPatching(id)
+    try {
+      await adminDeleteUser(id, { confirm: confirmText, account_id: accountId })
       onUpdated()
     } catch (err) {
       alert(err.message)
@@ -496,26 +515,40 @@ function UsersTab({ users, onUpdated }) {
                 <td>{u.username}</td>
                 <td className="admin-mono admin-muted">{u.email}</td>
                 <td>
-                  <span className={`admin-badge ${u.role === 'admin' ? 'admin-badge--admin' : ''}`}>
-                    {u.role}
-                  </span>
+                  <select
+                    className="admin-role-select"
+                    value={u.role}
+                    onChange={(e) => patchUser(u.id, { role: e.target.value })}
+                    disabled={patching === u.id}
+                  >
+                    <option value="user">user</option>
+                    <option value="admin">admin</option>
+                  </select>
                 </td>
                 <td>
                   <span className={`admin-badge ${u.email_verified ? 'admin-badge--ok' : 'admin-badge--off'}`}>
                     {u.email_verified ? '已验证' : '未验证'}
                   </span>
-                </td>
-                <td className="admin-muted">{new Date(u.created_at).toLocaleDateString('zh-CN')}</td>
-                <td>
                   {!u.email_verified && (
                     <button
                       className="admin-btn admin-btn--sm"
                       onClick={() => patchUser(u.id, { email_verified: true })}
                       disabled={patching === u.id}
+                      style={{ marginLeft: 8 }}
                     >
                       {patching === u.id ? '…' : '验证'}
                     </button>
                   )}
+                </td>
+                <td className="admin-muted">{new Date(u.created_at).toLocaleDateString('zh-CN')}</td>
+                <td>
+                  <button
+                    className="admin-btn admin-btn--sm admin-btn--danger"
+                    onClick={() => doDeleteUser(u.id, u.account_id)}
+                    disabled={patching === u.id}
+                  >
+                    删除
+                  </button>
                 </td>
               </tr>
             ))}

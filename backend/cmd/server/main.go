@@ -48,6 +48,7 @@ func main() {
 	emailStore := auth.NewEmailTokenStore(rdb, cfg.EmailTokenTTL)
 	refreshStore := auth.NewRefreshStore(rdb, cfg.RefreshTokenTTL)
 	blacklist := auth.NewJWTBlacklist(rdb)
+	pendingStore := auth.NewPendingRegistrationStore(rdb, cfg.EmailTokenTTL)
 	m := mailer.New(cfg)
 
 	r := gin.Default()
@@ -62,7 +63,7 @@ func main() {
 	r.GET("/api/health", health.Health)
 			r.GET("/api/uptime", health.Uptime)
 
-	authH := handler.NewAuthHandlerWithDeps(pool, cfg, m, tokenSvc, rl, emailStore, refreshStore, blacklist)
+	authH := handler.NewAuthHandlerWithDeps(pool, cfg, m, tokenSvc, rl, emailStore, refreshStore, blacklist, pendingStore)
 	r.POST("/api/auth/register", authH.Register)
 	r.GET("/api/auth/verify-email", authH.VerifyEmail)
 	r.POST("/api/auth/resend-verification", authH.ResendVerification)
@@ -113,6 +114,7 @@ func main() {
 		admin.POST("/tools/scan-local", adminTool.ScanLocal)
 		admin.GET("/users", adminTool.ListUsers)
 		admin.PATCH("/users/:id", adminTool.PatchUser)
+		admin.DELETE("/users/:id", adminTool.DeleteUser)
 		admin.GET("/portfolio", adminTool.ListPortfolio)
 		admin.PUT("/portfolio/:slug", adminTool.UpdatePortfolio)
 		admin.GET("/hero-images", heroH.ListAdmin)

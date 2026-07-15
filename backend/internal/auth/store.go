@@ -111,3 +111,26 @@ func (b *JWTBlacklist) Has(ctx context.Context, jti string) (bool, error) {
 	}
 	return n > 0, nil
 }
+
+// PendingRegistrationStore holds registration data until email is verified.
+// This prevents unverified users from occupying usernames/emails in the DB.
+type PendingRegistrationStore struct {
+	rdb *redis.Client
+	ttl time.Duration
+}
+
+func NewPendingRegistrationStore(rdb *redis.Client, ttl time.Duration) *PendingRegistrationStore {
+	return &PendingRegistrationStore{rdb: rdb, ttl: ttl}
+}
+
+func (s *PendingRegistrationStore) Set(ctx context.Context, token string, data []byte) error {
+	return s.rdb.Set(ctx, "pending_reg:"+token, data, s.ttl).Err()
+}
+
+func (s *PendingRegistrationStore) Get(ctx context.Context, token string) ([]byte, error) {
+	return s.rdb.Get(ctx, "pending_reg:"+token).Bytes()
+}
+
+func (s *PendingRegistrationStore) Delete(ctx context.Context, token string) error {
+	return s.rdb.Del(ctx, "pending_reg:"+token).Err()
+}
