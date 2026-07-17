@@ -63,6 +63,10 @@ func main() {
 	r.GET("/api/health", health.Health)
 			r.GET("/api/uptime", health.Uptime)
 
+	// 天气代理（公开读，后端调 Open-Meteo + Redis 缓存）
+	weatherH := handler.NewWeatherHandler(rdb)
+	r.GET("/api/weather", weatherH.GetWeather)
+
 	authH := handler.NewAuthHandlerWithDeps(pool, cfg, m, tokenSvc, rl, emailStore, refreshStore, blacklist, pendingStore)
 	r.POST("/api/auth/register", authH.Register)
 	r.GET("/api/auth/verify-email", authH.VerifyEmail)
