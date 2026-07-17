@@ -600,6 +600,7 @@ function SmartKBWidget({ open, onClose }) {
                 className="smartkb-settings-input"
                 type="text"
                 placeholder="默认 Ollama"
+                autoComplete="off"
                 value={customApiBase}
                 onChange={(e) => { setCustomApiBase(e.target.value); localStorage.setItem('oxelia51_smartkb_apibase', e.target.value) }}
               />
@@ -610,6 +611,7 @@ function SmartKBWidget({ open, onClose }) {
                 className="smartkb-settings-input"
                 type="password"
                 placeholder="自定义模型必填"
+                autoComplete="new-password"
                 value={customApiKey}
                 onChange={(e) => { setCustomApiKey(e.target.value); localStorage.setItem('oxelia51_smartkb_apikey', e.target.value) }}
               />
