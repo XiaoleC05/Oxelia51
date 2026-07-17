@@ -91,15 +91,14 @@ function WeatherBar() {
       return
     }
 
-    // 4) 并行请求天气 + 反向地理编码
+    // 4) 请求天气
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&timezone=auto`
-    const geoUrl = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=zh`
-    let weatherRes, geoRes
+    let weatherRes
     try {
-      ;[weatherRes, geoRes] = await Promise.all([fetch(weatherUrl), fetch(geoUrl)])
+      weatherRes = await fetch(weatherUrl)
     } catch {
       if (!cancelled) setLoading(false)
-      return // 网络错误：静默
+      return
     }
     if (cancelled) return
     if (!weatherRes?.ok) {
@@ -118,15 +117,19 @@ function WeatherBar() {
     const temp = Math.round(weather.current.temperature_2m)
     const mapped = WEATHER_MAP[code] || { label: '未知', icon: '🌡️' }
 
-    // 5) 城市名（反向地理编码可能失败）
+    // 5) 城市名（反向地理编码，失败不影响天气展示）
     let city = '未知'
     try {
-      const geo = await geoRes?.json()
-      if (geo?.results?.[0]?.name) {
-        city = geo.results[0].name
+      const geoUrl = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=zh`
+      const geoRes = await fetch(geoUrl)
+      if (geoRes?.ok) {
+        const geo = await geoRes.json().catch(() => null)
+        if (geo?.results?.[0]?.name) {
+          city = geo.results[0].name
+        }
       }
     } catch {
-      // 忽略
+      // 忽略，城市名保持 '未知'
     }
 
     if (cancelled) return
