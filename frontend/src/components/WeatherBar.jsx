@@ -34,7 +34,8 @@ const CACHE_TTL = 15 * 60 * 1000 // 15 分钟
 
 function WeatherBar() {
   const [data, setData] = useState(null) // {city, temp, icon, label}
-  const [denied, setDenied] = useState(false) // 定位被拒 / IP 定位也失败
+  const [denied, setDenied] = useState(false) // 定位被拒
+  const [loading, setLoading] = useState(true) // 加载中
 
   const load = useCallback(async () => {
     let cancelled = false
@@ -46,6 +47,7 @@ function WeatherBar() {
         const parsed = JSON.parse(saved)
         if (parsed?.ts && Date.now() - parsed.ts < CACHE_TTL) {
           if (!cancelled) {
+            setLoading(false)
             setData({
               city: parsed.city,
               temp: parsed.temp,
@@ -60,27 +62,21 @@ function WeatherBar() {
       // 缓存解析失败，继续走 API 流程
     }
 
-    // 2) 浏览器定位（失败时降级 IP 定位）
+    if (!cancelled) setLoading(true)
+
+    // 2) 浏览器定位（Promise.race 防止浏览器不回调导致永久挂起）
     let lat, lon
     if (navigator?.geolocation?.getCurrentPosition) {
-      const pos = await new Promise((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          (p) => resolve(p),
-          async () => {
-            // 定位失败 → 降级 IP 定位
-            const ipRes = await fetch('https://ipapi.co/json/').catch(() => null)
-            if (ipRes?.ok) {
-              const ip = await ipRes.json().catch(() => null)
-              if (ip?.latitude && ip?.longitude) {
-                resolve({ coords: { latitude: ip.latitude, longitude: ip.longitude } })
-                return
-              }
-            }
-            resolve(null) // IP 定位也失败
-          },
-          { timeout: 8000, maximumAge: 5 * 60 * 1000 }
-        )
-      })
+      const pos = await Promise.race([
+        new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (p) => resolve(p),
+            () => resolve(null),
+            { timeout: 5000, maximumAge: 5 * 60 * 1000 }
+          )
+        }),
+        new Promise((resolve) => setTimeout(() => resolve(null), 5000)),
+      ])
       if (pos) {
         lat = pos.coords.latitude
         lon = pos.coords.longitude
@@ -90,6 +86,7 @@ function WeatherBar() {
     // 3) 定位均失败 → 提示用户开启定位
     if (cancelled) return
     if (lat == null || lon == null) {
+      setLoading(false)
       setDenied(true)
       return
     }
@@ -101,14 +98,21 @@ function WeatherBar() {
     try {
       ;[weatherRes, geoRes] = await Promise.all([fetch(weatherUrl), fetch(geoUrl)])
     } catch {
+      if (!cancelled) setLoading(false)
       return // 网络错误：静默
     }
     if (cancelled) return
-    if (!weatherRes?.ok) return
+    if (!weatherRes?.ok) {
+      setLoading(false)
+      return
+    }
 
     const weather = await weatherRes.json().catch(() => null)
     if (cancelled) return
-    if (!weather?.current) return
+    if (!weather?.current) {
+      setLoading(false)
+      return
+    }
 
     const code = weather.current.weather_code
     const temp = Math.round(weather.current.temperature_2m)
@@ -133,8 +137,8 @@ function WeatherBar() {
       icon: mapped.icon,
       label: mapped.label,
     }
+    setLoading(false)
     setData(payload)
-    setDenied(false)
 
     // 6) 写入缓存
     try {
@@ -150,6 +154,20 @@ function WeatherBar() {
   useEffect(() => {
     load()
   }, [load])
+
+  // 渲染优先级：data → denied → loading → null
+  if (data) {
+    return (
+      <div className="weather-bar" aria-label="实时天气">
+        <span className="weather-bar-icon" aria-hidden="true">{data.icon}</span>
+        <span className="weather-bar-city">{data.city}</span>
+        <span className="weather-bar-sep" aria-hidden="true">·</span>
+        <span className="weather-bar-temp">{data.temp}°C</span>
+        <span className="weather-bar-sep" aria-hidden="true">·</span>
+        <span className="weather-bar-label">{data.label}</span>
+      </div>
+    )
+  }
 
   // 定位被拒：显示可点击提示行，点击重试
   if (denied) {
@@ -173,19 +191,16 @@ function WeatherBar() {
     )
   }
 
-  // loading 或 error 时不渲染（静默，避免闪烁）
-  if (!data) return null
+  // 加载中：让用户知道组件存在
+  if (loading) {
+    return (
+      <div className="weather-bar weather-bar--loading" aria-label="获取天气中">
+        <span>📍 获取天气中…</span>
+      </div>
+    )
+  }
 
-  return (
-    <div className="weather-bar" aria-label="实时天气">
-      <span className="weather-bar-icon" aria-hidden="true">{data.icon}</span>
-      <span className="weather-bar-city">{data.city}</span>
-      <span className="weather-bar-sep" aria-hidden="true">·</span>
-      <span className="weather-bar-temp">{data.temp}°C</span>
-      <span className="weather-bar-sep" aria-hidden="true">·</span>
-      <span className="weather-bar-label">{data.label}</span>
-    </div>
-  )
+  return null
 }
 
 export default WeatherBar
