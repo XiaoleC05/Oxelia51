@@ -2,21 +2,24 @@
 
 .weather-bar {
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 10px 0;
+  margin: 12px auto 0;
+  padding: 10px 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  font-size: 14px;
+  gap: 8px;
+  font-size: 15px;
   color: var(--text-muted);
   user-select: none;
   flex-wrap: nowrap;
   white-space: nowrap;
+  background: var(--bg-alt);
+  border-radius: 8px;
+  border: 1px solid var(--border);
 }
 
 .weather-bar-icon {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
 }
 
@@ -32,7 +35,8 @@
 
 .weather-bar-temp {
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 16px;
 }
 
 .weather-bar-label {
@@ -42,12 +46,17 @@
 /* ===== 移动端：保持单行不换行 ===== */
 @media (max-width: 640px) {
   .weather-bar {
+    margin: 10px auto 0;
     padding: 8px 16px;
-    font-size: 13px;
-    gap: 4px;
+    font-size: 14px;
+    gap: 6px;
   }
 
   .weather-bar-icon {
-    font-size: 16px;
+    font-size: 18px;
+  }
+
+  .weather-bar-temp {
+    font-size: 15px;
   }
 }
