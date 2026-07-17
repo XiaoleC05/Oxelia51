@@ -4,6 +4,7 @@ import { fetchHeroImages, fetchArticles, apiGet } from '../api'
 import { SkeletonLine } from '../components/Skeleton'
 import DevTimeline from '../components/DevTimeline'
 import BugCards from '../components/BugCards'
+import WeatherBar from '../components/WeatherBar'
 import './Landing.css'
 
 const DEFAULT_INTERVAL = 5000
@@ -184,6 +185,8 @@ function Landing() {
           </svg>
         </button>
       </section>
+
+      <WeatherBar />
 
       <section className="landing-stats" id="landing-content" aria-label="数据概览">
         <div className="landing-stats-inner">

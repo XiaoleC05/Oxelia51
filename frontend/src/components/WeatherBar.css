@@ -1,0 +1,53 @@
+/* ===== WeatherBar 实时天气信息条 ===== */
+
+.weather-bar {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-muted);
+  user-select: none;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.weather-bar-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.weather-bar-city {
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.weather-bar-sep {
+  color: var(--border);
+  margin: 0 2px;
+}
+
+.weather-bar-temp {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.weather-bar-label {
+  opacity: 0.8;
+}
+
+/* ===== 移动端：保持单行不换行 ===== */
+@media (max-width: 640px) {
+  .weather-bar {
+    padding: 8px 16px;
+    font-size: 13px;
+    gap: 4px;
+  }
+
+  .weather-bar-icon {
+    font-size: 16px;
+  }
+}
