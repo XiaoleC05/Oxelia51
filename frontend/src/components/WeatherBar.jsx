@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import './WeatherBar.css'
 
 /* ===== WMO 天气码 → 中文描述 + emoji ===== */
@@ -34,99 +34,146 @@ const CACHE_TTL = 15 * 60 * 1000 // 15 分钟
 
 function WeatherBar() {
   const [data, setData] = useState(null) // {city, temp, icon, label}
+  const [denied, setDenied] = useState(false) // 定位被拒 / IP 定位也失败
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     let cancelled = false
 
-    async function load() {
-      // 1) 检查 localStorage 缓存（TTL 15 分钟）
-      try {
-        const saved = localStorage.getItem(CACHE_KEY)
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (parsed?.ts && Date.now() - parsed.ts < CACHE_TTL) {
-            if (!cancelled) {
-              setData({
-                city: parsed.city,
-                temp: parsed.temp,
-                icon: parsed.icon,
-                label: parsed.label,
-              })
-            }
-            return
+    // 1) 检查 localStorage 缓存（TTL 15 分钟）
+    try {
+      const saved = localStorage.getItem(CACHE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed?.ts && Date.now() - parsed.ts < CACHE_TTL) {
+          if (!cancelled) {
+            setData({
+              city: parsed.city,
+              temp: parsed.temp,
+              icon: parsed.icon,
+              label: parsed.label,
+            })
           }
+          return
         }
-      } catch {
-        // 缓存解析失败，继续走 API 流程
       }
+    } catch {
+      // 缓存解析失败，继续走 API 流程
+    }
 
-      // 2) 浏览器定位
-      if (!navigator?.geolocation?.getCurrentPosition) return
+    // 2) 浏览器定位（失败时降级 IP 定位）
+    let lat, lon
+    if (navigator?.geolocation?.getCurrentPosition) {
       const pos = await new Promise((resolve) => {
         navigator.geolocation.getCurrentPosition(
           (p) => resolve(p),
-          () => resolve(null),
+          async () => {
+            // 定位失败 → 降级 IP 定位
+            const ipRes = await fetch('https://ipapi.co/json/').catch(() => null)
+            if (ipRes?.ok) {
+              const ip = await ipRes.json().catch(() => null)
+              if (ip?.latitude && ip?.longitude) {
+                resolve({ coords: { latitude: ip.latitude, longitude: ip.longitude } })
+                return
+              }
+            }
+            resolve(null) // IP 定位也失败
+          },
           { timeout: 8000, maximumAge: 5 * 60 * 1000 }
         )
       })
-      if (!pos || cancelled) return
-      const { latitude: lat, longitude: lon } = pos.coords
-
-      // 3) 并行请求天气 + 反向地理编码
-      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&timezone=auto`
-      const geoUrl = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=zh`
-      let weatherRes, geoRes
-      try {
-        ;[weatherRes, geoRes] = await Promise.all([fetch(weatherUrl), fetch(geoUrl)])
-      } catch {
-        return // 网络错误：静默
-      }
-      if (!weatherRes?.ok) return
-
-      const weather = await weatherRes.json().catch(() => null)
-      if (!weather?.current) return
-
-      const code = weather.current.weather_code
-      const temp = Math.round(weather.current.temperature_2m)
-      const mapped = WEATHER_MAP[code] || { label: '未知', icon: '🌡️' }
-
-      // 4) 城市名（反向地理编码可能失败）
-      let city = '未知'
-      try {
-        const geo = await geoRes?.json()
-        if (geo?.results?.[0]?.name) {
-          city = geo.results[0].name
-        }
-      } catch {
-        // 忽略
-      }
-
-      if (cancelled) return
-
-      const payload = {
-        city,
-        temp,
-        icon: mapped.icon,
-        label: mapped.label,
-      }
-      setData(payload)
-
-      // 5) 写入缓存
-      try {
-        localStorage.setItem(
-          CACHE_KEY,
-          JSON.stringify({ ...payload, ts: Date.now() })
-        )
-      } catch {
-        // 忽略
+      if (pos) {
+        lat = pos.coords.latitude
+        lon = pos.coords.longitude
       }
     }
 
-    load()
-    return () => { cancelled = true }
+    // 3) 定位均失败 → 提示用户开启定位
+    if (cancelled) return
+    if (lat == null || lon == null) {
+      setDenied(true)
+      return
+    }
+
+    // 4) 并行请求天气 + 反向地理编码
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&timezone=auto`
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=zh`
+    let weatherRes, geoRes
+    try {
+      ;[weatherRes, geoRes] = await Promise.all([fetch(weatherUrl), fetch(geoUrl)])
+    } catch {
+      return // 网络错误：静默
+    }
+    if (cancelled) return
+    if (!weatherRes?.ok) return
+
+    const weather = await weatherRes.json().catch(() => null)
+    if (cancelled) return
+    if (!weather?.current) return
+
+    const code = weather.current.weather_code
+    const temp = Math.round(weather.current.temperature_2m)
+    const mapped = WEATHER_MAP[code] || { label: '未知', icon: '🌡️' }
+
+    // 5) 城市名（反向地理编码可能失败）
+    let city = '未知'
+    try {
+      const geo = await geoRes?.json()
+      if (geo?.results?.[0]?.name) {
+        city = geo.results[0].name
+      }
+    } catch {
+      // 忽略
+    }
+
+    if (cancelled) return
+
+    const payload = {
+      city,
+      temp,
+      icon: mapped.icon,
+      label: mapped.label,
+    }
+    setData(payload)
+    setDenied(false)
+
+    // 6) 写入缓存
+    try {
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({ ...payload, ts: Date.now() })
+      )
+    } catch {
+      // 忽略
+    }
   }, [])
 
-  // loading 或 error 时不渲染（静默）
+  useEffect(() => {
+    load()
+  }, [load])
+
+  // 定位被拒：显示可点击提示行，点击重试
+  if (denied) {
+    return (
+      <div
+        className="weather-bar weather-bar--hint"
+        role="button"
+        tabIndex={0}
+        aria-label="点击重新获取定位"
+        onClick={() => { setDenied(false); load() }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setDenied(false)
+            load()
+          }
+        }}
+      >
+        <span>📍 开启定位查看天气</span>
+      </div>
+    )
+  }
+
+  // loading 或 error 时不渲染（静默，避免闪烁）
   if (!data) return null
 
   return (
