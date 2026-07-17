@@ -806,6 +806,19 @@
   text-decoration: underline;
 }
 
+/* 公安备案图标 */
+.filing-gongan-icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: text-bottom;
+  margin-right: 4px;
+}
+
+.filing-gongan {
+  display: inline-flex;
+  align-items: center;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 640px) {
   .landing {

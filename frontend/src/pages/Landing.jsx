@@ -304,6 +304,20 @@ function Landing() {
           >
             鲁ICP备2026038838号-1
           </a>
+          <span className="landing-footer-sep">·</span>
+          <a
+            href="https://beian.mps.gov.cn/#/query/webSearch?code=37028202001309"
+            rel="noreferrer"
+            target="_blank"
+            className="landing-footer-filing-link filing-gongan"
+          >
+            <img
+              src="/gongan.png"
+              alt="公安备案图标"
+              className="filing-gongan-icon"
+            />
+            鲁公网安备37028202001309号
+          </a>
         </div>
       </footer>
     </main>

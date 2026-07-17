@@ -188,3 +188,16 @@
     font-size: 10px;
   }
 }
+
+/* 公安备案图标（非首页复用） */
+.filing-gongan-icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: text-bottom;
+  margin-right: 4px;
+}
+
+.filing-gongan {
+  display: inline-flex;
+  align-items: center;
+}
