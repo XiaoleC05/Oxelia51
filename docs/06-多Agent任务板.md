@@ -89,8 +89,6 @@
 
 - [x] DormGuard
 - [x] SuperRead
-- [x] MusicBox
-- [x] CS2Lab
 - [x] AIHelper
 - [x] AgentCanvas
 
@@ -119,8 +117,6 @@
 |----|------|------|------|------|------|
 | ~~DormGuard~~ | ✅ 已完成 | dormguard | XiaoleC05/DormGuard | 8000 | — |
 | ✅ **TOOL-05** | SuperRead | superread | XiaoleC05/SuperRead | 8002 | 已完成 |
-| ✅ **TOOL-06** | MusicBox | musicbox | XiaoleC05/MusicBox | 8003 | 已完成 |
-| ✅ **TOOL-07** | CS2Lab | cs2lab | XiaoleC05/CS2Lab | 8001 | 已完成 |
 | ✅ **TOOL-08** | AIHelper | aihelper | XiaoleC05/AIHelper | 8004 | 已完成 |
 | ✅ **TOOL-09** | AgentCanvas | agentcanvas | XiaoleC05/AgentCanvas | 8005 | 已完成 |
 

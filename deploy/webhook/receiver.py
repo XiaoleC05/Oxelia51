@@ -31,8 +31,6 @@ TRIGGER_REF = "refs/heads/release"
 TOOL_REPOS = {
     "XiaoleC05/DormGuard":    "dormguard",
     "XiaoleC05/SuperRead":    "superread",
-    "XiaoleC05/MusicBox":     "musicbox",
-    "XiaoleC05/CS2Lab":       "cs2lab",
     "XiaoleC05/AIHelper":     "aihelper",
     "XiaoleC05/AgentCanvas":  "agentcanvas",
     "XiaoleC05/SecretStore":  "secretstore",

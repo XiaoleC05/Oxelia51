@@ -1,7 +1,7 @@
 <!--
 ============================================================
   Oxelia51 —— 在线工具平台
-  版本：v2.3.1  |  更新：2026-07-15
+  版本：v2.3.1  |  更新：2026-07-19
 ============================================================
 -->
 
@@ -45,8 +45,6 @@ PostgreSQL    Redis
 内部 API 网关：
   Go Backend → DormGuard :8000  （内网）
              → SuperRead :8002  （内网）
-             → MusicBox  :8003  （内网）
-             → CS2Lab    :8001  （内网）
              → AIHelper  :8004  （内网）
              → SecretStore :8006（内网）
              → AgentCanvas :8005（内网）
@@ -169,8 +167,6 @@ npm run dev
 |------|------|------|------|
 | DormGuard | [XiaoleC05/DormGuard](https://github.com/XiaoleC05/DormGuard) | 宿舍电费监控 + QQ 机器人 | :8000 |
 | SuperRead | [XiaoleC05/SuperRead](https://github.com/XiaoleC05/SuperRead) | RSS 订阅 + AI 每日简报 | :8002 |
-| MusicBox | [XiaoleC05/MusicBox](https://github.com/XiaoleC05/MusicBox) | 跨平台音乐聚合播放 | :8003 |
-| CS2Lab | [XiaoleC05/CS2Lab](https://github.com/XiaoleC05/CS2Lab) | CS2 道具教学与投掷物指南 | :8001 |
 | AIHelper | [XiaoleC05/AIHelper](https://github.com/XiaoleC05/AIHelper) | 提示词管理与增强 | :8004 |
 | SecretStore | [XiaoleC05/SecretStore](https://github.com/XiaoleC05/SecretStore) | AES-256-GCM 加密保险箱 | :8006 |
 | AgentCanvas | [XiaoleC05/AgentCanvas](https://github.com/XiaoleC05/AgentCanvas) | Agent 执行流程可视化 | :8005 |
@@ -194,8 +190,6 @@ npm run dev
 | DormGuard（Go 重构 + QQ 机器人） | ✅ 已完成 |
 | SecretStore 加密保险箱 | ✅ 已完成 |
 | SuperRead RSS 订阅 + AI 简报 | ✅ 已完成 |
-| MusicBox 音乐聚合播放 | ✅ 已完成 |
-| CS2Lab CS2 道具教学（9 张地图） | ✅ 已完成 |
 | AIHelper 提示词助手 | ✅ 已完成 |
 | AgentCanvas Agent 可视化画布 | ✅ 已完成 |
 | SmartKB 知识库检索 | ✅ 已完成 |
@@ -222,7 +216,7 @@ docker compose -f deploy/docker/docker-compose.yml up -d --build
 - [x] API 网关与工具请求转发
 - [x] 前端工具 UI 框架
 - [x] 标准化工具注册机制
-- [x] 7 个在线工具接入 API 网关
+- [x] 6 个在线工具接入 API 网关
 - [x] `account_id` 登录标识 + 个人资料页
 - [x] 友情链接页
 - [x] 双服务器资源监控（阿里云 + 腾讯云）
@@ -230,8 +224,6 @@ docker compose -f deploy/docker/docker-compose.yml up -d --build
 - [x] DormGuard Go 重构（Python → Go，内存降 95%）
 - [x] SecretStore 加密保险箱工具
 - [x] SuperRead RSS 订阅 + AI 简报
-- [x] MusicBox 音乐聚合播放
-- [x] CS2Lab CS2 道具教学
 - [x] AIHelper 提示词助手
 - [x] AgentCanvas Agent 可视化画布
 - [x] SmartKB 知识库检索（pgvector + RAG）

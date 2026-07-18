@@ -96,8 +96,6 @@
 
 - [x] DormGuard
 - [x] SuperRead
-- [x] MusicBox
-- [x] CS2Lab
 - [x] AIHelper
 - [x] AgentCanvas
 

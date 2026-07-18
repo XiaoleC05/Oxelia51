@@ -1,4 +1,4 @@
-# 8 个工具仓库 README 模板
+# 6 个工具仓库 README 模板
 
 > 以下为各工具仓库 README.md 的中文统一模板。请复制到对应仓库的 README.md，替换 `{...}` 占位符。
 
@@ -49,62 +49,6 @@ go run ./cmd/server/
 ## 技术栈
 
 Go + Gin + MySQL + NapCat QQ Bot
-
-## 本地运行
-
-cp .env.example .env
-go run ./cmd/server/
-
-## 部署
-
-由 Oxelia51 平台自动部署，详见 [部署文档](https://github.com/XiaoleC05/Oxelia51/blob/master/docs/dev/deployment.md)。
-```
-
-## MusicBox
-
-```markdown
-# MusicBox
-
-跨平台音乐聚合播放。
-
-## 功能
-
-- 多平台音乐搜索（网易云/QQ/酷狗）
-- 歌单导入与本地收藏
-- 在线流媒体播放
-- 歌词同步显示
-
-## 技术栈
-
-Go + Gin + Redis
-
-## 本地运行
-
-cp .env.example .env
-go run ./cmd/server/
-
-## 部署
-
-由 Oxelia51 平台自动部署，详见 [部署文档](https://github.com/XiaoleC05/Oxelia51/blob/master/docs/dev/deployment.md)。
-```
-
-## CS2Lab
-
-```markdown
-# CS2Lab
-
-CS2 道具教学与投掷物指南。
-
-## 功能
-
-- 9 张竞技地图全覆盖
-- 烟雾弹/闪光弹/燃烧弹轨迹演示
-- 道具点位中文化说明
-- 交互式地图标记
-
-## 技术栈
-
-Go + Gin + PostgreSQL
 
 ## 本地运行
 

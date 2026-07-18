@@ -24,9 +24,7 @@
 | 工具 | 端口 | 技术栈 |
 |------|------|--------|
 | DormGuard | :8000 | Go+Gin, MySQL 独立 |
-| CS2Lab | :8001 | Go+Gin |
 | SuperRead | :8002 | Go+Gin |
-| MusicBox | :8003 | Go+Gin |
 | AIHelper | :8004 | Go+Gin |
 | AgentCanvas | :8005 | Go+Gin |
 | SecretStore | :8006 | Go+Gin, AES-256-GCM |
@@ -110,7 +108,7 @@ sudo bash /opt/Oxelia51/deploy/tencent-cloud/init-server.sh
 
 ## 各工具独立 CI/CD
 
-8 个工具仓库各有独立的 `.github/workflows/deploy.yml`，push master 时自动：
+6 个工具仓库各有独立的 `.github/workflows/deploy.yml`，push master 时自动：
 
 1. `go vet` 检查
 2. 交叉编译 linux/amd64 二进制
