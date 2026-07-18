@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -63,24 +64,45 @@ func (h *WeatherHandler) GetWeather(c *gin.Context) {
 	lon := 120.38
 	cityName := "青岛"
 
-	geoURL := fmt.Sprintf("http://ip-api.com/json/%s?lang=zh-CN&fields=city,lat,lon", ip)
-	geoReq, geoErr := http.NewRequestWithContext(ctx, "GET", geoURL, nil)
-	if geoErr == nil {
-		geoReq.Header.Set("User-Agent", "Oxelia51/1.0")
-		geoResp, geoErr := h.hc.Do(geoReq)
-		if geoErr == nil {
-			defer geoResp.Body.Close()
-			if geoResp.StatusCode == 200 {
-				var geo struct {
-					City string  `json:"city"`
-					Lat  float64 `json:"lat"`
-					Lon  float64 `json:"lon"`
+	// 优先用国内 IP 库（城市场级准确），失败回退 ip-api.com（兼容国外 IP）
+	pconURL := fmt.Sprintf("https://whois.pconline.com.cn/ipJson.jsp?ip=%s&json=true", ip)
+	if pconReq, pconErr := http.NewRequestWithContext(ctx, "GET", pconURL, nil); pconErr == nil {
+		pconReq.Header.Set("User-Agent", "Oxelia51/1.0")
+		if pconResp, pconErr := h.hc.Do(pconReq); pconErr == nil {
+			defer pconResp.Body.Close()
+			if pconResp.StatusCode == 200 {
+				body, _ := io.ReadAll(pconResp.Body)
+				var pcon struct {
+					City string `json:"city"`
 				}
-				if json.NewDecoder(geoResp.Body).Decode(&geo) == nil && geo.Lat != 0 {
-					lat = geo.Lat
-					lon = geo.Lon
-					if geo.City != "" {
-						cityName = geo.City
+				if json.Unmarshal(body, &pcon) == nil && pcon.City != "" {
+					cityName = pcon.City
+				}
+			}
+		}
+	}
+
+	// pconline 未命中时回退 ip-api.com（提供城市名 + 坐标，覆盖国外 IP）
+	if cityName == "青岛" {
+		geoURL := fmt.Sprintf("http://ip-api.com/json/%s?lang=zh-CN&fields=city,lat,lon", ip)
+		geoReq, geoErr := http.NewRequestWithContext(ctx, "GET", geoURL, nil)
+		if geoErr == nil {
+			geoReq.Header.Set("User-Agent", "Oxelia51/1.0")
+			geoResp, geoErr := h.hc.Do(geoReq)
+			if geoErr == nil {
+				defer geoResp.Body.Close()
+				if geoResp.StatusCode == 200 {
+					var geo struct {
+						City string  `json:"city"`
+						Lat  float64 `json:"lat"`
+						Lon  float64 `json:"lon"`
+					}
+					if json.NewDecoder(geoResp.Body).Decode(&geo) == nil && geo.Lat != 0 {
+						lat = geo.Lat
+						lon = geo.Lon
+						if geo.City != "" {
+							cityName = geo.City
+						}
 					}
 				}
 			}

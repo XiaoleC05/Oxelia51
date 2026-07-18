@@ -29,11 +29,8 @@ function WeatherBar() {
   return (
     <div className="weather-bar" aria-label="实时天气">
       <span className="weather-bar-icon" aria-hidden="true">{data.icon}</span>
-      <span className="weather-bar-city">{data.city}</span>
-      <span className="weather-bar-sep" aria-hidden="true">·</span>
       <span className="weather-bar-temp">{data.temp}°C</span>
-      <span className="weather-bar-sep" aria-hidden="true">·</span>
-      <span className="weather-bar-label">{data.label}</span>
+      <span className="weather-bar-meta">{data.city} · {data.label}</span>
     </div>
   )
 }

@@ -1,62 +1,68 @@
-/* ===== WeatherBar 实时天气信息条 ===== */
+/* ===== WeatherBar 实时天气卡片 ===== */
 
 .weather-bar {
-  max-width: 1200px;
-  margin: 12px auto 0;
-  padding: 10px 20px;
+  position: relative;
+  z-index: 2;
+  max-width: 280px;
+  margin: -40px clamp(24px, 5vw, 80px) 16px auto;
+  padding: 16px 20px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 15px;
-  color: var(--text-muted);
-  user-select: none;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-  background: var(--bg-alt);
-  border-radius: 8px;
+  gap: 6px;
+  text-align: center;
+  background: rgba(var(--bg-rgb), 0.85);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
   border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  user-select: none;
+  animation: weather-enter 0.5s ease-out;
 }
 
 .weather-bar-icon {
-  font-size: 20px;
+  font-size: 48px;
   line-height: 1;
 }
 
-.weather-bar-city {
-  color: var(--text-h);
-  font-weight: 500;
-}
-
-.weather-bar-sep {
-  color: var(--border);
-  margin: 0 2px;
-}
-
 .weather-bar-temp {
+  font-size: 36px;
+  font-weight: 800;
   color: var(--accent);
-  font-weight: 700;
-  font-size: 16px;
+  line-height: 1.1;
 }
 
-.weather-bar-label {
-  opacity: 0.8;
+.weather-bar-meta {
+  font-size: 14px;
+  color: var(--text-h);
+  margin-top: 4px;
+  line-height: 1.3;
 }
 
-/* ===== 移动端：保持单行不换行 ===== */
+@keyframes weather-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== 移动端：全宽居中、等比缩小 ===== */
 @media (max-width: 640px) {
   .weather-bar {
-    margin: 10px auto 0;
-    padding: 8px 16px;
-    font-size: 14px;
-    gap: 6px;
+    max-width: calc(100vw - 32px);
+    margin: -32px auto 12px;
+    padding: 14px 18px;
   }
 
   .weather-bar-icon {
-    font-size: 18px;
+    font-size: 40px;
   }
 
   .weather-bar-temp {
-    font-size: 15px;
+    font-size: 28px;
+  }
+
+  .weather-bar-meta {
+    font-size: 13px;
   }
 }
