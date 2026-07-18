@@ -58,9 +58,34 @@ func (h *WeatherHandler) GetWeather(c *gin.Context) {
 		}
 	}
 
-	// 2) 默认坐标（青岛），后续可扩展 IP 地理位置库
+	// 2) IP → 城市名 + 坐标（失败时回退默认青岛）
 	lat := 36.06
 	lon := 120.38
+	cityName := "青岛"
+
+	geoURL := fmt.Sprintf("http://ip-api.com/json/%s?lang=zh-CN&fields=city,lat,lon", ip)
+	geoReq, geoErr := http.NewRequestWithContext(ctx, "GET", geoURL, nil)
+	if geoErr == nil {
+		geoReq.Header.Set("User-Agent", "Oxelia51/1.0")
+		geoResp, geoErr := h.hc.Do(geoReq)
+		if geoErr == nil {
+			defer geoResp.Body.Close()
+			if geoResp.StatusCode == 200 {
+				var geo struct {
+					City string  `json:"city"`
+					Lat  float64 `json:"lat"`
+					Lon  float64 `json:"lon"`
+				}
+				if json.NewDecoder(geoResp.Body).Decode(&geo) == nil && geo.Lat != 0 {
+					lat = geo.Lat
+					lon = geo.Lon
+					if geo.City != "" {
+						cityName = geo.City
+					}
+				}
+			}
+		}
+	}
 
 	// 3) 调 Open-Meteo（服务端无 CORS 限制）
 	weatherURL := fmt.Sprintf(
@@ -106,7 +131,7 @@ func (h *WeatherHandler) GetWeather(c *gin.Context) {
 	icon, label := mapped[0], mapped[1]
 
 	result := weatherResponse{
-		City:  "本地",
+		City:  cityName,
 		Temp:  int(data.Current.Temperature + 0.5),
 		Icon:  icon,
 		Label: label,
