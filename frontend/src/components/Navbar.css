@@ -536,3 +536,24 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* =============================================
+   Dropdown items: prevent hero/scrolled color leak
+   Higher specificity (0,3,0) beats .navbar--hero
+   and .navbar--scrolled item rules (0,2,0).
+============================================= */
+.navbar--hero .navbar-dropdown .navbar-item,
+.navbar--hero .navbar-dropdown .navbar-item--btn,
+.navbar--scrolled .navbar-dropdown .navbar-item,
+.navbar--scrolled .navbar-dropdown .navbar-item--btn {
+  color: var(--text);
+  text-shadow: none;
+}
+
+.navbar--hero .navbar-dropdown .navbar-item:hover,
+.navbar--hero .navbar-dropdown .navbar-item--btn:hover,
+.navbar--scrolled .navbar-dropdown .navbar-item:hover,
+.navbar--scrolled .navbar-dropdown .navbar-item--btn:hover {
+  background: var(--bg-alt);
+  color: var(--text-h);
+}
