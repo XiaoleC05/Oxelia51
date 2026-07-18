@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import './WeatherBar.css'
 
 function WeatherBar() {
-  const [data, setData] = useState(null)
+  const [cities, setCities] = useState([])
 
   useEffect(() => {
     let cancelled = false
@@ -12,8 +12,9 @@ function WeatherBar() {
         const res = await fetch('/api/weather')
         if (!res.ok || cancelled) return
         const json = await res.json().catch(() => null)
-        if (!cancelled && json?.temp !== undefined) {
-          setData(json)
+        if (!cancelled && json) {
+          // 新格式：{cities: [...]}；旧格式兼容：{city, temp, icon, label}
+          setCities(json.cities || (json.city ? [json] : []))
         }
       } catch {
         // 静默失败
@@ -24,13 +25,17 @@ function WeatherBar() {
     return () => { cancelled = true }
   }, [])
 
-  if (!data) return null
+  if (!cities.length) return null
 
   return (
     <div className="weather-bar" aria-label="实时天气">
-      <span className="weather-bar-icon" aria-hidden="true">{data.icon}</span>
-      <span className="weather-bar-temp">{data.temp}°C</span>
-      <span className="weather-bar-meta">{data.city} · {data.label}</span>
+      {cities.map((c, i) => (
+        <span key={i} className="weather-card">
+          <span className="weather-card-city">{c.city}</span>
+          <span className="weather-card-icon" aria-hidden="true">{c.icon}</span>
+          <span className="weather-card-temp">{c.temp}°</span>
+        </span>
+      ))}
     </div>
   )
 }

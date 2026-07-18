@@ -1,44 +1,44 @@
-/* ===== WeatherBar 实时天气卡片 ===== */
+/* ===== WeatherBar 多城市天气卡片行 ===== */
 
 .weather-bar {
-  position: relative;
-  z-index: 2;
-  max-width: 280px;
-  margin: -40px clamp(24px, 5vw, 80px) 16px auto;
-  padding: 16px 20px;
+  max-width: 1200px;
+  margin: 16px auto 0;
+  padding: 0 20px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: 6px;
-  text-align: center;
-  background: rgba(var(--bg-rgb), 0.85);
-  backdrop-filter: blur(12px) saturate(1.1);
-  -webkit-backdrop-filter: blur(12px) saturate(1.1);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
   user-select: none;
   animation: weather-enter 0.5s ease-out;
 }
 
-.weather-bar-icon {
-  font-size: 48px;
+.weather-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  padding: 6px 12px;
+  background: var(--bg-alt);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.weather-card-city {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.weather-card-icon {
+  font-size: 22px;
   line-height: 1;
 }
 
-.weather-bar-temp {
-  font-size: 36px;
-  font-weight: 800;
+.weather-card-temp {
+  font-weight: 700;
   color: var(--accent);
-  line-height: 1.1;
-}
-
-.weather-bar-meta {
-  font-size: 14px;
-  color: var(--text-h);
-  margin-top: 4px;
-  line-height: 1.3;
+  font-size: 18px;
 }
 
 @keyframes weather-enter {
@@ -46,23 +46,24 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== 移动端：全宽居中、等比缩小 ===== */
+/* ===== 移动端：缩小间距与字号 ===== */
 @media (max-width: 640px) {
   .weather-bar {
-    max-width: calc(100vw - 32px);
-    margin: -32px auto 12px;
-    padding: 14px 18px;
+    gap: 8px;
+    padding: 0 16px;
   }
 
-  .weather-bar-icon {
-    font-size: 40px;
-  }
-
-  .weather-bar-temp {
-    font-size: 28px;
-  }
-
-  .weather-bar-meta {
+  .weather-card {
     font-size: 13px;
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .weather-card-icon {
+    font-size: 18px;
+  }
+
+  .weather-card-temp {
+    font-size: 15px;
   }
 }
