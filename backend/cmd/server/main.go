@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net/http/pprof"
+	"os"
 	"path/filepath"
 
 	"github.com/XiaoleC05/oxelia51-backend/internal/admin"
@@ -23,24 +24,37 @@ func main() {
 	cfg.Validate()
 	ctx := context.Background()
 
+	// 结构化日志：JSON 格式（生产），text 格式（本地开发 LOG_FORMAT=text）
+	var logHandler slog.Handler
+	if os.Getenv("LOG_FORMAT") == "text" {
+		logHandler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
+	} else {
+		logHandler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
+	}
+	slog.SetDefault(slog.New(logHandler))
+
 	pool, err := database.Connect(ctx, cfg.DSN())
 	if err != nil {
-		log.Fatalf("数据库连接失败: %v", err)
+		slog.Error("database connection failed", "error", err)
+		os.Exit(1)
 	}
 	defer pool.Close()
 
 	migrationsDir := filepath.Join("migrations")
 	if err := database.RunMigrations(ctx, pool, migrationsDir); err != nil {
-		log.Fatalf("数据库迁移失败: %v", err)
+		slog.Error("database migration failed", "error", err)
+		os.Exit(1)
 	}
 
 	if err := admin.EnsureAdmin(ctx, pool, cfg); err != nil {
-		log.Fatalf("管理员种子失败: %v", err)
+		slog.Error("admin seeding failed", "error", err)
+		os.Exit(1)
 	}
 
 	rdb, err := database.ConnectRedis(ctx, cfg.RedisAddr)
 	if err != nil {
-		log.Fatalf("Redis 连接失败: %v", err)
+		slog.Error("redis connection failed", "error", err)
+		os.Exit(1)
 	}
 	defer rdb.Close()
 
@@ -57,7 +71,7 @@ func main() {
 	// 仅信任本机 Nginx 作为反代，防止客户端伪造 X-Forwarded-For 污染限流 key。
 	// Nginx 在 127.0.0.1 转发，c.ClientIP() 将读取可信的 X-Forwarded-For。
 	if err := r.SetTrustedProxies([]string{"127.0.0.1", "::1"}); err != nil {
-		log.Printf("警告: 设置可信代理失败: %v", err)
+			slog.Warn("trusted proxy setup failed", "error", err)
 	}
 
 	// pprof 性能分析端点（生产环境 Nginx 须屏蔽 /debug/* 不对外暴露）
@@ -155,8 +169,9 @@ func main() {
 	}
 
 	addr := cfg.BindAddr()
-	log.Printf("服务启动: %s", addr)
+	slog.Info("server started", "addr", addr)
 	if err := r.Run(addr); err != nil {
-		log.Fatalf("服务启动失败: %v", err)
+		slog.Error("server start failed", "error", err)
+		os.Exit(1)
 	}
 }

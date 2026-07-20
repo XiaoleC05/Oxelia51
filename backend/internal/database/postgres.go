@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -19,6 +19,6 @@ func Connect(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("数据库连通性检查失败: %w", err)
 	}
 
-	log.Println("数据库连接成功")
+	slog.Info("database connected")
 	return pool, nil
 }
