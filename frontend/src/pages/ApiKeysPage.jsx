@@ -82,7 +82,7 @@ function ApiKeysPage() {
 
       {loading ? (
         <div className="apikeys-loading">
-          <span className="apikeys-spinner" />
+          <span className="apikeys-spinner" aria-hidden="true" />
           <span>加载中…</span>
         </div>
       ) : (
@@ -98,14 +98,14 @@ function ApiKeysPage() {
             return (
               <div key={tool.key} className="apikeys-card">
                 <div className="apikeys-card-main">
-                  <div className="apikeys-card-icon">{tool.icon}</div>
+                  <div className="apikeys-card-icon" aria-hidden="true">{tool.icon}</div>
                   <div className="apikeys-card-info">
                     <div className="apikeys-card-name-row">
                       <span className="apikeys-card-name">{tool.name}</span>
                       <span className="apikeys-card-desc">{tool.desc}</span>
                     </div>
                     <div className="apikeys-card-status">
-                      <span className={`apikeys-dot ${configured ? 'apikeys-dot--on' : 'apikeys-dot--off'}`} />
+                      <span className={`apikeys-dot ${configured ? 'apikeys-dot--on' : 'apikeys-dot--off'}`} aria-hidden="true" />
                       <span className="apikeys-status-text">
                         {configured ? '已配置' : '未配置'}
                       </span>

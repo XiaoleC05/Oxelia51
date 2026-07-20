@@ -195,6 +195,7 @@ function About() {
                   value={avatarDraft}
                   onChange={(e) => { setAvatarDraft(e.target.value); setAvatarPreview(e.target.value) }}
                   placeholder="头像图片 URL"
+                  aria-label="头像图片 URL"
                 />
               )}
 
@@ -242,6 +243,7 @@ function About() {
               onChange={(e) => setBioDraft(e.target.value)}
               rows={6}
               placeholder="开发者简介…"
+              aria-label="开发者简介"
             />
             <div className="about-inline-edit-actions">
               <button
@@ -280,6 +282,7 @@ function About() {
               onChange={(e) => setResumeDraft(e.target.value)}
               rows={14}
               placeholder="开发者履历…"
+              aria-label="开发者履历"
             />
             <div className="about-inline-edit-actions">
               <button

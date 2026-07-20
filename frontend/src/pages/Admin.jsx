@@ -167,7 +167,7 @@ function Admin() {
 // ===== 数据概览 =====
 function DashboardIconUsers() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
@@ -175,14 +175,14 @@ function DashboardIconUsers() {
 }
 function DashboardIconTools() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
     </svg>
   )
 }
 function DashboardIconArticles() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
     </svg>
@@ -190,7 +190,7 @@ function DashboardIconArticles() {
 }
 function DashboardIconPortfolio() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
     </svg>
   )
@@ -392,7 +392,7 @@ function ToolsTab({ tools, onUpdated }) {
               />
             </label>
             <div className="admin-modal-actions">
-              <button type="submit" className="admin-btn" disabled={saving}>
+              <button type="submit" className="admin-btn admin-btn--primary" disabled={saving}>
                 {saving ? '保存中…' : '保存'}
               </button>
               <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setEditing(null)}>
@@ -481,6 +481,7 @@ function UsersTab({ users, onUpdated }) {
           type="text"
           className="users-search-input"
           placeholder="搜索用户（账号/邮箱）"
+          aria-label="搜索用户（账号/邮箱）"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -777,7 +778,7 @@ function HeroImagesTab({ heroImages, onUpdated }) {
           />
           毫秒（1000-60000）
         </label>
-        <button className="admin-btn" onClick={handleSaveInterval} disabled={savingInterval}>
+        <button className="admin-btn admin-btn--primary" onClick={handleSaveInterval} disabled={savingInterval}>
           {savingInterval ? '保存中…' : '保存间隔'}
         </button>
         {intervalMsg && <span className="hero-settings-msg">{intervalMsg}</span>}
@@ -877,7 +878,7 @@ function HeroImagesTab({ heroImages, onUpdated }) {
             </label>
 
             <div className="admin-modal-actions">
-              <button type="submit" className="admin-btn" disabled={saving || !uploadFile}>
+              <button type="submit" className="admin-btn admin-btn--primary" disabled={saving || !uploadFile}>
                 {saving ? '上传中…' : '上传并创建'}
               </button>
               <button type="button" className="admin-btn admin-btn--ghost" onClick={closeModal}>
@@ -942,7 +943,7 @@ function HeroImagesTab({ heroImages, onUpdated }) {
             </label>
 
             <div className="admin-modal-actions">
-              <button type="submit" className="admin-btn" disabled={saving || !urlValue.trim()}>
+              <button type="submit" className="admin-btn admin-btn--primary" disabled={saving || !urlValue.trim()}>
                 {saving ? '创建中…' : '创建'}
               </button>
               <button type="button" className="admin-btn admin-btn--ghost" onClick={closeModal}>
@@ -1012,7 +1013,7 @@ function HeroImagesTab({ heroImages, onUpdated }) {
             </label>
 
             <div className="admin-modal-actions">
-              <button type="submit" className="admin-btn" disabled={saving}>
+              <button type="submit" className="admin-btn admin-btn--primary" disabled={saving}>
                 {saving ? '保存中…' : '保存'}
               </button>
               <button type="button" className="admin-btn admin-btn--ghost" onClick={closeModal}>
@@ -1294,7 +1295,7 @@ function ArticlesTab({ articles, onUpdated }) {
             </label>
 
             <div className="admin-modal-actions">
-              <button type="submit" className="admin-btn" disabled={saving}>
+              <button type="submit" className="admin-btn admin-btn--primary" disabled={saving}>
                 {saving ? '保存中…' : '保存'}
               </button>
               <button type="button" className="admin-btn admin-btn--ghost" onClick={closeModal}>
@@ -1396,7 +1397,7 @@ function ProfileTab({ profile, onUpdated }) {
             <img src={profile.avatar_url} alt="头像" className="profile-avatar-img" />
           ) : (
             <div className="profile-avatar-placeholder">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 21c0-4.42 3.58-8 8-8s8 3.58 8 8" />
               </svg>
@@ -1444,7 +1445,7 @@ function ProfileTab({ profile, onUpdated }) {
                     <span>{avatarFile ? avatarFile.name : '选择图片（最大 10MB）'}</span>
                   </label>
                   <div className="admin-modal-actions" style={{ marginTop: 8 }}>
-                    <button className="admin-btn" onClick={handleAvatarUpload} disabled={saving || !avatarFile}>
+                    <button className="admin-btn admin-btn--primary" onClick={handleAvatarUpload} disabled={saving || !avatarFile}>
                       {saving ? '上传中…' : '上传并保存'}
                     </button>
                     <button className="admin-btn admin-btn--ghost" onClick={() => setEditingField(null)}>
@@ -1462,7 +1463,7 @@ function ProfileTab({ profile, onUpdated }) {
                     style={{ marginTop: 4 }}
                   />
                   <div className="admin-modal-actions" style={{ marginTop: 8 }}>
-                    <button className="admin-btn" onClick={handleAvatarUrl} disabled={saving}>
+                    <button className="admin-btn admin-btn--primary" onClick={handleAvatarUrl} disabled={saving}>
                       {saving ? '保存中…' : '保存'}
                     </button>
                     <button className="admin-btn admin-btn--ghost" onClick={() => setEditingField(null)}>
@@ -1493,7 +1494,7 @@ function ProfileTab({ profile, onUpdated }) {
               placeholder="开发者简介…"
             />
             <div className="admin-modal-actions">
-              <button className="admin-btn" onClick={handleSave} disabled={saving}>
+              <button className="admin-btn admin-btn--primary" onClick={handleSave} disabled={saving}>
                 {saving ? '保存中…' : '保存'}
               </button>
               <button className="admin-btn admin-btn--ghost" onClick={() => setEditingField(null)}>
@@ -1523,7 +1524,7 @@ function ProfileTab({ profile, onUpdated }) {
               placeholder="开发者履历…"
             />
             <div className="admin-modal-actions">
-              <button className="admin-btn" onClick={handleSave} disabled={saving}>
+              <button className="admin-btn admin-btn--primary" onClick={handleSave} disabled={saving}>
                 {saving ? '保存中…' : '保存'}
               </button>
               <button className="admin-btn admin-btn--ghost" onClick={() => setEditingField(null)}>
@@ -1542,7 +1543,7 @@ function ProfileTab({ profile, onUpdated }) {
 // ===== 服务器监控 =====
 function ProgressBar({ percent }) {
   const clamped = Math.min(100, Math.max(0, percent))
-  const color = clamped >= 80 ? '#c8553d' : clamped >= 50 ? '#d4a843' : '#2c6e49'
+  const color = clamped >= 80 ? 'var(--crit)' : clamped >= 50 ? 'var(--warn)' : 'var(--ok)'
 
   return (
     <div className="progress-bar">
@@ -1627,7 +1628,7 @@ function ServerTab() {
             onClick={handleRefresh}
             disabled={refreshing}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polyline points="23 4 23 10 17 10" />
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
             </svg>

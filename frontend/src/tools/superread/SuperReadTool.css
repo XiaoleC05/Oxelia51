@@ -3,6 +3,9 @@
 .sr-shell {
   background: transparent;
   padding: 0;
+  /* 危险/错误统一语义色与遮罩：亮暗模式均成立 */
+  --sr-danger: color-mix(in srgb, var(--accent) 70%, red);
+  --sr-overlay: rgba(0, 0, 0, 0.4);
 }
 
 /* ---- Loading ---- */
@@ -81,6 +84,18 @@
   opacity: 1;
 }
 
+/* ---- Keyboard focus ---- */
+.sr-tab:focus-visible,
+.sr-btn:focus-visible,
+.sr-icon-btn:focus-visible,
+.sr-filter-btn:focus-visible,
+.sr-filter-select:focus-visible,
+.sr-action-btn:focus-visible,
+.sr-pagination-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ---- Buttons ---- */
 .sr-btn {
   padding: 8px 18px;
@@ -147,8 +162,8 @@
 }
 
 .sr-icon-btn--danger:hover:not(:disabled) {
-  color: #c44;
-  border-color: #c44;
+  color: var(--sr-danger);
+  border-color: var(--sr-danger);
 }
 
 .sr-icon-btn--success {
@@ -178,7 +193,7 @@
 .sr-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--sr-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -289,12 +304,13 @@
   display: flex;
   gap: 16px;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.72;
   flex-wrap: wrap;
 }
 
 .sr-feed-error {
-  color: #c44;
+  color: var(--sr-danger);
 }
 
 .sr-feed-actions {
@@ -321,7 +337,8 @@
 .sr-feed-hint {
   margin: 8px 0 0;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.72;
   font-family: var(--mono);
   line-height: 1.6;
 }
@@ -556,7 +573,8 @@ select.sr-input:focus option:checked {
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.72;
   align-items: center;
 }
 
@@ -565,7 +583,7 @@ select.sr-input:focus option:checked {
   border-radius: 10px;
   font-size: 11px;
   background: var(--code-bg);
-  color: var(--text-muted);
+  color: var(--text);
   border: 1px solid var(--border);
   white-space: nowrap;
 }
@@ -715,7 +733,7 @@ select.sr-input:focus option:checked {
 
 .sr-brief-item--expanded {
   border-left-color: var(--accent-2);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--text-h) 8%, transparent);
 }
 
 .sr-brief-item-header {
@@ -990,6 +1008,11 @@ select.sr-input:focus option:checked {
     padding: 6px 12px;
     font-size: 13px;
     white-space: nowrap;
+    min-height: 44px;
+  }
+
+  .sr-filter-btn {
+    min-height: 44px;
   }
 
   .sr-feed-card {

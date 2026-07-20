@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 16px;
+  font-size: 18px;
   padding: 6px 12px;
   background: var(--bg-alt);
   border-radius: 8px;
@@ -31,14 +31,14 @@
 }
 
 .weather-card-icon {
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1;
 }
 
 .weather-card-temp {
   font-weight: 700;
   color: var(--accent);
-  font-size: 18px;
+  font-size: 20px;
 }
 
 @keyframes weather-enter {
@@ -54,16 +54,16 @@
   }
 
   .weather-card {
-    font-size: 13px;
+    font-size: 15px;
     padding: 4px 8px;
     gap: 4px;
   }
 
   .weather-card-icon {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .weather-card-temp {
-    font-size: 15px;
+    font-size: 17px;
   }
 }

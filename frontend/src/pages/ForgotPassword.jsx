@@ -30,8 +30,9 @@ function ForgotPassword() {
         <form onSubmit={handleSubmit}>
           {error && <p className="auth-error">{error}</p>}
           <div className="auth-field">
-            <label>注册邮箱</label>
+            <label htmlFor="forgot-email">注册邮箱</label>
             <input
+              id="forgot-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

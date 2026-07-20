@@ -15,6 +15,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: opacity 0.2s ease;
 }
 
 .smartkb-fab-inner {
@@ -53,7 +54,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed, #3b82f6);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -168,9 +169,11 @@
 /* ===== 拖动 ===== */
 .smartkb-fab--dragging {
   cursor: grabbing;
+  opacity: 0.85;
 }
 
 .smartkb-fab--dragging .smartkb-fab-planet {
+  transform: scale(1.05);
   box-shadow: 0 8px 28px rgba(124, 58, 237, 0.5),
               0 4px 16px rgba(59, 130, 246, 0.2),
               inset 0 1px 0 rgba(255, 255, 255, 0.3),
@@ -228,7 +231,7 @@
 
 /* ===== 暗色模式适配 ===== */
 [data-theme="dark"] .smartkb-fab-planet {
-  background: linear-gradient(135deg, #7c3aed, #3b82f6);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   border-color: rgba(255, 255, 255, 0.15);
   box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4),
               0 2px 8px rgba(59, 130, 246, 0.2),
@@ -280,7 +283,7 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 14px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px var(--border);
   animation: hint-fade 5s ease forwards;
   pointer-events: none;
 }

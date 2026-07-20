@@ -58,8 +58,9 @@ function ResetPassword() {
         <form onSubmit={handleSubmit}>
           {error && <p className="auth-error">{error}</p>}
           <div className="auth-field">
-            <label>新密码</label>
+            <label htmlFor="reset-password">新密码</label>
             <input
+              id="reset-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -70,8 +71,9 @@ function ResetPassword() {
             />
           </div>
           <div className="auth-field">
-            <label>确认密码</label>
+            <label htmlFor="reset-password-confirm">确认密码</label>
             <input
+              id="reset-password-confirm"
               type="password"
               value={passwordConfirm}
               onChange={(e) => setPasswordConfirm(e.target.value)}

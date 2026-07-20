@@ -2,6 +2,10 @@
   max-width: 720px;
   margin: 0 auto;
   padding: 100px 24px 60px;
+  /* 局部语义令牌：强调文字色、成功色与阴影（不改动全局设计令牌） */
+  --on-accent: #ffffff;
+  --ok: #22c55e;
+  --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .apikeys-header {
@@ -17,7 +21,7 @@
 
 .apikeys-subtitle {
   font-size: 14px;
-  color: var(--text-m);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -26,7 +30,7 @@
   align-items: center;
   gap: 12px;
   padding: 40px 0;
-  color: var(--text-m);
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -58,12 +62,12 @@
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
 }
 
 .apikeys-card:hover {
   border-color: var(--accent);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--card-shadow);
 }
 
 .apikeys-card-main {
@@ -81,7 +85,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-hover, rgba(0, 0, 0, 0.03));
+  background: var(--bg-alt);
   border-radius: 10px;
   flex-shrink: 0;
 }
@@ -106,7 +110,7 @@
 
 .apikeys-card-desc {
   font-size: 13px;
-  color: var(--text-m);
+  color: var(--text-muted);
 }
 
 .apikeys-card-status {
@@ -124,18 +128,18 @@
 }
 
 .apikeys-dot--on {
-  background: #22c55e;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+  background: var(--ok);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--ok) 40%, transparent);
 }
 
 .apikeys-dot--off {
-  background: var(--text-m);
+  background: var(--text-muted);
   opacity: 0.4;
 }
 
 .apikeys-status-text {
   font-size: 13px;
-  color: var(--text-m);
+  color: var(--text-muted);
 }
 
 .apikeys-card-detail {
@@ -147,17 +151,17 @@
 }
 
 .apikeys-masked-key {
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-family: var(--mono);
   font-size: 13px;
   padding: 3px 10px;
-  background: var(--bg-hover, rgba(0, 0, 0, 0.04));
+  background: var(--code-bg);
   border-radius: 6px;
   color: var(--text-h);
 }
 
 .apikeys-updated {
   font-size: 12px;
-  color: var(--text-m);
+  color: var(--text);
   opacity: 0.8;
 }
 
@@ -166,11 +170,8 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--text-m);
-}
-
-.apikeys-usage-item {
-  color: var(--text-m);
+  color: var(--text);
+  opacity: 0.75;
 }
 
 .apikeys-usage-sep {
@@ -178,8 +179,7 @@
 }
 
 .apikeys-usage-empty {
-  color: var(--text-m);
-  opacity: 0.6;
+  opacity: 0.8;
   font-style: italic;
 }
 
@@ -196,20 +196,29 @@
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   cursor: pointer;
   border: none;
   min-width: 100px;
 }
 
+.apikeys-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .apikeys-btn--primary {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .apikeys-btn--primary:hover {
-  background: var(--accent-hover, var(--accent));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: color-mix(in srgb, var(--accent) 85%, var(--text-h));
+  box-shadow: var(--card-shadow);
+}
+
+.apikeys-btn--primary:active {
+  background: color-mix(in srgb, var(--accent) 75%, var(--text-h));
 }
 
 .apikeys-btn--secondary {
@@ -221,6 +230,10 @@
 .apikeys-btn--secondary:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.apikeys-btn--secondary:active {
+  background: var(--bg-alt);
 }
 
 @media (max-width: 640px) {
@@ -241,6 +254,7 @@
 
   .apikeys-btn {
     width: 100%;
+    min-height: 44px;
   }
 
   .apikeys-card-detail {

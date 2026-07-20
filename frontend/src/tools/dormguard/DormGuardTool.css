@@ -3,6 +3,8 @@
 .dg-shell {
   background: transparent;
   padding: 0;
+  /* 低余额/危险统一语义色：亮暗模式均成立 */
+  --dg-danger: color-mix(in srgb, var(--accent) 70%, red);
 }
 
 /* ---- Loading ---- */
@@ -92,6 +94,16 @@
   opacity: 1;
 }
 
+/* ---- Keyboard focus ---- */
+.dg-tab:focus-visible,
+.dg-save-btn:focus-visible,
+.dg-reset-btn:focus-visible,
+.dg-action-btn:focus-visible,
+.dg-field-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ---- Balance Cards: big numbers ---- */
 .dg-cards {
   display: grid;
@@ -175,7 +187,7 @@
 }
 
 .dg-balance--low {
-  color: #c44;
+  color: var(--dg-danger);
 }
 
 /* ---- Update Time ---- */
@@ -196,7 +208,8 @@
   gap: 24px;
   padding: 12px 0;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.72;
 }
 
 .dg-legend-item {
@@ -215,7 +228,7 @@
 
 .dg-legend--normal::before { background: var(--accent-2); }
 .dg-legend--warning::before { background: var(--accent); }
-.dg-legend--low::before { background: #c44; }
+.dg-legend--low::before { background: var(--dg-danger); }
 
 .dg-legend-threshold {
   color: var(--text-muted);
@@ -283,7 +296,7 @@
 
 .dg-status-dot.dg-balance--normal { background: var(--accent-2); }
 .dg-status-dot.dg-balance--warning { background: var(--accent); }
-.dg-status-dot.dg-balance--low { background: #c44; }
+.dg-status-dot.dg-balance--low { background: var(--dg-danger); }
 
 /* ---- Hint ---- */
 .dg-hint {
@@ -354,7 +367,8 @@
 
 .dg-field-hint {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.72;
   font-family: var(--mono);
 }
 
@@ -471,7 +485,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--bg);
   transition: transform 0.2s;
 }
 .dg-toggle input:checked + .dg-toggle-track::after {
@@ -592,6 +606,10 @@
     align-items: flex-start;
     padding-bottom: 18px;
     margin-bottom: 24px;
+  }
+
+  .dg-tab {
+    min-height: 44px;
   }
 
   .dg-cards {

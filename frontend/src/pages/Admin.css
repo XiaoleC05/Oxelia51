@@ -4,6 +4,15 @@
   max-width: 100%;
   min-height: calc(100vh - 72px);
   padding: 0 0 80px;
+  /* 局部语义令牌：危险/状态色、遮罩与阴影（不改动全局设计令牌） */
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --ok: #2c6e49;
+  --warn: #d4a843;
+  --crit: #c8553d;
+  --on-accent: #ffffff;
+  --scrim: rgba(0, 0, 0, 0.45);
+  --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .admin-header {
@@ -24,9 +33,11 @@
   display: flex;
   gap: 0;
   margin-bottom: 32px;
+  overflow-x: auto;
 }
 
 .admin-tab {
+  position: relative;
   padding: 8px 20px;
   border: none;
   border-bottom: 2px solid var(--border);
@@ -34,17 +45,39 @@
   color: var(--text-muted);
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  transition: color 0.2s ease;
+}
+
+.admin-tab::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  background: var(--text-h);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.25s ease;
 }
 
 .admin-tab--active {
-  border-bottom-color: var(--text-h);
   color: var(--text-h);
+}
+
+.admin-tab--active::after {
+  transform: scaleX(1);
 }
 
 .admin-tab:hover {
   color: var(--text-h);
+}
+
+.admin-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .admin-status {
@@ -81,16 +114,40 @@
   font-weight: 500;
   cursor: pointer;
   border-radius: 3px;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .admin-btn:hover:not(:disabled) {
   border-color: var(--text-h);
 }
 
+.admin-btn:active:not(:disabled) {
+  background: var(--bg-alt);
+}
+
+.admin-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .admin-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.admin-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.admin-btn--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 85%, var(--text-h));
+  border-color: color-mix(in srgb, var(--accent) 85%, var(--text-h));
+}
+
+.admin-btn--primary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 75%, var(--text-h));
 }
 
 .admin-btn--sm {
@@ -99,14 +156,19 @@
 }
 
 .admin-btn--danger {
-  background: #dc2626;
-  color: #fff;
-  border-color: #dc2626;
+  background: var(--danger);
+  color: var(--on-accent);
+  border-color: var(--danger);
 }
 
 .admin-btn--danger:hover:not(:disabled) {
-  background: #b91c1c;
-  border-color: #b91c1c;
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
+.admin-btn--danger:active:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 80%, var(--text-h));
+  border-color: color-mix(in srgb, var(--danger) 80%, var(--text-h));
 }
 
 .admin-role-select {
@@ -117,11 +179,23 @@
   color: var(--text-h);
   font-family: inherit;
   font-size: 13px;
+  transition: border-color 0.2s ease;
+}
+
+.admin-role-select:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .admin-btn--ghost {
-  border-color: transparent;
+  background: transparent;
   color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.admin-btn--ghost:hover:not(:disabled) {
+  color: var(--text-h);
+  border-color: var(--text-muted);
 }
 
 .admin-feedback {
@@ -183,16 +257,23 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.8;
   font-size: 12px;
   font-family: var(--sans);
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .users-search-clear:hover {
   border-color: var(--text-h);
   color: var(--text-h);
+  opacity: 1;
+}
+
+.users-search-clear:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .admin-table {
@@ -208,9 +289,12 @@
   font-family: var(--sans);
   font-size: 13px;
   color: var(--text-muted);
-  background: var(--code-bg);
+  background: var(--bg-alt);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .admin-table td {
@@ -224,7 +308,11 @@
   border-bottom: none;
 }
 
-.admin-table tr:hover td {
+.admin-table tbody tr:nth-child(even) td {
+  background: rgba(var(--bg-alt-rgb), 0.35);
+}
+
+.admin-table tbody tr:hover td {
   background: var(--bg-alt);
 }
 
@@ -249,24 +337,24 @@
 
 .admin-badge--ok {
   color: var(--accent-2);
-  background: rgba(44, 110, 73, 0.08);
+  background: color-mix(in srgb, var(--accent-2) 10%, transparent);
 }
 
 .admin-badge--off {
-  color: var(--text-muted);
-  background: rgba(107, 107, 107, 0.08);
+  color: var(--text);
+  background: color-mix(in srgb, var(--text-muted) 12%, transparent);
 }
 
 .admin-badge--admin {
   color: var(--accent);
-  background: rgba(200, 85, 61, 0.08);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 /* ---- Modal ---- */
 .admin-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--scrim);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -314,21 +402,27 @@
   font-weight: 500;
 }
 
-.admin-field input,
+.admin-field input:not([type="checkbox"]),
 .admin-field select {
-  border: none;
-  border-bottom: 1px solid var(--border);
-  padding: 6px 0;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 10px;
   font-size: 15px;
   font-family: var(--mono);
   color: var(--text-h);
-  background: transparent;
+  background: var(--bg);
+  transition: border-color 0.2s ease;
 }
 
 .admin-field input:focus,
 .admin-field select:focus {
   outline: none;
-  border-bottom-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.admin-field input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .admin-field select option {
@@ -339,7 +433,7 @@
 .admin-field select option:checked,
 .admin-field select:focus option:checked {
   background: var(--accent);
-  color: var(--bg);
+  color: var(--on-accent);
 }
 
 .admin-field input[type="checkbox"] {
@@ -418,7 +512,8 @@
 
 .hero-card-order {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.65;
   font-family: var(--mono);
 }
 
@@ -483,6 +578,24 @@
     padding: 0 0 64px;
   }
 
+  .admin-tab {
+    padding: 8px 14px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .admin-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .users-search-input {
+    min-height: 44px;
+  }
+
   .admin-table th,
   .admin-table td {
     padding: 10px 12px;
@@ -523,11 +636,12 @@
   font-family: var(--mono);
   color: var(--text-h);
   background: var(--bg);
+  transition: border-color 0.2s ease;
 }
 
 .hero-settings-input:focus {
   outline: none;
-  border-color: var(--text-h);
+  border-color: var(--accent);
 }
 
 .hero-settings-msg {
@@ -572,7 +686,8 @@
   font-family: var(--heading);
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.65;
   margin: 0 0 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -626,7 +741,7 @@
 }
 
 .dashboard-card:hover {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-shadow);
   transform: scale(1.01);
 }
 
@@ -703,6 +818,11 @@
 .server-refresh-btn:hover:not(:disabled) {
   border-color: var(--text-h);
   color: var(--text-h);
+}
+
+.server-refresh-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .server-refresh-btn:disabled {
@@ -795,23 +915,6 @@
   max-width: 360px;
 }
 
-.admin-btn--sm {
-  padding: 4px 12px;
-  font-size: 12px;
-}
-
-.admin-btn--ghost {
-  background: transparent;
-  color: var(--text-muted);
-  border-color: var(--border);
-}
-
-.admin-btn--ghost:hover:not(:disabled) {
-  color: var(--text-h);
-  border-color: var(--text-muted);
-  box-shadow: none;
-}
-
 /* ===== Cloud Card ===== */
 .server-card--cloud {
   grid-column: 1 / -1;
@@ -848,7 +951,8 @@
 
 .cloud-card-label {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.65;
 }
 
 .cloud-card-value {

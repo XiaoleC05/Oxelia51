@@ -33,15 +33,41 @@
 
 .friend-card a {
   display: block;
+  position: relative;
   padding: 20px 24px;
   border: 1px solid var(--border);
   border-radius: 4px;
-  transition: border-color 0.2s, background 0.2s;
+  transition: all 0.2s ease;
 }
 
 .friend-card a:hover {
   border-color: var(--accent);
   background: var(--accent-bg);
+  box-shadow: 0 4px 16px var(--border);
+}
+
+.friend-card a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 外部链接图标 */
+.friend-card a::after {
+  content: '↗';
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text);
+  opacity: 0.35;
+  transition: all 0.2s ease;
+}
+
+.friend-card a:hover::after,
+.friend-card a:focus-visible::after {
+  color: var(--accent);
+  opacity: 1;
 }
 
 .friend-name {

@@ -316,6 +316,7 @@ export default function AgentCanvasTool() {
             <form className="ac-create-form" onSubmit={createProject}>
               <input
                 type="text" className="ac-input-inline" placeholder="新画布名称"
+                aria-label="新画布名称"
                 value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)}
               />
               <button type="submit" className="ac-action-btn" disabled={creatingProject || !newProjectName.trim()}>

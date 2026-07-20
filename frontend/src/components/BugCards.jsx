@@ -213,6 +213,7 @@ function BugCards() {
             <span>每页</span>
             <select
               className="bug-pagination-select"
+              aria-label="每页显示条数"
               value={pageSize}
               onChange={(e) => setPageSize(parseInt(e.target.value))}
             >

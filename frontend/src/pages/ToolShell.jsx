@@ -45,7 +45,7 @@ function ToolShell() {
     }
   }, [loading, tool, token, slug, navigate])
 
-  if (loading) return <p className="tool-shell-status">加载中...</p>
+  if (loading) return <p className="tool-shell-status"><span className="tool-shell-spinner" aria-hidden="true" />加载中...</p>
   if (error) return <p className="tool-shell-status tool-shell-error">{error}</p>
   // 未登录时立即返回 null，不渲染工具页内容，避免闪现后跳转
   if (!token) return null

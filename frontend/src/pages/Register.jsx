@@ -54,8 +54,9 @@ function Register() {
           {error && <p className="auth-error">{error}</p>}
           {message && <p className="auth-success">{message}</p>}
           <div className="auth-field">
-            <label>账号 ID</label>
+            <label htmlFor="register-account-id">账号 ID</label>
             <input
+              id="register-account-id"
               type="text"
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
@@ -65,12 +66,14 @@ function Register() {
               maxLength={32}
               placeholder="字母、数字或下划线"
               autoComplete="off"
+              aria-describedby="register-account-id-hint"
             />
-            <span className="auth-hint">4-32位字母、数字或下划线，注册后不可修改</span>
+            <span className="auth-hint" id="register-account-id-hint">4-32位字母、数字或下划线，注册后不可修改</span>
           </div>
           <div className="auth-field">
-            <label>用户名</label>
+            <label htmlFor="register-username">用户名</label>
             <input
+              id="register-username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -81,8 +84,9 @@ function Register() {
             />
           </div>
           <div className="auth-field">
-            <label>邮箱</label>
+            <label htmlFor="register-email">邮箱</label>
             <input
+              id="register-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -91,8 +95,9 @@ function Register() {
             />
           </div>
           <div className="auth-field">
-            <label>密码</label>
+            <label htmlFor="register-password">密码</label>
             <input
+              id="register-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -103,8 +108,9 @@ function Register() {
             />
           </div>
           <div className="auth-field">
-            <label>确认密码</label>
+            <label htmlFor="register-password-confirm">确认密码</label>
             <input
+              id="register-password-confirm"
               type="password"
               value={passwordConfirm}
               onChange={(e) => setPasswordConfirm(e.target.value)}

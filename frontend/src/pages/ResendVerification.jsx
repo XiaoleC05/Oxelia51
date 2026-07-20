@@ -36,8 +36,9 @@ function ResendVerification() {
         <form onSubmit={handleSubmit}>
           {error && <p className="auth-error">{error}</p>}
           <div className="auth-field">
-            <label>注册邮箱</label>
+            <label htmlFor="resend-email">注册邮箱</label>
             <input
+              id="resend-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

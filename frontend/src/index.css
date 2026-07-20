@@ -161,6 +161,8 @@ html {
 /* ---- Reset ---- */
 body {
   margin: 0;
+  /* 防止 100vw 全宽板块（landing hero/stats 等）在出现纵向滚动条时产生横向溢出 */
+  overflow-x: clip;
   overflow-wrap: break-word;
   word-break: break-word;
   background: rgba(var(--bg-rgb), 0.72);

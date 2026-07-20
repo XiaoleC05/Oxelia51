@@ -63,18 +63,11 @@
 }
 
 .about-title {
-  font-family: var(--heading);
+  font-family: var(--sans);
   font-size: clamp(2.2rem, 5vw, 3.2rem);
   font-weight: 700;
   margin: 0 0 8px;
   line-height: 1.15;
-}
-
-.about-tagline {
-  font-size: 16px;
-  color: var(--text-muted);
-  margin: 0;
-  letter-spacing: 0.15em;
 }
 
 /* ---- Avatar ---- */
@@ -92,6 +85,12 @@
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.about-avatar:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px var(--border);
 }
 
 .about-avatar-placeholder {
@@ -156,13 +155,6 @@
   font-style: italic;
 }
 
-.about-text {
-  text-align: left;
-  padding-left: 40px;
-  max-width: 700px;
-  margin: 0 auto;
-}
-
 /* ---- Admin inline edit ---- */
 .about-edit-btn {
   font-size: 13px;
@@ -173,12 +165,17 @@
   border-radius: 3px;
   padding: 4px 12px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .about-edit-btn:hover {
   color: var(--text-h);
   border-color: var(--text-muted);
+}
+
+.about-edit-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .about-edit-btn--sm {
@@ -234,13 +231,18 @@
   border: 1px solid var(--accent);
   border-radius: 3px;
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
 }
 
 .about-save-btn:hover {
   opacity: 0.88;
+}
+
+.about-save-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .about-save-btn:disabled {
@@ -257,12 +259,17 @@
   border-radius: 3px;
   padding: 6px 14px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .about-cancel-btn:hover {
   color: var(--text-h);
   border-color: var(--text-muted);
+}
+
+.about-cancel-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .about-cancel-btn:disabled {
@@ -331,12 +338,17 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .about-avatar-edit-tab:hover {
   color: var(--text-h);
   border-color: var(--text-h);
+}
+
+.about-avatar-edit-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .about-avatar-edit-tab--active {
@@ -347,7 +359,7 @@
 .about-avatar-edit-error {
   margin: 0;
   font-size: 0.82rem;
-  color: var(--danger, #dc3545);
+  color: var(--accent);
 }
 
 .about-avatar-edit-preview {
@@ -380,7 +392,7 @@
   border: 1px dashed var(--border);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .about-avatar-edit-file:hover {

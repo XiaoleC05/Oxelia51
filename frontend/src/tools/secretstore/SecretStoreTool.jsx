@@ -285,7 +285,7 @@ export default function SecretStoreTool() {
           <div className="ss-list-toolbar">
             <div className="ss-search-wrap">
               <SearchIcon/>
-              <input type="text" className="ss-search-input" placeholder="搜索条目…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}/>
+              <input type="text" className="ss-search-input" placeholder="搜索条目…" aria-label="搜索条目" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}/>
             </div>
             <div className="ss-list-actions">
               <button className="ss-action-btn" onClick={openNewEditor}><PlusIcon/> 新建</button>

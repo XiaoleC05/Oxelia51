@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import './DevTimeline.css'
 
 /* ===== 多 Agent 协作时间线 — Agent 职责描述 =====
@@ -51,8 +52,31 @@ const AGENT_ICON = {
 }
 
 function DevTimeline() {
+  const sectionRef = useRef(null)
+
+  /* 进入视口后加 .dev-timeline--inview 触发节点渐入/点亮动画（仅触发一次） */
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    if (typeof IntersectionObserver === 'undefined') {
+      el.classList.add('dev-timeline--inview')
+      return
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('dev-timeline--inview')
+          io.disconnect()
+        }
+      },
+      { threshold: 0.2 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
   return (
-    <section className="dev-timeline" aria-label="多 Agent 协作时间线">
+    <section ref={sectionRef} className="dev-timeline" aria-label="多 Agent 协作时间线">
       <h2 className="dev-timeline-title">多 Agent 协作时间线</h2>
       <div className="dev-timeline-track">
         {TIMELINE.map((node, i) => (

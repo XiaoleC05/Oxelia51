@@ -42,8 +42,9 @@ function Login() {
         <form onSubmit={handleSubmit}>
           {error && <p className="auth-error">{error}</p>}
           <div className="auth-field">
-            <label>账号</label>
+            <label htmlFor="login-account">账号</label>
             <input
+              id="login-account"
               type="text"
               value={account}
               onChange={(e) => setAccount(e.target.value)}
@@ -53,8 +54,9 @@ function Login() {
             />
           </div>
           <div className="auth-field">
-            <label>密码</label>
+            <label htmlFor="login-password">密码</label>
             <input
+              id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

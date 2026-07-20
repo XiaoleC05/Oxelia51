@@ -1,5 +1,41 @@
 /* ===== Shared Auth: creative split-screen ===== */
 
+/* ---- 组件级局部令牌 ----
+   --accent 在亮/暗两种模式下取值相同，因此 accent 上的前景色与品牌区
+   装饰插画色为常量，在此以变量统一定义，避免散落的硬编码颜色。 */
+.auth-brand,
+.auth-page {
+  --auth-on-accent: #fafaf7;
+}
+
+.auth-brand {
+  --auth-brand-start: var(--accent);
+  --auth-brand-mid: #a04030;
+  --auth-brand-end: #8a3528;
+  --auth-glow: rgba(255, 180, 100, 0.15);
+}
+
+[data-theme="dark"] .auth-brand {
+  --auth-brand-start: #2a1f1a;
+  --auth-brand-mid: #3d2820;
+  --auth-brand-end: #4a2e25;
+}
+
+.auth-wrapper {
+  --auth-shadow: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .auth-wrapper {
+  --auth-shadow: rgba(0, 0, 0, 0.2);
+}
+
+/* 成功/失败语义色：由 --accent-2 经色相旋转派生，亮/暗模式各自与
+   --text-h 混合以保证对比度，不引入新的硬编码颜色。 */
+.auth-page {
+  --auth-success: hsl(from var(--accent-2) calc(h - 72) s l);
+  --auth-danger: hsl(from var(--accent-2) calc(h + 143) s l);
+}
+
 /* ---- Wrapper: split layout ---- */
 .auth-wrapper {
   flex: 1;
@@ -10,11 +46,7 @@
   border-radius: 8px;
   overflow: hidden;
   min-height: 540px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="dark"] .auth-wrapper {
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 30px var(--auth-shadow);
 }
 
 /* ---- Brand panel (left) ---- */
@@ -26,20 +58,16 @@
   justify-content: flex-end;
   padding: 48px 40px;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--accent) 0%, #a04030 55%, #8a3528 100%);
-  color: #fafaf7;
-}
-
-[data-theme="dark"] .auth-brand {
-  background: linear-gradient(135deg, #2a1f1a 0%, #3d2820 55%, #4a2e25 100%);
+  background: linear-gradient(135deg, var(--auth-brand-start) 0%, var(--auth-brand-mid) 55%, var(--auth-brand-end) 100%);
+  color: var(--auth-on-accent);
 }
 
 /* Animated gradient overlay */
 .auth-brand-bg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.1), transparent 50%),
-              radial-gradient(circle at 70% 80%, rgba(255, 180, 100, 0.15), transparent 50%);
+  background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--auth-on-accent) 10%, transparent), transparent 50%),
+              radial-gradient(circle at 70% 80%, var(--auth-glow), transparent 50%);
   animation: auth-bg-drift 14s ease-in-out infinite alternate;
 }
 
@@ -47,7 +75,7 @@
 .auth-brand-shape {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid color-mix(in srgb, var(--auth-on-accent) 12%, transparent);
   pointer-events: none;
 }
 
@@ -74,7 +102,7 @@
   bottom: 25%;
   right: 15%;
   border: none;
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--auth-on-accent) 6%, transparent);
   animation: auth-float 7s ease-in-out infinite;
   animation-delay: -1s;
 }
@@ -101,15 +129,8 @@
   font-size: 1.8rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #fafaf7;
+  color: var(--auth-on-accent);
   margin-bottom: 8px;
-}
-
-.auth-brand-tagline {
-  font-size: 14px;
-  opacity: 0.82;
-  letter-spacing: 0.06em;
-  margin: 0;
 }
 
 /* ---- Form panel (right) ---- */
@@ -155,7 +176,7 @@
   color: var(--text-h);
   font-size: 16px;
   font-family: var(--sans);
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
   box-sizing: border-box;
 }
 
@@ -169,8 +190,8 @@
   display: block;
   margin-top: 4px;
   font-size: 12px;
-  color: var(--text-muted);
-  opacity: 0.78;
+  color: var(--text);
+  opacity: 0.62;
 }
 
 /* ---- Read-only field variant ---- */
@@ -184,19 +205,38 @@
   border-bottom-color: var(--border);
 }
 
-/* ---- Messages ---- */
-.auth-error {
-  color: var(--accent);
-  font-size: 14px;
+/* ---- Messages：成功（绿色系 ✓）/ 失败（红色系 ✕）语义区分 ---- */
+.auth-error,
+.auth-success {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 14px;
   margin-bottom: 20px;
+  border-left: 3px solid currentColor;
+  border-radius: 3px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
+.auth-error {
+  color: color-mix(in srgb, var(--auth-danger) 50%, var(--text-h));
+  background: color-mix(in srgb, var(--auth-danger) 10%, transparent);
+}
+
+.auth-error::before {
+  content: "✕";
+  font-weight: 700;
+}
+
 .auth-success {
-  color: var(--accent-2);
-  font-size: 14px;
-  margin-bottom: 20px;
-  line-height: 1.6;
+  color: color-mix(in srgb, var(--auth-success) 45%, var(--text-h));
+  background: color-mix(in srgb, var(--auth-success) 10%, transparent);
+}
+
+.auth-success::before {
+  content: "✓";
+  font-weight: 700;
 }
 
 /* ---- Button ---- */
@@ -207,15 +247,25 @@
   border: none;
   border-radius: 3px;
   background: var(--accent);
-  color: #fafaf7;
+  color: var(--auth-on-accent);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
 }
 
 .auth-btn:hover {
   opacity: 0.88;
+}
+
+.auth-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  opacity: 0.8;
+}
+
+.auth-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .auth-btn:disabled {
@@ -235,6 +285,7 @@
   color: var(--text-h);
   text-decoration: none;
   border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
 }
 
 .auth-footer a:hover {
@@ -253,6 +304,7 @@
   color: var(--text-h);
   text-decoration: none;
   border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
 }
 
 .auth-status a:hover {
@@ -260,41 +312,26 @@
   border-color: var(--accent);
 }
 
-/* ---- Responsive: stack vertically on mobile ---- */
+.auth-footer a:focus-visible,
+.auth-status a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ---- Responsive: 移动端隐藏装饰性品牌区，表单区占满 ---- */
 @media (max-width: 768px) {
   .auth-wrapper {
-    flex-direction: column;
     margin: 20px 0;
     min-height: auto;
   }
 
   .auth-brand {
-    flex: 0 0 auto;
-    padding: 32px 28px 28px;
-  }
-
-  .auth-brand-shape--1 {
-    width: 140px;
-    height: 140px;
-    top: -50px;
-    right: -30px;
-  }
-
-  .auth-brand-shape--2 {
-    width: 90px;
-    height: 90px;
-    top: 10%;
-    left: -25px;
-  }
-
-  .auth-brand-shape--3 {
-    width: 60px;
-    height: 60px;
-    bottom: 15%;
-    right: 10%;
+    display: none;
   }
 
   .auth-page {
+    flex: 1 1 auto;
     padding: 40px 28px;
   }
 }
@@ -303,18 +340,6 @@
   .auth-wrapper {
     margin: 48px 0 16px;
     border-radius: 6px;
-  }
-
-  .auth-brand {
-    padding: 24px 20px;
-  }
-
-  .auth-brand-logo {
-    font-size: 1.4rem;
-  }
-
-  .auth-brand-tagline {
-    font-size: 12px;
   }
 
   .auth-page {

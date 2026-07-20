@@ -32,7 +32,7 @@
 /* 网格 */
 .bug-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
@@ -41,7 +41,7 @@
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 18px 20px;
+  padding: 20px;
   cursor: pointer;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
               box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
@@ -61,13 +61,13 @@
 
 .bug-card:focus-visible {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+  box-shadow: 0 0 0 3px var(--accent-border);
 }
 
 .bug-card--open {
   transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.12),
+  box-shadow: 0 12px 32px var(--accent-bg),
               0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
@@ -139,7 +139,8 @@
   padding: 3px 8px;
   border-radius: 10px;
   background: var(--bg-alt);
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.8;
   font-family: var(--mono);
 }
 
@@ -200,11 +201,18 @@
   text-decoration: underline;
 }
 
+.bug-commit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* 展开/收起按钮 */
 .bug-card-toggle {
   text-align: center;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
+  opacity: 0.7;
   margin-top: auto;
   padding-top: 4px;
   font-weight: 500;
@@ -244,6 +252,11 @@
 .bug-pagination-btn:hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--accent-bg);
+}
+
+.bug-pagination-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .bug-pagination-btn:disabled {
@@ -299,17 +312,26 @@
   color: var(--bg);
 }
 
+/* 平板及以下：网格 2 列 → 1 列 */
+@media (max-width: 768px) {
+  .bug-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 移动端 */
 @media (max-width: 640px) {
   .bug-cards {
     padding: 32px 16px 48px;
   }
 
-  .bug-cards-grid {
-    grid-template-columns: 1fr;
-  }
-
   .bug-pagination {
     justify-content: center;
+  }
+
+  /* 触摸目标 ≥44px */
+  .bug-pagination-btn,
+  .bug-pagination-select {
+    min-height: 44px;
   }
 }

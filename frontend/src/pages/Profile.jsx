@@ -58,18 +58,21 @@ function Profile() {
         {error && <p className="auth-error">{error}</p>}
         {message && <p className="auth-success">{message}</p>}
         <div className="auth-field auth-field--readonly">
-          <label>账号 ID</label>
+          <label htmlFor="profile-account-id">账号 ID</label>
           <input
+            id="profile-account-id"
             type="text"
             value={user?.account_id || ''}
             readOnly
             tabIndex={-1}
+            aria-describedby="profile-account-id-hint"
           />
-          <span className="auth-hint">注册后不可修改</span>
+          <span className="auth-hint" id="profile-account-id-hint">注册后不可修改</span>
         </div>
         <div className="auth-field auth-field--readonly">
-          <label>邮箱</label>
+          <label htmlFor="profile-email">邮箱</label>
           <input
+            id="profile-email"
             type="text"
             value={user?.email || ''}
             readOnly
@@ -78,8 +81,9 @@ function Profile() {
         </div>
         <form onSubmit={handleSubmit}>
           <div className="auth-field">
-            <label>用户名</label>
+            <label htmlFor="profile-username">用户名</label>
             <input
+              id="profile-username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}

@@ -173,9 +173,9 @@ export default function AIHelperTool(){
     {!editorOpen&&viewMode==='list'&&(<div className="ah-list">
       <div className="ah-list-toolbar">
         <form className="ah-search-form" onSubmit={handleSearch}>
-          <div className="ah-search-wrap"><SearchIcon/><input type="text" className="ah-search-input" placeholder="搜索提示词…" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/></div>
+          <div className="ah-search-wrap"><SearchIcon/><input type="text" className="ah-search-input" placeholder="搜索提示词…" aria-label="搜索提示词" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/></div>
           <select className="ah-select ah-select--sm" value={filterCategory} onChange={e=>setFilterCategory(e.target.value)}>{CATEGORY_OPTIONS.map(c=><option key={c} value={c}>{c}</option>)}</select>
-          <input type="text" className="ah-input ah-input--sm" placeholder="标签…" value={filterTag} onChange={e=>setFilterTag(e.target.value)}/>
+          <input type="text" className="ah-input ah-input--sm" placeholder="标签…" aria-label="按标签筛选" value={filterTag} onChange={e=>setFilterTag(e.target.value)}/>
           <label className="ah-fav-toggle"><input type="checkbox" checked={filterFavorite} onChange={e=>setFilterFavorite(e.target.checked)}/><StarIcon filled={filterFavorite}/>收藏</label>
           <button type="submit" className="ah-search-btn">筛选</button>
         </form>

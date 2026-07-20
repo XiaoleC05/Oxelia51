@@ -1,6 +1,6 @@
 function AuthBrandPanel() {
   return (
-    <aside className="auth-brand">
+    <aside className="auth-brand" aria-hidden="true">
       <div className="auth-brand-bg" />
       <div className="auth-brand-shape auth-brand-shape--1" />
       <div className="auth-brand-shape auth-brand-shape--2" />
