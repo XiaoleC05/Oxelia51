@@ -19,9 +19,14 @@ type WeatherHandler struct {
 }
 
 func NewWeatherHandler(rdb *redis.Client) *WeatherHandler {
+	transport := &http.Transport{
+		MaxIdleConns:        10,
+		MaxIdleConnsPerHost: 6, // 6 城市并发查 api.open-meteo.com，复用连接
+		IdleConnTimeout:     90 * time.Second,
+	}
 	return &WeatherHandler{
 		rdb: rdb,
-		hc:  &http.Client{Timeout: 10 * time.Second},
+		hc:  &http.Client{Timeout: 10 * time.Second, Transport: transport},
 	}
 }
 
@@ -79,7 +84,7 @@ func (h *WeatherHandler) GetWeather(c *gin.Context) {
 	var (
 		wg      sync.WaitGroup
 		mu      sync.Mutex
-		results []weatherResponse
+		results = make([]weatherResponse, 0, len(cities)) // 预分配避免扩容
 	)
 
 	for _, city := range cities {

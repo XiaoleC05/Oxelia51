@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http/pprof"
 	"path/filepath"
 
 	"github.com/XiaoleC05/oxelia51-backend/internal/admin"
@@ -58,6 +59,18 @@ func main() {
 	if err := r.SetTrustedProxies([]string{"127.0.0.1", "::1"}); err != nil {
 		log.Printf("警告: 设置可信代理失败: %v", err)
 	}
+
+	// pprof 性能分析端点（生产环境 Nginx 须屏蔽 /debug/* 不对外暴露）
+	r.GET("/debug/pprof/", gin.WrapF(pprof.Index))
+	r.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
+	r.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
+	r.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
+	r.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
+	r.GET("/debug/pprof/heap", gin.WrapH(pprof.Handler("heap")))
+	r.GET("/debug/pprof/goroutine", gin.WrapH(pprof.Handler("goroutine")))
+	r.GET("/debug/pprof/allocs", gin.WrapH(pprof.Handler("allocs")))
+	r.GET("/debug/pprof/block", gin.WrapH(pprof.Handler("block")))
+	r.GET("/debug/pprof/mutex", gin.WrapH(pprof.Handler("mutex")))
 
 	health := handler.NewHealthHandler(pool)
 	r.GET("/api/health", health.Health)
