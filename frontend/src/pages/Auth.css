@@ -29,11 +29,16 @@
   --auth-shadow: rgba(0, 0, 0, 0.2);
 }
 
-/* 成功/失败语义色：由 --accent-2 经色相旋转派生，亮/暗模式各自与
-   --text-h 混合以保证对比度，不引入新的硬编码颜色。 */
+/* 成功/失败语义色：旧浏览器用固定颜色回退，新浏览器从 --accent-2 派生 */
 .auth-page {
-  --auth-success: hsl(from var(--accent-2) calc(h - 72) s l);
-  --auth-danger: hsl(from var(--accent-2) calc(h + 143) s l);
+  --auth-success: #2c6e49;
+  --auth-danger: #dc2626;
+}
+@supports (color: hsl(from red h s l)) {
+  .auth-page {
+    --auth-success: hsl(from var(--accent-2) calc(h - 72) s l);
+    --auth-danger: hsl(from var(--accent-2) calc(h + 143) s l);
+  }
 }
 
 /* ---- Wrapper: split layout ---- */
