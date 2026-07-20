@@ -66,6 +66,7 @@ PostgreSQL    Redis
 | 缓存 | Redis 7 | 会话缓存、限流器 |
 | 部署 | Docker Compose + Nginx | 阿里云 2C2G + 腾讯云 4C4G |
 | AI 协作 | 4-agent 模型 | Claude Code（架构与部署）、Qoder（后端）、Trae Work（前端）、Codex（审查与测试） |
+| 测试覆盖率 | ![coverage](https://img.shields.io/badge/coverage-9%25-yellow) | `go test -coverprofile=coverage.out ./...`（需 Docker 环境运行 DB 集成测试以提升覆盖率） |
 
 ## 目录结构
 
