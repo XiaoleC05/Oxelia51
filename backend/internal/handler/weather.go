@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"sync"
 	"time"
@@ -95,6 +96,11 @@ func (h *WeatherHandler) GetWeather(c *gin.Context) {
 			Lon  float64
 		}) {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("weather goroutine panic", "city", city.Name, "panic", r)
+				}
+			}()
 			wr := fetchCityWeather(ctx, h.hc, city.Name, city.Lat, city.Lon)
 			mu.Lock()
 			results = append(results, wr)
@@ -123,10 +129,12 @@ func fetchCityWeather(ctx context.Context, hc *http.Client, name string, lat, lo
 		return weatherResponse{City: name, Temp: 0, Icon: "🌡️", Label: "不可用"}
 	}
 	resp, err := hc.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return weatherResponse{City: name, Temp: 0, Icon: "🌡️", Label: "不可用"}
 	}
-	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return weatherResponse{City: name, Temp: 0, Icon: "🌡️", Label: "不可用"}
 	}

@@ -3,6 +3,7 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -42,7 +43,13 @@ func (m *AuthMiddleware) Handle() gin.HandlerFunc {
 		jti, _ := claims["jti"].(string)
 		if jti != "" {
 			blocked, err := m.blacklist.Has(c.Request.Context(), jti)
-			if err == nil && blocked {
+			if err != nil {
+				slog.Warn("blacklist check failed, denying token", "error", err, "jti", jti)
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "认证服务不可用", "code": "UNAUTHORIZED"})
+				c.Abort()
+				return
+			}
+			if blocked {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "令牌已失效", "code": "UNAUTHORIZED"})
 				c.Abort()
 				return

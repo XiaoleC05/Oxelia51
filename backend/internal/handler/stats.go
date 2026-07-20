@@ -18,10 +18,9 @@ import (
 )
 
 type StatsHandler struct {
-	mu       sync.Mutex
-	prevCPU  *cpuSample
-	prevTime time.Time
-	hc       *http.Client
+	mu      sync.Mutex
+	prevCPU *cpuSample
+	hc      *http.Client
 }
 
 func NewStatsHandler() *StatsHandler {
@@ -135,12 +134,10 @@ func (h *StatsHandler) cpuPercent() float64 {
 	if err != nil {
 		return 0
 	}
-	now := time.Now()
 
 	h.mu.Lock()
 	prev := h.prevCPU
 	h.prevCPU = cur
-	h.prevTime = now
 	h.mu.Unlock()
 
 	if prev == nil {

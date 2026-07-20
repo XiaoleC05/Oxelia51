@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { apiGet, getToken, getStoredUser, canUseTool, BADGE_LABEL } from '../api'
 import './Tools.css'
-import './Portfolio.css'
 
 function Tools() {
   const navigate = useNavigate()

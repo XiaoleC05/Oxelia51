@@ -204,6 +204,77 @@
   color: var(--text-muted);
 }
 
+/* ---- Portfolio tab (migrated from Portfolio.css) ---- */
+.portfolio-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.portfolio-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px 40px;
+  align-items: start;
+  padding: 48px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.portfolio-row:first-child {
+  border-top: 1px solid var(--border);
+}
+
+.portfolio-info {
+  min-width: 0;
+}
+
+.portfolio-info h2 {
+  font-family: var(--heading);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.portfolio-info p {
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 560px;
+}
+
+.portfolio-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-top: 4px;
+}
+
+.portfolio-links a {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1px;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.portfolio-links a:hover {
+  color: var(--text-h);
+  border-color: var(--text-muted);
+}
+
+.portfolio-status {
+  padding: 80px 0;
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+.portfolio-error {
+  color: var(--accent);
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 640px) {
   .tool-row {
@@ -232,5 +303,21 @@
   .tool-meta {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .portfolio-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 32px 0;
+  }
+
+  .portfolio-info h2 {
+    font-size: 1.25rem;
+  }
+
+  .portfolio-links {
+    flex-direction: row;
+    gap: 18px;
+    text-align: left;
   }
 }

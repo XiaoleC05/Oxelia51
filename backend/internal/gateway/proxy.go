@@ -98,6 +98,10 @@ func (h *Handler) Proxy(c *gin.Context) {
 		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "工具上游地址未配置")
 		return
 	}
+	if !strings.HasPrefix(base, "http://127.0.0.1:") && !strings.HasPrefix(base, "http://localhost:") {
+		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游地址配置无效")
+		return
+	}
 
 	target, err := url.Parse(base + proxyPath)
 	if err != nil {
