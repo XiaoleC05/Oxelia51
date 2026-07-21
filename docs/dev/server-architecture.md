@@ -14,7 +14,7 @@
 | **水平扩展** | 单机瓶颈 | 腾讯云作为热备节点，关键服务双实例 |
 | **服务隔离** | 一个服务 OOM 影响全局 | systemd memory limit + 独立用户运行 |
 | **高可用** | 腾讯云几乎闲置 | 腾讯云运行 PostgreSQL 只读副本 + health-server |
-| **安全** | 公网暴露 443/80 | 最小暴露面：仅 443，SSH 仅 Workbench |
+| **安全** | 公网暴露 443/80 | 最小暴露面：仅 443，SSH 仅 Workbench。IP 白名单保护 `/api/admin/*`，管理员在后台管理 |
 | **配置分离** | `.env` 文件在服务器上，OK | 补充 `.env.example` 模板 + 部署时注入 |
 | **可观测** | slog 日志已结构化 | 补充 health-check 定时脚本 + 告警 |
 | **自动化** | GitHub Actions 已有，OK | 补充零停机重启（graceful shutdown） |
