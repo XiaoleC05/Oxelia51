@@ -8,7 +8,7 @@ function Admin() {
   const token = useMemo(() => getToken(), [])
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const validTabs = ['dashboard', 'tools', 'users', 'heroes', 'articles', 'profile', 'server', 'terminal']
+  const validTabs = ['dashboard', 'tools', 'users', 'heroes', 'articles', 'profile', 'server', 'whitelist']
   const [tab, setTabState] = useState(() => {
     const t = searchParams.get('tab')
     return t && validTabs.includes(t) ? t : 'dashboard'
@@ -133,15 +133,15 @@ function Admin() {
           服务器
         </button>
         <button
-          className={`admin-tab ${tab === 'terminal' ? 'admin-tab--active' : ''}`}
-          onClick={() => setTab('terminal')}
+          className={`admin-tab ${tab === 'whitelist' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('whitelist')}
         >
-          终端
+          白名单
         </button>
       </div>
 
-      {tab === 'terminal' ? (
-        <TerminalTab />
+      {tab === 'whitelist' ? (
+        <IPWhitelistTab />
       ) : tab === 'server' ? (
         <ServerTab />
       ) : tab === 'dashboard' ? (
@@ -1548,62 +1548,93 @@ function ProfileTab({ profile, onUpdated }) {
   )
 }
 
-// ===== 服务器终端 =====
-function TerminalTab() {
-  const [cmd, setCmd] = useState('')
-  const [output, setOutput] = useState('')
-  const [running, setRunning] = useState(false)
-  const outputRef = useRef(null)
+// ===== IP 白名单管理 =====
+function IPWhitelistTab() {
+  const [items, setItems] = useState([])
+  const [ip, setIp] = useState('')
+  const [label, setLabel] = useState('')
+  const [loading, setLoading] = useState(true)
 
-  const run = useCallback(async () => {
-    const q = cmd.trim()
-    if (!q || running) return
-    setRunning(true)
-    setOutput((p) => p + '\n$ ' + q)
+  const load = useCallback(async () => {
     try {
       const token = getToken()
-      const res = await fetch('/api/admin/exec', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (token || '') },
-        body: JSON.stringify({ command: q, timeout: 15 }),
+      const res = await fetch('/api/admin/ip-whitelist', {
+        headers: { Authorization: 'Bearer ' + (token || '') },
       })
-      const data = await res.json()
-      setOutput((p) => p + '\n' + (data.stdout || '') + (data.error ? '\n[错误] ' + data.error : ''))
-    } catch (e) {
-      setOutput((p) => p + '\n[错误] ' + e.message)
-    } finally {
-      setRunning(false)
-    }
-  }, [cmd, running])
+      if (res.ok) setItems(await res.json())
+    } catch {} finally { setLoading(false) }
+  }, [])
 
-  useEffect(() => {
-    if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight
-  }, [output])
+  useEffect(() => { load() }, [load])
+
+  const add = async () => {
+    const v = ip.trim()
+    if (!v) return
+    const token = getToken()
+    const res = await fetch('/api/admin/ip-whitelist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (token || '') },
+      body: JSON.stringify({ ip: v, label: label.trim() }),
+    })
+    if (res.ok) { setIp(''); setLabel(''); load() }
+  }
+
+  const remove = async (id) => {
+    const token = getToken()
+    const res = await fetch('/api/admin/ip-whitelist/' + id, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + (token || '') },
+    })
+    if (res.ok) load()
+  }
 
   return (
     <div>
-      <h2>服务器终端</h2>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+      <h2>IP 白名单</h2>
+      <p className="admin-muted" style={{ marginBottom: 16, fontSize: 13 }}>
+        白名单内的 IP 才能访问管理后台。白名单为空时不限制。
+      </p>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <input
-          value={cmd}
-          onChange={(e) => setCmd(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') run() }}
-          placeholder="输入命令，回车执行"
-          style={{ flex: 1, fontFamily: 'var(--mono)', fontSize: 13, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--text-h)' }}
+          value={ip}
+          onChange={(e) => setIp(e.target.value)}
+          placeholder="IP 地址，如 218.200.225.181"
+          style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--text-h)', fontSize: 14 }}
         />
-        <button className="admin-btn admin-btn--primary" onClick={run} disabled={running}>
-          {running ? '执行中…' : '执行'}
-        </button>
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="备注（可选）"
+          style={{ width: 200, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--text-h)', fontSize: 14 }}
+        />
+        <button className="admin-btn admin-btn--primary" onClick={add}>添加</button>
       </div>
-      <pre
-        ref={outputRef}
-        style={{ background: 'var(--code-bg)', color: 'var(--text)', padding: 16, borderRadius: 6, fontSize: 12, fontFamily: 'var(--mono)', lineHeight: 1.6, maxHeight: 500, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}
-      >
-        {output || '命令输出显示在这里'}
-      </pre>
+      {loading ? (
+        <p className="admin-status">加载中…</p>
+      ) : items.length === 0 ? (
+        <p className="admin-status">白名单为空 — 所有 IP 均可访问</p>
+      ) : (
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead><tr><th>IP</th><th>备注</th><th>添加时间</th><th></th></tr></thead>
+            <tbody>
+              {items.map((it) => (
+                <tr key={it.id}>
+                  <td className="admin-mono">{it.ip}</td>
+                  <td>{it.label || '-'}</td>
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{new Date(it.created_at).toLocaleString()}</td>
+                  <td><button className="admin-btn admin-btn--danger admin-btn--sm" onClick={() => remove(it.id)}>删除</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
+
+// ===== 服务器监控 =====
 
 // ===== 服务器监控 =====
 function ProgressBar({ percent }) {
