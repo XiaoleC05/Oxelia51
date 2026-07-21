@@ -21,7 +21,7 @@ func testDBPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
-		dsn = "postgres://root:@Wo4geshabi@localhost:5432/oxelia51?sslmode=disable"
+		t.Skip("TEST_DATABASE_URL not set, skipping DB test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
