@@ -4,16 +4,16 @@ import './BugCards.css'
 
 /* ===== Vite ?raw 导入 Markdown 文件作为字符串 =====
  * 路径：src/components/ → ../ = src/ → ../../ = frontend/ → ../../../ = Oxelia51/
- * Markdown 文件位于 Oxelia51/docs/superpowers/bugs/
+ * Markdown 文件位于 Oxelia51/docs/dev/bugs/
  */
-import bug001 from '../../../docs/superpowers/bugs/001-superread-apikey-mask.md?raw'
-import bug002 from '../../../docs/superpowers/bugs/002-smartkb-date-scan.md?raw'
-import bug003 from '../../../docs/superpowers/bugs/003-brief-utc-timezone.md?raw'
-import bug004 from '../../../docs/superpowers/bugs/004-webhook-concurrency.md?raw'
-import bug005 from '../../../docs/superpowers/bugs/005-nginx-405-tool-webhook.md?raw'
-import bug006 from '../../../docs/superpowers/bugs/006-frontend-paren-render.md?raw'
-import bug007 from '../../../docs/superpowers/bugs/007-sse-type-mismatch.md?raw'
-import bug008 from '../../../docs/superpowers/bugs/008-fetch-interval-unit.md?raw'
+import bug001 from '../../../docs/dev/bugs/001-superread-apikey-mask.md?raw'
+import bug002 from '../../../docs/dev/bugs/002-smartkb-date-scan.md?raw'
+import bug003 from '../../../docs/dev/bugs/003-brief-utc-timezone.md?raw'
+import bug004 from '../../../docs/dev/bugs/004-webhook-concurrency.md?raw'
+import bug005 from '../../../docs/dev/bugs/005-nginx-405-tool-webhook.md?raw'
+import bug006 from '../../../docs/dev/bugs/006-frontend-paren-render.md?raw'
+import bug007 from '../../../docs/dev/bugs/007-sse-type-mismatch.md?raw'
+import bug008 from '../../../docs/dev/bugs/008-fetch-interval-unit.md?raw'
 
 const BUG_FILES = [
   bug001, bug002, bug003, bug004,

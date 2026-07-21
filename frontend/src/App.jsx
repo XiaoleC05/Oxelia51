@@ -7,7 +7,6 @@ import SmartKBFAB from './components/SmartKBFAB'
 import SmartKBWidget from './components/SmartKBWidget'
 import GlobalFooter from './components/GlobalFooter'
 import PageSkeleton from './components/Skeleton'
-import BackgroundWave from './components/BackgroundWave'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -87,7 +86,6 @@ function App() {
   const [kbOpen, setKbOpen] = useState(false)
   return (
     <BrowserRouter>
-      <BackgroundWave />
       <ScrollProgress />
       <Navbar />
       <main id="main-content"><AnimatedRoutes /></main>
