@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom'
 import { apiPost, setToken, setRefreshToken } from '../api'
 import AuthBrandPanel from '../components/AuthBrandPanel'
 import './Auth.css'
 
 function Login() {
   const location = useLocation()
-  const from = location.state?.from || '/'
+  const [searchParams] = useSearchParams()
+  const from = searchParams.get('redirect') || location.state?.from || '/'
   const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

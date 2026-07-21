@@ -25,7 +25,8 @@ async function parseResponse(res) {
     clearToken()
     localStorage.removeItem('user')
     if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-      window.location.href = '/login'
+      const p = window.location.pathname + window.location.search
+      window.location.href = '/login?redirect=' + encodeURIComponent(p)
     }
     throw new Error(data?.error || '登录已过期，请重新登录')
   }
