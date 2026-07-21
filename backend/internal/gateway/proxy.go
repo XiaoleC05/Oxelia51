@@ -248,14 +248,11 @@ func injectGatewayHeaders(req *http.Request, c *gin.Context, cfg *config.Config)
 	uid := strings.TrimSpace(fmt.Sprintf("%v", userID))
 	uname := strings.TrimSpace(fmt.Sprintf("%v", username))
 	r := strings.TrimSpace(fmt.Sprintf("%v", role))
+	// 未登录时使用匿名身份，让工具能正常响应（工具自行决定权限）
 	if uid == "" || uid == "0" || uid == "<nil>" {
-		return fmt.Errorf("令牌缺少用户信息，请重新登录")
-	}
-	if uname == "" || uname == "<nil>" {
-		return fmt.Errorf("令牌缺少用户名，请重新登录")
-	}
-	if r != "admin" && r != "user" {
-		return fmt.Errorf("令牌角色无效，请重新登录")
+		uid = "0"
+		uname = "anonymous"
+		r = "user"
 	}
 
 	req.Header.Set("X-Oxelia51-User-Id", uid)
