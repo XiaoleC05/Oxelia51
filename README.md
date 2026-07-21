@@ -7,57 +7,37 @@
 
 # Oxelia51
 
-> AI 模型怎么选？有什么好玩的网站？——都在这里。顺便搭建你的个人网站。
+大模型能力榜单，有趣网站推荐，个人网站搭建。
 
 ## 简介
 
 Oxelia51 做两件事：
 
-1. **AI 开发者导航** — 聚合 LMSYS、SWE-bench、Artificial Analysis 等权威平台的大模型能力数据，多维度对比（编程/前端/后端/审查/性价比/速度/中文），帮助开发者选择最适合的模型。每周推荐真正值得看的有趣网站。
+1. 大模型能力榜单 — 聚合 LMSYS、SWE-bench、Artificial Analysis 等平台的模型数据，按编程、前端、后端、审查、性价比、速度、中文等维度对比。每周更新。
 
-2. **个人网站搭建** — 选模板、填信息，一键获得 `oxelia51.com/@你的名字` 的个人主页。面向计算机学生的秋招/春招需求，以及独立开发者的作品展示。
+2. 有趣网站推荐 — 每周一期，推荐开发工具、设计灵感、独立博客、AI 应用等值得看的网站。
+
+3. 个人网站搭建 — 选模板，填信息，获得 `oxelia51.com/@名字` 的个人主页。可自定义博客、项目列表、社交链接。
 
 - 域名：[oxelia51.com](https://oxelia51.com)
 - 仓库：[github.com/XiaoleC05/Oxelia51](https://github.com/XiaoleC05/Oxelia51)
 
 ## 功能
 
-- 大模型能力榜单（8 个维度、11 个权威数据源、每周自动更新）
-- 有趣网站推荐（每周一期，支持用户投稿）
-- 个人主页搭建（`/@username`，选模板、填信息、一键发布）
-- 用户注册与 JWT 认证
+- 大模型能力榜单（编程、前端、后端、审查、性价比、速度、中文）
+- 有趣网站推荐（每周更新）
+- 个人主页搭建（`/@username`，选模板、填信息即发布）
 - 博客系统
-- SmartKB 平台智能助手
-- 管理员后台（用户管理、内容管理、双服监控、SecretStore 加密保险箱、DormGuard 电费监控）
+- 管理员后台（用户管理、内容管理、服务器监控、SecretStore、DormGuard）
 
 ## 架构
 
 ```
-Browser
-  ↓
-Nginx（反向代理，阿里云）
-  ↓
-React 前端（所有工具的统一界面）
-  ↓
-Go API 层（认证、工具注册、API 网关）
-  ↓           ↓
-PostgreSQL    Redis
-（用户/工具    （会话缓存、
- 元数据）      限流器）
-
-内部 API 网关：
-  Go Backend → DormGuard :8000  （内网）
-             → SuperRead :8002  （内网）
-             → AIHelper  :8004  （内网）
-             → SecretStore :8006（内网）
-             → AgentCanvas :8005（内网）
-             → SmartKB    :8007（内网）
-
-腾讯云 (118.25.138.177)：
-  health-server :8090  ← 阿里云管理后台定时拉取 CPU/内存/磁盘
+Browser → Nginx → React 前端 → Go API → PostgreSQL + Redis
 ```
 
-各工具仅提供后端 API，不包含独立前端。所有界面由平台 React 应用统一渲染，后端负责认证、工具注册和请求转发。双服务器监控数据在管理后台统一展示。
+- 阿里云 47.108.202.199（主服务器）+ 腾讯云 118.25.138.177（health-server）
+- 部署：`git push master` → GitHub Actions → webhook → 服务器
 
 ## 技术栈
 
@@ -69,39 +49,15 @@ PostgreSQL    Redis
 | 缓存 | Redis 7 | 会话缓存、限流器 |
 | 部署 | Docker Compose + Nginx | 阿里云 2C2G + 腾讯云 4C4G |
 | AI 协作 | 4-agent 模型 | Claude Code（架构与部署）、Qoder（后端）、Trae Work（前端）、Codex（审查与测试） |
-| 测试覆盖率 | ![coverage](https://img.shields.io/badge/coverage-9%25-yellow) | `go test -coverprofile=coverage.out ./...`（需 Docker 环境运行 DB 集成测试以提升覆盖率） |
-
 ## 目录结构
 
 ```
 Oxelia51/
-├── .agents/          # 各 Agent 任务提示词
-├── .github/          # GitHub Actions CI/CD
 ├── backend/          # Go + Gin
-│   ├── cmd/          # 入口
-│   ├── internal/     # 业务逻辑
-│   └── migrations/   # PostgreSQL 迁移脚本
-├── frontend/         # React（Vite）
-│   ├── public/       # 静态资源
-│   └── src/          # 组件、页面、工具壳
-├── deploy/           # 部署脚本与配置
-│   ├── docker/       # Docker Compose
-│   ├── nginx/        # Nginx 配置
-│   ├── systemd/      # systemd 服务文件
-│   ├── monitor/      # 健康检查脚本
-│   ├── tencent-cloud/ # 腾讯云 health-server
-│   └── webhook/      # 自动部署 webhook
-├── docs/             # 项目文档
-│   ├── user/         # 用户文档（使用指南、工具简介）
-│   ├── dev/          # 开发者文档（ADR/API/审查/部署）
-│   ├── superpowers/  # 设计规范 + Bug 案例
-│   ├── archive/      # 历史归档
-│   └── ui/           # UI 评审报告
-├── scripts/          # 辅助脚本
-├── AGENTS.md         # 多 Agent 协作规范
-├── CHANGELOG.md      # 版本变更日志
-├── oxelia51.tool.json # 工具注册清单
-└── README.md
+├── frontend/         # React + Vite
+├── deploy/           # 部署脚本、Nginx、systemd、webhook
+├── docs/dev/         # 开发文档
+└── scripts/          # 辅助脚本
 ```
 
 ## 环境要求
@@ -165,83 +121,17 @@ npm run dev
 | `/forgot-password` `/reset-password` | 密码重置 |
 | `/admin` | 管理后台（仅 `oxelia51`） |
 
-## 在线工具
-
-| 工具 | 仓库 | 说明 | 端口 |
-|------|------|------|------|
-| DormGuard | [XiaoleC05/DormGuard](https://github.com/XiaoleC05/DormGuard) | 宿舍电费监控 + QQ 机器人 | :8000 |
-| SuperRead | [XiaoleC05/SuperRead](https://github.com/XiaoleC05/SuperRead) | RSS 订阅 + AI 每日简报 | :8002 |
-| AIHelper | [XiaoleC05/AIHelper](https://github.com/XiaoleC05/AIHelper) | 提示词管理与增强 | :8004 |
-| SecretStore | [XiaoleC05/SecretStore](https://github.com/XiaoleC05/SecretStore) | AES-256-GCM 加密保险箱 | :8006 |
-| AgentCanvas | [XiaoleC05/AgentCanvas](https://github.com/XiaoleC05/AgentCanvas) | Agent 执行流程可视化 | :8005 |
-| SmartKB | [XiaoleC05/SuperRead](https://github.com/XiaoleC05/SuperRead) | 知识库检索（pgvector + RAG） | :8007 |
-
-> 各工具为独立 GitHub 仓库，通过本平台 API 网关统一接入。
-
-## 开发进度
-
-| 模块 | 状态 |
-|------|------|
-| 用户系统（注册/登录/JWT/邮箱验证） | ✅ 已完成 |
-| account_id 账号体系 | ✅ 已完成 |
-| 工具目录（列表/详情/状态徽章） | ✅ 已完成 |
-| 管理后台（工具 CRUD + 双服资源监控） | ✅ 已完成 |
-| 平台落地页 + 博客 + 作品集 + 关于 | ✅ 已完成 |
-| API 网关 | ✅ 已完成 |
-| 友链 / 个人资料页 | ✅ 已完成 |
-| 全站视觉系统（PageLoader / 星空背景 / 毛玻璃） | ✅ 已完成 |
-| 移动端适配 | ✅ 已完成 |
-| DormGuard（Go 重构 + QQ 机器人） | ✅ 已完成 |
-| SecretStore 加密保险箱 | ✅ 已完成 |
-| SuperRead RSS 订阅 + AI 简报 | ✅ 已完成 |
-| AIHelper 提示词助手 | ✅ 已完成 |
-| AgentCanvas Agent 可视化画布 | ✅ 已完成 |
-| SmartKB 知识库检索 | ✅ 已完成 |
-| 腾讯云 health-server + 双服监控 | ✅ 已完成 |
-
 ## 部署
 
 ```bash
-# 使用 Docker Compose 构建并部署
 docker compose -f deploy/docker/docker-compose.yml up -d --build
 ```
 
-详细部署文档见 [deploy/README.md](deploy/README.md)。
+部署流程：`git push master` → GitHub Actions 构建 → webhook → 服务器自动部署。
 
-**服务器信息**：
-- 阿里云 47.108.202.199（主服务器，运行全部服务）
-- 腾讯云 118.25.138.177（health-server 健康检查）
+## 4-Agent 协作
 
-部署流程：`git push master` → GitHub Actions 自动构建 → webhook 通知服务器拉取 → 自动部署。服务器无需 Go/Node 环境。
-
-## 路线图
-
-- [x] 平台落地页
-- [x] API 网关与工具请求转发
-- [x] 前端工具 UI 框架
-- [x] 标准化工具注册机制
-- [x] 6 个在线工具接入 API 网关
-- [x] `account_id` 登录标识 + 个人资料页
-- [x] 友情链接页
-- [x] 双服务器资源监控（阿里云 + 腾讯云）
-- [x] DormGuard QQ 机器人接入
-- [x] DormGuard Go 重构（Python → Go，内存降 95%）
-- [x] SecretStore 加密保险箱工具
-- [x] SuperRead RSS 订阅 + AI 简报
-- [x] AIHelper 提示词助手
-- [x] AgentCanvas Agent 可视化画布
-- [x] SmartKB 知识库检索（pgvector + RAG）
-
-## AI 协作模型
-
-本项目采用 **4-agent 多智能体协作模型**（详见 [AGENTS.md](AGENTS.md)）：
-
-| 角色 | 智能体 | 职责 |
-|------|--------|------|
-| 架构与部署 | Claude Code | 整体架构、任务分解、部署运维、最终集成 |
-| 后端 | Qoder | 业务逻辑、API、数据库 |
-| 前端 | Trae Work | UI、交互、响应式 |
-| 审查与测试 | Codex | 代码审查、测试、文档、命名一致性 |
+本项目由一位开发者 + 四个 AI Agent 协作开发（详见 [AGENTS.md](AGENTS.md)）：Claude Code（架构/部署）、Qoder（Go 后端）、Trae Work（React 前端）、Codex（审查/测试/文档）。
 
 ## 参与贡献
 
