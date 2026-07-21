@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -287,4 +289,43 @@ func (h *WhitelistHandler) DeleteWhitelist(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// --- 安全命令执行 ---
+
+// ExecReq 命令执行请求
+type ExecReq struct {
+	Command string `json:"command" binding:"required"`
+	Timeout int    `json:"timeout"` // 秒，默认 10，最大 30
+}
+
+// Exec 执行命令（仅 admin + IP 白名单）
+func Exec(c *gin.Context) {
+	var req ExecReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		infra.ApiError(c, http.StatusBadRequest, "INVALID_REQUEST", err.Error())
+		return
+	}
+	if len(req.Command) > 4096 {
+		infra.ApiError(c, http.StatusBadRequest, "INVALID_REQUEST", "命令过长")
+		return
+	}
+	timeout := 10
+	if req.Timeout > 0 && req.Timeout <= 30 {
+		timeout = req.Timeout
+	}
+
+	slog.Warn("exec", "command", req.Command)
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(timeout)*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "bash", "-c", req.Command)
+	output, err := cmd.CombinedOutput()
+
+	c.JSON(http.StatusOK, gin.H{
+		"exitCode": cmd.ProcessState.ExitCode(),
+		"stdout":   string(output),
+		"error":    func() string { if err != nil { return err.Error() }; return "" }(),
+	})
 }
