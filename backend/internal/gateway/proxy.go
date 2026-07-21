@@ -128,7 +128,7 @@ func (h *Handler) Proxy(c *gin.Context) {
 	}
 
 	copyHeaders(upReq.Header, c.Request.Header)
-	if err := injectGatewayHeaders(upReq, c, h.cfg); err != nil {
+	if err := injectGatewayHeaders(upReq, c, h.cfg, slug); err != nil {
 		// 未登录用户不注入身份头，直接转发（工具自行处理匿名访问）
 	}
 
@@ -240,7 +240,7 @@ func copyResponseHeaders(dst, src http.Header) {
 	}
 }
 
-func injectGatewayHeaders(req *http.Request, c *gin.Context, cfg *config.Config) error {
+func injectGatewayHeaders(req *http.Request, c *gin.Context, cfg *config.Config, slug string) error {
 	userID, _ := c.Get("userID")
 	username, _ := c.Get("username")
 	role, _ := c.Get("userRole")
@@ -263,6 +263,11 @@ func injectGatewayHeaders(req *http.Request, c *gin.Context, cfg *config.Config)
 	req.Header.Set("X-User-Id", uid)
 	req.Header.Set("X-Username", uname)
 	req.Header.Set("X-Role", r)
+
+	// Inject tool-specific admin token for downstream auth
+	if token, ok := cfg.ToolAdminTokens[slug]; ok && token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 
 	// HMAC-SHA256 signature for gateway authentication
 	if cfg.GatewayHMACSecret != "" {

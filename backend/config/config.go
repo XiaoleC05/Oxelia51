@@ -46,7 +46,8 @@ type Config struct {
 
 	GatewayUpstreamTimeout time.Duration
 	GatewayMaxBodyBytes    int64
-	GatewayHMACSecret     string
+	GatewayHMACSecret      string
+	ToolAdminTokens        map[string]string
 }
 
 func Load() *Config {
@@ -85,6 +86,7 @@ func Load() *Config {
 		GatewayUpstreamTimeout: getEnvDuration("GATEWAY_UPSTREAM_TIMEOUT", 30*time.Second),
 		GatewayMaxBodyBytes:    getEnvInt64("GATEWAY_MAX_BODY_BYTES", 10<<20),
 		GatewayHMACSecret:     getEnv("GATEWAY_HMAC_SECRET", ""),
+		ToolAdminTokens:       parseToolTokens(),
 	}
 }
 
@@ -158,4 +160,21 @@ func getEnvInt64(key string, fallback int64) int64 {
 		return fallback
 	}
 	return n
+}
+
+// parseToolTokens reads TOOL_ADMIN_TOKEN_<SLUG> env vars
+func parseToolTokens() map[string]string {
+	tokens := make(map[string]string)
+	for _, e := range os.Environ() {
+		if !strings.HasPrefix(e, "TOOL_ADMIN_TOKEN_") {
+			continue
+		}
+		parts := strings.SplitN(e, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		slug := strings.ToLower(strings.TrimPrefix(parts[0], "TOOL_ADMIN_TOKEN_"))
+		tokens[slug] = parts[1]
+	}
+	return tokens
 }
