@@ -120,7 +120,7 @@ func New(cfg *config.Config) *gin.Engine {
 		protected.PATCH("/auth/profile", userH.PatchProfile)
 
 		gw := gateway.NewHandler(pool, cfg)
-		protected.Any("/tools/:slug/proxy/*path", gw.Proxy)
+	r.Any("/api/tools/:slug/proxy/*path", gw.Proxy)
 	}
 
 	// Admin routes

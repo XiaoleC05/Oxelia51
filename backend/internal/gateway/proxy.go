@@ -129,8 +129,7 @@ func (h *Handler) Proxy(c *gin.Context) {
 
 	copyHeaders(upReq.Header, c.Request.Header)
 	if err := injectGatewayHeaders(upReq, c, h.cfg); err != nil {
-		apiError(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
-		return
+		// 未登录用户不注入身份头，直接转发（工具自行处理匿名访问）
 	}
 
 	resp, err := h.client.Do(upReq)
