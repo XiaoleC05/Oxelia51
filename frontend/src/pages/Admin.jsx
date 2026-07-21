@@ -8,7 +8,7 @@ function Admin() {
   const token = useMemo(() => getToken(), [])
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const validTabs = ['dashboard', 'tools', 'users', 'heroes', 'articles', 'profile', 'server']
+  const validTabs = ['dashboard', 'tools', 'users', 'heroes', 'articles', 'profile', 'server', 'terminal']
   const [tab, setTabState] = useState(() => {
     const t = searchParams.get('tab')
     return t && validTabs.includes(t) ? t : 'dashboard'
@@ -132,9 +132,17 @@ function Admin() {
         >
           服务器
         </button>
+        <button
+          className={`admin-tab ${tab === 'terminal' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('terminal')}
+        >
+          终端
+        </button>
       </div>
 
-      {tab === 'server' ? (
+      {tab === 'terminal' ? (
+        <TerminalTab />
+      ) : tab === 'server' ? (
         <ServerTab />
       ) : tab === 'dashboard' ? (
         <DashboardTab />
@@ -1536,6 +1544,63 @@ function ProfileTab({ profile, onUpdated }) {
           <p className="profile-text">{profile.resume || <span className="admin-muted">暂无履历。</span>}</p>
         )}
       </div>
+    </div>
+  )
+}
+
+// ===== 服务器终端 =====
+function TerminalTab() {
+  const [cmd, setCmd] = useState('')
+  const [output, setOutput] = useState('')
+  const [running, setRunning] = useState(false)
+  const outputRef = useRef(null)
+
+  const run = useCallback(async () => {
+    const q = cmd.trim()
+    if (!q || running) return
+    setRunning(true)
+    setOutput((p) => p + '\n$ ' + q)
+    try {
+      const token = getToken()
+      const res = await fetch('/api/admin/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (token || '') },
+        body: JSON.stringify({ command: q, timeout: 15 }),
+      })
+      const data = await res.json()
+      setOutput((p) => p + '\n' + (data.stdout || '') + (data.error ? '\n[错误] ' + data.error : ''))
+    } catch (e) {
+      setOutput((p) => p + '\n[错误] ' + e.message)
+    } finally {
+      setRunning(false)
+    }
+  }, [cmd, running])
+
+  useEffect(() => {
+    if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight
+  }, [output])
+
+  return (
+    <div>
+      <h2>服务器终端</h2>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <input
+          value={cmd}
+          onChange={(e) => setCmd(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') run() }}
+          placeholder="输入命令，回车执行"
+          style={{ flex: 1, fontFamily: 'var(--mono)', fontSize: 13, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--text-h)' }}
+        />
+        <button className="admin-btn admin-btn--primary" onClick={run} disabled={running}>
+          {running ? '执行中…' : '执行'}
+        </button>
+      </div>
+      <pre
+        ref={outputRef}
+        style={{ background: 'var(--code-bg)', color: 'var(--text)', padding: 16, borderRadius: 6, fontSize: 12, fontFamily: 'var(--mono)', lineHeight: 1.6, maxHeight: 500, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}
+      >
+        {output || '命令输出显示在这里'}
+      </pre>
     </div>
   )
 }
