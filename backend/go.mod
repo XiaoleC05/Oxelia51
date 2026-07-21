@@ -1,6 +1,6 @@
 module github.com/XiaoleC05/oxelia51-backend
 
-go 1.26.4
+go 1.26
 
 require (
 	github.com/alicebob/miniredis/v2 v2.38.0
