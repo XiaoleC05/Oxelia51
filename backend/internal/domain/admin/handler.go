@@ -2,6 +2,7 @@ package admin
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/XiaoleC05/oxelia51-backend/internal/infra"
 	"github.com/gin-gonic/gin"
 )
 
@@ -218,4 +220,71 @@ func uptimeLinux() uint64 {
 		return 0
 	}
 	return uint64(f)
+}
+
+// --- IP 白名单管理 ---
+
+// WhitelistHandler IP 白名单 CRUD 接口
+type WhitelistHandler struct {
+	repo *WhitelistRepository
+}
+
+func NewWhitelistHandler(repo *WhitelistRepository) *WhitelistHandler {
+	return &WhitelistHandler{repo: repo}
+}
+
+// ListWhitelist GET /api/admin/ip-whitelist
+func (h *WhitelistHandler) ListWhitelist(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	items, err := h.repo.List(ctx)
+	if err != nil {
+		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
+		return
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
+// CreateWhitelist POST /api/admin/ip-whitelist
+func (h *WhitelistHandler) CreateWhitelist(c *gin.Context) {
+	var req struct {
+		IP    string `json:"ip" binding:"required"`
+		Label string `json:"label"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		infra.ApiError(c, http.StatusBadRequest, "INVALID_REQUEST", "请求格式错误: "+err.Error())
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	if err := h.repo.Create(ctx, req.IP, req.Label); err != nil {
+		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "添加失败")
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "created"})
+}
+
+// DeleteWhitelist DELETE /api/admin/ip-whitelist/:id
+func (h *WhitelistHandler) DeleteWhitelist(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		infra.ApiError(c, http.StatusBadRequest, "INVALID_ID", "ID 无效")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	if err := h.repo.Delete(ctx, id); err != nil {
+		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "删除失败")
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

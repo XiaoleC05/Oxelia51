@@ -1,5 +1,15 @@
 package admin
 
+import "time"
+
+// IPWhitelist 白名单条目
+type IPWhitelist struct {
+	ID        int       `json:"id"`
+	IP        string    `json:"ip"`
+	Label     string    `json:"label"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // serverStats 单台服务器资源指标
 type serverStats struct {
 	CPUPercent      float64 `json:"cpu_percent"`

@@ -124,9 +124,11 @@ func New(cfg *config.Config) *gin.Engine {
 	}
 
 	// Admin routes
+	whitelistRepo := admin.NewWhitelistRepository(pool)
+	whitelistH := admin.NewWhitelistHandler(whitelistRepo)
 	adminTool := tool.NewAdminToolHandler(pool, cfg)
 	adminGroup := r.Group("/api/admin")
-	adminGroup.Use(authMW.Handle(), middleware.RequireAdmin())
+	adminGroup.Use(authMW.Handle(), middleware.RequireAdmin(), middleware.IPWhitelist(whitelistRepo))
 	{
 		adminGroup.GET("/tools", adminTool.ListTools)
 		adminGroup.PATCH("/tools/:slug", adminTool.PatchTool)
@@ -154,6 +156,10 @@ func New(cfg *config.Config) *gin.Engine {
 		statsH := admin.NewStatsHandler()
 		adminGroup.GET("/server-stats", statsH.ServerStats)
 		adminGroup.GET("/dashboard-stats", adminTool.DashboardStats)
+
+		adminGroup.GET("/ip-whitelist", whitelistH.ListWhitelist)
+		adminGroup.POST("/ip-whitelist", whitelistH.CreateWhitelist)
+		adminGroup.DELETE("/ip-whitelist/:id", whitelistH.DeleteWhitelist)
 	}
 
 	return r
