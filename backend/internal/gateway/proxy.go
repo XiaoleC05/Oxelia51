@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/XiaoleC05/oxelia51-backend/internal/config"
+	"github.com/XiaoleC05/oxelia51-backend/config"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"

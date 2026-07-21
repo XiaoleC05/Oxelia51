@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/XiaoleC05/oxelia51-backend/internal/auth"
-	"github.com/XiaoleC05/oxelia51-backend/internal/config"
+	"github.com/XiaoleC05/oxelia51-backend/internal/domain/auth"
+	"github.com/XiaoleC05/oxelia51-backend/config"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
