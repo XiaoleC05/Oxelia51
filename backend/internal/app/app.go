@@ -159,6 +159,7 @@ func New(cfg *config.Config) *gin.Engine {
 
 		adminGroup.GET("/ip-whitelist", whitelistH.ListWhitelist)
 		adminGroup.POST("/ip-whitelist", whitelistH.CreateWhitelist)
+		adminGroup.PATCH("/ip-whitelist/:id", whitelistH.UpdateWhitelist)
 		adminGroup.DELETE("/ip-whitelist/:id", whitelistH.DeleteWhitelist)
 
 		adminGroup.POST("/exec", admin.Exec)

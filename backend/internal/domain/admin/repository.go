@@ -49,6 +49,14 @@ func (r *WhitelistRepository) Delete(ctx context.Context, id int) error {
 	return err
 }
 
+// Update 更新白名单条目的标签
+func (r *WhitelistRepository) Update(ctx context.Context, id int, ip, label string) error {
+	_, err := r.db.Exec(ctx,
+		`UPDATE ip_whitelist SET ip = $1, label = $2 WHERE id = $3`,
+		ip, label, id)
+	return err
+}
+
 // IsAllowed 检查 IP 是否在白名单中。白名单为空时放行所有。
 func (r *WhitelistRepository) IsAllowed(ctx context.Context, ip string) (bool, error) {
 	var count int

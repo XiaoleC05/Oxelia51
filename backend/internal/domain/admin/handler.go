@@ -291,6 +291,35 @@ func (h *WhitelistHandler) DeleteWhitelist(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// UpdateWhitelist PATCH /api/admin/ip-whitelist/:id
+func (h *WhitelistHandler) UpdateWhitelist(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		infra.ApiError(c, http.StatusBadRequest, "INVALID_ID", "ID 无效")
+		return
+	}
+
+	var req struct {
+		IP    string `json:"ip" binding:"required"`
+		Label string `json:"label"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		infra.ApiError(c, http.StatusBadRequest, "INVALID_REQUEST", err.Error())
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	if err := h.repo.Update(ctx, id, req.IP, req.Label); err != nil {
+		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "更新失败")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "updated"})
+}
+
 // --- 安全命令执行 ---
 
 // ExecReq 命令执行请求
