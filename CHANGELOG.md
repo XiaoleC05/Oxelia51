@@ -5,206 +5,138 @@
 
 ---
 
-
 ## [v2.3.1] — 2026-07-15
 
 ### Added
 
 - **SmartKB 独立工具**：知识库检索，108 文档 444 片段已索引，基于 pgvector + PG16
-- **第 9 个 Bug 案例**：pgvector PG16/PG18 库版本冲突（`docs/superpowers/bugs/009-*.md`）
+- **第 9 个 Bug 案例**：pgvector PG16/PG18 库版本冲突
 
 ### Changed
 
-- **首页重构（P2–P6）**：AI 协作时间线 + Bug 案例卡片 + 统计数据栏 + 分割线过渡（Trae Work + Codex）
-- **全站品牌色统一**：accent 从紫色 `#863bff` 迁移为暖橙 `#c8553d`，暗色模式 `#d96b5a`；全局 CSS 变量完整覆盖亮/暗双模式
-- **AGENTS.md v2.2**：更新智能体模型为 4-agent（Claude Code + Qoder + Trae Work + Codex），补充 §7.1 字体约定
+- **首页重构（P2–P6）**：AI 协作时间线 + Bug 案例卡片 + 统计数据栏 + 分割线过渡
+- **全站品牌色统一**：accent 从紫色 `#863bff` 迁移为暖橙 `#c8553d`
+- **AGENTS.md v2.2**：更新智能体模型为 4-agent，补充 §7.1 字体约定
 
 ### Fixed
 
-- 首页统计栏亮/暗模式颜色正确（`var(--text-h)` 覆盖硬编码 `#fff`）
+- 首页统计栏亮/暗模式颜色正确
 - 导航栏移动端字体大小与安全区适配
 
 ### Documentation
 
-- **全项目文档重构**：`docs/` 分层——`user/`（使用指南+工具简介）、`dev/`（ADR/API契约/审查报告/部署指南/样式标准）、`superpowers/`（设计规范+Bug案例）、`archive/`（历史归档）、`ui/`（UI报告）
-- 新增 [用户使用指南](docs/user/guide.md) 和 [工具简介](docs/user/tools.md)
-- 新增 [部署指南](docs/dev/deployment.md)（合并 00-deployment-context.md + deploy/README.md）
-- 新增 [8 个工具仓库 README 中文模板](docs/dev/tool-readme-templates.md)
-- P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
-- P8 多用户并发+权限隔离审查（Codex）：1 严重 + 5 建议
-- P9 全平台安全审查（Codex）：2 严重 + 6 建议
-- Bug 案例新增 009，总计 9 个
-- README 工具数 7→8，添加 SmartKB
+- 全项目文档重构：`docs/` 分层为 `user/` `dev/` `superpowers/` `archive/` `ui/`
+- 新增用户使用指南、工具简介、部署指南、工具 README 模板
+- P7 全站体验审查 + P8 权限隔离审查 + P9 全平台安全审查
+- Bug 案例 009，累计 9 个
 
-### Changed
-
-- AGENTS.md 更新至 v2.3
-
-- P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
-- Bug 案例新增 009，总计 9 个
-- README 工具数 7→8，添加 SmartKB
+---
 
 ## [v2.3] — 2026-07-11
 
 ### Added
 
-- **全站前端优化**（Trae Work）：slogan「集成·简洁·高效」、SEO meta/OG/JSON-LD、移动端汉堡菜单、ErrorBoundary、加载动画统一设计令牌
-- **关于开发者**：GET /api/developer/profile（公开）、PATCH /api/admin/developer/profile（管理员），developer_profile 单行表
-- **导航栏重构**：顺序首页→工具→作品→博客→关于开发者→友情链接，「关于」→「关于开发者」
-- **页脚备案**：ICP 备案 + 公安备案占位
+- **全站前端优化**：SEO meta/OG/JSON-LD、移动端汉堡菜单、ErrorBoundary
+- **关于开发者**：GET /api/developer/profile + PATCH /api/admin/developer/profile
+- **导航栏重构**：新顺序首页→工具→作品→博客→关于开发者→友情链接
+- **页脚备案**：ICP 备案 + 公安备案
 
 ### Changed
 
-- **智能体模型 v2.1**（AGENTS.md）：架构与部署=Claude Code、后端=Qoder、前端=Trae Work、审查与测试=Codex
-- SecretStore 首页「显示全部/隐藏全部」眼睛按钮，防布局跳动 min-height
-- 友情链接替换为 Go/React/PostgreSQL/Redis/Docker/Nginx/Ubuntu/GitHub
+- 智能体模型 v2.1：4-agent（Claude Code + Qoder + Trae Work + Codex）
+- SecretStore 首页「显示全部/隐藏全部」按钮，防布局跳动
+- 友情链接替换为技术栈图标
+- .gitignore 移除 docs/ 排除，文档全部入库（35 文件）
+- 新增迁移 011_login_logs
 
 ### Fixed
 
 - 导航切换页面空白（React Router Suspense fallback）
 - SecretStore 模板切换抽动（ss-view-transition + min-height）
-- 卡片 hover 动画幅度减小（translateY(-2px), 0.3s ease-out）
+- 卡片 hover 动画幅度减小
 
-### Documentation
-
-- **全项目文档重构**：`docs/` 分层——`user/`（使用指南+工具简介）、`dev/`（ADR/API契约/审查报告/部署指南/样式标准）、`superpowers/`（设计规范+Bug案例）、`archive/`（历史归档）、`ui/`（UI报告）
-- 新增 [用户使用指南](docs/user/guide.md) 和 [工具简介](docs/user/tools.md)
-- 新增 [部署指南](docs/dev/deployment.md)（合并 00-deployment-context.md + deploy/README.md）
-- 新增 [8 个工具仓库 README 中文模板](docs/dev/tool-readme-templates.md)
-- P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
-- P8 多用户并发+权限隔离审查（Codex）：1 严重 + 5 建议
-- P9 全平台安全审查（Codex）：2 严重 + 6 建议
-- Bug 案例新增 009，总计 9 个
-- README 工具数 7→8，添加 SmartKB
-
-### Changed
-
-- AGENTS.md 更新至 v2.3
-
-- AGENTS.md v2.1 智能体分配更新
-- .gitignore 移除 docs/ 排除，全部文档入库（35 文件，4008 行）
-- 新增迁移 011_login_logs
+---
 
 ## [v2.2] — 2026-07-11
 
 ### Added
 
-- **腾讯云服务器**：初始化脚本、health-server 健康检查端点、UFW 防火墙规则
-- **双服务器监控**：GET /api/admin/server-stats 新增 remote 字段（TENCENT_HEALTH_URL）
-- **DormGuard Go 切换**：Python FastAPI → Go+Gin，权限控制（B3：role-based 路由拆分 + 阈值过滤）
-- **CS2Lab 地图扩展**（B2）：新增 de_cache（死城之谜）、de_train（列车停放站），全部道具中文化
-- **SecretStore 模板重设计**（B1）：8→7 种，SSH+云服务合并为服务器凭证，新增模型厂商字段
-- **开发者 API**（C4）：GET /api/developer/profile + PATCH /api/admin/developer/profile
+- **腾讯云服务器**：初始化脚本、health-server 健康检查、UFW 防火墙
+- **双服务器监控**：/api/admin/server-stats 新增 remote 字段
+- **DormGuard Go 切换**：Python FastAPI → Go+Gin，role-based 权限控制
+- **CS2Lab 地图扩展**：新增 de_cache、de_train，道具中文化
+- **SecretStore 模板重设计**：8→7 种，新增模型厂商字段
+- **开发者 API**：GET /api/developer/profile + PATCH /api/admin/developer/profile
 
 ### Changed
 
-- **工具分流**：SuperRead/MusicBox/AIHelper internal_api_base → 腾讯云 118.25.138.177
-- **user_accessible**：AIHelper/SuperRead/AgentCanvas → TRUE（A1+A2 403 修复）
+- 工具分流：SuperRead/MusicBox/AIHelper → 腾讯云
+- user_accessible：AIHelper/SuperRead/AgentCanvas → TRUE
 
 ### Deployment
 
-- 部署方式明确：本地交叉编译（build-all-tools.bat）→ scp 二进制 → systemctl restart
-- 服务器清理：删除 /opt/src/、/usr/local/go（服务器不需要 Go）
+- 本地交叉编译（build-all-tools.bat）→ scp 二进制 → systemctl restart
+- 服务器清理：删除 /opt/src/、/usr/local/go
 
-### Documentation
-
-- **全项目文档重构**：`docs/` 分层——`user/`（使用指南+工具简介）、`dev/`（ADR/API契约/审查报告/部署指南/样式标准）、`superpowers/`（设计规范+Bug案例）、`archive/`（历史归档）、`ui/`（UI报告）
-- 新增 [用户使用指南](docs/user/guide.md) 和 [工具简介](docs/user/tools.md)
-- 新增 [部署指南](docs/dev/deployment.md)（合并 00-deployment-context.md + deploy/README.md）
-- 新增 [8 个工具仓库 README 中文模板](docs/dev/tool-readme-templates.md)
-- P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
-- P8 多用户并发+权限隔离审查（Codex）：1 严重 + 5 建议
-- P9 全平台安全审查（Codex）：2 严重 + 6 建议
-- Bug 案例新增 009，总计 9 个
-- README 工具数 7→8，添加 SmartKB
-
-### Changed
-
-- AGENTS.md 更新至 v2.3
-
-- docs/00-deployment-context.md 更新服务器信息
-- deploy/tencent-cloud/ 完整部署套件
+---
 
 ## [v2.1] — 2026-07-09
 
 ### Added
 
-- **6 个在线工具上线**：SuperRead（RSS + AI 简报）、MusicBox（音乐聚合）、CS2Lab（道具教学）、AIHelper（提示词助手）、AgentCanvas（可视化画布）、SecretStore（加密保险箱）
-- **Gateway Header 统一**（GW-FIX）：proxy.go 同时发送 X-User-Id/X-Username/X-Role 短 header 与 X-Oxelia51-* 长 header
-- **REV-06 审查**：Trae Work 全量审查 6 工具 + 平台代码，输出 9 P0 + 29 P1 + 27 P2 发现
+- **6 个在线工具上线**：SuperRead / MusicBox / CS2Lab / AIHelper / AgentCanvas / SecretStore
+- **Gateway Header 统一**（GW-FIX）：proxy.go 同时发送短 header 与长 header
+- **REV-06 审查**：Trae Work 全量审查 6 工具 + 平台代码
 
 ### Changed
 
-- 前端智能体 Qoder Wake 更名为 Hermes（AGENTS.md、README、CHANGELOG、.agents 全部同步）
-- README.md 合并中英文为中文正式版，新增 CHANGELOG.md
-- 5-agent 模型落地：Codex（架构）→ Cursor（后端）/ Hermes（前端）/ Qoder（QA）/ Trae Work（审查）
+- 前端智能体 Qoder Wake 更名为 Hermes
+- README.md 合并中英文为中文正式版
+- 5-agent 模型落地
 
 ### Fixed
 
-- REV-06 P0 全量修复：鉴权后门移除、CORS 加固、MusicBox 凭证串用、SecretStore Combo 越权、CS2Lab 测试降级、AIHelper Authorization 缺失
-- REV-06 P1 安全加固：SSRF 白名单、错误脱敏、API Key 隐藏、响应体限制、AI 摘要闭环
+- REV-06 P0 全量修复：鉴权后门、CORS 加固、凭证串用、越权、测试降级
+- REV-06 P1 安全加固：SSRF 白名单、错误脱敏、API Key 隐藏
+
+---
 
 ## [v2.0] — 2026-07-08
 
 ### Added
 
-- **5-agent 多智能体协作模型**：Codex（架构）、Cursor（后端）、Hermes（前端）、Qoder（QA 与部署）、Trae Work（审查与知识），详见 `AGENTS.md` v2.0
-- **account_id 账号体系**：`username` 拆分为不可变 `account_id` + 可修改显示名；新增 `PATCH /api/auth/profile` 修改个人资料接口
-- **友情链接页 `/friends`**：网格卡片布局，移动端单列
-- **个人资料页 `/profile`**：读取用户信息，支持修改显示名
-- **DormGuard QQ 机器人**：QQ Bot 已连接上线，通过 NapCat Docker 容器对接
-- **服务器资源监控面板**：管理端新增服务器 CPU、内存、磁盘监控 Tab，含刷新按钮
-- **全站视觉系统**：
-  - PageLoader 四变体（split / ink / mist / light），按路由分配，统一 1.0s 动画时长
-  - 深空星空背景（canvas 粒子）
-  - 全局毛玻璃效果（`backdrop-filter`）
-  - 亮色页脚
-- **DormGuard 配置面板**：工具壳内可配置 `CRAWLER_ALERT_THRESHOLD` 等参数
-- **搜索 API**：`GET /api/search?q=xxx`，全文搜索博客文章
+- **5-agent 多智能体协作模型**：Codex/Cursor/Hermes/Qoder/Trae Work
+- **account_id 账号体系**：username 拆分为不可变 account_id + 可修改显示名
+- **友情链接页** `/friends`、**个人资料页** `/profile`
+- **DormGuard QQ 机器人**：NapCat Docker 对接上线
+- **服务器资源监控面板**：管理端 CPU/内存/磁盘监控
+- **全站视觉系统**：PageLoader 四变体、Canvas 星空背景、全局毛玻璃效果
+- **搜索 API**：`GET /api/search?q=xxx`
 
 ### Changed
 
-- AGENTS.md 从 v1.0 重构为 v2.0，Agent 模型从 3-agent 升级为 5-agent
-- 登录页支持 `account` 字段（可输入 account_id 或邮箱）
-- 注册页新增 `account_id` 必填字段
-- 前端构建 Node.js 版本从 20 升级至 24
+- AGENTS.md v1.0→v2.0，Agent 模型 3-agent→5-agent
+- 登录页/注册页支持 account_id
+- Node.js 20→24
 
 ### Fixed
 
-- PatchProfile 空字符串 username 校验（`TrimSpace` + 400 拦截）
-- 移动端导航栏用户名换行 + 紧凑高度
-- 移动端段落对齐：`text-align: justify`，`letter-spacing: 0`
-- 管理端弹窗内容溢出滚动 + 服务器刷新按钮
-- 移动端 tap 高亮残留
-- CI Node.js 版本与本地对齐
+- PatchProfile 空字符串校验
+- 移动端导航栏 + 段落对齐 + tap 高亮
+- 管理端弹窗溢出 + 服务器刷新按钮
+- CI Node.js 版本对齐
 
 ### Removed
 
-- 移除 MouseGlow 鼠标光晕（被星空背景替代）
-- 移除 `chapter-num` 相关 class（所有页面已清理）
-- 移除所有页面中面向访客的管理端技术细节文案
+- MouseGlow 鼠标光晕（被星空背景替代）
+- chapter-num class（全页面清理）
+- 管理端技术细节文案（对访客不可见）
 
 ### Documentation
 
-- **全项目文档重构**：`docs/` 分层——`user/`（使用指南+工具简介）、`dev/`（ADR/API契约/审查报告/部署指南/样式标准）、`superpowers/`（设计规范+Bug案例）、`archive/`（历史归档）、`ui/`（UI报告）
-- 新增 [用户使用指南](docs/user/guide.md) 和 [工具简介](docs/user/tools.md)
-- 新增 [部署指南](docs/dev/deployment.md)（合并 00-deployment-context.md + deploy/README.md）
-- 新增 [8 个工具仓库 README 中文模板](docs/dev/tool-readme-templates.md)
-- P7 全站体验审查（Codex）：2 严重（无障碍）+ 6 建议
-- P8 多用户并发+权限隔离审查（Codex）：1 严重 + 5 建议
-- P9 全平台安全审查（Codex）：2 严重 + 6 建议
-- Bug 案例新增 009，总计 9 个
-- README 工具数 7→8，添加 SmartKB
-
-### Changed
-
-- AGENTS.md 更新至 v2.3
-
 - `docs/01~04` 归档至 `docs/archive/`
-- README 与 `.trae/rules/project_rules.md` 同步 v2.0 信息
-- 新增 `docs/tools/secretstore-design.md`（SecretStore 设计文档）
-- 新增 `docs/ui/` 下 UI-06 ~ UI-08 视觉升级报告
-- 新增 REV-05 审查报告
+- README 与 project_rules 同步 v2.0
+- 新增 secretstore-design.md、UI-06~08 报告、REV-05 审查报告
 
 ---
 
@@ -212,45 +144,32 @@
 
 ### Added
 
-- **API 网关**：`internal/gateway/` 动态代理，`/api/tools/:slug/proxy/*path` 转发至工具后端
-- **邮箱验证流程**：注册 → 验证邮件 24h 有效 → 验证后可登录
-- **密码重置**：忘记密码 → 邮件重置链接 → 新密码
-- **JWT 认证体系**：access 7 天 / refresh 30 天；logout 黑名单；Redis 存储 refresh token
-- **限流**：注册（同 IP ≤3/小时）、重发验证（同邮箱 ≤1/天）、忘记密码（同邮箱 ≤1/天）、登录失败（同 IP ≤10/15min）
-- **管理员种子**：唯一管理员 `oxelia51`，首次生成密码写桌面文件
-- **工具注册机制**：`tools` 表扩展、manifest 扫描 API、`oxelia51.tool.json` 规范
-- **平台落地页**：首页头图轮播、内容区块、渐变页脚
-- **工具目录 `/tools`**：列表、详情、状态徽章（已开放 / 暂未开放 / 已下线）
-- **作品集 `/portfolio`**：`portfolio_items` 表，后台可覆盖名称与描述
-- **博客系统**：`/blog` 列表 + `/blog/:id` 文章详情；管理端文章 CRUD
-- **关于页 `/about`**
-- **管理后台**：工具元数据增删改查、用户列表、作品集管理
-- **前端工具壳**：`/tools/:slug` 动态加载 `ToolNameTool.jsx`，通过 API 模块 proxy 调用
-- **6 个工具 manifest**：DormGuard、SuperRead、MusicBox、CS2Lab、AIHelper、AgentCanvas
-- **DormGuard 网关模式**：`OXELIA_GATEWAY_MODE` 信任网关身份头，CORS 允许 `:5173`
+- **API 网关**：`/api/tools/:slug/proxy/*path` 动态代理
+- **邮箱验证流程** + **密码重置** + **JWT 认证体系**（access 7d / refresh 30d）
+- **限流**：注册、重发验证、忘记密码、登录失败独立计数
+- **管理员种子**：唯一管理员 `oxelia51`
+- **工具注册机制**：tools 表扩展、manifest 扫描
+- **平台落地页** + **工具目录** + **作品集** + **博客系统** + **关于页** + **管理后台**
+- **6 个工具 manifest**：DormGuard/SuperRead/MusicBox/CS2Lab/AIHelper/AgentCanvas
 
 ### Changed
 
-- 用户模型从单表扩展为完整认证体系（email、email_verified、role）
-- 管理 API 资源标识统一为 `slug`（原 `:id`）
-- `user_accessible` 字段替代 `visitor_visible`（语义纠正）
-- DormGuard 数据库独立 MySQL，不合并至平台 PostgreSQL（ADR-007）
+- 用户模型扩展为完整认证体系
+- 管理 API 资源标识统一为 `slug`
+- `user_accessible` 替代 `visitor_visible`
+- DormGuard 数据库独立（ADR-007）
 
 ### Fixed
 
-- 平台 `:8080` 仅本地/SSH 访问，公网仅 DormGuard（阶段 0~1）
-- `email` 字段 UNIQUE 约束 + 409 `EMAIL_TAKEN` 错误码
-- JWT 生命周期、refresh token 轮换机制
-- CORS 配置追加 `:5173`（本地开发）
-- Nginx 反向代理缓存禁用 + Authorization 头透传
+- 平台 `:8080` 仅本地/SSH
+- email UNIQUE + 409 EMAIL_TAKEN
+- JWT 生命周期 + refresh token 轮换
+- CORS 追加 `:5173`
+- Nginx 反向代理缓存禁用 + Authorization 透传
 
 ### Deployment
 
-- GitHub Actions 自动部署工作流（`ci-deploy.sh` → 服务器 `git pull` → 重启服务）
-- Webhook 推送 release 分支触发自动部署
-- systemd 服务文件（oxelia51-backend）
-- Nginx 配置同步
-- 生产 cutover 脚本、全栈诊断脚本
+- GitHub Actions 自动部署 + Webhook + systemd + Nginx
 
 ---
 
@@ -258,13 +177,10 @@
 
 ### Added
 
-- **项目初始化**：Go 后端骨架（Gin）+ React 前端骨架（Vite）
-- **Docker Compose**：PostgreSQL 17 + Redis 7
-- **用户注册/登录**：bcrypt 密码哈希 + JWT 令牌签发
-- **JWT 认证中间件**：`Authorization: Bearer <token>` 保护路由
-- **当前用户接口**：`GET /api/users/me`
-- **工具管理 API**：列表 / 详情 / 创建 / 更新 / 删除
-- **前端导航栏**：根据登录状态切换显示（登录/注册 vs 用户名/退出）
-- **前端注册/登录页**：React Router 路由 + localStorage token 存储
-- **健康检查**：`GET /api/health`
-- **项目文档**：README 中英文双版、ADR-001 技术选型决策记录
+- 项目初始化：Go（Gin）+ React（Vite）
+- Docker Compose：PostgreSQL 17 + Redis 7
+- 用户注册/登录：bcrypt + JWT
+- JWT 认证中间件 + 当前用户接口
+- 工具管理 API（CRUD）
+- 前端导航栏 + 注册/登录页
+- 健康检查 + 项目文档
