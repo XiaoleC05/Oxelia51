@@ -62,6 +62,18 @@ func New(cfg *config.Config) *gin.Engine {
 
 	r := gin.Default()
 
+	// CORS: allow browser requests from oxelia51.com
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "https://oxelia51.com")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Oxelia51-Access-Token")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+
 	if err := r.SetTrustedProxies([]string{"127.0.0.1", "::1"}); err != nil {
 		slog.Warn("trusted proxy setup failed", "error", err)
 	}
