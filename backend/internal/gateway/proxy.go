@@ -220,7 +220,8 @@ func isClientIPForwardHeader(h string) bool {
 
 func copyHeaders(dst, src http.Header) {
 	for k, vals := range src {
-		if isHopByHop(k) || isClientIPForwardHeader(k) || strings.EqualFold(k, "Authorization") {
+		if isHopByHop(k) || isClientIPForwardHeader(k) || strings.EqualFold(k, "Authorization") ||
+			strings.EqualFold(k, "Origin") || strings.EqualFold(k, "Referer") {
 			continue
 		}
 		for _, v := range vals {
