@@ -135,12 +135,12 @@ func New(cfg *config.Config) *gin.Engine {
 	r.Any("/api/tools/:slug/proxy/*path", gw.Proxy)
 	}
 
-	// Admin routes
+	// Admin routes — JWT + role check（IP whitelist NOT applied to CRUD endpoints）
 	whitelistRepo := admin.NewWhitelistRepository(pool)
 	whitelistH := admin.NewWhitelistHandler(whitelistRepo)
 	adminTool := tool.NewAdminToolHandler(pool, cfg)
 	adminGroup := r.Group("/api/admin")
-	adminGroup.Use(authMW.Handle(), middleware.RequireAdmin(), middleware.IPWhitelist(whitelistRepo))
+	adminGroup.Use(authMW.Handle(), middleware.RequireAdmin())
 	{
 		adminGroup.GET("/tools", adminTool.ListTools)
 		adminGroup.PATCH("/tools/:slug", adminTool.PatchTool)
@@ -169,12 +169,18 @@ func New(cfg *config.Config) *gin.Engine {
 		adminGroup.GET("/server-stats", statsH.ServerStats)
 		adminGroup.GET("/dashboard-stats", adminTool.DashboardStats)
 
+		// IP whitelist CRUD — must be outside IP check or empty DB = deadlock
 		adminGroup.GET("/ip-whitelist", whitelistH.ListWhitelist)
 		adminGroup.POST("/ip-whitelist", whitelistH.CreateWhitelist)
 		adminGroup.PATCH("/ip-whitelist/:id", whitelistH.UpdateWhitelist)
 		adminGroup.DELETE("/ip-whitelist/:id", whitelistH.DeleteWhitelist)
+	}
 
-		adminGroup.POST("/exec", admin.Exec)
+	// IP whitelist gated routes — dangerous operations only
+	adminIPGroup := r.Group("/api/admin")
+	adminIPGroup.Use(authMW.Handle(), middleware.RequireAdmin(), middleware.IPWhitelist(whitelistRepo))
+	{
+		adminIPGroup.POST("/exec", admin.Exec)
 	}
 
 	return r

@@ -1551,6 +1551,7 @@ function ProfileTab({ profile, onUpdated }) {
 // ===== IP 白名单管理 =====
 function IPWhitelistTab() {
   const [items, setItems] = useState([])
+  const [clientIP, setClientIP] = useState('')
   const [ip, setIp] = useState('')
   const [label, setLabel] = useState('')
   const [loading, setLoading] = useState(true)
@@ -1561,7 +1562,11 @@ function IPWhitelistTab() {
       const res = await fetch('/api/admin/ip-whitelist', {
         headers: { Authorization: 'Bearer ' + (token || '') },
       })
-      if (res.ok) setItems(await res.json())
+      if (res.ok) {
+        const data = await res.json()
+        setItems(data.items || [])
+        setClientIP(data.clientIP || '')
+      }
     } catch {} finally { setLoading(false) }
   }, [])
 
@@ -1592,8 +1597,19 @@ function IPWhitelistTab() {
     <div>
       <h2>IP 白名单</h2>
       <p className="admin-muted" style={{ marginBottom: 16, fontSize: 13 }}>
-        白名单内的 IP 才能访问管理后台。白名单为空时不限制。
+        白名单内的 IP 才能执行敏感操作。白名单为空时拒绝所有 IP。
       </p>
+      {clientIP && (
+        <p className="admin-status" style={{ marginBottom: 8 }}>
+          你的当前 IP：<code style={{ fontWeight: 700 }}>{clientIP}</code>
+          {' '}
+          <button
+            className="admin-btn admin-btn--primary admin-btn--sm"
+            onClick={() => { setIp(clientIP); setLabel('本机') }}
+            style={{ padding: '2px 10px', fontSize: 12 }}
+          >快速填充</button>
+        </p>
+      )}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <input
           value={ip}
@@ -1612,7 +1628,7 @@ function IPWhitelistTab() {
       {loading ? (
         <p className="admin-status">加载中…</p>
       ) : items.length === 0 ? (
-        <p className="admin-status">白名单为空 — 所有 IP 均可访问</p>
+        <p className="admin-status" style={{ color: 'var(--text-warning, #e6a23c)' }}>白名单为空 — 敏感操作（exec）已禁用。请添加你的 IP。</p>
       ) : (
         <div className="admin-table-wrap">
           <table className="admin-table">

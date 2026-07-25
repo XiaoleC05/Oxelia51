@@ -23,12 +23,9 @@
 
 | 工具 | 端口 | 技术栈 |
 |------|------|--------|
-| DormGuard | :8000 | Go+Gin, MySQL 独立 |
-| SuperRead | :8002 | Go+Gin |
-| AIHelper | :8004 | Go+Gin |
-| AgentCanvas | :8005 | Go+Gin |
+| DormGuard | :8000 | Python+FastAPI, MySQL 独立 |
 | SecretStore | :8006 | Go+Gin, AES-256-GCM |
-| SmartKB | :8007 | Go+Gin, pgvector |
+| SmartKB | :8007 | Go+Gin, pgvector（腾讯云独立部署） |
 
 PostgreSQL / Redis — Docker 127.0.0.1
 

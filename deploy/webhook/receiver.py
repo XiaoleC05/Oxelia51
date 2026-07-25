@@ -30,9 +30,6 @@ TRIGGER_REF = "refs/heads/release"
 # Repo → tool-name mapping (工具仓库 fully-qualified name → service name on server)
 TOOL_REPOS = {
     "XiaoleC05/DormGuard":    "dormguard",
-    "XiaoleC05/SuperRead":    "superread",
-    "XiaoleC05/AIHelper":     "aihelper",
-    "XiaoleC05/AgentCanvas":  "agentcanvas",
     "XiaoleC05/SecretStore":  "secretstore",
 }
 

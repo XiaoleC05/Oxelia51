@@ -5,6 +5,22 @@
 
 ---
 
+## [v2.4.0] — 2026-07-25
+
+### Removed
+
+- 移除 SuperRead、AIHelper、AgentCanvas 三个旧工具（前端壳 + API 代理 + 部署配置 + webhook）
+- 移除 RemoteShell 相关文档引用（本地已无 .git 仓库）
+- 清理 MusicBox、CS2Lab 在 .env.example 中的残留配置
+- DormGuard 精简：移除 QQ 机器人告警、定时调度、告警规则/日志功能，仅保留电量显示
+
+### Changed
+
+- 在线工具从 6 个精简为 3 个（DormGuard、SecretStore、SmartKB）
+- 更新部署文档、架构文档、README、CLAUDE.md 中的工具列表
+
+---
+
 ## [v2.3.1] — 2026-07-15
 
 ### Added

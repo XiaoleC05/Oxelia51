@@ -8,17 +8,11 @@ import {
   BADGE_LABEL,
 } from '../api'
 import DormGuardTool from '../tools/dormguard/DormGuardTool'
-import SuperReadTool from '../tools/superread/SuperReadTool'
-import AIHelperTool from '../tools/aihelper/AIHelperTool'
-import AgentCanvasTool from '../tools/agentcanvas/AgentCanvasTool'
 import SecretStoreTool from '../tools/secretstore/SecretStoreTool'
 import './ToolShell.css'
 
 const TOOL_VIEWS = {
   dormguard: DormGuardTool,
-  superread: SuperReadTool,
-  aihelper: AIHelperTool,
-  agentcanvas: AgentCanvasTool,
   secretstore: SecretStoreTool,
 }
 

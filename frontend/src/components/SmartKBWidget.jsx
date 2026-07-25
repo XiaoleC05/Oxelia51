@@ -611,7 +611,7 @@ function SmartKBWidget({ open, onClose }) {
   )
 }
 
-/* ===== 检索 API（经平台网关代理至 superread 工具） ===== */
+/* ===== 检索 API（经平台网关代理至 smartkb 工具） ===== */
 async function apiSearch(query) {
   return apiProxy('smartkb', 'api/smartkb/search', {
     method: 'POST',

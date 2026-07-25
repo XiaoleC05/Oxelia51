@@ -122,7 +122,7 @@
 
 - `Landing.css`（981 行，含 281 行死代码，已恢复但需清理）
 - `Admin.css`（974 行，按钮/表格/徽章与全局重复）
-- `SuperReadTool.css`（1087 行，是最大的工具 CSS，大量硬编码）
+- 工具壳 CSS（如已移除的 SuperReadTool.css 曾达 1087 行，大量硬编码）
 - `DormGuardTool.css`（628 行）
 
 ---

@@ -1,6 +1,6 @@
 # Oxelia51 方向调整方案
 
-**版本**：v3.0 | **日期**：2026-07-22 | **状态**：讨论中
+**版本**：v3.0 | **日期**：2026-07-25 | **状态**：部分已执行
 
 ---
 
@@ -10,10 +10,10 @@
 
 | 删除项 | 原因 |
 |--------|------|
-| SuperRead（RSS 阅读器） | 与建站方向无关；RSS 导入可作为博客功能保留 |
-| AIHelper（提示词助手） | 与建站方向无关 |
-| AgentCanvas（Agent 画布） | 与建站方向无关 |
-| CS2Lab / MusicBox | 已删除 |
+| ~~SuperRead（RSS 阅读器）~~ | ✅ 已完成（2026-07-25） |
+| ~~AIHelper（提示词助手）~~ | ✅ 已完成（2026-07-25） |
+| ~~AgentCanvas（Agent 画布）~~ | ✅ 已完成（2026-07-25） |
+| ~~CS2Lab / MusicBox~~ | ✅ 此前已删除 |
 
 ### 1.2 首页现有内容
 
@@ -41,7 +41,7 @@
 
 | 删除项 | 路径 |
 |--------|------|
-| 5 个工具壳组件 | `frontend/src/tools/superread/` `aihelper/` `agentcanvas/` `cs2lab/` `musicbox/` |
+| ~~5 个工具壳组件~~ | ✅ 已删除（2026-07-25） |
 | ToolShell 路由 | `frontend/src/pages/ToolShell.jsx` |
 | BackgroundWave | `frontend/src/components/BackgroundWave.jsx` |
 | WeatherBar | `frontend/src/components/WeatherBar.jsx`（天气不展示了） |

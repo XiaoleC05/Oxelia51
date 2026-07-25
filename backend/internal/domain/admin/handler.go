@@ -246,7 +246,10 @@ func (h *WhitelistHandler) ListWhitelist(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, items)
+	c.JSON(http.StatusOK, gin.H{
+		"items":    items,
+		"clientIP": c.ClientIP(),
+	})
 }
 
 // CreateWhitelist POST /api/admin/ip-whitelist

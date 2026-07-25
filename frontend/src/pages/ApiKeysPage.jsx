@@ -5,20 +5,6 @@ import './ApiKeysPage.css'
 
 const TOOLS = [
   {
-    key: 'aihelper',
-    name: 'AIHelper',
-    desc: '文本增强',
-    icon: '📝',
-    settingsPath: '/tools/aihelper',
-  },
-  {
-    key: 'superread',
-    name: 'SuperRead',
-    desc: 'RSS 阅读器',
-    icon: '📖',
-    settingsPath: '/tools/superread',
-  },
-  {
     key: 'secretstore',
     name: 'SecretStore',
     desc: '密钥管理',

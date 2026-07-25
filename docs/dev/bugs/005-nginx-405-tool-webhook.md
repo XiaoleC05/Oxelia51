@@ -1,6 +1,6 @@
 # Nginx 代理 Tool Webhook 返回 405 Method Not Allowed
 
-- **场景**：生产环境部署后，RSS 阅读器向 `https://oxelia51.com/api/tools/superread/webhook` 发送 POST 请求，被 Nginx 返回 405
+- **场景**：生产环境部署后，工具 webhook 向 `https://oxelia51.com/api/tools/{slug}/webhook` 发送 POST 请求，被 Nginx 返回 405
 - **发现 Agent**：Claude Code
 - **修复 Agent**：Qoder
 - **根因**：`deploy/nginx.conf` 中 `/api/tools/` location 块只配置了 GET/HEAD，未允许 POST；同时缺少 `proxy_pass` 到 backend 的 8080 端口

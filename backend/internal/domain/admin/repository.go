@@ -64,9 +64,9 @@ func (r *WhitelistRepository) IsAllowed(ctx context.Context, ip string) (bool, e
 	if err != nil {
 		return false, err
 	}
-	// 白名单为空时，允许所有 IP（防止管理员锁死自己）
+	// 白名单为空时，拒绝所有 IP（管理员需先通过其他方式添加第一条白名单）
 	if count == 0 {
-		return true, nil
+		return false, nil
 	}
 
 	var exists int

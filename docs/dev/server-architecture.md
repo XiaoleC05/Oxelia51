@@ -31,12 +31,12 @@
 ├─────────────────────────────────────────────────────┤
 │ 第二层：应用                                        │
 │ ┌──────────┐ ┌──────────┐ ┌──────────┐             │
-│ │ Oxelia51 │ │ SmartKB  │ │ SuperRead│ ... 共 6 个  │
-│ │ :8080    │ │ :8007    │ │ :8002    │             │
+│ │ Oxelia51 │ │ DormGuard│ │SecretStore│ 共 4 个工具  │
+│ │ :8080    │ │ :8000    │ │ :8006    │             │
 │ └──────────┘ └──────────┘ └──────────┘             │
 │ ┌──────────┐ ┌──────────┐                          │
-│ │ remoteshell│ │ NapCat  │                          │
-│ │ :8088    │ │ QQ Bot  │                          │
+│ │ SmartKB  │ │ NapCat   │                          │
+│ │ :8007    │ │ QQ Bot   │                          │
 │ └──────────┘ └──────────┘                          │
 ├─────────────────────────────────────────────────────┤
 │ 第三层：数据                                        │
@@ -59,11 +59,11 @@
 
 | 服务器 | 服务 | 角色 |
 |--------|------|------|
-| **阿里云** 47.108.202.199 | Nginx, Oxelia51 API, NapCat QQ Bot, remoteshell | **主节点**（用户请求入口） |
+| **阿里云** 47.108.202.199 | Nginx, Oxelia51 API, NapCat QQ Bot | **主节点**（用户请求入口） |
 | 阿里云 | PostgreSQL, Redis, Actions Runner | 数据 + CI/CD |
-| 阿里云 | DormGuard, SmartKB | 主节点工具服务 |
+| 阿里云 | DormGuard, SecretStore, SmartKB | 主节点工具服务 |
 | **腾讯云** 118.25.138.177 | health-server :8090 | 健康检查端点 |
-| 腾讯云 | SuperRead, AIHelper, AgentCanvas, SecretStore | **从节点**（工具服务分流） |
+| 腾讯云 | SmartKB（独立编译） | **从节点**（知识库推理） |
 
 **原则**：
 - 阿里云承载用户面（API + 数据库 + QQ Bot）
@@ -121,7 +121,7 @@ WantedBy=multi-user.target
 ENDPOINTS=(
   "https://oxelia51.com/api/health"
   "http://127.0.0.1:8007/api/health"   # SmartKB
-  "http://127.0.0.1:8002/api/health"   # SuperRead
+  "http://127.0.0.1:8006/api/health"   # SecretStore
   "http://118.25.138.177:8090/health"  # Tencent
 )
 
@@ -199,7 +199,7 @@ apply-release.sh
 | # | 操作 | 负责 |
 |:--:|------|:--:|
 | 1 | 为每个服务创建独立 systemd unit（加 memory limit） | Claude |
-| 2 | 工具服务（SuperRead/AIHelper/AgentCanvas/SecretStore）迁移到腾讯云 | Claude |
+| 2 | 工具服务（SecretStore/SmartKB）迁移到腾讯云 | Claude |
 | 3 | 腾讯云部署 health-server 互相监控 | Claude |
 | 4 | 部署定时健康检查脚本（cron） | Claude |
 | 5 | `apply-release.sh` 加 graceful shutdown + health-check + 回滚 | Claude |

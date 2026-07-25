@@ -6,18 +6,13 @@ import './BugCards.css'
  * 路径：src/components/ → ../ = src/ → ../../ = frontend/ → ../../../ = Oxelia51/
  * Markdown 文件位于 Oxelia51/docs/dev/bugs/
  */
-import bug001 from '../../../docs/dev/bugs/001-superread-apikey-mask.md?raw'
 import bug002 from '../../../docs/dev/bugs/002-smartkb-date-scan.md?raw'
-import bug003 from '../../../docs/dev/bugs/003-brief-utc-timezone.md?raw'
-import bug004 from '../../../docs/dev/bugs/004-webhook-concurrency.md?raw'
 import bug005 from '../../../docs/dev/bugs/005-nginx-405-tool-webhook.md?raw'
 import bug006 from '../../../docs/dev/bugs/006-frontend-paren-render.md?raw'
 import bug007 from '../../../docs/dev/bugs/007-sse-type-mismatch.md?raw'
-import bug008 from '../../../docs/dev/bugs/008-fetch-interval-unit.md?raw'
 
 const BUG_FILES = [
-  bug001, bug002, bug003, bug004,
-  bug005, bug006, bug007, bug008,
+  bug002, bug005, bug006, bug007,
 ]
 
 /* ===== 解析 Markdown：提取标题 + 字段键值对 =====

@@ -179,8 +179,8 @@ TOOL-04-3 网关注册（Claude Code）  → internal_api_base 配置 + seed 同
 | 指标 | 数据 |
 |------|------|
 | 版本迭代 | v1.0 → v2.3.1，7 个版本，跨越 6 周（2026-06-07 至 2026-07-20） |
-| 在线工具 | 6 个（DormGuard、SuperRead、AIHelper、SecretStore、AgentCanvas、SmartKB），全部从零构建 |
-| 代码规模 | 平台主仓库 + 6 个工具独立仓库，Go 后端 + React 前端 |
+| 在线工具 | 3 个（DormGuard、SecretStore、SmartKB），全部从零构建 |
+| 代码规模 | 平台主仓库 + 3 个工具独立仓库，Go 后端 + React 前端 |
 | Agent 提示词 | `.agents/` 目录 8 个结构化任务文件 |
 | Codex 审查报告 | `docs/dev/reviews/` 下 15 篇分级审查报告（不含历史 UI 报告） |
 | Bug 案例库 | `docs/superpowers/bugs/` 下 9 个结构化 Bug 案例 |

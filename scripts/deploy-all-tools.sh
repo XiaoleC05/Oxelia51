@@ -47,20 +47,17 @@ UNIT
   echo "  $name deployed"
 }
 
-# --- 按依赖顺序部署 ---
+# --- 部署 ---
 echo "Updating database seed..."
 sudo -u postgres psql -d oxelia51 -f /opt/Oxelia51/deploy/seed-tools.sql
 
-deploy_tool superread    8002
-deploy_tool aihelper     8004
-deploy_tool agentcanvas  8005
 deploy_tool secretstore  8006
 
 echo ""
 echo "=== All tools deployed ==="
 echo "Verifying..."
 sleep 2
-for s in superread aihelper agentcanvas secretstore; do
+for s in secretstore; do
   echo -n "$s: "
   curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/tools/$s/proxy/api/health || echo "FAIL"
   echo ""

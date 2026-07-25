@@ -72,8 +72,8 @@ Oxelia51/                    ← 平台主仓库
   docs/                      ← Codex
 
 独立工具仓库（各有 master 分支，SSH 远端）：
-  SuperRead/ DormGuard/ AIHelper/ AgentCanvas/ SecretStore/
-  ↑ 全部是 Go 后端 → Qoder 领域
+  DormGuard/ SecretStore/ SmartKB/
+  ↑ 工具后端 → Qoder 领域（DormGuard 为 Python）
   ↑ .github/workflows/deploy.yml → 我的领域
 ```
 
