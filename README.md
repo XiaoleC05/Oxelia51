@@ -1,148 +1,178 @@
-<!--
-============================================================
-  Oxelia51 — AI 开发者导航 + 个人网站搭建
-  版本：v3.0  |  更新：2026-07-22
-============================================================
--->
+<p align="center">
+  <img src="https://img.shields.io/badge/version-3.0-blue" alt="version">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
+  <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go" alt="go">
+  <img src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus" alt="c++">
+</p>
 
-# Oxelia51
+<h1 align="center">Oxelia51</h1>
 
-大模型能力榜单，有趣网站推荐，个人网站搭建。
+<p align="center">
+  改一行环境变量，Token 消耗一目了然。
+  <br>
+  基于 Langfuse 开源基座 + 自研 Go 代理网关 + 自研 C++ 分析引擎的
+  <br>
+  <strong>oxelia51.com</strong>
+</p>
 
-## 简介
+<p align="center">
+  <a href="https://oxelia51.com">在线体验</a> ·
+  <a href="docs/README.md">文档</a> ·
+  <a href="#快速开始">快速开始</a> ·
+  <a href="README.en.md">English</a>
+</p>
 
-Oxelia51 做两件事：
+---
 
-1. 大模型能力榜单 — 聚合 LMSYS、SWE-bench、Artificial Analysis 等平台的模型数据，按编程、前端、后端、审查、性价比、速度、中文等维度对比。每周更新。
+## 这是什么
 
-2. 有趣网站推荐 — 每周一期，推荐开发工具、设计灵感、独立博客、AI 应用等值得看的网站。
+你用 Claude Code、Cursor、ChatGPT 写代码时，每天消耗多少 Token？花在哪个模型上最多？哪个项目最烧钱？
 
-3. 个人网站搭建 — 选模板，填信息，获得 `oxelia51.com/@名字` 的个人主页。可自定义博客、项目列表、社交链接。
+Oxelia51 让你**零代码**统计所有 LLM 调用的 Token 消耗：
 
-- 域名：[oxelia51.com](https://oxelia51.com)
-- 仓库：[github.com/XiaoleC05/Oxelia51](https://github.com/XiaoleC05/Oxelia51)
+```
+正常：  Claude Code ────→ api.anthropic.com
 
-## 功能
+加了：  Claude Code ────→ oxelia51.com/api/proxy/anthropic ────→ api.anthropic.com
+                              │
+                              └── 自动记录 Token → 仪表盘实时展示
+```
 
-- 大模型能力榜单（编程、前端、后端、审查、性价比、速度、中文）
-- 有趣网站推荐（每周更新）
-- 个人主页搭建（`/@username`，选模板、填信息即发布）
-- 博客系统
-- 管理员后台（用户管理、内容管理、服务器监控、SecretStore、DormGuard）
+**改动量**：改**一行环境变量**。不装 SDK，不改代码，不碰 API Key。
+
+## 特性
+
+- 🔌 **代理模式** — 一行环境变量，零侵入。客户端不用装任何东西
+- 📊 **多维度统计** — 按时间、模型、项目、会话查看 Token 消耗
+- 💰 **成本核算** — 内置 20+ 模型定价表，自动换算花费
+- 🚨 **智能告警** — 预算预警 + 用量异常检测，站内/邮件/Webhook 通知
+- 🌐 **国内 LLM 适配** — DeepSeek、Moonshot、智谱开箱即用
+- 🏠 **5 分钟自部署** — `docker compose up -d`，数据不离开服务器
+- 🎨 **双主题** — Cozy（暖色）/ Cosmos（深色），一键切换
+- 🔒 **安全** — API Key 只转发不落库，代码全开源
 
 ## 架构
 
 ```
-Browser → Nginx → React 前端 → Go API → PostgreSQL + Redis
+用户 AI 工具
+  │  改一行 BASE_URL
+  ▼
+┌──────────────────────────────┐
+│   Go 代理网关（自研）          │  转发请求 + 记录 Token
+│   阿里云 2C2G :9090           │  适配 6 大 LLM 供应商
+└────────────┬─────────────────┘
+             │ INSERT
+             ▼
+┌──────────────────────────────┐
+│   ClickHouse                  │  Token 事件存储（列式 OLAP）
+│   Docker Compose              │  毫秒级聚合查询
+└────────────┬─────────────────┘
+             │ SELECT
+             ▼
+┌──────────────────────────────┐
+│   C++ 分析引擎（自研）         │  离线批处理，每 5 分钟调度
+│   腾讯云 4C4G，systemd timer   │  聚合 → 成本 → 异常 → 告警
+└────────────┬─────────────────┘
+             │ INSERT
+             ▼
+┌──────────────────────────────┐
+│   PostgreSQL + Langfuse Web   │  仪表盘 · Trace 查看 · 成本页
+│   腾讯云 Docker Compose       │  Fork Langfuse (MIT) + 定制
+└──────────────────────────────┘
 ```
-
-- 阿里云 47.108.202.199（主服务器）+ 腾讯云 118.25.138.177（health-server）
-- 部署：`git push master` → GitHub Actions → webhook → 服务器
-
-## 技术栈
-
-| 层级 | 方案 | 说明 |
-|------|------|------|
-| 后端 | Go + Gin | 认证、工具注册、API 网关 |
-| 前端 | React + Vite | 统一工具界面 |
-| 数据库 | PostgreSQL 17 | 用户与工具元数据 |
-| 缓存 | Redis 7 | 会话缓存、限流器 |
-| 部署 | Docker Compose + Nginx | 阿里云 2C2G + 腾讯云 4C4G |
-| AI 协作 | 4-agent 模型 | Claude Code（架构与部署）、Qoder（后端）、Trae Work（前端）、Codex（审查与测试） |
-## 目录结构
-
-```
-Oxelia51/
-├── backend/          # Go + Gin
-├── frontend/         # React + Vite
-├── deploy/           # 部署脚本、Nginx、systemd、webhook
-├── docs/dev/         # 开发文档
-└── scripts/          # 辅助脚本
-```
-
-## 环境要求
-
-- Go 1.26+
-- Node.js 24+
-- PostgreSQL 17
-- Redis 7
-- Docker 与 Docker Compose
 
 ## 快速开始
 
+### 你自己部署（5 分钟）
+
 ```bash
-# 克隆仓库
 git clone https://github.com/XiaoleC05/Oxelia51.git
-cd Oxelia51
-
-# 启动依赖服务
+cd Oxelia51/deploy
+cp .env.example .env
+# 编辑 .env，填入安全密钥
 docker compose up -d
-
-# 后端
-cd backend
-cp .env.example .env   # 编辑 .env 填入实际配置
-go run ./cmd/server/main.go
-
-# 前端
-cd frontend
-npm install
-npm run dev
 ```
 
-## 配置
+浏览器打开 `http://localhost:3000` → 注册 → 创建项目 → 获得代理 URL。
 
-通过环境变量管理。复制 `.env.example` 为 `.env` 并填入实际值：
-
-| 变量 | 说明 |
-|------|------|
-| `DATABASE_URL` | PostgreSQL 连接字符串 |
-| `REDIS_URL` | Redis 连接字符串 |
-| `JWT_SECRET` | JWT 签名密钥 |
-| `SMTP_*` | 邮件服务配置（阿里云邮件推送） |
-| `CRAWLER_*` | DormGuard 爬虫相关密钥 |
-| `TENCENT_HEALTH_URL` | 腾讯云 health-server 地址（用于双服监控） |
-
-> 完整环境变量见 `backend/.env.example`。
-
-## 页面与路由
-
-| 路由 | 说明 |
-|------|------|
-| `/` | 平台落地页 |
-| `/tools` | 工具目录 |
-| `/tools/:slug` | 工具壳（DormGuard 等） |
-| `/portfolio` | 作品集 |
-| `/blog` | 博客列表 |
-| `/blog/:id` | 文章详情 |
-| `/about` | 关于开发者 |
-| `/friends` | 友情链接 |
-| `/profile` | 个人资料（修改显示名） |
-| `/login` `/register` `/verify-email` | 认证流程 |
-| `/forgot-password` `/reset-password` | 密码重置 |
-| `/admin` | 管理后台（仅 `oxelia51`） |
-
-## 部署
+### 在你的 AI 工具中配置
 
 ```bash
-docker compose -f deploy/docker/docker-compose.yml up -d --build
+# Claude Code
+export ANTHROPIC_BASE_URL="https://oxelia51.com/api/proxy/anthropic"
+
+# Cursor / ChatGPT
+export OPENAI_BASE_URL="https://oxelia51.com/api/proxy/openai"
 ```
 
-部署流程：`git push master` → GitHub Actions 构建 → webhook → 服务器自动部署。
+之后所有 LLM 调用的 Token 自动显示在仪表盘上。
 
-## 4-Agent 协作
+## 技术栈
 
-本项目由一位开发者 + 四个 AI Agent 协作开发（详见 [AGENTS.md](AGENTS.md)）：Claude Code（架构/部署）、Qoder（Go 后端）、Trae Work（React 前端）、Codex（审查/测试/文档）。
+| 组件 | 技术 | 来源 | 规模 |
+|------|------|------|:--:|
+| Go 代理网关 | Go + 标准库 `net/http/httputil` | 自研 | ~2000 行 |
+| C++ 分析引擎 | C++17 + `clickhouse-cpp` | 自研 | ~3000 行 |
+| 数据底座 + UI | Langfuse (MIT) | Fork + 定制 | — |
+| Token 事件存储 | ClickHouse | Docker | — |
+| 业务数据库 | PostgreSQL 17 | Docker | — |
+| 管理后台 | Go + Gin + React | 现有 | — |
+
+## 项目结构
+
+```
+Oxelia51/
+├── proxy-gateway/        # Go 代理网关
+├── analytics/            # C++ 分析引擎
+├── backend/              # 管理后台（Go）
+├── frontend/             # 管理后台 UI（React，逐步废弃）
+├── deploy/               # Docker Compose · Nginx · Webhook
+├── docs/                 # 全部文档（6 份 + dev 归档）
+│   ├── README.md                # 文档索引
+│   ├── 1-feasibility.md         # 可行性分析
+│   ├── 2-requirements.md        # 需求分析
+│   ├── 3-architecture.md        # 概要设计
+│   ├── 4-detailed-design.md     # 详细设计
+│   ├── 5-deployment.md          # 自动化部署
+│   └── 6-maintenance.md         # 维护与服务器
+└── scripts/              # 辅助脚本
+```
+
+## 文档
+
+完整文档见 [docs/README.md](docs/README.md)：
+
+| # | 文档 | 读者 |
+|:--:|------|------|
+| 1 | 可行性分析 | 决策者 |
+| 2 | 需求分析 | 产品 / 开发者 |
+| 3 | 概要设计 | 开发者 |
+| 4 | 详细设计 | 实现者 |
+| 5 | 自动化部署 | 运维 |
+| 6 | 维护与服务器 | 运维 |
+
+## 开发协作
+
+本项目由 1 位开发者 + 4 个 AI Agent 协作开发，详见 [AGENTS.md](AGENTS.md)。
+
+| Agent | 角色 |
+|-------|------|
+| Claude Code | 架构、部署、协调 |
+| Qoder | Go 后端 |
+| Trae Work | React 前端 |
+| Codex | 审查、测试、文档 |
 
 ## 参与贡献
 
-1. Fork 本仓库
-2. 创建功能分支（`git checkout -b feature/xxx`）
-3. 提交变更（`git commit -m 'feat: 描述'`）
-4. 推送分支（`git push origin feature/xxx`）
-5. 提交 Pull Request
+[Conventional Commits](https://www.conventionalcommits.org/) 格式：
 
-提交格式遵循：`feat:` / `fix:` / `refactor:` / `docs:` / `test:` / `style:` / `chore:`
+```bash
+git commit -m "feat: 支持 Gemini 代理"     # 新功能
+git commit -m "fix: SSE 流式丢数据"        # 修 bug
+git commit -m "docs: 更新部署文档"          # 文档
+git commit -m "refactor: 重构 adapter 接口" # 重构
+```
 
 ## 许可证
 
-本项目基于 MIT License 开源。
+MIT License — 详见 [LICENSE](LICENSE)

@@ -16,7 +16,7 @@
 ```
 
 内部工具 (均仅 loopback，通过 API 网关访问)：
-  DormGuard   :8000  — Python+FastAPI，MySQL 独立
+  DormGuard   :8000  — Go+Gin，MySQL 独立
   SecretStore :8006  — Go+Gin，AES-256-GCM
 
 SmartKB :8007  — Go+Gin，腾讯云 118.25.138.177
@@ -33,7 +33,7 @@ PostgreSQL / Redis — Docker 127.0.0.1
 | 服务器 | IP | 配置 | 角色 |
 |--------|-----|------|------|
 | 阿里云 | 47.108.202.199 | 2C2G | 主服务器，运行全部业务 |
-| 腾讯云 | 118.25.138.177 | 4C4G | 健康检查，不部署业务工具 |
+| 腾讯云 | 118.25.138.177 | 4C4G | 数据层（Langfuse + ClickHouse + SmartKB） |
 
 ## 部署流程
 

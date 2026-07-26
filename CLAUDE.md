@@ -65,15 +65,20 @@
 ## 3. 项目结构
 
 ```
-Oxelia51/                    ← 平台主仓库
-  backend/                   ← Qoder
-  frontend/                  ← Trae Work
-  deploy/ .github/           ← 我
-  docs/                      ← Codex
+Oxelia51/                    ← 平台主仓库（v3.0）
+  proxy-gateway/             ← Go 代理网关（自研）
+  analytics/                 ← C++ 分析引擎（自研）
+  backend/                   ← Go 管理后台
+  frontend/                  ← React 前端（旧页面逐步废弃）
+  deploy/                    ← 部署配置
+  docs/                      ← 全部文档
 
-独立工具仓库（各有 master 分支，SSH 远端）：
+Fork：
+  langfuse-token/            ← Fork langfuse/langfuse（前端定制）
+
+独立工具仓库（SSH 远端，管理后台引用）：
   DormGuard/ SecretStore/ SmartKB/
-  ↑ 工具后端 → Qoder 领域（DormGuard 为 Python）
+  ↑ 工具后端 → Qoder 领域
   ↑ .github/workflows/deploy.yml → 我的领域
 ```
 
@@ -85,7 +90,7 @@ Oxelia51/                    ← 平台主仓库
 - 前端通过 `/api/tools/:slug/proxy/*path` 网关调用工具，不直连工具端口
 - 工具间不可互调 API（ADR-007）
 - 不转发客户端 `Authorization` 给工具
-- API 契约和 ADR 为 FROZEN 状态，修改需版本号 bump + Codex 审查
+- API 契约为 FROZEN 状态，修改需版本号 bump + 审查
 
 ---
 

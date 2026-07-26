@@ -76,8 +76,3 @@ systemctl reload nginx
 chmod -R o+rX /opt/Oxelia51/uploads/ 2>/dev/null || true
 
 "$APP_DIR/deploy/monitor/oxelia51-healthcheck.sh"
-
-if [ -d /opt/DormGuard/backend ] && [ -f "$APP_DIR/deploy/fix-dormguard-gateway.sh" ]; then
-  echo "检测到 DormGuard，执行网关联调修复..."
-  bash "$APP_DIR/deploy/fix-dormguard-gateway.sh"
-fi

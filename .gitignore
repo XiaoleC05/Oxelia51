@@ -1,9 +1,6 @@
 # 开发者私人目录（不跟踪、不公开）
 /developer/
 
-# AI 规则文件（不公开）
-.trae/
-
 # 环境变量（含敏感信息）
 .env
 .env.local
@@ -31,10 +28,11 @@ backend/oxelia51-server.exe
 backend/oxelia51-server-linux
 oxelia51-server-linux.zip
 backend/*.exe
+proxy-gateway/*.exe
 deploy/tencent-cloud/health-server
 
-#docker配置
-docker-compose.yml
+#docker 配置
+/docker-compose.yml
 
 backend/server.exe
 *.tmp
