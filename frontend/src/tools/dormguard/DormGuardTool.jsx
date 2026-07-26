@@ -21,14 +21,14 @@ function DormGuardTool() {
     let cancelled = false
     try {
       // Get dorm number from system config
+      let dorm = '101'
       try {
         const configResp = await apiProxy('dormguard', 'api/system/config')
-        const dorm = configResp?.dorm_number || '101'
+        dorm = configResp?.dorm_number || '101'
         if (!cancelled) setDormNumber(dorm)
       } catch { /* use default */ }
 
-      // Fetch latest record
-      const dorm = dormNumber || '101'
+      // Fetch latest record with the dorm we just got
       try {
         const latest = await apiProxy('dormguard', `api/power/records/${dorm}/latest`)
         if (!cancelled) setRecord(latest)
@@ -39,7 +39,7 @@ function DormGuardTool() {
       if (!cancelled) setLoading(false)
     }
     return () => { cancelled = true }
-  }, [dormNumber])
+  }, [])
 
   useEffect(() => {
     loadLatest()
