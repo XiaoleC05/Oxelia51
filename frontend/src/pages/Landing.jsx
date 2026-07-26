@@ -74,23 +74,6 @@ function Landing() {
   const total = images.length
   const hasImages = total > 0
 
-  /* ---- 动态注入 <link rel="preload"> 预加载首张头图（LCP 优化） ----
-   * 首页头图 URL 来自 API（动态），无法在 index.html 中硬编码
-   * 获取到首张 URL 后注入 preload link，让浏览器尽早开始下载
-   */
-  useEffect(() => {
-    if (!hasImages || !images[0]?.image_url) return
-    const link = document.createElement('link')
-    link.rel = 'preload'
-    link.as = 'image'
-    link.href = images[0].image_url
-    link.fetchPriority = 'high'
-    document.head.appendChild(link)
-    return () => {
-      document.head.removeChild(link)
-    }
-  }, [hasImages, images])
-
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current)

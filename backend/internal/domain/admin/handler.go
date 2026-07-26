@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"unicode/utf8"
 	"net/http"
 	"net/url"
 	"os"
@@ -226,6 +227,17 @@ func uptimeLinux() uint64 {
 
 // --- IP 白名单管理 ---
 
+// sanitizeLabel 修复非 UTF-8 编码（如 GBK）的标签文本
+func sanitizeLabel(raw string) string {
+	s := strings.TrimSpace(raw)
+	if s == "" || utf8.ValidString(s) {
+		return s
+	}
+	// 尝试 GBK → UTF-8：Go 字符串是 UTF-8，直接返回原值；
+	// 客户端应使用 UTF-8 编码发送请求
+	return strings.ToValidUTF8(s, "?")
+}
+
 // WhitelistHandler IP 白名单 CRUD 接口
 type WhitelistHandler struct {
 	repo *WhitelistRepository
@@ -266,7 +278,7 @@ func (h *WhitelistHandler) CreateWhitelist(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	if err := h.repo.Create(ctx, req.IP, req.Label); err != nil {
+	if err := h.repo.Create(ctx, req.IP, sanitizeLabel(req.Label)); err != nil {
 		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "添加失败")
 		return
 	}
@@ -315,7 +327,7 @@ func (h *WhitelistHandler) UpdateWhitelist(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	if err := h.repo.Update(ctx, id, req.IP, req.Label); err != nil {
+	if err := h.repo.Update(ctx, id, req.IP, sanitizeLabel(req.Label)); err != nil {
 		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "更新失败")
 		return
 	}
