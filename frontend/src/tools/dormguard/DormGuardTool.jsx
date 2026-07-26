@@ -20,18 +20,13 @@ function DormGuardTool() {
   const loadLatest = useCallback(async () => {
     let cancelled = false
     try {
-      // Get dorm number from system config
-      let dorm = '101'
+      // Fetch latest record for dorm 320
       try {
-        const configResp = await apiProxy('dormguard', 'api/system/config')
-        dorm = configResp?.dorm_number || '101'
-        if (!cancelled) setDormNumber(dorm)
-      } catch { /* use default */ }
-
-      // Fetch latest record with the dorm we just got
-      try {
-        const latest = await apiProxy('dormguard', `api/power/records/${dorm}/latest`)
-        if (!cancelled) setRecord(latest)
+        const latest = await apiProxy('dormguard', 'api/power/records/320/latest')
+        if (!cancelled) {
+          setRecord(latest)
+          setDormNumber(latest?.dorm_number || '320')
+        }
       } catch { /* no data yet */ }
     } catch (err) {
       if (!cancelled) setError(err.message)
