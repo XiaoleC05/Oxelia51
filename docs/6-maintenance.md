@@ -322,24 +322,28 @@ ORDER BY idx_scan ASC;
 
 ## 6. 容量规划
 
-### 6.1 存储预估
+### 6.1 存储监控
 
-| 日请求量 | 年数据量（ClickHouse 压缩后） | PostgreSQL |
-|:--:|------|------|
-| 1,000 | ~50MB | ~5MB |
-| 10,000 | ~500MB | ~50MB |
-| 100,000 | ~5GB | ~500MB |
-| 1,000,000 | ~50GB | ~5GB |
+ClickHouse 数据量随请求量增长。通过以下查询监控实际增长速度：
 
-当前磁盘：阿里云 40GB，腾讯云 80GB。按日请求 10 万算，腾讯云 ClickHouse 可用 16 年。实际瓶颈在内存（4G），数据量超 50GB 后聚合查询可能变慢。
+```sql
+-- 每月数据增量
+SELECT toYYYYMM(timestamp) AS month,
+       count() AS rows,
+       formatReadableSize(sum(bytes_on_disk)) AS size_on_disk
+FROM oxelia51.token_events
+GROUP BY month ORDER BY month;
+```
+
+当前磁盘：阿里云 40GB，腾讯云 40GB。达到 70% 时需扩容。
 
 ### 6.2 扩容触发
 
-| 指标 | 当前值 | 扩容阈值 | 扩容方案 |
-|------|------|------|------|
-| ClickHouse 磁盘使用 | < 5GB | > 50GB (70%) | 腾讯云升配磁盘 |
-| Go 代理 CPU | < 10% | > 80% 持续 5 分钟 | 阿里云升配 CPU |
-| 内存使用 | < 2GB | > 3.2GB (80%) | 升配内存 / 加 swap |
+| 指标 | 阈值 | 操作 |
+|------|------|------|
+| 磁盘使用 | > 70% | 所在云升配磁盘 |
+| Go 代理 CPU | > 80% 持续 5 分钟 | 阿里云升配 CPU |
+| 内存使用 | > 3.2GB (80%) | 升配内存 |
 
 ---
 

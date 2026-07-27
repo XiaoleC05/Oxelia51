@@ -27,7 +27,7 @@
 
 采用 API 代理模式：用户修改环境变量指向代理地址，代理转发请求并记录 Token。
 
-API Key 不存储，仅转发。同时提供 SaaS（oxelia51.com）和自部署（二进制 + systemd）两种形态。
+API Key 不存储，仅转发。提供 oxelia51.com 在线使用和自部署两种形态。
 
 ## 3. Token 统计与展示
 
@@ -41,7 +41,7 @@ API Key 不存储，仅转发。同时提供 SaaS（oxelia51.com）和自部署�
 
 ### 3.3 成本显示
 
-显示估算花费。内置各模型定价表，自动换算为 USD。
+内置各模型定价表。默认显示人民币（CNY），可点击按钮切换为美元（USD）。汇率取当日中国银行中间价，通过定时任务每日更新。
 
 ### 3.4 图表库
 
@@ -78,7 +78,7 @@ Token 平台的用户管理和系统配置功能。
 
 ### 7.1 交付方式
 
-SaaS 网站（oxelia51.com）和 GitHub 可安装包同时推进，共享代码。
+oxelia51.com 在线服务和 GitHub 自部署包共享同一代码库。
 
 ### 7.2 自部署形态
 
@@ -98,4 +98,4 @@ SaaS 网站（oxelia51.com）和 GitHub 可安装包同时推进，共享代码�
 
 ## 9. 范围
 
-不做 MVP。基于 Langfuse + Helicone 融合，直接开发完整功能。开发阶段详见 `4-detailed-design.md`。
+基于 Langfuse + Helicone 融合，开发完整功能。实现细节见 `4-detailed-design.md`。

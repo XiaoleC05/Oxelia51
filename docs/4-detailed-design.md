@@ -415,37 +415,32 @@ int main() {
 
 ### 2.3 成本计算
 
+定价存储在数据库 `oxelia51.model_pricing` 表中，以 USD 为基准。前端显示时按当日汇率换算 CNY，用户可点击按钮切换币种。
+
+```sql
+CREATE TABLE oxelia51.model_pricing (
+    model             String,
+    provider          LowCardinality(String),
+    prompt_price_usd  Float64,  -- per 1M tokens, USD
+    completion_price_usd Float64,
+    updated_at        DateTime
+) ENGINE = ReplacingMergeTree(updated_at)
+ORDER BY model;
+```
+
+汇率通过定时任务每日从中国银行 API 拉取存入 `oxelia51.exchange_rates` 表。
+
 ```cpp
 // src/pricing.cpp
 
-struct Price { double prompt; double completion; }; // per 1M tokens
-
-static const std::unordered_map<std::string, Price> kPricing = {
-    {"claude-opus-5",       {15.00, 75.00}},
-    {"claude-sonnet-5",     { 3.00, 15.00}},
-    {"claude-haiku-4.5",    { 0.80,  4.00}},
-    {"gpt-4o",              { 2.50, 10.00}},
-    {"gpt-4o-mini",         { 0.15,  0.60}},
-    {"deepseek-chat",       { 0.14,  0.28}},
-    {"deepseek-reasoner",   { 0.55,  2.19}},
-    {"gemini-2.5-pro",      { 1.25, 10.00}},
-    {"gemini-2.5-flash",    { 0.15,  0.60}},
-    {"moonshot-v1-8k",      { 0.84,  0.84}},
-    {"moonshot-v1-32k",     { 1.68,  1.68}},
-    {"moonshot-v1-128k",    { 4.20,  4.20}},
-    {"glm-4-plus",          { 1.05,  1.05}},
-    {"glm-4-flash",         { 0.14,  0.14}},
-};
-
 double Pricing::calculate(const std::string& model,
                           uint64_t prompt_tokens, uint64_t completion_tokens) const {
-    auto it = kPricing.find(model);
-    if (it == kPricing.end()) {
-        std::cerr << "[WARN] unknown model: " << model << ", cost set to 0\n";
+    auto price = pricingRepo_->find(model);
+    if (!price) {
         return 0.0;
     }
-    return (prompt_tokens / 1'000'000.0) * it->second.prompt
-         + (completion_tokens / 1'000'000.0) * it->second.completion;
+    return (prompt_tokens / 1'000'000.0) * price->prompt_usd
+         + (completion_tokens / 1'000'000.0) * price->completion_usd;
 }
 ```
 
