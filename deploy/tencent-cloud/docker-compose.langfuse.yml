@@ -1,8 +1,9 @@
 # =============================================
 #  Oxelia51 v3.0 — Langfuse 数据层
 #  服务器：腾讯云 118.25.138.177 (4C4G, Ubuntu 24.04)
-#  注意：SmartKB PostgreSQL 已占 5432，
-#        所以 Langfuse PostgreSQL 用 5433
+#  注意：SmartKB PostgreSQL 已占 5433，
+#        所以 Langfuse PostgreSQL 用 5434
+#  Docker 镜像：腾讯云原生加速器 mirror.ccs.tencentyun.com
 # =============================================
 services:
   langfuse-postgres:
@@ -10,7 +11,7 @@ services:
     restart: unless-stopped
     container_name: langfuse-postgres
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:5434:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -24,8 +25,6 @@ services:
       interval: 3s
       timeout: 3s
       retries: 10
-    mem_limit: 256m
-    mem_reservation: 128m
 
   langfuse-redis:
     image: redis:7-alpine
@@ -44,8 +43,6 @@ services:
       interval: 3s
       timeout: 10s
       retries: 10
-    mem_limit: 128m
-    mem_reservation: 64m
 
   langfuse-clickhouse:
     image: clickhouse/clickhouse-server:25.12
@@ -69,8 +66,6 @@ services:
       timeout: 5s
       retries: 10
       start_period: 1s
-    mem_limit: 1024m
-    mem_reservation: 384m
     ulimits:
       nofile:
         soft: 262144
@@ -96,8 +91,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 1s
-    mem_limit: 256m
-    mem_reservation: 128m
 
   langfuse-worker:
     image: docker.io/langfuse/langfuse-worker:3
@@ -158,8 +151,6 @@ services:
       REDIS_TLS_ENABLED: "false"
       EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-}
       SMTP_CONNECTION_URL: ${SMTP_CONNECTION_URL:-}
-    mem_limit: 512m
-    mem_reservation: 256m
 
   langfuse-web:
     image: docker.io/langfuse/langfuse:3
@@ -180,8 +171,6 @@ services:
       LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-}
       LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-}
       LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-}
-    mem_limit: 512m
-    mem_reservation: 256m
 
 volumes:
   langfuse_pgdata:
