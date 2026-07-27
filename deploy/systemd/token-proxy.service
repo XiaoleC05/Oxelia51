@@ -1,0 +1,20 @@
+[Unit]
+Description=Oxelia51 Token Proxy Gateway (Go)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/oxelia51/proxy
+EnvironmentFile=-/opt/oxelia51/proxy/.env
+ExecStart=/opt/oxelia51/proxy/proxy-server
+Restart=always
+RestartSec=5
+MemoryMax=384M
+
+# 优雅关闭
+TimeoutStopSec=10
+KillSignal=SIGINT
+
+[Install]
+WantedBy=multi-user.target
