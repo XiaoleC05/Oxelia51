@@ -284,31 +284,30 @@ nginx -t && systemctl reload nginx
 
 ## 4. 自部署版（给用户）
 
-### 4.1 Docker Compose 一键部署
+### 4.1 Langfuse Docker Compose 一键部署
 
 ```bash
 git clone https://github.com/XiaoleC05/Oxelia51.git
-cd Oxelia51/deploy
+cd Oxelia51/deploy/tencent-cloud
 
-# 生成密钥
-SALT=$(openssl rand -hex 16)
-ENCRYPTION_KEY=$(openssl rand -hex 32)
-NEXTAUTH_SECRET=$(openssl rand -hex 32)
+# 配置 Docker 镜像加速器（国内必须）
+sudo mkdir -p /etc/docker
+echo '{"registry-mirrors":["https://mirror.ccs.tencentyun.com","https://docker.1ms.run"]}' \
+  | sudo tee /etc/docker/daemon.json
+sudo systemctl restart docker
 
-# 创建 .env
-cat > .env << EOF
-POSTGRES_PASSWORD=$(openssl rand -hex 16)
-CLICKHOUSE_PASSWORD=$(openssl rand -hex 16)
-REDIS_PASSWORD=$(openssl rand -hex 16)
-MINIO_PASSWORD=$(openssl rand -hex 16)
-SALT=$SALT
-ENCRYPTION_KEY=$ENCRYPTION_KEY
-NEXTAUTH_SECRET=$NEXTAUTH_SECRET
-NEXTAUTH_URL=http://localhost:3000
-EOF
+# 复制 compose 文件
+mkdir -p /opt/langfuse
+cp docker-compose.langfuse.yml /opt/langfuse/
+cp langfuse-deploy.sh /opt/langfuse/
+cd /opt/langfuse
 
-docker compose up -d
+# 生成密钥 + 拉取镜像 + 启动
+bash langfuse-deploy.sh install
+bash langfuse-deploy.sh start
+
 # 浏览器打开 http://localhost:3000
+# 管理员密码见 install 输出
 ```
 
 ### 4.2 Binary + systemd 自部署（仅 Go 代理）
@@ -317,19 +316,23 @@ docker compose up -d
 cd Oxelia51/proxy-gateway
 go build -o proxy-server ./cmd/proxy/
 
-sudo cp proxy-server /opt/oxelia51/proxy-server
-sudo cp deploy/token-proxy.service /etc/systemd/system/
+sudo mkdir -p /opt/oxelia51/proxy
+sudo cp proxy-server /opt/oxelia51/proxy/
+sudo cp ../deploy/systemd/token-proxy.service /etc/systemd/system/
 
 # 配置环境变量
-cat > /opt/oxelia51/.env << EOF
+cat > /opt/oxelia51/proxy/.env << EOF
 PROXY_PORT=9090
-CLICKHOUSE_ADDR=<your-clickhouse-host>:9000
+CLICKHOUSE_ADDR=<clickhouse-host>:9000
 CLICKHOUSE_USER=clickhouse
-CLICKHOUSE_PASSWORD=<your-password>
+CLICKHOUSE_PASSWORD=<password>
 EOF
 
 sudo systemctl daemon-reload
 sudo systemctl enable --now token-proxy
+
+# 可选：部署管理脚本
+sudo cp ../deploy/deploy-proxy.sh /opt/oxelia51/proxy/
 ```
 
 ---
@@ -337,20 +340,21 @@ sudo systemctl enable --now token-proxy
 ## 5. 回滚
 
 ```bash
-# 回滚到上一个 release tarball
+# 阿里云 — 回滚到上一个 release tarball
 cd /opt/Oxelia51-src
 git fetch origin release
 LAST_COMMIT=$(git log -1 --format="%H")
 git checkout "${LAST_COMMIT}~1" -- oxelia51-release.tar.gz
 tar xzf oxelia51-release.tar.gz -C /opt/Oxelia51/
 systemctl restart oxelia51-backend
+systemctl restart token-proxy
 nginx -s reload
 
-# 回滚 Docker Compose（Langfuse）
-cd /opt/oxelia51/deploy
-docker compose down
+# 腾讯云 — 回滚 Docker Compose（Langfuse）
+cd /opt/langfuse
+docker compose -f docker-compose.langfuse.yml --env-file .env -p langfuse down
 # 恢复旧镜像标签
-docker compose up -d
+docker compose -f docker-compose.langfuse.yml --env-file .env -p langfuse up -d
 ```
 
 ---
@@ -359,9 +363,10 @@ docker compose up -d
 
 | 密钥 | 位置 | 生成方式 | 轮换周期 |
 |------|------|------|:--:|
-| WEBHOOK_SECRET | 服务器 `/opt/Oxelia51/deploy/webhook/.env` + GitHub Webhook Settings | `openssl rand -hex 32` | 每季度 |
-| JWT_SECRET | 服务器 `/opt/oxelia51/.env` | `openssl rand -hex 32` | 每季度 |
-| SALT / ENCRYPTION_KEY | Docker Compose `.env` | `openssl rand -hex 32` | 每半年 |
-| PostgreSQL / ClickHouse 密码 | Docker Compose `.env` | `openssl rand -hex 16` | 每半年 |
-| SSH Deploy Key | 服务器 `~/.ssh/oxelia51_deploy` | `ssh-keygen -t ed25519` | 每年 |
-| SSL 证书 | `/etc/letsencrypt/` | certbot-auto-renew | 90 天自动续期 |
+| WEBHOOK_SECRET | 阿里云 `/opt/Oxelia51/deploy/webhook/.env` + GitHub | `openssl rand -hex 32` | 每季度 |
+| JWT_SECRET | 阿里云 `/opt/oxelia51/backend/.env` | `openssl rand -hex 32` | 每季度 |
+| SALT / ENCRYPTION_KEY | 腾讯云 `/opt/langfuse/.env` | `openssl rand -hex 32` | 每半年 |
+| PG / CH / Redis 密码 | 腾讯云 `/opt/langfuse/.env` | `openssl rand -hex 16` | 每半年 |
+| SSH Deploy Key | 阿里云 `~/.ssh/oxelia51_deploy` | `ssh-keygen -t ed25519` | 每年 |
+| SSH 腾讯云 Key | 阿里云 `~/.ssh/tencent_cloud` | `ssh-keygen -t ed25519` | 每年 |
+| SSL 证书 | 阿里云 `/etc/letsencrypt/` | certbot auto-renew | 90 天 |

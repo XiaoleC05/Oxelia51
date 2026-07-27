@@ -11,12 +11,14 @@
 | 属性 | 阿里云 | 腾讯云 |
 |------|--------|--------|
 | 公网 IP | 47.108.202.199 | 118.25.138.177 |
-| 配置 | 2C2G 40GB | 4C4G 80GB |
+| 配置 | 2C2G 40GB | 4C4G 40GB |
 | 系统 | Alibaba Cloud Linux 3 | Ubuntu 24.04 |
-| SSH | Workbench（22 不对外） | 22 |
-| 运行服务 | Nginx, Go 代理 :9090, Go 管理后台 :8080, Webhook :9000 | Docker Compose (6 容器), C++ 引擎, SmartKB |
+| SSH | Workbench（22 不对外） | Workbench（22 不对外） |
+| 运行服务 | Nginx, Go 代理 :9090, Go 管理后台 :8080, Webhook :9000 | Docker: Langfuse (6 容器) + SmartKB, C++ 引擎 (计划) |
 
 ### 1.2 端口清单
+
+#### 阿里云 (47.108.202.199)
 
 | 端口 | 绑定 | 服务 | 对外 |
 |:--:|------|------|:--:|
@@ -24,12 +26,23 @@
 | 9090 | 127.0.0.1 | Go 代理网关 | ❌ |
 | 8080 | 127.0.0.1 | Go 管理后台 | ❌ |
 | 9000 | 127.0.0.1 | Webhook 接收器 | ❌ |
-| 3000 | Docker | Langfuse Web | ❌ |
+
+#### 腾讯云 (118.25.138.177)
+
+| 端口 | 绑定 | 服务 | 对外 |
+|:--:|------|------|:--:|
+| 80 | 0.0.0.0 | Nginx → Langfuse Web | ✅ |
+| 3000 | 127.0.0.1 | Langfuse Web | ❌ |
 | 3030 | 127.0.0.1 | Langfuse Worker | ❌ |
 | 8123 | 127.0.0.1 | ClickHouse HTTP | ❌ |
 | 9000 | 127.0.0.1 | ClickHouse Native | ❌ |
-| 5432 | 127.0.0.1 | PostgreSQL | ❌ |
-| 6379 | 127.0.0.1 | Redis | ❌ |
+| 9009 | — | ClickHouse 内部 | ❌ |
+| 5433 | 127.0.0.1 | SmartKB PostgreSQL | ❌ |
+| 5434 | 127.0.0.1 | Langfuse PostgreSQL | ❌ |
+| 6379 | 127.0.0.1 | Langfuse Redis | ❌ |
+| 9090 | 127.0.0.1 | MinIO S3 | ❌ |
+| 9091 | 127.0.0.1 | MinIO Console | ❌ |
+| 8007 | 127.0.0.1 | SmartKB API | ❌ |
 
 ---
 
@@ -65,27 +78,33 @@ systemctl reload nginx                     # 无中断重载配置
 ### 2.2 腾讯云
 
 ```bash
-cd /opt/oxelia51/deploy
+cd /opt/langfuse
 
 # 容器状态
-docker compose ps
+docker compose -f docker-compose.langfuse.yml --env-file .env -p langfuse ps
 
 # 容器日志
-docker compose logs -f --tail=100 langfuse-web
-docker compose logs -f --tail=100 langfuse-worker
+docker compose -f docker-compose.langfuse.yml --env-file .env -p langfuse logs -f --tail=100 langfuse-web
 
 # 重启单个容器
-docker compose restart langfuse-web
+docker compose -f docker-compose.langfuse.yml --env-file .env -p langfuse restart langfuse-web
 
 # 全部重启
-docker compose down && docker compose up -d
+docker compose -f docker-compose.langfuse.yml --env-file .env -p langfuse down
+docker compose -f docker-compose.langfuse.yml --env-file .env -p langfuse up -d
 
-# C++ 引擎
-systemctl status token-analytics
-journalctl -u token-analytics -n 50 -f
+# 或使用管理脚本
+bash langfuse-deploy.sh status
+bash langfuse-deploy.sh logs
+bash langfuse-deploy.sh restart
 
-# 手动触发一次分析
-systemctl start token-analytics
+# Docker 镜像加速器
+cat /etc/docker/daemon.json
+# {"registry-mirrors":["https://mirror.ccs.tencentyun.com","https://docker.1ms.run"]}
+
+# C++ 引擎（计划部署）
+# systemctl status token-analytics
+# journalctl -u token-analytics -n 50 -f
 ```
 
 ### 2.3 数据库
@@ -109,8 +128,9 @@ clickhouse-client --query "
   WHERE database = 'oxelia51'
   GROUP BY table"
 
-# PostgreSQL — 客户端连接
-psql -h localhost -U postgres -d postgres
+# PostgreSQL — 客户端连接（Langfuse PG 在 5434，SmartKB PG 在 5433）
+psql -h localhost -p 5434 -U postgres -d postgres   # Langfuse
+psql -h localhost -p 5433 -U postgres -d postgres   # SmartKB
 
 # 查看近期告警
 psql -c "SELECT * FROM oxelia51.alert_logs ORDER BY created_at DESC LIMIT 20"
@@ -123,31 +143,22 @@ psql -c "SELECT * FROM oxelia51.alert_logs ORDER BY created_at DESC LIMIT 20"
 ### 3.1 用户反馈「仪表盘没有数据」
 
 ```
+阿里云操作：
 1. 检查 Go 代理是否在记录
    journalctl -u token-proxy --since "5 min ago" | grep "recorded"
-   预期：每条约 1 条 "recorded" 日志
+   预期：约 1 条/秒 "recorded" 日志
    若 0 条 → Go 代理未收到请求，检查 Nginx 转发
 
+腾讯云操作：
 2. 检查 ClickHouse 是否有数据
    clickhouse-client --query "SELECT count() FROM oxelia51.token_events WHERE timestamp >= now() - INTERVAL 5 MINUTE"
    预期：> 0
-   若 0 → Go 代理写入失败，检查日志
+   若 0 → Go 代理写入失败，检查腾讯云 ClickHouse 是否可达
 
-3. 检查 C++ 引擎是否在运行
-   systemctl status token-analytics
-   journalctl -u token-analytics --since "10 min ago"
-   预期：最近 10 分钟内有执行记录
-   若无 → systemctl start token-analytics
-
-4. 检查 PostgreSQL 统计表
-   psql -c "SELECT * FROM oxelia51.daily_stats ORDER BY date DESC LIMIT 5"
-   预期：有今天的数据
-   若 0 → C++ 引擎写入失败，检查 ClickHouse 连接
-
-5. 检查 Langfuse Web 是否可访问
-   curl http://localhost:3000/api/health
+3. 检查 Langfuse Web 是否可访问
+   curl http://127.0.0.1:3000/api/public/health
    预期：200 OK
-   若失败 → docker compose ps langfuse-web → docker compose restart langfuse-web
+   若失败 → docker compose -f /opt/langfuse/docker-compose.langfuse.yml --env-file /opt/langfuse/.env -p langfuse ps langfuse-web
 ```
 
 ### 3.2 用户反馈「代理返回 502」
@@ -173,20 +184,23 @@ psql -c "SELECT * FROM oxelia51.alert_logs ORDER BY created_at DESC LIMIT 20"
 ### 3.3 用户反馈「网页打不开 / 加载很慢」
 
 ```
+阿里云操作：
 1. 检查 Nginx
    systemctl status nginx
    curl -o /dev/null -w "%{http_code}" https://oxelia51.com
    预期：200
 
 2. 检查 Tencent 云是否可达
-   curl http://118.25.138.177:3000/api/health
-   预期：200
+   curl -m 5 http://118.25.138.177/api/public/health
+   预期：{"status":"OK","version":"..."}
    若超时 → 检查腾讯云安全组/防火墙是否放行阿里云 IP
 
+腾讯云操作：
 3. 检查 Langfuse Web 容器
-   docker compose ps langfuse-web
-   预期：Up (healthy)
-   若 Restarting → docker compose logs langfuse-web 查原因
+   cd /opt/langfuse
+   docker compose -f docker-compose.langfuse.yml --env-file .env -p langfuse ps langfuse-web
+   预期：Up
+   若 Restarting → docker logs langfuse-web 查原因
 ```
 
 ### 3.4 服务器磁盘满
@@ -209,17 +223,9 @@ find /var/log -name "*.log" -mtime +30 -delete
 # 查看内存分布
 free -h
 docker stats --no-stream
-
-# 限制 Docker 内存（修改 docker-compose.yml）
-services:
-  clickhouse:
-    mem_limit: 1g
-  langfuse-web:
-    mem_limit: 512m
-
-# 临时释放缓存
-echo 3 > /proc/sys/vm/drop_caches
 ```
+
+> **注意**：Langfuse Web 是 Next.js 应用，启动时会编译大量页面，实际峰值内存可超过 1GB。**不要设置** `mem_limit` 小于 1GB，否则会 OOM。当前配置不设上限，依赖 Docker 自动管理。腾讯云 4G 内存跑 7 个容器（含 SmartKB PG），空闲约 1GB，够用。
 
 ---
 
@@ -265,7 +271,7 @@ clickhouse-client --query "RESTORE DATABASE oxelia51 FROM Disk('backups','202607
 
 ## 5. 性能调优
 
-### 5.1 Go 代理网关
+### 5.1 Go 代理网关（阿里云）
 
 ```bash
 # 调整 GOMAXPROCS（默认 = CPU 核数）
@@ -279,12 +285,17 @@ oxelia51 soft nofile 65536
 oxelia51 hard nofile 65536
 ```
 
-### 5.2 ClickHouse
+### 5.2 ClickHouse（腾讯云）
+
+```bash
+# ClickHouse 容器内执行
+docker exec -it langfuse-clickhouse clickhouse-client -u clickhouse --password "$CH_PASS"
+```
 
 ```sql
 -- 调整合并线程（4C 机器）
 SET max_threads = 4;
-SET max_bytes_before_external_group_by = 5000000000;  -- 5GB
+SET max_bytes_before_external_group_by = 5000000000;
 
 -- 检查慢查询
 SELECT query, elapsed
@@ -293,17 +304,18 @@ WHERE type = 'QueryFinish' AND elapsed > 1
 ORDER BY elapsed DESC LIMIT 10;
 ```
 
-### 5.3 PostgreSQL
+### 5.3 PostgreSQL（腾讯云）
+
+```bash
+# Langfuse PG 在 5434，SmartKB PG 在 5433
+psql -h localhost -p 5434 -U postgres -d postgres
+```
 
 ```sql
 -- 检查索引使用
 SELECT schemaname, tablename, indexname, idx_scan
 FROM pg_stat_user_indexes
 ORDER BY idx_scan ASC;
-
--- 检查慢查询（需要先启用日志）
-ALTER SYSTEM SET log_min_duration_statement = 1000;  -- 记录 >1s 的查询
-SELECT pg_reload_conf();
 ```
 
 ---
@@ -335,34 +347,43 @@ SELECT pg_reload_conf();
 
 ### 7.1 健康检查端点
 
+**阿里云**：
 ```bash
 # Go 代理
 curl http://127.0.0.1:9090/api/proxy/status
-# {"status":"ok","uptime":86400,"qps":12.5,"latency_p99_ms":8,
-#  "providers":{"anthropic":"ok","openai":"ok","deepseek":"ok"}}
 
 # 管理后台
 curl http://127.0.0.1:8080/api/health
 
 # Webhook 接收器
 curl http://127.0.0.1:9000
+```
 
+**腾讯云**：
+```bash
 # Langfuse Web
-curl http://localhost:3000/api/health
+curl http://127.0.0.1:3000/api/public/health
+# {"status":"OK","version":"3.224.1"}
+
+# ClickHouse
+curl http://127.0.0.1:8123/ping
+# Ok
+
+# 所有容器
+docker compose -f /opt/langfuse/docker-compose.langfuse.yml --env-file /opt/langfuse/.env -p langfuse ps
 ```
 
 ### 7.2 定时健康检查脚本
 
+**阿里云** (`/opt/Oxelia51/deploy/monitor/oxelia51-healthcheck.sh`, crontab `*/5 * * * *`):
+
 ```bash
 #!/bin/bash
-# /opt/Oxelia51/deploy/monitor/oxelia51-healthcheck.sh
-# crontab: */5 * * * *
-
 checks=(
     "Go 代理:curl -sf http://127.0.0.1:9090/api/proxy/status"
     "管理后台:curl -sf http://127.0.0.1:8080/api/health"
     "Webhook:curl -sf http://127.0.0.1:9000"
-    "Langfuse:curl -sf http://127.0.0.1:3000/api/health"
+    "腾讯云 Langfuse:curl -sf http://118.25.138.177/api/public/health"
 )
 
 for check in "${checks[@]}"; do
@@ -378,16 +399,16 @@ done
 
 ## 8. 安全清单
 
-| 检查项 | 频率 | 命令/方法 |
-|------|:--:|------|
-| 检查 Nginx 错误日志中无异常 | 每日 | `grep -i "error\|attack\|scan\|inject" /var/log/nginx/error.log` |
-| 检查 Go 代理无鉴权失败的异常高峰 | 每日 | `journalctl -u token-proxy --since "1 day ago" \| grep -c "missing X-Project-ID"` |
-| 检查 SSH 登录 | 每日 | `last -20` |
-| 检查 ClickHouse 端口未对外暴露 | 每月 | `ss -tlnp \| grep 8123` 确认绑定 127.0.0.1 |
-| 检查 TLS 证书到期日 | 每月 | `certbot certificates` 或 `openssl s_client -connect oxelia51.com:443` |
-| 更新服务器系统包 | 每月 | `apt update && apt upgrade -y`（腾讯云）；`yum update -y`（阿里云） |
-| SSH Key 轮换 | 每年 | 重新生成 `~/.ssh/oxelia51_deploy`，更新 GitHub Deploy Keys |
-| 数据库密码轮换 | 每半年 | 更新 `.env` → `docker compose down && up -d` |
+| 检查项 | 服务器 | 频率 | 命令/方法 |
+|------|:--:|:--:|------|
+| Nginx 错误日志 | 阿里云 | 每日 | `grep -i "error\|attack\|scan\|inject" /var/log/nginx/error.log` |
+| Go 代理鉴权失败 | 阿里云 | 每日 | `journalctl -u token-proxy --since "1 day ago" \| grep -c "missing X-Project-ID"` |
+| SSH 登录 | 双机 | 每日 | `last -20` |
+| ClickHouse 端口 | 腾讯云 | 每月 | `ss -tlnp \| grep 8123` 确认绑定 127.0.0.1 |
+| TLS 证书到期 | 阿里云 | 每月 | `certbot certificates` 或 `openssl s_client -connect oxelia51.com:443` |
+| 系统更新 | 双机 | 每月 | `apt upgrade -y`（腾讯云）；`yum update -y`（阿里云） |
+| SSH Key 轮换 | 双机 | 每年 | 重新生成 `~/.ssh/oxelia51_deploy`，更新 GitHub Deploy Keys |
+| 数据库密码轮换 | 腾讯云 | 每半年 | 更新 `/opt/langfuse/.env` → `docker compose down && up -d` |
 
 ---
 

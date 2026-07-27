@@ -97,8 +97,13 @@ Fork：
 ## 5. 部署约束
 
 - 阿里云 47.108.202.199，Workbench 操作，22 端口不对外
+- 腾讯云 118.25.138.177，Workbench 操作，22 端口不对外
+- 阿里云可通过 `/api/admin/exec`（JWT + IP 白名单）执行命令
+- 阿里云可通过 `~/.ssh/tencent_cloud` SSH 到腾讯云
 - 已配环境变量不得重复询问：`CRAWLER_*` `QQ_BOT_*`
 - 工具部署路径：`/opt/<tool>/<tool>-server`，systemd 管理
+- 腾讯云 Langfuse：Docker Compose，部署在 `/opt/langfuse/`，管理脚本 `langfuse-deploy.sh`
+- 阿里云 Go 代理：`/opt/oxelia51/proxy/proxy-server`，systemd `token-proxy.service`
 - 部署流：`push master → Actions → release tarball → webhook → 服务器`
 - `deploy.sh` 有自愈循环，`receiver.py` 按 repo 路由到 `tool-deploy.sh`
 
