@@ -140,44 +140,28 @@ jobs:
           retention-days: 7
 
   release:
-    name: Push tarball to release branch
+    name: Create GitHub Release
     needs: build-test
     if: >-
       (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # release job 需要写权限来 push 到 release 分支
     permissions:
       contents: write
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Download release artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: oxelia-release
 
-      - name: Push tarball to release branch
+      - name: Create Release and Upload Asset
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-
-          # 创建 orphan 分支（无历史），仅包含 tarball
-          git checkout --orphan release-tmp
-          git rm -rf . 2>/dev/null || true
-
-          # 确认 tarball 存在
-          ls -lh oxelia51-release.tar.gz
-
-          git add oxelia51-release.tar.gz
-          git commit -m "release: ${GITHUB_SHA::7}"
-
-          # 强制推送到 release 分支（覆盖旧版本）
-          git push origin "release-tmp:release" --force
-          echo "tarball pushed to release branch"
+          TAG="release-$(date +%Y%m%d%H%M%S)"
+          gh release create "$TAG" oxelia51-release.tar.gz \
+            --title "Release ${GITHUB_SHA::7}" \
+            --notes "Automated release. Commit: ${GITHUB_SHA}" \
+            --target master \
+            --latest
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV

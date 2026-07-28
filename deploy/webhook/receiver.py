@@ -2,10 +2,10 @@
 """Oxelia51 GitHub webhook receiver.
 
 监听 127.0.0.1:9000，验证 HMAC-SHA256 签名，
-在 push 到 release 分支时触发相应的部署脚本。
+在 GitHub Release published 时触发部署脚本。
 
 支持多仓库：
-  - XiaoleC05/Oxelia51 → 主平台 deploy.sh
+  - XiaoleC05/Oxelia51 → 主平台 deploy.sh <tarball_url>
   - 工具仓库 → tool-deploy.sh <tool-name>
 
 环境变量：
@@ -25,9 +25,8 @@ SECRET = os.environ.get("WEBHOOK_SECRET", "").encode()
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", "/opt/Oxelia51/deploy/webhook/deploy.sh")
 TOOL_DEPLOY_SCRIPT = os.environ.get("TOOL_DEPLOY_SCRIPT", "/opt/Oxelia51/deploy/webhook/tool-deploy.sh")
 LISTEN_ADDR = ("127.0.0.1", 9000)
-TRIGGER_REF = "refs/heads/release"
 
-# Repo → tool-name mapping (工具仓库 fully-qualified name → service name on server)
+# 工具仓库 mapping
 TOOL_REPOS = {
     "XiaoleC05/DormGuard":    "dormguard",
     "XiaoleC05/SecretStore":  "secretstore",
@@ -63,9 +62,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
             return
 
         event = self.headers.get("X-GitHub-Event", "")
-        if event != "push":
-            self._respond(200, b"ignored: not push event\n")
-            return
 
         try:
             payload = json.loads(body)
@@ -73,25 +69,46 @@ class WebhookHandler(BaseHTTPRequestHandler):
             self._respond(400, b"invalid json\n")
             return
 
-        ref = payload.get("ref", "")
-        if ref != TRIGGER_REF:
-            self._respond(200, f"ignored: {ref} (only {TRIGGER_REF})\n".encode())
-            return
+        if event == "release":
+            action = payload.get("action", "")
+            if action != "published":
+                self._respond(200, f"ignored: release {action}\n".encode())
+                return
 
-        repo = payload.get("repository", {}).get("full_name", "")
+            repo = payload.get("repository", {}).get("full_name", "")
 
-        if repo == "XiaoleC05/Oxelia51":
-            # 主平台部署
-            trigger_deploy(DEPLOY_SCRIPT)
-            self._respond(200, b"platform deploy triggered\n")
+            if repo == "XiaoleC05/Oxelia51":
+                assets = payload.get("release", {}).get("assets", [])
+                if not assets:
+                    self._respond(500, b"no assets in release\n")
+                    return
+                tarball_url = assets[0]["browser_download_url"]
+                trigger_deploy(DEPLOY_SCRIPT, tarball_url)
+                self._respond(200, b"platform deploy triggered\n")
 
-        elif repo in TOOL_REPOS:
-            tool_name = TOOL_REPOS[repo]
-            trigger_deploy(TOOL_DEPLOY_SCRIPT, tool_name, repo)
-            self._respond(200, f"tool deploy triggered: {tool_name}\n".encode())
+            elif repo in TOOL_REPOS:
+                tool_name = TOOL_REPOS[repo]
+                trigger_deploy(TOOL_DEPLOY_SCRIPT, tool_name, repo)
+                self._respond(200, f"tool deploy triggered: {tool_name}\n".encode())
+
+            else:
+                self._respond(200, f"unknown repo: {repo}\n".encode())
+
+        elif event == "push":
+            ref = payload.get("ref", "")
+            repo = payload.get("repository", {}).get("full_name", "")
+
+            if ref == "refs/heads/master":
+                self._respond(200, b"ignored: push to master, deploy via release\n".encode())
+            elif repo in TOOL_REPOS:
+                tool_name = TOOL_REPOS[repo]
+                trigger_deploy(TOOL_DEPLOY_SCRIPT, tool_name, repo)
+                self._respond(200, f"tool deploy triggered: {tool_name}\n".encode())
+            else:
+                self._respond(200, f"ignored: {ref}\n".encode())
 
         else:
-            self._respond(200, f"unknown repo: {repo}\n".encode())
+            self._respond(200, f"ignored: {event}\n".encode())
 
     def do_GET(self):
         self._respond(200, b"ok\n")
