@@ -8,6 +8,11 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/adapter"
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/limiter"
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/proxy"
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/recorder"
 )
 
 func main() {
@@ -16,18 +21,41 @@ func main() {
 		port = "9090"
 	}
 
+	// 组装依赖
+	adapterRegistry := adapter.NewRegistry()
+	startTime := time.Now()
+
+	// ClickHouse 记录器
+	chAddr := os.Getenv("CLICKHOUSE_ADDR")
+	chUser := os.Getenv("CLICKHOUSE_USER")
+	chPassword := os.Getenv("CLICKHOUSE_PASSWORD")
+
+	var rec recorder.Recorder
+	if chAddr != "" {
+		chRec, chWriter, err := recorder.NewClickHouseRecorder(chAddr, chUser, chPassword)
+		if err != nil {
+			log.Printf("clickhouse init failed, using no-op recorder: %v", err)
+			rec = recorder.NewChannelRecorder(&noopWriter{})
+		} else {
+			rec = chRec
+			defer chWriter.Close()
+		}
+	} else {
+		log.Println("CLICKHOUSE_ADDR not set, using no-op recorder")
+		rec = recorder.NewChannelRecorder(&noopWriter{})
+	}
+	defer rec.Close()
+
+	// 限流器
+	ratePerMin := 60
+	lm := limiter.NewRateLimiter(ratePerMin)
+
+	// 转发器
+	forwarder := proxy.NewForwarder(adapterRegistry, rec)
+
+	// 路由
 	mux := http.NewServeMux()
-
-	// 健康检查
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	})
-
-	// TODO: 注册代理路由
-	// mux.Handle("/api/proxy/anthropic/", proxy.AnthropicHandler(...))
-	// mux.Handle("/api/proxy/openai/", proxy.OpenAIHandler(...))
-	// ...
+	proxy.SetupRoutes(mux, forwarder, lm, adapterRegistry.Providers(), startTime)
 
 	srv := &http.Server{
 		Addr:         ":" + port,
@@ -43,6 +71,7 @@ func main() {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
 		log.Println("shutting down...")
+		rec.Flush()
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		srv.Shutdown(ctx)
@@ -53,4 +82,11 @@ func main() {
 		log.Fatalf("server error: %v", err)
 	}
 	log.Println("server stopped")
+}
+
+// noopWriter 用于 ClickHouse 不可用时的空操作
+type noopWriter struct{}
+
+func (n *noopWriter) WriteBatch(records []adapter.TokenRecord) error {
+	return nil
 }
