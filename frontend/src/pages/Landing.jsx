@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { fetchHeroImages, fetchArticles, apiGet } from '../api'
 import { SkeletonLine } from '../components/Skeleton'
 import DevTimeline from '../components/DevTimeline'
-import BugCards from '../components/BugCards'
 import WeatherBar from '../components/WeatherBar'
 import './Landing.css'
 
@@ -252,7 +251,6 @@ function Landing() {
       </section>
 
       <DevTimeline />
-      <BugCards />
 
       <div className="landing-footer-transition" />
 
