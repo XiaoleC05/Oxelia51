@@ -70,6 +70,10 @@ jobs:
         working-directory: langfuse-token-src
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        working-directory: langfuse-token-src
+        run: npx prisma generate --schema=packages/shared/prisma/schema.prisma
+
       - name: Build langfuse-token shared
         working-directory: langfuse-token-src
         run: pnpm --filter=shared run build
