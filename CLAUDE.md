@@ -109,6 +109,8 @@ Fork：
 - 阿里云 Go 代理：`/opt/oxelia51/proxy/proxy-server`，systemd `token-proxy.service`
 - 部署流：`push master → Actions → release tarball → webhook → 服务器`
 - `deploy.sh` 有自愈循环，`receiver.py` 按 repo 路由到 `tool-deploy.sh`
+- **所有编译在本地完成**，禁止在服务器上运行 `go build`/`npm run build`/`make`/`cmake` 等编译命令
+- 服务器上只做：下载二进制、重启服务、执行 SQL、查看日志
 
 ---
 
