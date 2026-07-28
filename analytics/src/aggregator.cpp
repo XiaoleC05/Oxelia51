@@ -8,7 +8,7 @@
 
 namespace oxelia51 {
 
-// SQL 字符串转义：单引号 → ''，反斜杠 → \\
+// SQL 字符串转义：单引号 → ''，反斜杠 → 双反斜杠
 static std::string escapeSql(const std::string& s) {
     std::string out;
     out.reserve(s.size());
