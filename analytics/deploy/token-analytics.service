@@ -1,0 +1,19 @@
+[Unit]
+Description=Oxelia51 Token Analytics Engine
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=-/opt/langfuse/.env
+ExecStart=/opt/oxelia51/analytics/token-analytics --interval 5
+
+# ClickHouse HTTP 地址（默认 127.0.0.1:8123，如需覆盖取消注释）
+# Environment=CH_ADDR=http://127.0.0.1:8123
+
+# PostgreSQL 连接串（默认从 POSTGRES_USER/PASSWORD 构建，如需覆盖取消注释）
+# Environment=PG_CONNSTR=host=127.0.0.1 port=5434 dbname=postgres user=postgres password=xxx
+
+# 告警 SMTP（可选，留空跳过邮件）
+# Environment=SMTP_CONNECTION_URL=smtps://user:pass@smtp.example.com:465
+# Environment=EMAIL_FROM_ADDRESS=noreply@oxelia51.com

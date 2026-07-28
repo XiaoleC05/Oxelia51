@@ -1,0 +1,263 @@
+// Oxelia51 Token Analytics Engine
+// 离线批处理：ClickHouse 聚合 → 成本计算 → 异常检测 → 预算检查 → 告警分发
+// 由 systemd timer 每 5 分钟触发
+
+#include "aggregator.h"
+#include "alerter.h"
+#include "db/clickhouse.h"
+#include "db/postgres.h"
+#include "detector.h"
+#include "pricing.h"
+
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <string>
+#include <vector>
+
+namespace {
+
+// 带时间戳的日志输出（写入 stderr，供 systemd journal 捕获）
+void log(const std::string& msg) {
+    auto now = std::chrono::system_clock::now();
+    auto t = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{};
+    gmtime_r(&t, &tm);
+    char ts[32];
+    std::strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", &tm);
+    std::fprintf(stderr, "[%s] %s\n", ts, msg.c_str());
+    std::fflush(stderr);
+}
+
+// getenv 带回退：primary 优先，否则用 fallback
+std::string envOr(const char* primary, const char* fallback) {
+    const char* v = std::getenv(primary);
+    if (v && *v) return v;
+    v = std::getenv(fallback);
+    return v ? v : "";
+}
+
+std::string envOr(const char* primary, const char* fallback, const char* defaultValue) {
+    std::string v = envOr(primary, fallback);
+    return v.empty() ? defaultValue : v;
+}
+
+// 格式化浮点数
+std::string fmtDouble(double v, int precision) {
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "%.*f", precision, v);
+    return buf;
+}
+
+} // namespace
+
+int main(int argc, char* argv[]) {
+    // ---- 命令行参数 ----
+    bool dryRun = false;
+    int intervalMinutes = 5;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--dry-run") {
+            dryRun = true;
+        } else if (arg == "--interval" && i + 1 < argc) {
+            try {
+                intervalMinutes = std::stoi(argv[++i]);
+            } catch (...) {
+                log("Error: invalid --interval value");
+                return 1;
+            }
+        } else if (arg == "--help" || arg == "-h") {
+            std::fprintf(stderr, "Usage: token-analytics [--dry-run] [--interval N]\n");
+            return 0;
+        } else {
+            log("Error: unknown argument: " + arg);
+            return 1;
+        }
+    }
+
+    log(std::string("Token Analytics Engine starting") +
+        (dryRun ? " (DRY-RUN)" : "") +
+        " interval=" + std::to_string(intervalMinutes) + "min");
+
+    // ---- 环境变量 ----
+    // ClickHouse: CH_ADDR 优先，默认 http://127.0.0.1:8123
+    //             CH_USER/CH_PASS 回退到 CLICKHOUSE_USER/CLICKHOUSE_PASSWORD
+    std::string chAddr = envOr("CH_ADDR", "", "http://127.0.0.1:8123");
+    std::string chUser = envOr("CH_USER", "CLICKHOUSE_USER");
+    std::string chPass = envOr("CH_PASS", "CLICKHOUSE_PASSWORD");
+
+    // PostgreSQL: PG_CONNSTR 优先，否则从 POSTGRES_* 构建
+    std::string pgConnstr = envOr("PG_CONNSTR", "");
+    if (pgConnstr.empty()) {
+        pgConnstr = "host=127.0.0.1 port=5434 dbname=" +
+                    envOr("POSTGRES_DB", "", "postgres") +
+                    " user=" + envOr("POSTGRES_USER", "", "postgres") +
+                    " password=" + envOr("POSTGRES_PASSWORD", "", "");
+    }
+
+    // SMTP（可选）
+    std::string smtpUrl = envOr("SMTP_CONNECTION_URL", "", "");
+    std::string emailFrom = envOr("EMAIL_FROM_ADDRESS", "", "");
+
+    // ---- 连接数据库 ----
+    oxelia51::ClickHouseClient ch(chAddr, chUser, chPass);
+    try {
+        ch.query("SELECT 1 FORMAT TabSeparated");
+        log("ClickHouse: connected (" + chAddr + ")");
+    } catch (const std::exception& e) {
+        log("ClickHouse connection failed: " + std::string(e.what()));
+        return 1;
+    }
+
+    oxelia51::PostgresClient pg(pgConnstr);
+    if (!pg.ok()) {
+        log("PostgreSQL connection failed: " + pg.lastError());
+        return 1;
+    }
+    log("PostgreSQL: connected");
+
+    // ---- Step 1: 聚合（从 ClickHouse 拉取新事件） ----
+    std::vector<oxelia51::DailyEvent> events;
+    std::string maxTimestamp;
+    try {
+        std::string lastProcessed = pg.getEngineState("last_processed");
+        if (!lastProcessed.empty()) {
+            log("Last processed: " + lastProcessed);
+        }
+        oxelia51::Aggregator aggregator;
+        events = aggregator.aggregate(ch, lastProcessed, intervalMinutes, maxTimestamp);
+        log("Step 1: Aggregated " + std::to_string(events.size()) + " event group(s)");
+    } catch (const std::exception& e) {
+        log("Step 1 FAILED (aggregate): " + std::string(e.what()));
+        return 1;  // 无事件数据，无法继续
+    }
+
+    // ---- Step 2: 计算成本 ----
+    try {
+        oxelia51::Pricing pricing(pg);
+        double totalCost = 0.0;
+        for (auto& e : events) {
+            e.cost_usd = pricing.calculate(e.model, e.prompt_tokens, e.completion_tokens);
+            totalCost += e.cost_usd;
+        }
+        log("Step 2: Cost calculated, total $" + fmtDouble(totalCost, 4));
+    } catch (const std::exception& e) {
+        log("Step 2 FAILED (pricing): " + std::string(e.what()) + " — costs set to 0");
+        // 继续执行，cost_usd 保持 0
+    }
+
+    // ---- Step 3: 写入日统计（UPSERT） ----
+    bool upsertOk = true;
+    if (!dryRun && !events.empty()) {
+        try {
+            pg.upsertDailyStats(events);
+            log("Step 3: UPSERT " + std::to_string(events.size()) + " row(s) into daily_stats");
+        } catch (const std::exception& e) {
+            log("Step 3 FAILED (upsert): " + std::string(e.what()));
+            upsertOk = false;
+        }
+    } else if (dryRun) {
+        log("Step 3: Skipped (dry-run)");
+    }
+
+    // ---- Step 4: 异常检测 ----
+    int anomalyCount = 0;
+    try {
+        oxelia51::Detector detector;
+        for (const auto& e : events) {
+            uint64_t baseline = ch.getYesterdayUsage(e.project_id, e.model, e.date);
+            if (detector.isAnomalous(e.total_tokens, baseline)) {
+                double ratio = (baseline > 0)
+                    ? static_cast<double>(e.total_tokens) / static_cast<double>(baseline)
+                    : static_cast<double>(e.total_tokens);
+                std::string msg = e.model + " spike " + fmtDouble(ratio, 1) +
+                                  "x vs yesterday (current=" + std::to_string(e.total_tokens) +
+                                  ", baseline=" + std::to_string(baseline) + ")";
+                log("Step 4: Anomaly [" + e.project_id + "] " + msg);
+                if (!dryRun) {
+                    pg.insertAlert(e.project_id, oxelia51::AlertType::ANOMALY,
+                                   "warning", msg);
+                }
+                ++anomalyCount;
+            }
+        }
+        log("Step 4: Anomaly detection done, " + std::to_string(anomalyCount) + " alert(s)");
+    } catch (const std::exception& e) {
+        log("Step 4 FAILED (anomaly): " + std::string(e.what()));
+    }
+
+    // ---- Step 5: 预算检查 ----
+    try {
+        if (!dryRun) {
+            auto configs = pg.getBudgetConfigs();
+            int budgetAlerts = 0;
+            for (const auto& cfg : configs) {
+                // 修正：预算按 USD 成本检查（从 daily_stats 汇总），而非 ClickHouse token 数
+                double monthCost = pg.getMonthCost(cfg.project_id);
+                if (monthCost >= cfg.budget_usd * cfg.threshold) {
+                    double pct = (cfg.budget_usd > 0)
+                        ? (monthCost / cfg.budget_usd * 100.0) : 0.0;
+                    std::string msg = "Budget " + fmtDouble(pct, 0) +
+                                      "% reached ($" + fmtDouble(monthCost, 2) +
+                                      "/$" + fmtDouble(cfg.budget_usd, 2) + ")";
+                    log("Step 5: Budget alert [" + cfg.project_id + "] " + msg);
+                    pg.insertAlert(cfg.project_id, oxelia51::AlertType::BUDGET,
+                                   "warning", msg);
+                    ++budgetAlerts;
+                }
+            }
+            log("Step 5: Budget check done, " + std::to_string(budgetAlerts) +
+                " alert(s) across " + std::to_string(configs.size()) + " config(s)");
+        } else {
+            log("Step 5: Skipped (dry-run)");
+        }
+    } catch (const std::exception& e) {
+        log("Step 5 FAILED (budget): " + std::string(e.what()));
+    }
+
+    // ---- Step 6: 更新引擎状态（last_processed） ----
+    if (!dryRun && upsertOk && !maxTimestamp.empty()) {
+        try {
+            pg.setEngineState("last_processed", maxTimestamp);
+            log("Step 6: last_processed updated to " + maxTimestamp);
+        } catch (const std::exception& e) {
+            log("Step 6 FAILED (engine_state): " + std::string(e.what()));
+        }
+    } else if (dryRun) {
+        log("Step 6: Skipped (dry-run)");
+    } else if (!upsertOk) {
+        log("Step 6: Skipped (UPSERT failed, not advancing last_processed)");
+    } else {
+        log("Step 6: No new events, last_processed unchanged");
+    }
+
+    // ---- Step 7: 确保今日汇率 ----
+    if (!dryRun) {
+        try {
+            pg.ensureTodayExchangeRate();
+        } catch (const std::exception& e) {
+            log("Step 7 FAILED (exchange_rate): " + std::string(e.what()));
+        }
+    }
+
+    // ---- Step 8: 分发告警通知（邮件 + Webhook） ----
+    if (!dryRun) {
+        try {
+            oxelia51::Alerter alerter(pg, smtpUrl, emailFrom);
+            alerter.sendPendingAlerts();
+        } catch (const std::exception& e) {
+            log("Step 8 FAILED (alerter): " + std::string(e.what()));
+        }
+    } else {
+        log("Step 8: Skipped (dry-run)");
+    }
+
+    // ---- 总结 ----
+    log("Done: " + std::to_string(events.size()) + " events, " +
+        std::to_string(anomalyCount) + " anomalies" +
+        (dryRun ? " (dry-run, no writes)" : ""));
+
+    return 0;
+}
