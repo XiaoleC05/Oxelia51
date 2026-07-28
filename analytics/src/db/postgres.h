@@ -4,9 +4,11 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "aggregator.h"  // DailyEvent
+#include "detector.h"    // AnomalyConfig
 
 namespace oxelia51 {
 
@@ -87,6 +89,11 @@ public:
     std::vector<BudgetConfig> getBudgetConfigs();
     // 获取某项目本月成本（从 daily_stats 汇总）
     double getMonthCost(const std::string& projectId);
+
+    // ---- 异常检测配置 ----
+    // 从 projects.metadata.oxelia51.anomaly 读取配置
+    // 无配置的 project 不返回（调用方使用默认值）
+    std::vector<std::pair<std::string, AnomalyConfig>> getAnomalyConfigs();
 
     // ---- 引擎状态 ----
     std::string getEngineState(const std::string& key);

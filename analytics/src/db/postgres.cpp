@@ -212,6 +212,38 @@ double PostgresClient::getMonthCost(const std::string& projectId) {
     return cost;
 }
 
+std::vector<std::pair<std::string, AnomalyConfig>> PostgresClient::getAnomalyConfigs() {
+    const char* sql =
+        "SELECT p.id AS project_id, "
+        "       p.metadata->'oxelia51'->'anomaly'->>'enabled' AS enabled, "
+        "       p.metadata->'oxelia51'->'anomaly'->>'spike_ratio' AS spike_ratio "
+        "FROM projects p "
+        "WHERE p.metadata->'oxelia51'->'anomaly' IS NOT NULL";
+    PGresult* res = exec(sql);
+    std::vector<std::pair<std::string, AnomalyConfig>> configs;
+    int n = PQntuples(res);
+    configs.reserve(n);
+    for (int i = 0; i < n; ++i) {
+        std::string projectId = PQgetvalue(res, i, 0);
+        AnomalyConfig cfg;  // 默认 enabled=true, spike_ratio=3.0
+        const char* enabledStr = PQgetvalue(res, i, 1);
+        if (enabledStr && *enabledStr) {
+            cfg.enabled = (std::string(enabledStr) == "true");
+        }
+        const char* ratioStr = PQgetvalue(res, i, 2);
+        if (ratioStr && *ratioStr) {
+            try {
+                cfg.spike_ratio = std::stod(ratioStr);
+            } catch (...) {
+                // 解析失败保持默认值 3.0
+            }
+        }
+        configs.emplace_back(std::move(projectId), cfg);
+    }
+    PQclear(res);
+    return configs;
+}
+
 std::string PostgresClient::getEngineState(const std::string& key) {
     const char* sql = "SELECT value FROM oxelia51.engine_state WHERE key = $1";
     PGresult* res = execParams(sql, {key});

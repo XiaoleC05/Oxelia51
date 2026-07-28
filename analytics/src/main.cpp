@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace {
@@ -162,19 +163,37 @@ int main(int argc, char* argv[]) {
         log("Step 3: Skipped (dry-run)");
     }
 
-    // ---- Step 4: 异常检测 ----
+    // ---- Step 4: 异常检测（按 project 读取配置） ----
     int anomalyCount = 0;
     try {
+        // 加载所有 project 的异常检测配置
+        std::unordered_map<std::string, oxelia51::AnomalyConfig> configMap;
+        auto anomalyConfigs = pg.getAnomalyConfigs();
+        for (auto& [pid, cfg] : anomalyConfigs) {
+            configMap[pid] = cfg;
+        }
+        log("Step 4: Loaded " + std::to_string(configMap.size()) + " anomaly config(s)");
+
         oxelia51::Detector detector;
+        const oxelia51::AnomalyConfig DEFAULT_CONFIG;  // enabled=true, spike_ratio=3.0
+
         for (const auto& e : events) {
+            // 查找配置，无则使用默认值
+            auto it = configMap.find(e.project_id);
+            const oxelia51::AnomalyConfig& cfg =
+                (it != configMap.end()) ? it->second : DEFAULT_CONFIG;
+
+            if (!cfg.enabled) continue;  // 禁用异常检测的 project 跳过
+
             uint64_t baseline = ch.getYesterdayUsage(e.project_id, e.model, e.date);
-            if (detector.isAnomalous(e.total_tokens, baseline)) {
+            if (detector.isAnomalous(e.total_tokens, baseline, cfg)) {
                 double ratio = (baseline > 0)
                     ? static_cast<double>(e.total_tokens) / static_cast<double>(baseline)
                     : static_cast<double>(e.total_tokens);
                 std::string msg = e.model + " spike " + fmtDouble(ratio, 1) +
                                   "x vs yesterday (current=" + std::to_string(e.total_tokens) +
-                                  ", baseline=" + std::to_string(baseline) + ")";
+                                  ", baseline=" + std::to_string(baseline) +
+                                  ", threshold=" + fmtDouble(cfg.spike_ratio, 1) + "x)";
                 log("Step 4: Anomaly [" + e.project_id + "] " + msg);
                 if (!dryRun) {
                     pg.insertAlert(e.project_id, oxelia51::AlertType::ANOMALY,
