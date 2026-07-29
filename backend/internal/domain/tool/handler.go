@@ -15,112 +15,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type ToolHandler struct {
-	db *pgxpool.Pool
-}
-
-func NewToolHandler(db *pgxpool.Pool) *ToolHandler {
-	return &ToolHandler{db: db}
-}
-
-func (h *ToolHandler) List(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
-	rows, err := h.db.Query(ctx, `
-		SELECT slug, name,
-		       COALESCE(description_override, description) AS description,
-		       user_accessible, status, release_url, online_capable
-		FROM tools
-		WHERE online_capable = TRUE
-		ORDER BY name`)
-	if err != nil {
-		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
-		return
-	}
-	defer rows.Close()
-
-	items := []ToolListItem{}
-	for rows.Next() {
-		var item ToolListItem
-		if err := rows.Scan(
-			&item.Slug, &item.Name, &item.Description,
-			&item.UserAccessible, &item.Status, &item.ReleaseURL, &item.OnlineCapable,
-		); err != nil {
-			infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "读取数据失败")
-			return
-		}
-		item.Badge = ComputeBadge(item.Status, item.UserAccessible)
-		items = append(items, item)
-	}
-
-	c.JSON(http.StatusOK, items)
-}
-
-func (h *ToolHandler) ListPortfolioPublic(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
-	rows, err := h.db.Query(ctx, `
-		SELECT slug,
-		       COALESCE(name_override, name) AS name,
-		       COALESCE(description_override, description) AS description,
-		       github_repo, source_dir, name_override, description_override, linked_tool_slug
-		FROM portfolio_items
-		ORDER BY name`)
-	if err != nil {
-		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
-		return
-	}
-	defer rows.Close()
-
-	items := []PortfolioItem{}
-	for rows.Next() {
-		var item PortfolioItem
-		if err := rows.Scan(
-			&item.Slug, &item.Name, &item.Description,
-			&item.GithubRepo, &item.SourceDir,
-			&item.NameOverride, &item.DescriptionOverride, &item.LinkedToolSlug,
-		); err != nil {
-			infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "读取数据失败")
-			return
-		}
-		items = append(items, item)
-	}
-
-	c.JSON(http.StatusOK, items)
-}
-
-func (h *ToolHandler) Get(c *gin.Context) {
-	slug := c.Param("slug")
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
-	var item ToolListItem
-	err := h.db.QueryRow(ctx, `
-		SELECT slug, name,
-		       COALESCE(description_override, description) AS description,
-		       user_accessible, status, release_url, online_capable
-		FROM tools
-		WHERE slug = $1 AND online_capable = TRUE`, slug,
-	).Scan(
-		&item.Slug, &item.Name, &item.Description,
-		&item.UserAccessible, &item.Status, &item.ReleaseURL, &item.OnlineCapable,
-	)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			infra.ApiError(c, http.StatusNotFound, "TOOL_NOT_FOUND", "工具不存在")
-			return
-		}
-		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
-		return
-	}
-
-	item.Badge = ComputeBadge(item.Status, item.UserAccessible)
-	c.JSON(http.StatusOK, item)
-}
-
 type AdminToolHandler struct {
 	db  *pgxpool.Pool
 	cfg *config.Config
@@ -128,87 +22,6 @@ type AdminToolHandler struct {
 
 func NewAdminToolHandler(db *pgxpool.Pool, cfg *config.Config) *AdminToolHandler {
 	return &AdminToolHandler{db: db, cfg: cfg}
-}
-
-func (h *AdminToolHandler) PatchTool(c *gin.Context) {
-	slug := c.Param("slug")
-
-	var req PatchToolRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		infra.ApiError(c, http.StatusBadRequest, "INVALID_REQUEST", "请求格式错误: "+err.Error())
-		return
-	}
-
-	if req.Status != nil && *req.Status != "enabled" && *req.Status != "disabled" {
-		infra.ApiError(c, http.StatusBadRequest, "INVALID_STATUS", "status 必须为 enabled 或 disabled")
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
-	var detail AdminToolDetail
-	err := h.db.QueryRow(ctx, `
-		UPDATE tools SET
-			user_accessible = COALESCE($2, user_accessible),
-			status = COALESCE($3, status),
-			description_override = COALESCE(NULLIF($4, ''), description_override),
-			internal_api_base = COALESCE($5, internal_api_base),
-			updated_at = NOW()
-		WHERE slug = $1
-		RETURNING slug, name, description, user_accessible, online_capable, status,
-		          internal_api_base, github_repo, release_url, manifest_path, description_override`,
-		slug, req.UserAccessible, req.Status, req.DescriptionOverride, req.InternalAPIBase,
-	).Scan(
-		&detail.Slug, &detail.Name, &detail.Description,
-		&detail.UserAccessible, &detail.OnlineCapable, &detail.Status,
-		&detail.InternalAPIBase, &detail.GithubRepo, &detail.ReleaseURL,
-		&detail.ManifestPath, &detail.DescriptionOverride,
-	)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			infra.ApiError(c, http.StatusNotFound, "TOOL_NOT_FOUND", "工具不存在")
-			return
-		}
-		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "更新失败")
-		return
-	}
-
-	c.JSON(http.StatusOK, detail)
-}
-
-func (h *AdminToolHandler) ListTools(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
-	rows, err := h.db.Query(ctx, `
-		SELECT slug, name, description,
-		       user_accessible, online_capable, status,
-		       internal_api_base, github_repo, release_url, manifest_path, description_override
-		FROM tools
-		ORDER BY name`)
-	if err != nil {
-		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
-		return
-	}
-	defer rows.Close()
-
-	items := []AdminToolDetail{}
-	for rows.Next() {
-		var item AdminToolDetail
-		if err := rows.Scan(
-			&item.Slug, &item.Name, &item.Description,
-			&item.UserAccessible, &item.OnlineCapable, &item.Status,
-			&item.InternalAPIBase, &item.GithubRepo, &item.ReleaseURL,
-			&item.ManifestPath, &item.DescriptionOverride,
-		); err != nil {
-			infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "读取数据失败")
-			return
-		}
-		items = append(items, item)
-	}
-
-	c.JSON(http.StatusOK, items)
 }
 
 func (h *AdminToolHandler) ListUsers(c *gin.Context) {
@@ -358,13 +171,11 @@ func (h *AdminToolHandler) DeleteUser(c *gin.Context) {
 }
 
 type dashboardStatsResponse struct {
-	TotalUsers     int `json:"total_users"`
-	TotalTools     int `json:"total_tools"`
-	NewUsers7d     int `json:"new_users_7d"`
-	NewUsers30d    int `json:"new_users_30d"`
-	NewUsersSince  int `json:"new_users_since"`
-	TotalArticles  int `json:"total_articles"`
-	TotalPortfolio int `json:"total_portfolio"`
+	TotalUsers    int `json:"total_users"`
+	TotalTools    int `json:"total_tools"`
+	NewUsers7d    int `json:"new_users_7d"`
+	NewUsers30d   int `json:"new_users_30d"`
+	NewUsersSince int `json:"new_users_since"`
 }
 
 func (h *AdminToolHandler) DashboardStats(c *gin.Context) {
@@ -377,107 +188,10 @@ func (h *AdminToolHandler) DashboardStats(c *gin.Context) {
 	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM tools`).Scan(&resp.TotalTools)
 	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'`).Scan(&resp.NewUsers7d)
 	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '30 days'`).Scan(&resp.NewUsers30d)
-	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM articles`).Scan(&resp.TotalArticles)
-	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM portfolio_items`).Scan(&resp.TotalPortfolio)
 
 	if since != "" {
 		h.db.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE created_at >= $1`, since).Scan(&resp.NewUsersSince)
 	}
 
 	c.JSON(http.StatusOK, resp)
-}
-
-func (h *AdminToolHandler) ScanLocal(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
-	defer cancel()
-
-	result, err := ScanLocal(ctx, h.db, h.cfg.CodeRoot)
-	if err != nil {
-		if result != nil {
-			c.JSON(http.StatusConflict, gin.H{
-				"error":  err.Error(),
-				"code":   "SCAN_FAILED",
-				"result": result,
-			})
-			return
-		}
-		infra.ApiError(c, http.StatusInternalServerError, "SCAN_ERROR", err.Error())
-		return
-	}
-
-	c.JSON(http.StatusOK, result)
-}
-
-func (h *AdminToolHandler) ListPortfolio(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
-	rows, err := h.db.Query(ctx, `
-		SELECT slug,
-		       COALESCE(name_override, name) AS name,
-		       COALESCE(description_override, description) AS description,
-		       github_repo, source_dir, name_override, description_override, linked_tool_slug
-		FROM portfolio_items
-		ORDER BY name`)
-	if err != nil {
-		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询失败")
-		return
-	}
-	defer rows.Close()
-
-	items := []PortfolioItem{}
-	for rows.Next() {
-		var item PortfolioItem
-		if err := rows.Scan(
-			&item.Slug, &item.Name, &item.Description,
-			&item.GithubRepo, &item.SourceDir,
-			&item.NameOverride, &item.DescriptionOverride, &item.LinkedToolSlug,
-		); err != nil {
-			infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "读取数据失败")
-			return
-		}
-		items = append(items, item)
-	}
-
-	c.JSON(http.StatusOK, items)
-}
-
-func (h *AdminToolHandler) UpdatePortfolio(c *gin.Context) {
-	slug := c.Param("slug")
-
-	var req UpdatePortfolioRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		infra.ApiError(c, http.StatusBadRequest, "INVALID_REQUEST", "请求格式错误: "+err.Error())
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
-	var item PortfolioItem
-	err := h.db.QueryRow(ctx, `
-		UPDATE portfolio_items SET
-			name_override = COALESCE($2, name_override),
-			description_override = COALESCE($3, description_override)
-		WHERE slug = $1
-		RETURNING slug,
-		          COALESCE(name_override, name),
-		          COALESCE(description_override, description),
-		          github_repo, source_dir, name_override, description_override, linked_tool_slug`,
-		slug, req.NameOverride, req.DescriptionOverride,
-	).Scan(
-		&item.Slug, &item.Name, &item.Description,
-		&item.GithubRepo, &item.SourceDir,
-		&item.NameOverride, &item.DescriptionOverride, &item.LinkedToolSlug,
-	)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			infra.ApiError(c, http.StatusNotFound, "PORTFOLIO_NOT_FOUND", "作品集条目不存在")
-			return
-		}
-		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "更新失败")
-		return
-	}
-
-	c.JSON(http.StatusOK, item)
 }

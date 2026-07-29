@@ -9,14 +9,11 @@ import (
 
 	"github.com/XiaoleC05/oxelia51-backend/config"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/admin"
-	"github.com/XiaoleC05/oxelia51-backend/internal/domain/article"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/auth"
-	"github.com/XiaoleC05/oxelia51-backend/internal/domain/developer"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/health"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/hero"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/tool"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/user"
-	"github.com/XiaoleC05/oxelia51-backend/internal/domain/weather"
 	"github.com/XiaoleC05/oxelia51-backend/internal/gateway"
 	"github.com/XiaoleC05/oxelia51-backend/internal/infra"
 	"github.com/XiaoleC05/oxelia51-backend/internal/middleware"
@@ -53,11 +50,8 @@ func New(cfg *config.Config) *gin.Engine {
 	// Service & repository init
 	tokenSvc := auth.NewTokenService(cfg)
 	rl := auth.NewRateLimiter(rdb)
-	emailStore := auth.NewEmailTokenStore(rdb, cfg.EmailTokenTTL)
 	refreshStore := auth.NewRefreshStore(rdb, cfg.RefreshTokenTTL)
 	blacklist := auth.NewJWTBlacklist(rdb)
-	pendingStore := auth.NewPendingRegistrationStore(rdb, cfg.EmailTokenTTL)
-	m := infra.NewMailer(cfg)
 	userRepo := user.NewRepository(pool)
 
 	r := gin.Default()
@@ -92,35 +86,15 @@ func New(cfg *config.Config) *gin.Engine {
 
 	// Handler init
 	healthH := health.NewHealthHandler(pool)
-	weatherH := weather.NewWeatherHandler(rdb)
-	authH := auth.NewAuthHandlerWithDeps(pool, cfg, m, tokenSvc, rl, emailStore, refreshStore, blacklist, pendingStore, userRepo)
+	authH := auth.NewAuthHandlerWithDeps(pool, cfg, tokenSvc, rl, refreshStore, blacklist, userRepo)
 	userH := user.NewUserHandler(pool, userRepo)
-	toolH := tool.NewToolHandler(pool)
 	heroH := hero.NewHeroHandler(pool)
-	devH := developer.NewDeveloperHandler(pool)
-	articleH := article.NewArticleHandler(pool)
 
 	// Public routes
 	r.GET("/api/health", healthH.Health)
 	r.GET("/api/uptime", healthH.Uptime)
-	r.GET("/api/weather", weatherH.GetWeather)
-	r.POST("/api/auth/register", authH.Register)
-	r.GET("/api/auth/verify-email", authH.VerifyEmail)
-	r.POST("/api/auth/resend-verification", authH.ResendVerification)
 	r.POST("/api/auth/login", authH.Login)
 	r.POST("/api/auth/refresh", authH.Refresh)
-	r.POST("/api/auth/forgot-password", authH.ForgotPassword)
-	r.POST("/api/auth/reset-password", authH.ResetPassword)
-	r.GET("/api/tools", toolH.List)
-	r.GET("/api/tools/:slug", toolH.Get)
-	r.GET("/api/portfolio", toolH.ListPortfolioPublic)
-	r.GET("/api/hero-images", heroH.ListPublic)
-	r.GET("/api/developer/profile", devH.GetProfile)
-	r.GET("/api/articles", articleH.ListPublic)
-	r.GET("/api/articles/categories", articleH.Categories)
-	r.GET("/api/articles/:id", articleH.GetPublic)
-	r.GET("/api/pages/:slug", articleH.GetPage)
-	r.GET("/api/search", articleH.Search)
 
 	// Protected routes
 	authMW := middleware.NewAuthMiddleware(cfg, tokenSvc, blacklist)
@@ -132,7 +106,7 @@ func New(cfg *config.Config) *gin.Engine {
 		protected.PATCH("/auth/profile", userH.PatchProfile)
 
 		gw := gateway.NewHandler(pool, cfg)
-	r.Any("/api/tools/:slug/proxy/*path", gw.Proxy)
+		r.Any("/api/tools/:slug/proxy/*path", gw.Proxy)
 	}
 
 	// Admin routes — JWT + role check（IP whitelist NOT applied to CRUD endpoints）
@@ -142,28 +116,10 @@ func New(cfg *config.Config) *gin.Engine {
 	adminGroup := r.Group("/api/admin")
 	adminGroup.Use(authMW.Handle(), middleware.RequireAdmin())
 	{
-		adminGroup.GET("/tools", adminTool.ListTools)
-		adminGroup.PATCH("/tools/:slug", adminTool.PatchTool)
-		adminGroup.POST("/tools/scan-local", adminTool.ScanLocal)
 		adminGroup.GET("/users", adminTool.ListUsers)
 		adminGroup.PATCH("/users/:id", adminTool.PatchUser)
 		adminGroup.DELETE("/users/:id", adminTool.DeleteUser)
-		adminGroup.GET("/portfolio", adminTool.ListPortfolio)
-		adminGroup.PUT("/portfolio/:slug", adminTool.UpdatePortfolio)
-		adminGroup.GET("/hero-images", heroH.ListAdmin)
-		adminGroup.POST("/hero-images", heroH.Create)
-		adminGroup.PUT("/hero-images/:id", heroH.Update)
-		adminGroup.DELETE("/hero-images/:id", heroH.Delete)
 		adminGroup.POST("/hero-images/upload", heroH.Upload)
-		adminGroup.PUT("/carousel-settings", heroH.UpdateCarouselSettings)
-		adminGroup.PATCH("/developer/profile", devH.PatchProfile)
-		adminGroup.GET("/developer/profile", devH.GetProfileAdmin)
-		adminGroup.GET("/articles", articleH.ListAdmin)
-		adminGroup.POST("/articles", articleH.Create)
-		adminGroup.PUT("/articles/:id", articleH.Update)
-		adminGroup.DELETE("/articles/:id", articleH.Delete)
-		adminGroup.GET("/pages", articleH.ListPagesAdmin)
-		adminGroup.PUT("/pages/:slug", articleH.UpdatePage)
 
 		statsH := admin.NewStatsHandler()
 		adminGroup.GET("/server-stats", statsH.ServerStats)
