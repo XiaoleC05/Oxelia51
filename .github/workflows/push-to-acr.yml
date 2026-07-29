@@ -1,27 +1,28 @@
-name: Push Docker Image to ACR
+name: Build and Push to ACR
 
 on:
   workflow_dispatch:
 
 jobs:
   push-to-acr:
-    name: Push to Aliyun ACR
+    name: Build & Push to Aliyun ACR
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
-      - name: Download Docker image from GitHub Release
-        run: |
-          curl -sL -o /tmp/langfuse-token-web.tar.gz \
-            "https://github.com/XiaoleC05/langfuse-token/releases/download/docker-20260728211940/langfuse-token-web.tar.gz"
-          ls -lh /tmp/langfuse-token-web.tar.gz
+      - uses: actions/checkout@v4
+        with:
+          repository: XiaoleC05/langfuse-token
 
-      - name: Load and push to ACR
+      - name: Build Docker image
+        run: |
+          docker build -f web/Dockerfile -t langfuse-token-web:latest .
+
+      - name: Push to ACR
         env:
           ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
           ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
         run: |
-          docker load < /tmp/langfuse-token-web.tar.gz
           docker tag langfuse-token-web:latest "$ACR_REGISTRY/oxelia51/langfuse-token:latest"
           echo "$ACR_PASSWORD" | docker login --username "$ACR_USERNAME" --password-stdin "$ACR_REGISTRY"
           docker push "$ACR_REGISTRY/oxelia51/langfuse-token:latest"
