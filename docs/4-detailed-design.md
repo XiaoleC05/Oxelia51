@@ -551,29 +551,54 @@ GROUP BY session_id ORDER BY started DESC LIMIT 50;
 
 ## 4. Langfuse 定制
 
-### 4.1 改动文件清单
+### 4.1 改动文件清单（已实现，2026-07-29 更新）
 
 ```
 langfuse-token/web/src/
 │
-├── features/dashboard/
-│   └── components/TokenWidget.tsx        新增：Token 统计卡片（概览）
-│   └── components/TokenChart.tsx         新增：Token 趋势图（ECharts 折线）
-│   └── components/CostChart.tsx          新增：成本饼图（ECharts）
+├── features/dashboard/components/
+│   ├── TokenWidget.tsx                   新增：Token 统计卡片（概览）
+│   ├── TokenChart.tsx                    新增：Token 趋势图（ECharts 折线，日/周/月）
+│   ├── CostChart.tsx                     新增：成本饼图（ECharts，CNY/USD 切换）
+│   ├── EChart.tsx                        新增：ECharts React 轻量封装
+│   └── useOxeliaChartTheme.ts            新增：图表主题色 hook（读 --ox-chart-* 变量）
+│
+├── features/oxelia51/
+│   ├── server/oxelia51Router.ts          新增：tRPC router（PG $queryRaw + ClickHouse）
+│   ├── currency.tsx                      新增：CNY/USD 上下文（汇率取 exchange_rates）
+│   └── components/
+│       ├── AlertsSettings.tsx            新增：告警设置（预算/异常/通道/历史）
+│       └── SegmentedControl.tsx          新增：分段切换控件
 │
 ├── features/theming/
-│   └── ThemeProvider.tsx                 修改：注入 Cozy/Cosmos CSS 变量
-│   └── oxelia51-theme.css               新增：双主题变量文件
+│   ├── ThemeProvider.tsx                 修改：注入 data-theme 并同步 next-themes
+│   ├── oxelia51-theme.css                新增：Cozy/Cosmos 变量（--ox- 前缀）
+│   ├── oxelia51-theme.ts                 新增：主题 store（localStorage 持久化）
+│   └── Oxelia51ThemeToggle.tsx           新增：侧边栏底部主题切换
 │
-├── features/navigation/
-│   └── sidebar-items.tsx                 修改：加 /admin、/dashboard/cost 链接
+├── components/
+│   ├── FilingInfo.tsx                    新增：ICP/公安备案 + MIT 开源声明页脚
+│   ├── LangfuseLogo.tsx                  修改：Oxelia51 字标（黄/蓝双版）
+│   ├── layouts/routes.tsx                修改：导航分组（Token 统计 / 管理外链）
+│   ├── layouts/app-layout/variants/AuthenticatedLayout.tsx
+│   │                                     修改：全局页脚 + title/favicon
+│   └── layouts/app-layout/hooks/useLayoutMetadata.ts
+│                                         修改：title=Oxelia51、favicon=favicon.ico
 │
-├── pages/
-│   ├── cost.tsx                          新增：成本分析页
-│   └── alerts.tsx                        新增：告警配置页
+├── pages/project/[projectId]/
+│   ├── dashboard/tokens.tsx              新增：Token 统计页
+│   ├── dashboard/cost.tsx                新增：成本分析页
+│   └── settings/index.tsx                修改：注册 alerts slug（/settings/alerts）
 │
-└── styles/
-    └── oxelia51-vars.css                 新增：CSS 变量覆盖
+├── pages/_document.tsx                   修改：lang=zh-CN + 主题防闪烁脚本
+├── pages/_app.tsx                        修改：引入主题 CSS
+├── styles/oxelia51-vars.css              新增：Langfuse shadcn 变量映射（HSL）
+└── next.config.mjs                       修改：i18n locales [en, zh-CN]
+
+数据层约定：
+  - PostgreSQL oxelia51 schema → prisma.$queryRaw（复用 Langfuse DATABASE_URL）
+  - ClickHouse oxelia51.token_events → queryClickhouse（@langfuse/shared）
+  - 路由注册于 web/src/server/api/root.ts（appRouter.oxelia51）
 ```
 
 ### 4.2 同步上游
@@ -589,6 +614,10 @@ git rebase upstream/main
 ---
 
 ## 5. UI 主题系统
+
+> 实现备注（2026-07-29）：为避免与 Langfuse shadcn 变量（--accent/--border/--radius）
+> 冲突，实际代码中所有变量加 `--ox-` 前缀（如 `--ox-accent`），并通过
+> `web/src/styles/oxelia51-vars.css` 将主题色映射为 Langfuse 的 HSL 变量。
 
 ### 5.1 Cozy 暖色
 
