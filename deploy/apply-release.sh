@@ -10,11 +10,10 @@ if [ ! -f "$RELEASE_DIR/backend/oxelia51-server" ]; then
   exit 1
 fi
 
-mkdir -p "$APP_DIR/backend" "$APP_DIR/frontend/dist" "$APP_DIR/deploy/docker"
+mkdir -p "$APP_DIR/backend" "$APP_DIR/deploy/docker"
 install -m 755 "$RELEASE_DIR/backend/oxelia51-server" "$APP_DIR/backend/oxelia51-server"
 rsync -a "$RELEASE_DIR/backend/migrations/" "$APP_DIR/backend/migrations/"
 rsync -a "$RELEASE_DIR/deploy/" "$APP_DIR/deploy/"
-rsync -a --delete "$RELEASE_DIR/frontend-dist/" "$APP_DIR/frontend/dist/"
 chmod +x "$APP_DIR/deploy/"*.sh "$APP_DIR/deploy/monitor/"*.sh 2>/dev/null || true
 
 if [ ! -f "$APP_DIR/backend/.env" ]; then
@@ -77,19 +76,4 @@ chmod -R o+rX /opt/Oxelia51/uploads/ 2>/dev/null || true
 
 "$APP_DIR/deploy/monitor/oxelia51-healthcheck.sh"
 
-# ---- Langfuse 前端部署（腾讯云） ----
-if [ -d "$RELEASE_DIR/langfuse-web-next/.next" ]; then
-  echo "=== 部署 Langfuse Token 前端到腾讯云 ==="
-  scp -i ~/.ssh/tencent_cloud -o StrictHostKeyChecking=no \
-    -r "$RELEASE_DIR/langfuse-web-next/.next" \
-    root@118.25.138.177:/tmp/langfuse-next-update/
-  ssh -i ~/.ssh/tencent_cloud -o StrictHostKeyChecking=no root@118.25.138.177 '
-    CONTAINER=$(docker ps -q --filter name=langfuse-web)
-    if [ -n "$CONTAINER" ]; then
-      docker cp /tmp/langfuse-next-update/.next/. $CONTAINER:/app/web/
-      echo "langfuse-web .next 已更新"
-    fi
-    rm -rf /tmp/langfuse-next-update
-  '
-  echo "=== Langfuse 前端部署完成 ==="
-fi
+# Langfuse 前端由 ACR Docker 镜像部署，通过 push-to-acr.yml workflow 推送

@@ -28,12 +28,6 @@ jobs:
           go-version: '1.26'
           cache-dependency-path: backend/go.sum
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
       - name: Backend vet
         working-directory: backend
         run: go vet ./...
@@ -49,75 +43,6 @@ jobs:
           GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../release/backend/oxelia51-server ./cmd/server
           cp -r migrations ../release/backend/migrations
 
-      - name: Frontend install + build
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run build
-          cp -r dist ../release/frontend-dist
-
-      # ---- Langfuse Token 前端 (oxelia51.com v3.0) ----
-      - uses: actions/checkout@v4
-        with:
-          repository: XiaoleC05/langfuse-token
-          path: langfuse-token-src
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
-
-      - name: Install langfuse-token deps
-        working-directory: langfuse-token-src
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client
-        working-directory: langfuse-token-src
-        run: npx prisma generate --schema=packages/shared/prisma/schema.prisma
-
-      - name: Build langfuse-token shared
-        working-directory: langfuse-token-src
-        run: pnpm --filter=shared run build
-
-      - name: Build langfuse-token web
-        working-directory: langfuse-token-src/web
-        env:
-          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/postgres"
-          NEXTAUTH_SECRET: "dummy-12345678901234567890123456789012"
-          NEXTAUTH_URL: "http://localhost:3000"
-          SALT: "dummy-salt-12345678901234567890"
-          ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
-          CLICKHOUSE_URL: "http://localhost:8123"
-          CLICKHOUSE_USER: "default"
-          CLICKHOUSE_PASSWORD: "dummy"
-          REDIS_HOST: "localhost"
-          REDIS_PORT: "6379"
-          REDIS_AUTH: "dummy"
-          LANGFUSE_S3_EVENT_UPLOAD_BUCKET: "langfuse"
-          LANGFUSE_S3_EVENT_UPLOAD_REGION: "auto"
-          LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: "minio"
-          LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: "dummy12345678"
-          LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: "http://localhost:9000"
-          LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
-          LANGFUSE_S3_EVENT_UPLOAD_PREFIX: "events/"
-          LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: "langfuse"
-          LANGFUSE_S3_MEDIA_UPLOAD_REGION: "auto"
-          LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: "minio"
-          LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: "dummy12345678"
-          LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: "http://localhost:9000"
-          LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
-          LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: "media/"
-          EMAIL_FROM_ADDRESS: "noreply@example.com"
-          SMTP_CONNECTION_URL: ""
-          LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
-          INLINE_RUNTIME_CHUNK: "false"
-        run: npx next build
-
-      - name: Package langfuse-token .next
-        run: |
-          mkdir -p release/langfuse-web-next
-          cp -r langfuse-token-src/web/.next release/langfuse-web-next/
-          rm -rf langfuse-token-src
-
       - name: Stage deploy scripts
         run: cp -r deploy release/deploy
 
@@ -126,7 +51,6 @@ jobs:
           test -f release/backend/oxelia51-server
           test -f release/backend/migrations/003_auth_v11.up.sql
           test -f release/deploy/apply-release.sh
-          test -d release/frontend-dist
           echo "release structure OK"
 
       - name: Package release tarball
