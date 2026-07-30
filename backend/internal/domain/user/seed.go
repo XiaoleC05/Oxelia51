@@ -18,9 +18,10 @@ import (
 const adminUsername = "oxelia51"
 
 // EnsureAdmin creates the sole admin user if missing (ADMIN-01).
+// 判定依据 account_id（不可变唯一标识），而非可修改的 username。
 func EnsureAdmin(ctx context.Context, pool *pgxpool.Pool, cfg *config.Config) error {
 	var exists bool
-	err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)`, adminUsername).Scan(&exists)
+	err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE account_id = $1)`, adminUsername).Scan(&exists)
 	if err != nil {
 		return fmt.Errorf("检查管理员账号失败: %w", err)
 	}
@@ -47,7 +48,8 @@ func EnsureAdmin(ctx context.Context, pool *pgxpool.Pool, cfg *config.Config) er
 	email := "admin@oxelia51.local"
 	_, err = pool.Exec(ctx,
 		`INSERT INTO users (account_id, username, password, email, role, email_verified)
-		 VALUES ($1, $2, $3, $4, 'admin', TRUE)`,
+		 VALUES ($1, $2, $3, $4, 'admin', TRUE)
+		 ON CONFLICT (account_id) DO NOTHING`,
 		adminUsername, adminUsername, string(hash), email,
 	)
 	if err != nil {
