@@ -59,6 +59,14 @@ fi
 systemctl restart oxelia51-backend.service
 sleep 3
 
+# 代理网关二进制（CI 交叉编译，服务器不做任何编译）
+if [ -f "$RELEASE_DIR/proxy/proxy-server" ]; then
+  mkdir -p /opt/oxelia51/proxy
+  install -m 755 "$RELEASE_DIR/proxy/proxy-server" /opt/oxelia51/proxy/proxy-server
+  systemctl restart token-proxy || true
+  echo "token-proxy 已更新并重启"
+fi
+
 if [ -f "$APP_DIR/deploy/seed-tools.sql" ]; then
   PGPASSWORD="$DB_PASSWORD" psql -h 127.0.0.1 -U root -d oxelia51 -f "$APP_DIR/deploy/seed-tools.sql" || true
 fi

@@ -26,7 +26,9 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
-          cache-dependency-path: backend/go.sum
+          cache-dependency-path: |
+            backend/go.sum
+            proxy-gateway/go.sum
 
       - name: Backend vet
         working-directory: backend
@@ -43,12 +45,19 @@ jobs:
           GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../release/backend/oxelia51-server ./cmd/server
           cp -r migrations ../release/backend/migrations
 
+      - name: Proxy cross-compile (linux/amd64)
+        working-directory: proxy-gateway
+        run: |
+          mkdir -p ../release/proxy
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../release/proxy/proxy-server ./cmd/proxy
+
       - name: Stage deploy scripts
         run: cp -r deploy release/deploy
 
       - name: Verify release structure
         run: |
           test -f release/backend/oxelia51-server
+          test -f release/proxy/proxy-server
           test -f release/backend/migrations/003_auth_v11.up.sql
           test -f release/deploy/apply-release.sh
           echo "release structure OK"
