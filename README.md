@@ -151,17 +151,6 @@ Oxelia51/
 | 5 | 自动化部署 | 运维 |
 | 6 | 维护与服务器 | 运维 |
 
-## 开发协作
-
-本项目由 1 位开发者 + 4 个 AI Agent 协作开发，详见 [AGENTS.md](AGENTS.md)。
-
-| Agent | 角色 |
-|-------|------|
-| Claude Code | 架构、部署、协调 |
-| Qoder | Go 后端 |
-| Trae Work | React 前端 |
-| Codex | 审查、测试、文档 |
-
 ## 参与贡献
 
 [Conventional Commits](https://www.conventionalcommits.org/) 格式：

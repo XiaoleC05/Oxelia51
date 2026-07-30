@@ -86,8 +86,8 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	model := extractModel(requestBody)
 	stream := isStreamRequest(requestBody)
 
-	// 4) 解析上游 URL
-	upstreamPath := f.registry.ResolveTarget(r.URL.Path, prefix)
+	// 4) 解析上游 URL（拼接供应商路径前缀）
+	upstreamPath := route.PathPrefix + "/" + strings.TrimPrefix(f.registry.ResolveTarget(r.URL.Path, prefix), "/")
 	targetURL := &url.URL{
 		Scheme: "https",
 		Host:   route.Target,

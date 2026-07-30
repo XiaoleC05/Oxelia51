@@ -37,6 +37,7 @@ type Adapter interface {
 
 // Route 定义一条代理路由
 type Route struct {
-	Adapter Adapter
-	Target   string // 上游主机（含端口，如 api.openai.com:443）
+	Adapter    Adapter
+	Target     string // 上游主机（含端口，如 api.openai.com:443）
+	PathPrefix string // 上游路径前缀（如 /v1），无则为空
 }
