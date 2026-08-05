@@ -86,7 +86,22 @@
 - ✅ 构建产物验证：修改名称 / 平台亮点 / 数据追踪（.js 运行时）/ GitHub 链接（XiaoleC05/Oxelia51）全部命中
 - ⚠️ 注意：CI 有多个 workflow（Codespell/CodeQL/Docker build），轮询 build run 需按 workflow 名称筛选，勿误判其他 run 完成
 
+## 第 7 轮修复（2026-08-05）：进站需刷新才能点击
+
+**症状**：每次进网站必须刷新一次才能正常点击（页面可看但交互无效）。
+
+**排查**：容器稳定、chunk 全部 200、Fresh 浏览器 Playwright 诊断登录/导航正常。
+
+**三个修复**：
+1. **代码（636bdfd，已部署 e69cc）**：
+   - 移除 `_app.tsx` 的 Google Translate DOM monkey-patch（React 19 下可能中断 hydration）
+   - 监听 `pageshow.persisted`：BFCache（浏览器往返缓存）恢复时强制刷新，恢复 React 事件绑定
+2. **nginx（已生效）**：`location /api/` catch-all 把 Langfuse 的 `/api/project/*/visit`、`/api/public/*` 转发到 Go 8080 → 404。已在其前新增 `location /api/project/`、`location /api/public/` → Langfuse 3000。验证：visit 401（原 404）、public/health 200。
+   - nginx 配置备份：`/etc/nginx/sites-available/oxelia51.com.bak3`
+3. **Playwright 诊断结论**：Fresh 浏览器下登录一次成功、侧栏导航（会话等）正常、chunk 全 200、无 console/JS 错误。「追踪」链接 = 首页（/project/[id] 即追踪列表）同路由不跳转属正常。未复现「必须刷新」，故前端修复针对浏览器缓存/往返恢复场景。
+
 ## 待办
 
-- [ ] 浏览器级体验回归确认（用户侧：登录亮点卡、成本币种切换、页脚 GitHub、修改名称）
+- [ ] 部署后用户浏览器验证（进站是否免刷新可点）
+- [ ] 浏览器级体验回归确认（登录亮点卡、成本币种切换、页脚 GitHub、修改名称）
 - [ ] ClickHouse native TLS（跨云写入加密）
