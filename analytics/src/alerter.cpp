@@ -359,17 +359,18 @@ void Alerter::sendPendingAlerts() {
     int sent = 0;
     for (const auto& alert : alerts) {
         std::string subject = "[Oxelia51 告警] " + alert.alert_type + " · " + alert.project_id;
-        std::string body = alert.message + "\n\n项目: " + alert.project_id +
-                           "\n类型: " + alert.alert_type +
-                           "\n级别: " + alert.severity +
-                           "\n时间: " + alert.created_at;
+        std::string textBody = alert.message + "\n\n项目: " + alert.project_id +
+                               "\n类型: " + alert.alert_type +
+                               "\n级别: " + alert.severity +
+                               "\n时间: " + alert.created_at;
+        std::string htmlBody = buildAlertHtml(alert);
 
         auto channels = pg_.getAlertChannels(alert.project_id);
         bool delivered = false;
 
         for (const auto& ch : channels) {
             if (ch.type == "email" && ch.verified) {
-                if (sendEmail(ch.address, subject, body)) {
+                if (sendEmail(ch.address, subject, textBody, htmlBody)) {
                     delivered = true;
                 }
             } else if (ch.type == "webhook") {

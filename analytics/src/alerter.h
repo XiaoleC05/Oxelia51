@@ -25,10 +25,10 @@ private:
 
     bool sendEmail(const std::string& to,
                    const std::string& subject,
-                   const std::string& body);
+                   const std::string& textBody,
+                   const std::string& htmlBody);
     bool sendWebhook(const std::string& url, const std::string& jsonPayload);
-    std::string buildAlertHtml(const std::string& subject,
-                               const std::string& content) const;
+    std::string buildAlertHtml(const Alert& alert) const;
     std::string buildAlertJson(const Alert& alert) const;
 
     static std::string jsonEscape(const std::string& s);
