@@ -2,6 +2,7 @@
 
 #include <cerrno>
 #include <chrono>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <curl/curl.h>
@@ -39,6 +40,28 @@ struct SmtpConfig {
     bool valid = false;
 };
 
+// 简单 URL 百分号解码（%40 → @ 等）
+static std::string urldecode(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    auto hex = [](char c) -> int {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        return c - 'A' + 10;
+    };
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '%' && i + 2 < s.size() &&
+            std::isxdigit(static_cast<unsigned char>(s[i + 1])) &&
+            std::isxdigit(static_cast<unsigned char>(s[i + 2]))) {
+            out += static_cast<char>(hex(s[i + 1]) * 16 + hex(s[i + 2]));
+            i += 2;
+        } else {
+            out += s[i];
+        }
+    }
+    return out;
+}
+
 static SmtpConfig parseSmtpUrl(const std::string& url) {
     SmtpConfig cfg;
     if (url.empty()) return cfg;
@@ -55,31 +78,32 @@ static SmtpConfig parseSmtpUrl(const std::string& url) {
     // host:port[:userinfo] 部分
     std::string rest = u.substr(schemeEnd + 3);
 
-    // 提取认证信息 (user:password@)
-    size_t atPos = rest.find('@');
+    // 提取认证信息 (user:password@)：用最后一个 @ 分割，
+    // 兼容邮箱地址本身含 @ 的情况（如 714085964@qq.com:auth@smtp.qq.com:465）
+    size_t atPos = rest.rfind('@');
     if (atPos != std::string::npos) {
         std::string creds = rest.substr(0, atPos);
         rest = rest.substr(atPos + 1);
         size_t colonPos = creds.find(':');
         if (colonPos != std::string::npos) {
-            cfg.user = creds.substr(0, colonPos);
-            cfg.password = creds.substr(colonPos + 1);
+            cfg.user = urldecode(creds.substr(0, colonPos));
+            cfg.password = urldecode(creds.substr(colonPos + 1));
         } else {
-            cfg.user = creds;
+            cfg.user = urldecode(creds);
         }
     }
 
     // 提取 host 和 port
     size_t colonPos = rest.rfind(':');
     if (colonPos != std::string::npos) {
-        cfg.host = rest.substr(0, colonPos);
+        cfg.host = urldecode(rest.substr(0, colonPos));
         try {
             cfg.port = std::stoi(rest.substr(colonPos + 1));
         } catch (...) {
             cfg.port = cfg.useSsl ? 465 : 587;
         }
     } else {
-        cfg.host = rest;
+        cfg.host = urldecode(rest);
         cfg.port = cfg.useSsl ? 465 : 587;
     }
 

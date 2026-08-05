@@ -51,6 +51,16 @@ jobs:
           mkdir -p ../release/proxy
           GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../release/proxy/proxy-server ./cmd/proxy
 
+      - name: Analytics cross-compile (linux/amd64)
+        working-directory: analytics
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libcurl4-openssl-dev
+          mkdir -p ../release/analytics
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j2
+          cp build/token-analytics ../release/analytics/
+
       - name: Stage deploy scripts
         run: cp -r deploy release/deploy
 
@@ -58,6 +68,7 @@ jobs:
         run: |
           test -f release/backend/oxelia51-server
           test -f release/proxy/proxy-server
+          test -f release/analytics/token-analytics
           test -f release/backend/migrations/003_auth_v11.up.sql
           test -f release/deploy/apply-release.sh
           echo "release structure OK"
