@@ -78,7 +78,7 @@
 1. ✅ 账户设置「显示名称」→「修改名称」（标题/提示/Toast 统一）
 2. ✅ 成本分析币种统一：CostTrendChart 坐标轴/tooltip 带货币符号；ModelUsageChart/ModelCostTable 接入全局 CNY/USD 切换（首页模型成本图/表不再固定 USD）
 3. ✅ 页脚：`由 Langfuse 提供支持` → `Powered by Langfuse`；新增 GitHub 链接（XiaoleC05/Oxelia51）；全站 full 版统一
-4. ✅ 登录页：底部加平台亮点卡片（数据追踪/成本分析/后台管理）
+4. ✅ 登录页：底部加平台亮点卡片（数据追踪/成本分析/提示词管理——**不暴露后台管理**，仅管理员可见的功能对普通用户隔离）
 
 ## 部署验证（2026-08-05 23:10，新镜像 8ff9859d）
 
