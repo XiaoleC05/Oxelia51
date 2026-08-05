@@ -60,7 +60,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1.5G
+          memory: 1G
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
@@ -115,7 +115,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 512M
     depends_on: &langfuse-depends
       langfuse-postgres:
         condition: service_healthy
@@ -179,12 +179,15 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1.5G
+          # 2026-08-05: 1.5G 时 Node 自动堆上限≈768M，启动即 OOM 崩溃（129 次重启）。
+          # 2.5G + 显式 NODE_OPTIONS 堆上限 1.5G 后稳定。
+          memory: 2.5G
     depends_on: *langfuse-depends
     ports:
       - "127.0.0.1:3000:3000"
     environment:
       <<: *langfuse-env
+      NODE_OPTIONS: --max-old-space-size=1536
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET in .env}
       LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-}
       LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-Oxelia51}
