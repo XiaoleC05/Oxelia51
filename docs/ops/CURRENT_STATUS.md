@@ -127,7 +127,20 @@
 - ⚠️ pnpm.overrides 升级尝试破坏 postinstall（兼容性），已回退
 - ✅ 自托管单用户环境实际利用面极小，接受风险并记录
 
+## 第 9 轮（2026-08-06）：网关状态页 + 邮件告警
+
+1. ✅ 代理网关状态页：新增 internal/stats 统计器（5 分钟滑动窗口），/api/proxy/status 扩展 stats；后端 /api/admin/gateway-stats 服务端代理；后台管理新增「代理网关状态」卡片（QPS/延迟/成功率/供应商分布）——全部部署验证通过
+2. ✅ SMTP 邮件告警激活（QQ 邮箱）：
+   - 修复 alerter SMTP URL 解析（邮箱含 @ 需最后一个 @ 分割 + %40 解码）
+   - 修复 libcurl 分步 PLAIN 认证被 QQ 拒绝（加 CURLOPT_SASL_IR 一次性认证）
+   - .env 配置 SMTP_CONNECTION_URL + EMAIL_FROM_ADDRESS；email 通道已建
+   - 端到端测试：测试告警成功发信（Alert dispatch complete: 1 sent）
+3. ✅ 单云整合评估报告（docs/ops/SINGLE_CLOUD_MIGRATION.md）：短期方案 C 消除 SSH 隧道，中期方案 A 全迁阿里云
+4. ✅ CI 增补：deploy.yml 编译 C++ 分析引擎入 release（含 libcurl-dev）
+
 ## 待办
 
-- [ ] 浏览器级体验回归确认（用户侧）
+- [ ] 用户确认收到测试邮件
+- [ ] 单云整合方案实施（待定）
 - [ ] ClickHouse native TLS（跨云写入加密）
+
