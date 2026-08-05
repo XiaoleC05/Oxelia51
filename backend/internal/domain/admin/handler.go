@@ -58,6 +58,29 @@ func (h *StatsHandler) ServerStats(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// GatewayStats 代理网关实时统计（QPS/延迟/成功率/供应商分布）。
+// 服务端代理本机 proxy-server 的 /api/proxy/status，不向公网暴露网关状态。
+func (h *StatsHandler) GatewayStats(c *gin.Context) {
+	req, err := http.NewRequest(http.MethodGet, "http://127.0.0.1:9090/api/proxy/status", nil)
+	if err != nil {
+		infra.ApiError(c, http.StatusInternalServerError, "GATEWAY_UNREACHABLE", "网关请求构造失败")
+		return
+	}
+	resp, err := h.hc.Do(req)
+	if err != nil {
+		infra.ApiError(c, http.StatusBadGateway, "GATEWAY_UNREACHABLE", "代理网关不可达")
+		return
+	}
+	defer resp.Body.Close()
+
+	var payload map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		infra.ApiError(c, http.StatusBadGateway, "GATEWAY_ERROR", "网关响应解析失败")
+		return
+	}
+	c.JSON(http.StatusOK, payload)
+}
+
 func (h *StatsHandler) fetchRemoteStats(rawURL string) (*serverStats, error) {
 	parsed, err := url.Parse(rawURL)
 	if err != nil {

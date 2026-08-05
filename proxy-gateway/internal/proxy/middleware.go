@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/limiter"
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/stats"
 )
 
 type contextKey string
@@ -80,17 +81,27 @@ func recovery(next http.Handler) http.Handler {
 	})
 }
 
-// statusJSONHandler 返回代理状态
-func statusJSONHandler(providers []string, startTime time.Time) http.HandlerFunc {
+// statusJSONHandler 返回代理状态 + 实时统计（QPS/延迟/成功率/供应商分布）
+func statusJSONHandler(providers []string, startTime time.Time, st *stats.Stats) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		providerMap := map[string]map[string]string{}
 		for _, p := range providers {
 			providerMap[p] = map[string]string{"status": "ok"}
 		}
+		var snap stats.Snapshot
+		if st != nil {
+			snap = st.Snapshot()
+		} else {
+			snap.Status = "ok"
+			snap.UptimeSec = int64(time.Since(startTime).Seconds())
+			snap.ByProvider = []stats.ProviderStat{}
+		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":    "ok",
+			"status":    snap.Status,
 			"uptime":    time.Since(startTime).String(),
+			"uptimeSec": snap.UptimeSec,
+			"stats":     snap,
 			"providers": providerMap,
 		})
 	}

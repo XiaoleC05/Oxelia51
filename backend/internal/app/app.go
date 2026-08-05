@@ -124,6 +124,8 @@ func New(cfg *config.Config) *gin.Engine {
 		statsH := admin.NewStatsHandler()
 		adminGroup.GET("/server-stats", statsH.ServerStats)
 		adminGroup.GET("/dashboard-stats", adminTool.DashboardStats)
+		// 代理网关状态（QPS/延迟/成功率/供应商分布），仅管理员
+		adminGroup.GET("/gateway-stats", statsH.GatewayStats)
 
 		// IP whitelist CRUD — must be outside IP check or empty DB = deadlock
 		adminGroup.GET("/ip-whitelist", whitelistH.ListWhitelist)

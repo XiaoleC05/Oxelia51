@@ -13,6 +13,7 @@ import (
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/limiter"
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/proxy"
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/recorder"
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/stats"
 )
 
 func main() {
@@ -50,12 +51,15 @@ func main() {
 	ratePerMin := 60
 	lm := limiter.NewRateLimiter(ratePerMin)
 
+	// 网关统计器
+	st := stats.New()
+
 	// 转发器
-	forwarder := proxy.NewForwarder(adapterRegistry, rec)
+	forwarder := proxy.NewForwarder(adapterRegistry, rec, st)
 
 	// 路由
 	mux := http.NewServeMux()
-	proxy.SetupRoutes(mux, forwarder, lm, adapterRegistry.Providers(), startTime)
+	proxy.SetupRoutes(mux, forwarder, lm, adapterRegistry.Providers(), startTime, st)
 
 	srv := &http.Server{
 		Addr:         ":" + port,

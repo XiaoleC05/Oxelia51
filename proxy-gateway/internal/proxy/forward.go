@@ -14,6 +14,7 @@ import (
 
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/adapter"
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/recorder"
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/stats"
 	"github.com/google/uuid"
 )
 
@@ -21,12 +22,14 @@ import (
 type Forwarder struct {
 	registry *adapter.Registry
 	recorder recorder.Recorder
+	stats    *stats.Stats
 }
 
-func NewForwarder(reg *adapter.Registry, rec recorder.Recorder) *Forwarder {
+func NewForwarder(reg *adapter.Registry, rec recorder.Recorder, st *stats.Stats) *Forwarder {
 	return &Forwarder{
 		registry: reg,
 		recorder: rec,
+		stats:    st,
 	}
 }
 
@@ -106,6 +109,9 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ModifyResponse: func(resp *http.Response) error {
 			duration := uint32(time.Since(start).Milliseconds())
 
+			// Oxelia51 网关统计：记录成功请求 + 延迟
+			f.stats.Record(provider, time.Since(start), resp.StatusCode < 400)
+
 			isStream := stream || strings.Contains(resp.Header.Get("Content-Type"), "text/event-stream")
 
 			if isStream {
@@ -169,6 +175,8 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		},
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 			log.Printf("proxy error: %v", err)
+			// Oxelia51 网关统计：记录失败请求
+			f.stats.Record(provider, time.Since(start), false)
 			if err == context.DeadlineExceeded {
 				http.Error(w, `{"error":"upstream timeout","code":"UPSTREAM_TIMEOUT"}`, http.StatusGatewayTimeout)
 				return
