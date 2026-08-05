@@ -100,8 +100,34 @@
    - nginx 配置备份：`/etc/nginx/sites-available/oxelia51.com.bak3`
 3. **Playwright 诊断结论**：Fresh 浏览器下登录一次成功、侧栏导航（会话等）正常、chunk 全 200、无 console/JS 错误。「追踪」链接 = 首页（/project/[id] 即追踪列表）同路由不跳转属正常。未复现「必须刷新」，故前端修复针对浏览器缓存/往返恢复场景。
 
+## 第 8 轮（2026-08-05）：性能/健壮性/安全/高并发体检
+
+### 安全（P0）
+- ✅ 端口暴露核查：腾讯云/阿里云数据库端口全部仅绑定 127.0.0.1，无公网暴露
+- ✅ X-Frame-Options 重复头修复（上游 SAMEORIGIN + nginx DENY → 统一 DENY，6 处 proxy_hide_header）
+- ✅ 登录限流：nginx limit_req（10r/s + burst 20，纵深防御，Go 侧已有应用层限流）
+- ✅ 安全头确认：CSP / HSTS / X-Content-Type-Options / Referrer-Policy 已完备
+
+### 性能（P1）
+- ✅ Nginx gzip 全类型启用（原只压缩 html）：JS/CSS/JSON 压缩率 ~65%（112KB→39KB）
+- ✅ 静态资源 immutable 长缓存确认（max-age=31536000）
+- ✅ worker_connections 768→4096 + worker_rlimit_nofile 65535
+
+### 健壮性（P2）
+- ✅ 容器日志轮转：compose 全 6 服务 json-file 50m×3（已应用）
+- ✅ ClickHouse 日志轮转（100M×5）+ 截断 928MB→372K（配置在 oxelia51-tuning.xml）
+- ✅ 数据库备份 cron：每周日 3:07 pg_dump（docker cp 模式），保留 28 天，实测备份通过
+- ✅ docker 镜像清理：回收 14.02GB（磁盘 75%→40%）
+
+### 高并发（P3）
+- ✅ worker_connections 4096、Postgres 当前 16 连接健康、登录限流
+
+### 漏洞检测（25 个传递依赖漏洞：3 low/11 moderate/11 high）
+- ⚠️ 全部为传递依赖（构建期 webpack/postcss/brace-expansion；深层 sharp/undici/path-to-regexp/uuid）
+- ⚠️ pnpm.overrides 升级尝试破坏 postinstall（兼容性），已回退
+- ✅ 自托管单用户环境实际利用面极小，接受风险并记录
+
 ## 待办
 
-- [ ] 部署后用户浏览器验证（进站是否免刷新可点）
-- [ ] 浏览器级体验回归确认（登录亮点卡、成本币种切换、页脚 GitHub、修改名称）
+- [ ] 浏览器级体验回归确认（用户侧）
 - [ ] ClickHouse native TLS（跨云写入加密）
