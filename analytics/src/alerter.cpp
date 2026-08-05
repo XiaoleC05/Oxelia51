@@ -141,6 +141,23 @@ Alerter::Alerter(PostgresClient& pg,
                  const std::string& emailFrom)
     : pg_(pg), smtpUrl_(smtpUrl), emailFrom_(emailFrom) {}
 
+// HTML 转义（告警邮件内容防注入）
+static std::string htmlEscape(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    for (char c : s) {
+        switch (c) {
+            case '&': out += "&amp;"; break;
+            case '<': out += "&lt;"; break;
+            case '>': out += "&gt;"; break;
+            case '"': out += "&quot;"; break;
+            case '\'': out += "&#39;"; break;
+            default: out.push_back(c);
+        }
+    }
+    return out;
+}
+
 std::string Alerter::jsonEscape(const std::string& s) {
     std::string out;
     out.reserve(s.size());
@@ -162,6 +179,17 @@ std::string Alerter::jsonEscape(const std::string& s) {
         }
     }
     return out;
+}
+
+// 告警邮件品牌 HTML（与 web 端 OxeliaEmailLayout 风格一致：
+// 深色头带 + 白字 logo + 浅色正文 + 备案页脚）
+std::string Alerter::buildAlertHtml(const std::string& subject,
+                                    const std::string& content) const {
+    const char* head = R"(<!DOCTYPE html><html><head><meta charset="utf-8"/></head><body style="margin:0;padding:0;background:#FAFAFA;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAFAFA;"><tr><td style="padding:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0A;padding:20px 40px;"><tr><td><img src="https://oxelia51.com/icon-64-dark.png" alt="Oxelia51" width="128" height="48" style="display:block;border:0;"/></td></tr></table><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 40px 8px;"><tr><td style="background:#FFFFFF;border-radius:8px;padding:28px 32px;"><h1 style="margin:0 0 12px;font-size:20px;line-height:1.4;color:#0A0A0A;">)";
+    const char* bodyStart = R"(</h1><div style="font-size:14px;line-height:1.7;color:#333333;white-space:pre-wrap;">)";
+    const char* bodyEnd = R"(</div></td></tr></table><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:16px 40px 32px;"><tr><td style="font-size:12px;line-height:1.6;color:#999999;">这封邮件由 Oxelia51 —— Token 消耗统计平台发出。<br/>官网：<a href="https://oxelia51.com" style="color:#E5484D;">oxelia51.com</a> · 反馈：receive@oxelia51.com<br/>鲁ICP备2026038838号-1 · 鲁公网安备37028202001309号</td></tr></table></td></tr></table></body></html>)";
+    return std::string(head) + htmlEscape(subject) + bodyStart +
+           htmlEscape(content) + bodyEnd;
 }
 
 std::string Alerter::buildAlertJson(const Alert& alert) const {
@@ -189,15 +217,15 @@ bool Alerter::sendEmail(const std::string& to,
         return false;
     }
 
-    // 构建邮件体（RFC 5322 格式）
+    // 构建邮件体（RFC 5322 格式）：品牌 HTML 模板
     std::string emailBody =
         "From: " + emailFrom_ + "\r\n"
         "To: " + to + "\r\n"
         "Subject: " + subject + "\r\n"
-        "Content-Type: text/plain; charset=utf-8\r\n"
+        "Content-Type: text/html; charset=utf-8\r\n"
         "Content-Transfer-Encoding: 8bit\r\n"
         "\r\n" +
-        body + "\r\n";
+        buildAlertHtml(subject, body) + "\r\n";
 
     EmailPayload payload{emailBody, 0};
 
@@ -279,11 +307,11 @@ void Alerter::sendPendingAlerts() {
 
     int sent = 0;
     for (const auto& alert : alerts) {
-        std::string subject = "[Oxelia51 Alert] " + alert.alert_type + ": " + alert.project_id;
-        std::string body = alert.message + "\n\nProject: " + alert.project_id +
-                           "\nType: " + alert.alert_type +
-                           "\nSeverity: " + alert.severity +
-                           "\nTime: " + alert.created_at;
+        std::string subject = "[Oxelia51 告警] " + alert.alert_type + " · " + alert.project_id;
+        std::string body = alert.message + "\n\n项目: " + alert.project_id +
+                           "\n类型: " + alert.alert_type +
+                           "\n级别: " + alert.severity +
+                           "\n时间: " + alert.created_at;
 
         auto channels = pg_.getAlertChannels(alert.project_id);
         bool delivered = false;

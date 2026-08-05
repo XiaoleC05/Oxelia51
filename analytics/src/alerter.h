@@ -27,6 +27,8 @@ private:
                    const std::string& subject,
                    const std::string& body);
     bool sendWebhook(const std::string& url, const std::string& jsonPayload);
+    std::string buildAlertHtml(const std::string& subject,
+                               const std::string& content) const;
     std::string buildAlertJson(const Alert& alert) const;
 
     static std::string jsonEscape(const std::string& s);
