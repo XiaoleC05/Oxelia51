@@ -12,6 +12,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: XiaoleC05/langfuse-token
+          ref: main
 
       - name: Build Docker image
         run: |
