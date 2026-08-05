@@ -9,6 +9,12 @@ services:
   langfuse-postgres:
     image: postgres:17-alpine
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
     container_name: langfuse-postgres
     deploy:
       resources:
@@ -33,6 +39,12 @@ services:
   langfuse-redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
     container_name: langfuse-redis
     deploy:
       resources:
@@ -55,6 +67,12 @@ services:
   langfuse-clickhouse:
     image: clickhouse/clickhouse-server:25.12
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
     container_name: langfuse-clickhouse
     user: "101:101"
     deploy:
@@ -86,6 +104,12 @@ services:
   langfuse-minio:
     image: cgr.dev/chainguard/minio
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
     container_name: langfuse-minio
     deploy:
       resources:
@@ -111,6 +135,12 @@ services:
   langfuse-worker:
     image: docker.io/langfuse/langfuse-worker:3
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
     container_name: langfuse-worker
     deploy:
       resources:
@@ -175,6 +205,12 @@ services:
   langfuse-web:
     image: crpi-6hx0lh969xz92v2y.cn-chengdu.personal.cr.aliyuncs.com/oxelia51/langfuse-token:latest
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
     container_name: langfuse-web
     deploy:
       resources:
