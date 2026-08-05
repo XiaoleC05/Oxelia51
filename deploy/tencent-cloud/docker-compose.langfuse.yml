@@ -10,6 +10,10 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     container_name: langfuse-postgres
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     ports:
       - "127.0.0.1:5434:5432"
     environment:
@@ -30,6 +34,10 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     container_name: langfuse-redis
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     command: >
       --requirepass ${REDIS_AUTH:?set REDIS_AUTH in .env}
       --maxmemory-policy noeviction
@@ -49,6 +57,10 @@ services:
     restart: unless-stopped
     container_name: langfuse-clickhouse
     user: "101:101"
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
@@ -75,6 +87,10 @@ services:
     image: cgr.dev/chainguard/minio
     restart: unless-stopped
     container_name: langfuse-minio
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     entrypoint: sh
     command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
     environment:
@@ -96,6 +112,10 @@ services:
     image: docker.io/langfuse/langfuse-worker:3
     restart: unless-stopped
     container_name: langfuse-worker
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     depends_on: &langfuse-depends
       langfuse-postgres:
         condition: service_healthy
@@ -153,9 +173,13 @@ services:
       SMTP_CONNECTION_URL: ${SMTP_CONNECTION_URL:-}
 
   langfuse-web:
-    image: docker.io/langfuse/langfuse:3
+    image: crpi-6hx0lh969xz92v2y.cn-chengdu.personal.cr.aliyuncs.com/oxelia51/langfuse-token:latest
     restart: unless-stopped
     container_name: langfuse-web
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
     depends_on: *langfuse-depends
     ports:
       - "127.0.0.1:3000:3000"
