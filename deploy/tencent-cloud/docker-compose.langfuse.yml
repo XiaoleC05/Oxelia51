@@ -188,6 +188,9 @@ services:
     environment:
       <<: *langfuse-env
       NODE_OPTIONS: --max-old-space-size=1536
+      # 后台管理：服务端持有 Go 运维凭证换 JWT 转发（不下发浏览器）
+      OXELIA51_ADMIN_ACCOUNT: ${OXELIA51_ADMIN_ACCOUNT:?set in .env}
+      OXELIA51_ADMIN_PASSWORD: ${OXELIA51_ADMIN_PASSWORD:?set in .env}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET in .env}
       LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-}
       LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-Oxelia51}
