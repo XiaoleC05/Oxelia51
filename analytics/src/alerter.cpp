@@ -221,6 +221,9 @@ bool Alerter::sendEmail(const std::string& to,
     if (!cfg.user.empty()) {
         curl_easy_setopt(curl, CURLOPT_USERNAME, cfg.user.c_str());
         curl_easy_setopt(curl, CURLOPT_PASSWORD, cfg.password.c_str());
+        // 一次性发送 AUTH 凭据（initial response）。QQ 邮箱 SMTP 对 libcurl
+        // 默认的分步 PLAIN 认证返回 334 后拒绝（Login denied）；SASL_IR 成功。
+        curl_easy_setopt(curl, CURLOPT_SASL_IR, 1L);
     }
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
