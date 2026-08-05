@@ -73,7 +73,20 @@
 - ✅ 运维凭证已注入 web 容器 env（OXELIA51_ADMIN_ACCOUNT / PASSWORD 均已有值）
 - ⏳ 浏览器级体验回归（登录一次点击、侧栏折叠展开、颜色设置、中文化观感）待用户浏览器确认
 
+## 第 6 轮变更（2026-08-05，已完成并部署）
+
+1. ✅ 账户设置「显示名称」→「修改名称」（标题/提示/Toast 统一）
+2. ✅ 成本分析币种统一：CostTrendChart 坐标轴/tooltip 带货币符号；ModelUsageChart/ModelCostTable 接入全局 CNY/USD 切换（首页模型成本图/表不再固定 USD）
+3. ✅ 页脚：`由 Langfuse 提供支持` → `Powered by Langfuse`；新增 GitHub 链接（XiaoleC05/Oxelia51）；全站 full 版统一
+4. ✅ 登录页：底部加平台亮点卡片（数据追踪/成本分析/后台管理）
+
+## 部署验证（2026-08-05 23:10，新镜像 8ff9859d）
+
+- ✅ CI 构建（b9347e5）成功，部署后 web running、local3000 200
+- ✅ 构建产物验证：修改名称 / 平台亮点 / 数据追踪（.js 运行时）/ GitHub 链接（XiaoleC05/Oxelia51）全部命中
+- ⚠️ 注意：CI 有多个 workflow（Codespell/CodeQL/Docker build），轮询 build run 需按 workflow 名称筛选，勿误判其他 run 完成
+
 ## 待办
 
-- [ ] 浏览器级体验回归确认（用户侧：登录、侧栏折叠、颜色设置、英文清理观感）
+- [ ] 浏览器级体验回归确认（用户侧：登录亮点卡、成本币种切换、页脚 GitHub、修改名称）
 - [ ] ClickHouse native TLS（跨云写入加密）
