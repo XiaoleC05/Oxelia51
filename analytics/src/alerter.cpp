@@ -182,14 +182,52 @@ std::string Alerter::jsonEscape(const std::string& s) {
 }
 
 // 告警邮件品牌 HTML（与 web 端 OxeliaEmailLayout 风格一致：
-// 深色头带 + 白字 logo + 浅色正文 + 备案页脚）
-std::string Alerter::buildAlertHtml(const std::string& subject,
-                                    const std::string& content) const {
-    const char* head = R"(<!DOCTYPE html><html><head><meta charset="utf-8"/></head><body style="margin:0;padding:0;background:#FAFAFA;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAFAFA;"><tr><td style="padding:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0A;padding:20px 40px;"><tr><td><img src="https://oxelia51.com/icon-64-dark.png" alt="Oxelia51" width="128" height="48" style="display:block;border:0;"/></td></tr></table><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 40px 8px;"><tr><td style="background:#FFFFFF;border-radius:8px;padding:28px 32px;"><h1 style="margin:0 0 12px;font-size:20px;line-height:1.4;color:#0A0A0A;">)";
-    const char* bodyStart = R"(</h1><div style="font-size:14px;line-height:1.7;color:#333333;white-space:pre-wrap;">)";
-    const char* bodyEnd = R"(</div></td></tr></table><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:16px 40px 32px;"><tr><td style="font-size:12px;line-height:1.6;color:#999999;">这封邮件由 Oxelia51 —— Token 消耗统计平台发出。<br/>官网：<a href="https://oxelia51.com" style="color:#E5484D;">oxelia51.com</a> · 反馈：receive@oxelia51.com<br/>鲁ICP备2026038838号-1 · 鲁公网安备37028202001309号</td></tr></table></td></tr></table></body></html>)";
-    return std::string(head) + htmlEscape(subject) + bodyStart +
-           htmlEscape(content) + bodyEnd;
+// 深色头带 + logo + 品牌名，浅色正文白卡片结构化字段表，品牌页脚）。
+// 全内联样式 + 表格布局，兼容主流邮件客户端。
+std::string Alerter::buildAlertHtml(const Alert& alert) const {
+    // 中文标签与 web 端告警设置页（AlertsSettings.tsx）保持一致；未知值回退原始字符串
+    auto typeLabel = [](const std::string& t) -> std::string {
+        if (t == "budget") return "预算";
+        if (t == "anomaly") return "异常";
+        return t;
+    };
+    auto severityLabel = [](const std::string& s) -> std::string {
+        if (s == "warning") return "警告";
+        if (s == "critical") return "严重";
+        if (s == "info") return "提示";
+        return s;
+    };
+    // 字段表行：label 列固定宽，行间细分隔线；value 一律 HTML 转义防注入
+    auto fieldRow = [](const char* label, const std::string& value) {
+        return std::string(
+                   "<tr><td style=\"padding:10px 0;border-bottom:1px solid #F0F0F0;"
+                   "font-size:13px;color:#999999;width:80px;vertical-align:top;\">") +
+               label +
+               "</td><td style=\"padding:10px 0;border-bottom:1px solid #F0F0F0;"
+               "font-size:14px;color:#0A0A0A;vertical-align:top;\">" +
+               htmlEscape(value) + "</td></tr>";
+    };
+
+    std::string html;
+    html += R"(<!DOCTYPE html><html><head><meta charset="utf-8"/></head><body style="margin:0;padding:0;background:#FAFAFA;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAFAFA;"><tr><td>)";
+    // 深色头部带：横版 logo（深底白字版）+ 品牌名
+    html += R"(<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0A;"><tr><td style="padding:16px 40px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td><img src="https://oxelia51.com/icon-64-dark.png" alt="Oxelia51" width="128" height="48" style="display:block;border:0;"/></td><td style="padding-left:12px;color:#FAFAFA;font-size:18px;font-weight:600;">Oxelia51</td></tr></table></td></tr></table>)";
+    // 浅色正文白卡片：标题 + 结构化字段表 + 告警详情
+    // （当前值/阈值由检测器写入 message，无独立字段，归入「告警详情」）
+    html += R"(<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:24px 40px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border:1px solid #EAEAEA;border-radius:8px;"><tr><td style="padding:28px 32px;"><h1 style="margin:0 0 16px;font-size:20px;line-height:1.4;color:#0A0A0A;">)";
+    html += htmlEscape(typeLabel(alert.alert_type)) + "告警";
+    html += R"(</h1><table role="presentation" width="100%" cellpadding="0" cellspacing="0">)";
+    html += fieldRow("项目", alert.project_id);
+    html += fieldRow("告警类型", typeLabel(alert.alert_type));
+    html += fieldRow("严重级别", severityLabel(alert.severity));
+    html += fieldRow("触发时间", alert.created_at);
+    html += R"(</table><div style="margin-top:16px;font-size:13px;color:#999999;">告警详情</div><div style="margin-top:4px;padding:12px 16px;background:#FAFAFA;border:1px solid #EAEAEA;border-radius:6px;font-size:14px;line-height:1.7;color:#333333;white-space:pre-wrap;">)";
+    html += htmlEscape(alert.message);
+    html += R"(</div></td></tr></table></td></tr></table>)";
+    // 品牌页脚：目的声明 + 官网 + 反馈邮箱 + 备案
+    html += R"(<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:16px 40px 32px;font-size:12px;line-height:1.6;color:#999999;">这封邮件由 Oxelia51——Token 消耗统计平台发出。<br/>官网：<a href="https://oxelia51.com" style="color:#0A0A0A;">oxelia51.com</a> · 反馈邮箱：<a href="mailto:receive@oxelia51.com" style="color:#0A0A0A;">receive@oxelia51.com</a><br/>鲁ICP备2026038838号-1 · 鲁公网安备37028202001309号</td></tr></table>)";
+    html += "</td></tr></table></body></html>";
+    return html;
 }
 
 std::string Alerter::buildAlertJson(const Alert& alert) const {
@@ -206,7 +244,8 @@ std::string Alerter::buildAlertJson(const Alert& alert) const {
 
 bool Alerter::sendEmail(const std::string& to,
                         const std::string& subject,
-                        const std::string& body) {
+                        const std::string& textBody,
+                        const std::string& htmlBody) {
     if (smtpUrl_.empty() || emailFrom_.empty()) {
         return false;
     }
@@ -217,15 +256,27 @@ bool Alerter::sendEmail(const std::string& to,
         return false;
     }
 
-    // 构建邮件体（RFC 5322 格式）：品牌 HTML 模板
-    std::string emailBody =
-        "From: " + emailFrom_ + "\r\n"
-        "To: " + to + "\r\n"
-        "Subject: " + subject + "\r\n"
-        "Content-Type: text/html; charset=utf-8\r\n"
-        "Content-Transfer-Encoding: 8bit\r\n"
-        "\r\n" +
-        buildAlertHtml(subject, body) + "\r\n";
+    // 构建邮件体（RFC 5322）：multipart/alternative = 纯文本兜底 + 品牌 HTML。
+    // 当前用 CURLOPT_UPLOAD 上传整封报文（非 libcurl MIME API），直接拼 boundary 即可。
+    const std::string boundary = "oxelia51-alert-alt";
+    std::string emailBody;
+    emailBody += "From: " + emailFrom_ + "\r\n";
+    emailBody += "To: " + to + "\r\n";
+    emailBody += "Subject: " + subject + "\r\n";
+    emailBody += "MIME-Version: 1.0\r\n";
+    emailBody += "Content-Type: multipart/alternative; boundary=\"" + boundary + "\"\r\n";
+    emailBody += "\r\n";
+    emailBody += "--" + boundary + "\r\n";
+    emailBody += "Content-Type: text/plain; charset=utf-8\r\n";
+    emailBody += "Content-Transfer-Encoding: 8bit\r\n";
+    emailBody += "\r\n";
+    emailBody += textBody + "\r\n";
+    emailBody += "--" + boundary + "\r\n";
+    emailBody += "Content-Type: text/html; charset=utf-8\r\n";
+    emailBody += "Content-Transfer-Encoding: 8bit\r\n";
+    emailBody += "\r\n";
+    emailBody += htmlBody + "\r\n";
+    emailBody += "--" + boundary + "--\r\n";
 
     EmailPayload payload{emailBody, 0};
 
