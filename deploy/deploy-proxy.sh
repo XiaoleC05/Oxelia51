@@ -29,9 +29,6 @@ PROXY_PORT=9090
 CLICKHOUSE_ADDR=118.25.138.177:9000
 CLICKHOUSE_USER=clickhouse
 CLICKHOUSE_PASSWORD=CHANGEME
-CLICKHOUSE_DATABASE=oxelia51
-# 日志级别: debug | info | warn | error
-LOG_LEVEL=info
 EOF
         info ".env 模板已创建 → $ENV_FILE"
         info "请编辑 .env 填入 ClickHouse 密码后重新部署"

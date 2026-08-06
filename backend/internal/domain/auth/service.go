@@ -70,14 +70,6 @@ func (s *TokenService) ParseAccess(tokenString string) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-func RandomToken() (string, error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
-}
-
 // --- RateLimiter ---
 
 type RateLimiter struct {

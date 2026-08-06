@@ -30,7 +30,7 @@ fi
 echo "--- 登录 + 直连网关 :8080 ---"
 LOGIN=$(curl -sS --max-time 15 -X POST http://127.0.0.1:8080/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d "$(python3 -c "import json,sys; print(json.dumps({'username':'oxelia51','password':sys.argv[1]}))" "$PW")") || LOGIN=""
+  -d "$(python3 -c "import json,sys; print(json.dumps({'account':'oxelia51','password':sys.argv[1]}))" "$PW")") || LOGIN=""
 TOKEN=$(echo "$LOGIN" | python3 -c "import json,sys; print(json.load(sys.stdin).get('token',''))" 2>/dev/null || true)
 if [ -z "$TOKEN" ]; then
   echo "登录失败: $(echo "$LOGIN" | head -c 200)"

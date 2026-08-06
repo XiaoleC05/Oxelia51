@@ -43,7 +43,7 @@ $docker = Get-Command docker -ErrorAction SilentlyContinue
 if ($docker) {
     Set-Location $Root
     Write-Host "Starting PostgreSQL + Redis (docker compose)..." -ForegroundColor Cyan
-    docker compose up -d
+    docker compose -f deploy/docker/compose.prod.yml up -d
 } else {
     Write-Host "[WARN] Docker not found. Start PostgreSQL 17 + Redis 7 manually, or install Docker Desktop." -ForegroundColor Yellow
 }

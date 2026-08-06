@@ -2,9 +2,7 @@ package proxykey
 
 import (
 	"context"
-	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -62,12 +60,3 @@ func (r *Repository) Disable(ctx context.Context, id int64) (int64, error) {
 	}
 	return tag.RowsAffected(), nil
 }
-
-// TouchLastUsed 记录最近使用时间（网关鉴权命中时更新）。
-func (r *Repository) TouchLastUsed(ctx context.Context, id int64) {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	_, _ = r.pool.Exec(ctx, `UPDATE proxy_keys SET last_used_at = now() WHERE id = $1`, id)
-}
-
-var _ = pgx.ErrNoRows // 保持 pgx 导入（类型断言等）
