@@ -201,6 +201,8 @@ services:
       REDIS_TLS_ENABLED: "false"
       EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-}
       SMTP_CONNECTION_URL: ${SMTP_CONNECTION_URL:-}
+      # 开放注册：邮箱验证防滥用（true 启用 OTP 注册流程）
+      AUTH_EMAIL_VERIFICATION_REQUIRED: ${AUTH_EMAIL_VERIFICATION_REQUIRED:-false}
 
   langfuse-web:
     image: crpi-6hx0lh969xz92v2y.cn-chengdu.personal.cr.aliyuncs.com/oxelia51/langfuse-token:latest
