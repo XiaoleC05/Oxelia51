@@ -1,6 +1,16 @@
 # 当前服务状态
 
-> 最后更新：2026-08-05 20:30
+> 最后更新：2026-08-06 21:30
+
+## 架构体检 + 告警 alerter 上线（2026-08-06）
+
+1. ✅ **Git 瘦身**：langfuse-token .git 1.8G→12M（误提交 tar.gz 孤儿 blob）、Oxelia51 2.0G→18M（删 fe-chunks 分支 + worktree）
+2. ✅ **服务器清理**：阿里云旧二进制 server（28M）/0字节垃圾文件/孤儿 frontend/孤儿 langfuse-token 检出/nginx .bak（移入 /root/nginx-bak）全部清除；腾讯云 3 个 dangling 镜像 -4.6G + 重复脚本 install.sh + journal vacuum
+3. ✅ **死代码清理**：Oxelia51（mailer.go + SMTP 配置面 + 4 死配置字段 + RandomToken + TouchLastUsed + 3 孤儿部署文件，go build/vet 通过）、langfuse-token（3 无引用 tRPC + 6 孤儿资源 + 46 i18n 批次，typecheck 通过）
+4. ✅ **告警引擎部署（补全闭环）**：token-analytics（C++ alerter）编译于本地容器 → 部署腾讯云 `/opt/oxelia51/analytics/token-analytics`，systemd `token-analytics.service`（oneshot，每 5 分钟 timer）已启用
+   - CH（127.0.0.1:8123）✅ PG（127.0.0.1:5434）✅ 连接正常
+   - 端到端邮件验证：临时预算触发 → alert_logs 落库（status=sent）→ receive@oxelia51.com 收到测试告警邮件
+   - 构建方式：`analytics/Dockerfile`（本地容器编译，符合"禁止服务器 make/cmake"）
 
 ## 服务健康
 
