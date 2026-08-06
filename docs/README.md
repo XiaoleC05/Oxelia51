@@ -1,6 +1,6 @@
 # oxelia51.com 文档索引
 
-**版本**：v3.0 | **更新**：2026-07-27
+**版本**：v3.0 | **更新**：2026-08-06
 
 ---
 
@@ -15,6 +15,15 @@
 | 5 | [自动化部署](5-deployment.md) | 运维 | CI/CD、Webhook、Docker Compose、systemd |
 | 6 | [维护与服务器](6-maintenance.md) | 运维 | 服务器信息、日常命令、故障排查、备份、安全 |
 
+## 运维文档（随变更维护）
+
+| 文档 | 说明 |
+|------|------|
+| [当前服务状态](ops/CURRENT_STATUS.md) | 服务健康、资源占用、事故记录、近期变更 |
+| [待办队列](ops/NEXT_STEPS.md) | 按优先级的下一步工作清单 |
+| [单云整合评估](ops/SINGLE_CLOUD_MIGRATION.md) | 双云 → 单云迁移方案对比 |
+| [Bug 报告模板](ops/BUG_REPORT.md) | 问题上报格式 |
+
 ## 参考
 
 | 文档 | 说明 |
@@ -23,3 +32,5 @@
 | [CHANGELOG.md](../CHANGELOG.md) | 完整开发日志 + 版本发布 + Bug 索引 |
 | [AGENTS.md](../AGENTS.md) | 任务分工规则（后端/前端/审查/架构） |
 | [CLAUDE.md](../CLAUDE.md) | 文件所有权 + 行为边界 + 提示词模板 |
+| [7-i18n-glossary.md](7-i18n-glossary.md) | 汉化术语标准（i18n 路由已移除，现为文案口径规范） |
+| [prompts/current-task.md](prompts/current-task.md) | 当前任务提示词模板 |

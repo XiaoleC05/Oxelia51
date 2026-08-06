@@ -1,7 +1,9 @@
 # Oxelia51 前端汉化术语表
 
-**版本**：v1.0 | **日期**：2026-07-30
-**用途**：langfuse-token fork 汉化统一口径，后续翻译必须遵循本表。
+**版本**：v1.1 | **日期**：2026-08-06
+**用途**：langfuse-token fork 中文文案统一口径，后续新增/修改 UI 文案必须遵循本表。
+**说明**：i18n 路由已于 2026-08-05 移除（不再有 /en 语言路由与浏览器语言重定向），本表从「翻译规范」转为「中文文案标准」——全站统一用中文，术语按本表落地。
+**去 AI 化原则**：面向用户的文案避免 LLM/AI 直译，统一用「模型」（如 LLM Connections → 模型连接、AI 工具 → 模型工具）。
 
 ## 核心实体
 
@@ -33,7 +35,7 @@
 | Account Settings | 账户设置 |
 | Members | 成员 |
 | API Keys | API 密钥 |
-| LLM Connections | LLM 连接 |
+| LLM Connections | 模型连接 |
 | Model Definitions | 模型定义 |
 | Integrations | 集成 |
 | Exports | 导出 |
