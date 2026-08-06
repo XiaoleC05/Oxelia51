@@ -270,9 +270,12 @@ func NewWhitelistHandler(repo *WhitelistRepository) *WhitelistHandler {
 	return &WhitelistHandler{repo: repo}
 }
 
-// forwardedClientIP 优先取 Langfuse 服务端转发的浏览器真实出口 IP，
-// 回退到连接地址（直连时即真实 IP；经 nginx 时取 X-Forwarded-For 首段）。
+// forwardedClientIP 返回可信客户端 IP，与 middleware.clientIP 同口径：
+// X-Real-IP（nginx 可信对端）→ X-Oxelia51-Client-IP（nginx 已覆盖）→ 连接地址。
 func forwardedClientIP(c *gin.Context) string {
+	if ip := strings.TrimSpace(c.GetHeader("X-Real-IP")); ip != "" {
+		return ip
+	}
 	if ip := strings.TrimSpace(c.GetHeader("X-Oxelia51-Client-IP")); ip != "" {
 		return ip
 	}
