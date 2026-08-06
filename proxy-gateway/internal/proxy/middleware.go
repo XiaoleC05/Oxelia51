@@ -26,22 +26,68 @@ func projectIDFromContext(ctx context.Context) string {
 	return v
 }
 
-// projectAuth 校验 X-Project-ID 头存在且非空
-func projectAuth(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		projectID := r.Header.Get("X-Project-ID")
-		if strings.TrimSpace(projectID) == "" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{
-				"error": "缺少 X-Project-ID 头",
-				"code":  "MISSING_PROJECT_ID",
-			})
-			return
-		}
-		ctx := contextWithProjectID(r.Context(), projectID)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+// extractKey 从请求中提取代理密钥（Bearer <k> 或 x-api-key <k>）。
+func extractKey(r *http.Request) string {
+	auth := r.Header.Get("Authorization")
+	if len(auth) > 7 && strings.EqualFold(auth[:7], "Bearer ") {
+		return strings.TrimSpace(auth[7:])
+	}
+	return strings.TrimSpace(r.Header.Get("X-Api-Key"))
+}
+
+func writeJSON(w http.ResponseWriter, status int, body map[string]string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(body)
+}
+
+// keyAuth 代理密钥鉴权：Bearer <key> 或 x-api-key <key> → 查 proxy_keys →
+// 用 key 解析出的 project_id 覆盖 X-Project-ID（防伪造）。
+// authMode: "required" 强制密钥；"optional"（默认）无密钥时回退旧逻辑（仅 X-Project-ID 非空）。
+func keyAuth(ks *KeyStore, authMode string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			key := extractKey(r)
+			if key != "" {
+				projectID, enabled, ok := ks.Resolve(r.Context(), key)
+				if !ok || !enabled {
+					writeJSON(w, http.StatusUnauthorized, map[string]string{
+						"error": "无效的 API 密钥",
+						"code":  "INVALID_API_KEY",
+					})
+					return
+				}
+				// 用密钥映射的 project_id 覆盖 header（客户端自填 X-Project-ID 无效）
+				r.Header.Set("X-Project-ID", projectID)
+				// 代理密钥不向上游泄漏
+				r.Header.Del("Authorization")
+				r.Header.Del("X-Api-Key")
+				ctx := contextWithProjectID(r.Context(), projectID)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+
+			// 无密钥
+			if authMode == "required" {
+				writeJSON(w, http.StatusUnauthorized, map[string]string{
+					"error": "缺少 API 密钥",
+					"code":  "MISSING_API_KEY",
+				})
+				return
+			}
+			// optional：兼容旧客户端（仅校验 X-Project-ID 非空）
+			projectID := r.Header.Get("X-Project-ID")
+			if strings.TrimSpace(projectID) == "" {
+				writeJSON(w, http.StatusBadRequest, map[string]string{
+					"error": "缺少 X-Project-ID 头",
+					"code":  "MISSING_PROJECT_ID",
+				})
+				return
+			}
+			ctx := contextWithProjectID(r.Context(), projectID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
 
 // rateLimit 基于 project 维度的 token bucket 限流

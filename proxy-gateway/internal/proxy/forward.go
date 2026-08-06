@@ -105,6 +105,18 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Director: func(req *http.Request) {
 			req.URL = targetURL
 			req.Host = route.Target
+
+			// Oxelia51 产品化：客户端真实上游 LLM key 经 X-Oxelia51-Upstream-Key 传递，
+			// 按供应商协议写回鉴权头（Anthropic 用 x-api-key，OpenAI 兼容系用 Authorization）。
+			// 该头由中间件 keyAuth 校验代理密钥后保留；代理密钥本身不上行。
+			if k := req.Header.Get("X-Oxelia51-Upstream-Key"); k != "" {
+				req.Header.Del("X-Oxelia51-Upstream-Key")
+				if route.Adapter.ProviderName() == "anthropic" {
+					req.Header.Set("x-api-key", k)
+				} else {
+					req.Header.Set("Authorization", "Bearer "+k)
+				}
+			}
 		},
 		ModifyResponse: func(resp *http.Response) error {
 			duration := uint32(time.Since(start).Milliseconds())

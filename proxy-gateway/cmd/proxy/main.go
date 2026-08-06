@@ -54,12 +54,35 @@ func main() {
 	// 网关统计器
 	st := stats.New()
 
+	// 代理密钥鉴权（proxy_keys 表，阿里云 PG 同机）
+	// PROXY_PG_URL 示例：postgres://root:xxx@127.0.0.1:5432/oxelia51?sslmode=disable
+	authMode := os.Getenv("PROXY_AUTH_MODE") // "optional"（默认）/ "required"
+	if authMode == "" {
+		authMode = "optional"
+	}
+	var ks *proxy.KeyStore
+	if dsn := os.Getenv("PROXY_PG_URL"); dsn != "" {
+		var err error
+		ks, err = proxy.NewKeyStore(context.Background(), dsn)
+		if err != nil {
+			if authMode == "required" {
+				log.Fatalf("proxy keystore init failed (required mode): %v", err)
+			}
+			log.Printf("proxy keystore init failed, falling back to X-Project-ID only: %v", err)
+			ks = nil
+		} else {
+			defer ks.Close()
+		}
+	} else if authMode == "required" {
+		log.Fatal("PROXY_AUTH_MODE=required but PROXY_PG_URL not set")
+	}
+
 	// 转发器
 	forwarder := proxy.NewForwarder(adapterRegistry, rec, st)
 
 	// 路由
 	mux := http.NewServeMux()
-	proxy.SetupRoutes(mux, forwarder, lm, adapterRegistry.Providers(), startTime, st)
+	proxy.SetupRoutes(mux, forwarder, lm, adapterRegistry.Providers(), startTime, st, ks, authMode)
 
 	srv := &http.Server{
 		Addr:         ":" + port,

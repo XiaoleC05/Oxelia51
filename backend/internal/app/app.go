@@ -12,6 +12,7 @@ import (
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/auth"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/health"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/hero"
+	"github.com/XiaoleC05/oxelia51-backend/internal/domain/proxykey"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/tool"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/user"
 	"github.com/XiaoleC05/oxelia51-backend/internal/gateway"
@@ -126,6 +127,12 @@ func New(cfg *config.Config) *gin.Engine {
 		adminGroup.GET("/dashboard-stats", adminTool.DashboardStats)
 		// 代理网关状态（QPS/延迟/成功率/供应商分布），仅管理员
 		adminGroup.GET("/gateway-stats", statsH.GatewayStats)
+
+		// 代理项目密钥（网关鉴权用），仅管理员
+		pkH := proxykey.NewHandler(pool)
+		adminGroup.GET("/proxy-keys", pkH.List)
+		adminGroup.POST("/proxy-keys", pkH.Create)
+		adminGroup.DELETE("/proxy-keys/:id", pkH.Delete)
 
 		// IP whitelist CRUD — must be outside IP check or empty DB = deadlock
 		adminGroup.GET("/ip-whitelist", whitelistH.ListWhitelist)
