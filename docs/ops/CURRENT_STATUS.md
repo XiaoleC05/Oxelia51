@@ -175,8 +175,8 @@
 
 ## 待办
 
-- [ ] 开放注册的邮箱验证开启（AUTH_EMAIL_VERIFICATION_REQUIRED=true，防滥用）——上生产前决策
-- [ ] 用户浏览器验证：设置页「代理接入」生成 key、空态引导、分工具配置
+- [x] 开放注册 + 邮箱验证已开启（AUTH_EMAIL_VERIFICATION_REQUIRED=true 已生效）
+- [x] 开放注册（邮箱验证）已配置完成——待用户注册实测
 - [ ] 后续：docs 站（用户向教程）、收费/配额
 
 
