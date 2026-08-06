@@ -158,9 +158,15 @@
 - ✅ 验证码 migration 已应用（alert_channels 加 verification_code/verification_expires）
 - ✅ 部署：web e035f + analytics（multipart alerter）
 
+## 第 11 轮（2026-08-06）：健康检查 + 备份 cron 修复
+
+- ✅ 全系统健康检查：双云服务 active、磁盘 49-51%、腾讯云负载正常（ClickHouse 后台合并）、runner 恢复通道可用、公网/API 200
+- ✅ 清理：token-savior 缓存文件移除跟踪；docker-build 目录 gitignore 排除（磁盘占用待进程释放）
+- ✅ **备份 cron 修复**：原行内 `$(date +%Y%m%d)` 命令在 cron 环境未生效（无备份文件）；改为 `/usr/local/bin/langfuse-backup.sh` 脚本（日志到 /var/log/langfuse-backup.log），立即触发验证生成 langfuse-db-20260806.dump ✓
+
 ## 待办
 
-- [x] 用户浏览器验证：验证码流程、反馈表单、落地页（2026-08-06 确认通过）
-- [x] ClickHouse 跨云写入加密（2026-08-06 核实：网关走 SSH 隧道 native TCP 9000 已加密，无需额外 TLS）
+- [ ] 单云整合方案实施（方案 C 消除 SSH 隧道，需用户定夺）
+
 
 
