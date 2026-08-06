@@ -1,0 +1,22 @@
+# 紧急恢复：在阿里云 self-hosted runner 上重启 Go 后端（exec API 依赖 Go 后端，
+# 后端挂时无法远程运维，此通道绕过 exec 直接操作服务器）。
+name: Emergency Restart
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/emergency-restart.yml"
+
+jobs:
+  restart-backend:
+    runs-on: self-hosted
+    steps:
+      - name: Restart Oxelia51 Go backend
+        run: |
+          systemctl restart oxelia51-backend
+          sleep 3
+          systemctl is-active oxelia51-backend
+          curl -s --max-time 5 http://127.0.0.1:8080/api/health | head -c 120
+          echo
+          echo "RESTART-DONE"
