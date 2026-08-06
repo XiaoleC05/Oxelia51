@@ -1,6 +1,17 @@
 # 当前服务状态
 
-> 最后更新：2026-08-07 00:30
+> 最后更新：2026-08-07 02:00
+
+## 安全修复部署（2026-08-07 02:00，审查发现全部修复）
+
+- ✅ **HIGH：IP 白名单 X-Forwarded-For 伪造** —— 已修复并部署三层
+  - nginx /api/ 覆盖 `X-Oxelia51-Client-IP $remote_addr`（阿里云已应用+重载）
+  - Go clientIP/forwardedClientIP 优先读可信 X-Real-IP（新二进制已部署，md5 fefaffd1）
+  - web clientIpFromHeaders 优先 x-real-ip（新镜像已部署）
+  - **验证**：全伪造头（X-Real-IP/X-Oxelia51-Client-IP/XFF）→ 返回真实出口 IP 218.200.225.186
+- ✅ **MEDIUM**：/admin whoami staleTime:0（防换账号缓存命中）+ 校验失败重试；proxyKeyRouter create/remove 仅限 Owner/Admin
+- ✅ **LOW**：whitelistCreate IP/CIDR 格式校验；sticky 偏移对齐 h-14
+- ✅ 提交：Oxelia51 `213b95a`（Go+nginx）、langfuse-token `595e145`（web）
 
 ## 单管理员体系上线（2026-08-07 00:30，commit 4cb65c8 已部署）
 
