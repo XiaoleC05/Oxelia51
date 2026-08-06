@@ -164,9 +164,21 @@
 - ✅ 清理：token-savior 缓存文件移除跟踪；docker-build 目录 gitignore 排除（磁盘占用待进程释放）
 - ✅ **备份 cron 修复**：原行内 `$(date +%Y%m%d)` 命令在 cron 环境未生效（无备份文件）；改为 `/usr/local/bin/langfuse-backup.sh` 脚本（日志到 /var/log/langfuse-backup.log），立即触发验证生成 langfuse-db-20260806.dump ✓
 
+## 第 12 轮（2026-08-06）：产品化——网关密钥鉴权 + 接入闭环 + 定价扩充
+
+- ✅ **网关项目密钥鉴权**：proxy_keys 表（阿里云 PG）+ KeyStore + keyAuth（Bearer/x-api-key → 覆盖 X-Project-ID 防伪造）+ 上游真实 key 经 X-Oxelia51-Upstream-Key 传递；PROXY_AUTH_MODE=optional 兼容旧客户端。验证：有效 key 放行、无效 key 401 INVALID_API_KEY
+- ✅ **Go 后端 proxy-keys API**：生成（明文仅一次，DB 存 sha256）/列表/软删
+- ✅ **web 接入闭环**：设置页「代理接入」（URL+项目ID+密钥管理+分工具配置）+ Token/Cost 空态引导 + LandingPage 用 env
+- ✅ **model_pricing 扩充**：3 → 20 个主流模型定价
+- ✅ **nginx**：主 conf 加 /api/proxy/ → 9090（鉴权透传）；修复部署脚本覆盖问题
+- 部署：网关+后端（587abae）+ web（e3259），公网 200
+
 ## 待办
 
-- [ ] 单云整合方案实施（方案 C 消除 SSH 隧道，需用户定夺）
+- [ ] 开放注册的邮箱验证开启（AUTH_EMAIL_VERIFICATION_REQUIRED=true，防滥用）——上生产前决策
+- [ ] 用户浏览器验证：设置页「代理接入」生成 key、空态引导、分工具配置
+- [ ] 后续：docs 站（用户向教程）、收费/配额
+
 
 
 
