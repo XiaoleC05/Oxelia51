@@ -138,9 +138,29 @@
 3. ✅ 单云整合评估报告（docs/ops/SINGLE_CLOUD_MIGRATION.md）：短期方案 C 消除 SSH 隧道，中期方案 A 全迁阿里云
 4. ✅ CI 增补：deploy.yml 编译 C++ 分析引擎入 release（含 libcurl-dev）
 
+## 第 10 轮（2026-08-06）：并行工作冲突解决 + 反馈/验证闭环 + 502 事故
+
+### 冲突检查（与 kimicode 并行工作）
+- ✅ Oxelia51 alerter：无冲突（HTML→结构化→multipart 线性演进，h/cpp 一致）
+- ✅ langfuse-token 反馈/落地页：无重复，接线一致
+- ⚠️ 告警通道 verified 两套方案冲突：采纳 B（kimicode 验证码流程，未提交已提交）——email 通道 verified=false + 6 位验证码 + 10 分钟 TTL + verify/resend mutation + AlertsSettings 验证 UI
+- ⚠️ Oxelia51 CI 曾编译失败（8d3d3f4 alerter.cpp 大改未同步 .h），37 秒后 2f592a6 修复
+
+### ⚡ 502 事故（17:41 崩溃循环 → 用户协助恢复）
+- **根因**：015_feedback migration 误放 Go 后端迁移目录（阿里云 DB 无 oxelia51 schema）→ 后端启动跑迁移失败 → 崩溃循环 7355 次 → 全部 /api 502（含登录/exec）
+- **恢复**：用户远程删除 015 文件 + 重启后端（exec/SSH/runner 全死锁时唯一通道）
+- **教训**：oxelia51 schema 的表迁移放 langfuse prisma（腾讯云）或 analytics migrations，**勿放 Go 后端 migrations（阿里云 DB）**
+- **改进**：新增 emergency-restart.yml（阿里云 self-hosted runner 恢复通道）
+
+### P4 完成
+- ✅ 告警邮件 multipart HTML（文本兜底 + 品牌 HTML 字段表，已发测试）
+- ✅ 反馈渠道：表单落库 oxelia51.feedback + 通知/自动回复邮件 + 后台反馈列表
+- ✅ 验证码 migration 已应用（alert_channels 加 verification_code/verification_expires）
+- ✅ 部署：web e035f + analytics（multipart alerter）
+
 ## 待办
 
-- [ ] 用户确认收到测试邮件
-- [ ] 单云整合方案实施（待定）
+- [ ] 用户浏览器验证：验证码流程（配置邮箱→收码→验证）、反馈表单、落地页
 - [ ] ClickHouse native TLS（跨云写入加密）
+
 
