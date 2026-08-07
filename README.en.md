@@ -24,6 +24,18 @@
 
 ---
 
+## Direction: v4 (planned 🚧)
+
+Oxelia51 is moving toward a **local-first personal token ledger** (design finalized 2026-08-08, shipped in phases P1–P4):
+
+- **Desktop app** (Tauri 2, Windows/macOS/Linux) fully works offline with local data; **login/registration is no longer a precondition** — accounts are only for cross-device sync, cloud hosting, and admin
+- **Conversations and projects are first-class** (Cursor-style: custom name + local folder reference), with multi-dimensional (time / model / project / session) token views
+- Landing page + docs site `/docs` rebuilt for **individuals**, not organizations
+- Product home repo: this repo; web frontend: langfuse-token (Langfuse MIT fork)
+
+> Design doc: [v4 Product Design](https://github.com/XiaoleC05/langfuse-token/blob/main/docs/superpowers/specs/2026-08-08-oxelia51-v4-design.md)
+> All v3 content below describes **currently implemented** cloud capabilities; new v4 capabilities are marked 🚧 (planned).
+
 ## What is this?
 
 How many tokens did you burn in Claude Code today? Which model costs the most? Which project is the most expensive?

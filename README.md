@@ -24,6 +24,18 @@
 
 ---
 
+## 方向：v4（规划中 🚧）
+
+产品正在转向**本地优先的个人 Token 记账本**（2026-08-08 设计定稿，P1–P4 依次推进）：
+
+- **桌面应用**（Tauri 2，Windows/macOS/Linux）全功能本地使用，数据存本地；**登录/注册不再是使用前提**，仅用于跨设备同步、云托管、管理员管理
+- **会话与项目为一等公民**（Cursor 式：自定义名称 + 引用本地文件夹），多维（纵/横/时/空）展示 Token 记录
+- 落地页 + 文档站 `/docs` 重构，面向**个人**而非组织
+- 产品主仓：本仓；web 前端：langfuse-token（Langfuse MIT fork）
+
+> 设计文档：[v4 产品设计](https://github.com/XiaoleC05/langfuse-token/blob/main/docs/superpowers/specs/2026-08-08-oxelia51-v4-design.md)
+> 下文 v3 描述均为**当前已实现**的云端能力；v4 新能力一律标注 🚧（规划中）。
+
 ## 这是什么
 
 你用 Claude Code、Cursor、ChatGPT 写代码时，每天消耗多少 Token？花在哪个模型上最多？哪个项目最烧钱？

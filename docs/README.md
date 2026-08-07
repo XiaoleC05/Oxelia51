@@ -1,8 +1,14 @@
 # oxelia51.com 文档索引
 
-**版本**：v3.0 | **更新**：2026-08-06
+**版本**：v4.0（规划中） | **更新**：2026-08-08
 
 ---
+
+## 产品方向
+
+v4 转向**本地优先的个人 Token 记账本**（桌面应用 + 弱认证 + 个人会话/项目 + 多维展示），P1–P4 依次推进。
+
+设计定稿：[v4 产品设计](https://github.com/XiaoleC05/langfuse-token/blob/main/docs/superpowers/specs/2026-08-08-oxelia51-v4-design.md)（覆盖 P1–P4，含未实现项标注）
 
 ## 核心文档
 
