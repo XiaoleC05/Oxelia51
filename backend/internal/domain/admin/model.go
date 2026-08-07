@@ -17,21 +17,27 @@ type serverStats struct {
 	MemoryTotalMB   uint64  `json:"memory_total_mb"`
 	DiskUsedPercent float64 `json:"disk_used_percent"`
 	DiskTotalGB     uint64  `json:"disk_total_gb"`
-	UptimeSeconds   uint64  `json:"uptime_seconds"`
-	GoGoroutines    int     `json:"go_goroutines"`
-	GoAllocMB       uint64  `json:"go_alloc_mb"`
+	// UptimeSeconds 主机运行时长（/proc/uptime，容器内为宿主机时长）
+	UptimeSeconds uint64 `json:"uptime_seconds"`
+	// ProcessUptimeSeconds 服务进程运行时长（进程启动至今，容器重启归零）
+	ProcessUptimeSeconds uint64 `json:"process_uptime_seconds"`
+	GoGoroutines         int    `json:"go_goroutines"`
+	GoAllocMB            uint64 `json:"go_alloc_mb"`
 }
 
 type serverStatsResponse struct {
-	CPUPercent      float64      `json:"cpu_percent"`
-	MemoryUsedMB    uint64       `json:"memory_used_mb"`
-	MemoryTotalMB   uint64       `json:"memory_total_mb"`
-	DiskUsedPercent float64      `json:"disk_used_percent"`
-	DiskTotalGB     uint64       `json:"disk_total_gb"`
-	UptimeSeconds   uint64       `json:"uptime_seconds"`
-	GoGoroutines    int          `json:"go_goroutines"`
-	GoAllocMB       uint64       `json:"go_alloc_mb"`
-	Remote          *serverStats `json:"remote,omitempty"`
+	CPUPercent      float64 `json:"cpu_percent"`
+	MemoryUsedMB    uint64  `json:"memory_used_mb"`
+	MemoryTotalMB   uint64  `json:"memory_total_mb"`
+	DiskUsedPercent float64 `json:"disk_used_percent"`
+	DiskTotalGB     uint64  `json:"disk_total_gb"`
+	// UptimeSeconds 主机运行时长（/proc/uptime，容器内为宿主机时长）
+	UptimeSeconds uint64 `json:"uptime_seconds"`
+	// ProcessUptimeSeconds 服务进程运行时长（进程启动至今，容器重启归零）
+	ProcessUptimeSeconds uint64       `json:"process_uptime_seconds"`
+	GoGoroutines         int          `json:"go_goroutines"`
+	GoAllocMB            uint64       `json:"go_alloc_mb"`
+	Remote               *serverStats `json:"remote,omitempty"`
 }
 
 type cpuSample struct {

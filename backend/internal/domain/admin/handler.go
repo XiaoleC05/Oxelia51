@@ -26,11 +26,15 @@ type StatsHandler struct {
 	mu      sync.Mutex
 	prevCPU *cpuSample
 	hc      *http.Client
+	// startTime 进程启动时间：/proc/uptime 在容器内是宿主机时长，
+	// 服务运行时长用 time.Since(startTime) 另算（容器重启归零）
+	startTime time.Time
 }
 
 func NewStatsHandler() *StatsHandler {
 	return &StatsHandler{
-		hc: &http.Client{Timeout: 5 * time.Second},
+		hc:        &http.Client{Timeout: 5 * time.Second},
+		startTime: time.Now(),
 	}
 }
 
@@ -43,6 +47,7 @@ func (h *StatsHandler) ServerStats(c *gin.Context) {
 		resp.DiskUsedPercent, resp.DiskTotalGB = diskUsageLinux("/")
 		resp.UptimeSeconds = uptimeLinux()
 	}
+	resp.ProcessUptimeSeconds = uint64(time.Since(h.startTime).Seconds())
 
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
