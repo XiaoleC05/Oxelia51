@@ -12,10 +12,21 @@ import {
 import "./app.css";
 
 /**
- * Oxelia51 桌面端「总览」屏（P3.1 最小版）。
- * 数据源：本地 sidecar 的只读统计接口（/api/overview）。
- * 5 秒轮询刷新；sidecar 离线时顶栏红灯提示。
+ * Oxelia51 桌面端（P3.2 布局地基）。
+ * 顶部为标签导航栏：总览 / 项目 / 会话 / 告警 / 设置。
+ * 当前仅「总览」已实现，其余为规划中占位（P3.2 逐屏落地）。
+ * 数据源：本地 sidecar 只读统计接口（/api/overview），5 秒轮询。
  */
+
+type TabKey = "overview" | "projects" | "sessions" | "alerts" | "settings";
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "overview", label: "总览" },
+  { key: "projects", label: "项目" },
+  { key: "sessions", label: "会话" },
+  { key: "alerts", label: "告警" },
+  { key: "settings", label: "设置" },
+];
 
 function StatCard({
   label,
@@ -59,55 +70,32 @@ function TrendChart({ trend }: { trend: TrendPoint[] }) {
   );
 }
 
-function ModelRanking({ byModel }: { byModel: ModelStat[] }) {
-  const max = Math.max(1, ...byModel.map((m) => m.tokens));
+function Ranking({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: { name: string; tokens: number; requests: number }[];
+}) {
+  const max = Math.max(1, ...rows.map((r) => r.tokens));
   return (
     <div className="card">
-      <h2 className="card-title">按模型</h2>
-      {byModel.length === 0 ? (
+      <h2 className="card-title">{title}</h2>
+      {rows.length === 0 ? (
         <p className="empty">暂无数据</p>
       ) : (
         <div className="rank">
-          {byModel.map((m) => (
-            <div key={m.model} className="rank-row">
-              <span className="rank-name">{m.model}</span>
+          {rows.map((r) => (
+            <div key={r.name} className="rank-row">
+              <span className="rank-name">{r.name}</span>
               <div className="rank-track">
                 <div
                   className="rank-fill"
-                  style={{ width: `${Math.max(2, (m.tokens / max) * 100)}%` }}
+                  style={{ width: `${Math.max(2, (r.tokens / max) * 100)}%` }}
                 />
               </div>
               <span className="rank-val tabular">
-                {fmtTokens(m.tokens)} · {m.requests} 次
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ProjectRanking({ byProject }: { byProject: ProjectStat[] }) {
-  const max = Math.max(1, ...byProject.map((p) => p.tokens));
-  return (
-    <div className="card">
-      <h2 className="card-title">按项目</h2>
-      {byProject.length === 0 ? (
-        <p className="empty">暂无数据</p>
-      ) : (
-        <div className="rank">
-          {byProject.map((p) => (
-            <div key={p.projectId} className="rank-row">
-              <span className="rank-name">{p.projectId}</span>
-              <div className="rank-track">
-                <div
-                  className="rank-fill"
-                  style={{ width: `${Math.max(2, (p.tokens / max) * 100)}%` }}
-                />
-              </div>
-              <span className="rank-val tabular">
-                {fmtTokens(p.tokens)} · {p.requests} 次
+                {fmtTokens(r.tokens)} · {r.requests} 次
               </span>
             </div>
           ))}
@@ -140,7 +128,62 @@ function RecentSessions({ sessions }: { sessions: SessionStat[] }) {
   );
 }
 
+/** 总览屏：今日/周/月/累计 + 趋势 + 模型/项目排行 + 最近会话。 */
+function OverviewView({ data, online }: { data: Overview | null; online: boolean }) {
+  return (
+    <>
+      {!online && (
+        <div className="offline-banner">
+          sidecar 未运行。请配置 Claude Code / Cursor 的代理指向{" "}
+          <code>http://127.0.0.1:17800</code>。
+        </div>
+      )}
+
+      <section className="stats">
+        <StatCard label="今日" tokens={data?.today.tokens ?? 0} requests={data?.today.requests ?? 0} />
+        <StatCard label="近 7 日" tokens={data?.week.tokens ?? 0} requests={data?.week.requests ?? 0} />
+        <StatCard label="近 30 日" tokens={data?.month.tokens ?? 0} requests={data?.month.requests ?? 0} />
+        <StatCard label="累计" tokens={data?.total.tokens ?? 0} requests={data?.total.requests ?? 0} />
+      </section>
+
+      <TrendChart trend={data?.trend ?? []} />
+
+      <section className="grid-2">
+        <Ranking
+          title="按模型"
+          rows={(data?.byModel ?? []).map((m: ModelStat) => ({
+            name: m.model,
+            tokens: m.tokens,
+            requests: m.requests,
+          }))}
+        />
+        <Ranking
+          title="按项目"
+          rows={(data?.byProject ?? []).map((p: ProjectStat) => ({
+            name: p.projectId,
+            tokens: p.tokens,
+            requests: p.requests,
+          }))}
+        />
+      </section>
+
+      <RecentSessions sessions={data?.sessions ?? []} />
+    </>
+  );
+}
+
+/** 规划中屏：P3.2 逐屏落地前的占位。 */
+function PlaceholderView({ label }: { label: string }) {
+  return (
+    <div className="placeholder">
+      <h2 className="placeholder-title">{label}</h2>
+      <p className="placeholder-desc">该页面正在开发中（P3.2），很快会在这里呈现。</p>
+    </div>
+  );
+}
+
 export default function App() {
+  const [tab, setTab] = useState<TabKey>("overview");
   const [data, setData] = useState<Overview | null>(null);
   const [online, setOnline] = useState(false);
   const [theme, setTheme] = useState<"cosmos" | "cozy">("cosmos");
@@ -167,12 +210,29 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* 顶部标签导航栏 */}
       <header className="topbar">
         <div className="brand">
           <span className="brand-glyph" />
           <span className="brand-name">Oxelia51</span>
           <span className="brand-sub">本地账本</span>
         </div>
+
+        <nav className="tabs" role="tablist">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.key}
+              className={`tab ${tab === t.key ? "active" : ""}`}
+              onClick={() => setTab(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
         <div className="topbar-right">
           <span className={`status ${online ? "ok" : "down"}`}>
             <span className="dot" />
@@ -190,28 +250,11 @@ export default function App() {
       </header>
 
       <main className="content">
-        {!online && (
-          <div className="offline-banner">
-            sidecar 未运行。请配置 Claude Code / Cursor 的代理指向{" "}
-            <code>http://127.0.0.1:17800</code>。
-          </div>
+        {tab === "overview" ? (
+          <OverviewView data={data} online={online} />
+        ) : (
+          <PlaceholderView label={TABS.find((t) => t.key === tab)?.label ?? ""} />
         )}
-
-        <section className="stats">
-          <StatCard label="今日" tokens={data?.today.tokens ?? 0} requests={data?.today.requests ?? 0} />
-          <StatCard label="近 7 日" tokens={data?.week.tokens ?? 0} requests={data?.week.requests ?? 0} />
-          <StatCard label="近 30 日" tokens={data?.month.tokens ?? 0} requests={data?.month.requests ?? 0} />
-          <StatCard label="累计" tokens={data?.total.tokens ?? 0} requests={data?.total.requests ?? 0} />
-        </section>
-
-        <TrendChart trend={data?.trend ?? []} />
-
-        <section className="grid-2">
-          <ModelRanking byModel={data?.byModel ?? []} />
-          <ProjectRanking byProject={data?.byProject ?? []} />
-        </section>
-
-        <RecentSessions sessions={data?.sessions ?? []} />
       </main>
     </div>
   );

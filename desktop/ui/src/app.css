@@ -4,11 +4,11 @@
   min-height: 100%;
 }
 
-/* 顶栏 */
+/* 顶栏：品牌 + 标签导航 + 状态/主题 */
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 20px;
   height: 52px;
   padding: 0 20px;
   border-bottom: 1px solid var(--ox-border);
@@ -22,6 +22,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .brand-glyph {
@@ -43,10 +44,45 @@
   color: var(--ox-text-muted);
 }
 
+/* 标签导航 */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--ox-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--ox-speed), background-color var(--ox-speed);
+}
+
+.tab:hover {
+  color: var(--ox-text-h);
+  background-color: var(--ox-bg-alt);
+}
+
+.tab.active {
+  color: var(--ox-accent);
+  font-weight: 600;
+  background-color: color-mix(in srgb, var(--ox-accent) 10%, transparent);
+}
+
 .topbar-right {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .status {
@@ -289,4 +325,30 @@
   color: var(--ox-text-muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+}
+
+/* 规划中占位 */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50vh;
+  border: 1px dashed var(--ox-border);
+  border-radius: var(--ox-radius);
+  text-align: center;
+}
+
+.placeholder-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ox-text-h);
+}
+
+.placeholder-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ox-text-muted);
 }
