@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -24,6 +25,21 @@ type Forwarder struct {
 	recorder recorder.Recorder
 	stats    *stats.Stats
 }
+
+// upstreamBase 测试/演示钩子：设置 PROXY_UPSTREAM_BASE 时，把所有上游请求改指到该
+// 地址（如本地 mock LLM http://127.0.0.1:9000），用于本地 E2E 验证与离线演示。
+// 生产云模式不设置该 env，行为与原来完全一致。
+var upstreamBase = func() *url.URL {
+	base := strings.TrimSpace(os.Getenv("PROXY_UPSTREAM_BASE"))
+	if base == "" {
+		return nil
+	}
+	u, err := url.Parse(base)
+	if err != nil || u.Host == "" {
+		return nil
+	}
+	return u
+}()
 
 func NewForwarder(reg *adapter.Registry, rec recorder.Recorder, st *stats.Stats) *Forwarder {
 	return &Forwarder{
@@ -96,6 +112,10 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Host:   route.Target,
 		Path:   "/" + strings.TrimPrefix(upstreamPath, "/"),
 	}
+	if upstreamBase != nil {
+		targetURL.Scheme = upstreamBase.Scheme
+		targetURL.Host = upstreamBase.Host
+	}
 
 	start := time.Now()
 	provider := route.Adapter.ProviderName()
@@ -104,7 +124,11 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proxy := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL = targetURL
-			req.Host = route.Target
+			if upstreamBase != nil {
+				req.Host = upstreamBase.Host
+			} else {
+				req.Host = route.Target
+			}
 
 			// Oxelia51 产品化：客户端真实上游 LLM key 经 X-Oxelia51-Upstream-Key 传递，
 			// 按供应商协议写回鉴权头（Anthropic 用 x-api-key，OpenAI 兼容系用 Authorization）。

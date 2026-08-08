@@ -48,6 +48,23 @@ func keyAuth(ks *KeyStore, authMode string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			key := extractKey(r)
+			if ks == nil {
+				// 本地优先模式（无代理密钥库）：key 即客户端真实上游 key，透传上行；
+				// 项目默认 "local"，个人本地单一账本。
+				if key != "" {
+					r.Header.Set("X-Oxelia51-Upstream-Key", key)
+				}
+				r.Header.Del("Authorization")
+				r.Header.Del("X-Api-Key")
+				projectID := strings.TrimSpace(r.Header.Get("X-Project-ID"))
+				if projectID == "" {
+					projectID = "local"
+					r.Header.Set("X-Project-ID", projectID)
+				}
+				ctx := contextWithProjectID(r.Context(), projectID)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
 			if key != "" {
 				projectID, enabled, ok := ks.Resolve(r.Context(), key)
 				if !ok || !enabled {
