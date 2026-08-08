@@ -78,8 +78,8 @@ jobs:
         working-directory: ${{ env.UI_DIR }}
 
       - name: Build Tauri app
-        working-directory: desktop
-        run: npx --prefix ui tauri build 2>/dev/null || npm exec --prefix ui -- tauri build
+        working-directory: desktop/ui
+        run: npm run tauri build
 
       - name: Collect artifacts
         shell: bash
