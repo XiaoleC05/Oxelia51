@@ -23,13 +23,29 @@ func (a *API) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/overview", a.handleOverview)
 	mux.HandleFunc("/api/health", a.handleHealth)
+	mux.HandleFunc("/api/", a.handleOptions) // OPTIONS 预检 + 未知路径 404
 	return mux
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
+	// 桌面 UI（Tauri webview / Vite dev）跨源读取本地接口
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+func (a *API) handleOptions(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
 }
 
 func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {

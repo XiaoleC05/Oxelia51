@@ -6,6 +6,7 @@ ui/dist/
 src-tauri/target/
 src-tauri/binaries/*.exe
 src-tauri/binaries/*.dll
+sidecar/*.exe
 
 # 本地 SQLite 账本（测试数据）
 *.db
