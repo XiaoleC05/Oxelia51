@@ -82,7 +82,8 @@ func NewSQLiteWriter(path string) (*SQLiteWriter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("sqlite open: %w", err)
 	}
-	db.SetMaxOpenConns(1)
+	// WAL 下允许多连接：recorder 写 + localapi 读可并行（busy_timeout 兜底写锁）
+	db.SetMaxOpenConns(8)
 	if _, err := db.ExecContext(context.Background(), sqliteCreateTableSQL); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("sqlite create tables: %w", err)

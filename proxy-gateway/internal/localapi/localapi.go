@@ -22,6 +22,13 @@ func New(db *sql.DB) *API { return &API{db: db} }
 func (a *API) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/overview", a.handleOverview)
+	mux.HandleFunc("/api/projects", a.handleProjects)
+	mux.HandleFunc("/api/sessions", a.handleSessions)
+	mux.HandleFunc("/api/sessions/", a.handleSessionDetail)
+	mux.HandleFunc("/api/alerts", a.handleAlerts)
+	mux.HandleFunc("/api/settings", a.handleSettings)
+	mux.HandleFunc("/api/pricing", a.handlePricing)
+	mux.HandleFunc("/api/sync", a.handleSync)
 	mux.HandleFunc("/api/health", a.handleHealth)
 	mux.HandleFunc("/api/", a.handleOptions) // OPTIONS 预检 + 未知路径 404
 	return mux
@@ -57,8 +64,51 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 type rowCount struct {
-	Tokens   int64 `json:"tokens"`
-	Requests int64 `json:"requests"`
+	Tokens   int64   `json:"tokens"`
+	Requests int64   `json:"requests"`
+	Cost     float64 `json:"cost"`
+}
+
+// aggCost 计算某个时间范围内的 USD 成本（按模型用定价表逐模型聚合）。
+func (a *API) aggCost(since string) float64 {
+	pricing := a.getPricingMap()
+	rows, err := a.db.Query(
+		"SELECT model, COALESCE(SUM(prompt_tokens),0), COALESCE(SUM(completion_tokens),0) FROM token_events WHERE timestamp >= ? GROUP BY model",
+		since,
+	)
+	if err != nil {
+		return 0
+	}
+	defer rows.Close()
+	var cost float64
+	for rows.Next() {
+		var model string
+		var p, c int64
+		if rows.Scan(&model, &p, &c) == nil {
+			cost += costOf(pricing, model, p, c)
+		}
+	}
+	return cost
+}
+
+func (a *API) aggCostAll() float64 {
+	pricing := a.getPricingMap()
+	rows, err := a.db.Query(
+		"SELECT model, COALESCE(SUM(prompt_tokens),0), COALESCE(SUM(completion_tokens),0) FROM token_events GROUP BY model",
+	)
+	if err != nil {
+		return 0
+	}
+	defer rows.Close()
+	var cost float64
+	for rows.Next() {
+		var model string
+		var p, c int64
+		if rows.Scan(&model, &p, &c) == nil {
+			cost += costOf(pricing, model, p, c)
+		}
+	}
+	return cost
 }
 
 // Overview 总览接口：今日/近7日/近30日/累计 + 模型/项目/会话排行 + 14 天趋势
@@ -74,6 +124,7 @@ func (a *API) handleOverview(w http.ResponseWriter, r *http.Request) {
 			"SELECT COALESCE(SUM(total_tokens),0), COUNT(*) FROM token_events WHERE timestamp >= ?",
 			since,
 		).Scan(&c.Tokens, &c.Requests)
+		c.Cost = a.aggCost(since)
 		return c
 	}
 
@@ -83,23 +134,29 @@ func (a *API) handleOverview(w http.ResponseWriter, r *http.Request) {
 
 	var total rowCount
 	_ = a.db.QueryRow("SELECT COALESCE(SUM(total_tokens),0), COUNT(*) FROM token_events").Scan(&total.Tokens, &total.Requests)
+	total.Cost = a.aggCostAll()
 
 	byModel := []struct {
-		Model    string `json:"model"`
-		Tokens   int64  `json:"tokens"`
-		Requests int64  `json:"requests"`
+		Model    string  `json:"model"`
+		Tokens   int64   `json:"tokens"`
+		Requests int64   `json:"requests"`
+		Cost     float64 `json:"cost"`
 	}{}
+	pricing := a.getPricingMap()
 	rows, err := a.db.Query(
-		"SELECT model, COALESCE(SUM(total_tokens),0), COUNT(*) FROM token_events WHERE model != '' GROUP BY model ORDER BY SUM(total_tokens) DESC LIMIT 8",
+		"SELECT model, COALESCE(SUM(total_tokens),0), COALESCE(SUM(prompt_tokens),0), COALESCE(SUM(completion_tokens),0), COUNT(*) FROM token_events WHERE model != '' GROUP BY model ORDER BY SUM(total_tokens) DESC LIMIT 8",
 	)
 	if err == nil {
 		for rows.Next() {
 			var m struct {
-				Model    string `json:"model"`
-				Tokens   int64  `json:"tokens"`
-				Requests int64  `json:"requests"`
+				Model    string  `json:"model"`
+				Tokens   int64   `json:"tokens"`
+				Requests int64   `json:"requests"`
+				Cost     float64 `json:"cost"`
 			}
-			if rows.Scan(&m.Model, &m.Tokens, &m.Requests) == nil {
+			var p, c int64
+			if rows.Scan(&m.Model, &m.Tokens, &p, &c, &m.Requests) == nil {
+				m.Cost = costOf(pricing, m.Model, p, c)
 				byModel = append(byModel, m)
 			}
 		}
@@ -107,25 +164,32 @@ func (a *API) handleOverview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	byProject := []struct {
-		ProjectID string `json:"projectId"`
-		Tokens    int64  `json:"tokens"`
-		Requests  int64  `json:"requests"`
+		ProjectID string  `json:"projectId"`
+		Tokens    int64   `json:"tokens"`
+		Requests  int64   `json:"requests"`
+		Cost      float64 `json:"cost"`
 	}{}
 	rows, err = a.db.Query(
-		"SELECT project_id, COALESCE(SUM(total_tokens),0), COUNT(*) FROM token_events WHERE project_id != '' GROUP BY project_id ORDER BY SUM(total_tokens) DESC LIMIT 10",
+		"SELECT project_id, COALESCE(SUM(total_tokens),0), COALESCE(SUM(prompt_tokens),0), COALESCE(SUM(completion_tokens),0), COUNT(*) FROM token_events WHERE project_id != '' GROUP BY project_id ORDER BY SUM(total_tokens) DESC LIMIT 10",
 	)
 	if err == nil {
 		for rows.Next() {
 			var p struct {
-				ProjectID string `json:"projectId"`
-				Tokens    int64  `json:"tokens"`
-				Requests  int64  `json:"requests"`
+				ProjectID string  `json:"projectId"`
+				Tokens    int64   `json:"tokens"`
+				Requests  int64   `json:"requests"`
+				Cost      float64 `json:"cost"`
 			}
-			if rows.Scan(&p.ProjectID, &p.Tokens, &p.Requests) == nil {
+			var prompt, comp int64
+			if rows.Scan(&p.ProjectID, &p.Tokens, &prompt, &comp, &p.Requests) == nil {
 				byProject = append(byProject, p)
 			}
 		}
 		rows.Close()
+		// 先关主查询再逐项算成本，避免单连接下嵌套查询死锁
+		for i := range byProject {
+			byProject[i].Cost = a.projectCost(byProject[i].ProjectID)
+		}
 	}
 
 	sessions := []struct {
