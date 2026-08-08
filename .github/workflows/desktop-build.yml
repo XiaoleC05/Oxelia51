@@ -78,8 +78,9 @@ jobs:
         working-directory: ${{ env.UI_DIR }}
 
       - name: Build Tauri app
-        working-directory: desktop/ui
-        run: npm run tauri build
+        working-directory: desktop
+        # tauri CLI 需在 src-tauri 父目录运行（它只向下找 tauri.conf.json）
+        run: npm exec --prefix ui -- tauri build
 
       - name: Collect artifacts
         shell: bash
