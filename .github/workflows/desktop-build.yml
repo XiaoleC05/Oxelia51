@@ -15,10 +15,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - windows-latest
-          - macos-14        # Apple Silicon
-          - ubuntu-latest
+        include:
+          - platform: windows-latest
+            bundles: nsis
+          - platform: macos-14        # Apple Silicon
+            bundles: dmg
+          - platform: ubuntu-latest
+            bundles: deb
     env:
       UI_DIR: desktop/ui
       SRC_TAURI: desktop/src-tauri
@@ -79,14 +82,22 @@ jobs:
       - name: Build Tauri app
         working-directory: desktop
         # tauri CLI 需在 src-tauri 父目录运行（它只向下找 tauri.conf.json）
-        run: npm exec --prefix ui -- tauri build
+        run: npm exec --prefix ui -- tauri build --bundles ${{ matrix.bundles }}
 
       - name: Collect artifacts
         shell: bash
         run: |
           mkdir -p desktop/dist
-          echo "bundle files:"; find desktop/src-tauri/target/release/bundle -type f 2>/dev/null | head -30 || true
-          find desktop/src-tauri/target/release/bundle -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) -exec cp {} desktop/dist/ \; 2>/dev/null || true
+          # bundle 可能在 target/release 或 target/<triple>/release 下
+          BUNDLES=""
+          for d in desktop/src-tauri/target/release/bundle desktop/src-tauri/target/*/release/bundle; do
+            [ -d "$d" ] && BUNDLES="$BUNDLES $d"
+          done
+          echo "bundle dirs:$BUNDLES" | tee -a "$GITHUB_STEP_SUMMARY"
+          for d in $BUNDLES; do find "$d" -type f -print | tee -a "$GITHUB_STEP_SUMMARY"; done || true
+          for d in $BUNDLES; do
+            find "$d" -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) -exec cp {} desktop/dist/ \; 2>/dev/null || true
+          done
           echo "dist:"; ls -la desktop/dist/ 2>/dev/null || true
 
       - name: Upload artifacts
@@ -94,6 +105,7 @@ jobs:
         with:
           name: oxelia51-desktop-${{ matrix.platform }}
           path: desktop/dist/
+          if-no-files-found: warn
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
