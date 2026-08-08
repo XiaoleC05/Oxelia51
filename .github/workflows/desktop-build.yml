@@ -1,0 +1,113 @@
+name: Desktop Build (Windows/macOS/Linux)
+
+# 桌面应用三平台打包（P3.3）。
+# 触发：push v* 版本 tag（正式发布）或手动 dispatch。
+# 产物以 GitHub Release 附件上传，供 /download 页使用。
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  desktop:
+    name: ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - windows-latest
+          - macos-14        # Apple Silicon
+          - ubuntu-latest
+    env:
+      UI_DIR: desktop/ui
+      SRC_TAURI: desktop/src-tauri
+      GATEWAY: proxy-gateway
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go (sidecar)
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: ${{ env.GATEWAY }}/go.sum
+
+      - name: Set up Rust (Tauri)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Node (UI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ env.UI_DIR }}/package-lock.json
+
+      - name: Install Linux webkit deps
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      # 构建 Go sidecar 到 Tauri externalBin 期望位置（proxy-<target-triple>）
+      - name: Build Go sidecar (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          TRIPLE="x86_64-pc-windows-msvc"
+          cd ${{ env.GATEWAY }}
+          go build -o ../desktop/src-tauri/binaries/proxy-${TRIPLE}.exe ./cmd/proxy
+          ls -la ../desktop/src-tauri/binaries/
+
+      - name: Build Go sidecar (macOS)
+        if: matrix.platform == 'macos-14'
+        run: |
+          TRIPLE="aarch64-apple-darwin"
+          cd ${{ env.GATEWAY }}
+          go build -o ../desktop/src-tauri/binaries/proxy-${TRIPLE} ./cmd/proxy
+
+      - name: Build Go sidecar (Linux)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          TRIPLE="x86_64-unknown-linux-gnu"
+          cd ${{ env.GATEWAY }}
+          go build -o ../desktop/src-tauri/binaries/proxy-${TRIPLE} ./cmd/proxy
+
+      - name: Install UI deps
+        run: npm ci
+        working-directory: ${{ env.UI_DIR }}
+
+      - name: Build Tauri app
+        working-directory: desktop
+        run: npx --prefix ui tauri build 2>/dev/null || npm exec --prefix ui -- tauri build
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p desktop/dist
+          find desktop/src-tauri/target/release/bundle -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) -exec cp {} desktop/dist/ \;
+          ls -la desktop/dist/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: oxelia51-desktop-${{ matrix.platform }}
+          path: desktop/dist/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: desktop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true

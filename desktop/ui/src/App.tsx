@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchHealth, fetchOverview, type Overview } from "./api";
+import { APP_VERSION, checkForUpdate, type UpdateInfo } from "./version";
 import { OverviewTab } from "./screens/OverviewTab";
 import { ProjectsTab } from "./screens/ProjectsTab";
 import { SessionsTab } from "./screens/SessionsTab";
@@ -28,6 +29,12 @@ export default function App() {
   const [data, setData] = useState<Overview | null>(null);
   const [online, setOnline] = useState(false);
   const [theme, setTheme] = useState<"cosmos" | "cozy">("cosmos");
+  const [update, setUpdate] = useState<UpdateInfo>({ available: false });
+
+  // 启动时检查一次新版本
+  useEffect(() => {
+    void checkForUpdate().then(setUpdate);
+  }, []);
 
   const refresh = useCallback(async () => {
     const [overview, health] = await Promise.all([
@@ -90,11 +97,18 @@ export default function App() {
       </header>
 
       <main className="content">
+        {update.available && update.url && (
+          <a className="update-banner" href={update.url} target="_blank" rel="noreferrer">
+            ⬆ 发现新版本 {update.latest}（当前 {APP_VERSION}）——点击前往下载
+          </a>
+        )}
         {tab === "overview" && <OverviewTab data={data} online={online} />}
         {tab === "projects" && <ProjectsTab />}
         {tab === "sessions" && <SessionsTab />}
         {tab === "alerts" && <AlertsTab />}
-        {tab === "settings" && <SettingsTab theme={theme} onTheme={setTheme} />}
+        {tab === "settings" && (
+          <SettingsTab theme={theme} onTheme={setTheme} appVersion={APP_VERSION} />
+        )}
       </main>
     </div>
   );

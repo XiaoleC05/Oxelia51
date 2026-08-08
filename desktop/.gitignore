@@ -12,3 +12,4 @@ sidecar/*.exe
 *.db
 *.db-shm
 *.db-wal
+ui/tsconfig.tsbuildinfo

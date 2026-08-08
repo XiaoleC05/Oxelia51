@@ -3,18 +3,22 @@ use std::process::{Child, Command};
 use std::sync::Mutex;
 
 use tauri::{AppHandle, Manager, RunEvent, State};
+use tauri::path::BaseDirectory;
 
 /// Tauri 2 桌面壳（Oxelia51 本地优先桌面应用，P3）。
 ///
 /// 职责：开一个窗口加载桌面 UI（desktop/ui），并在应用生命周期内托管
 /// 本地 Go sidecar（LOCAL_MODE 网关，默认 :17800）。sidecar 负责代理转发 +
-/// SQLite 落账；UI 通过 /api/overview 读取。
+/// SQLite 落账；UI 通过 /api/* 读取。
 ///
-/// sidecar 位置解析顺序：OXELIA_SIDECAR env → exe 同目录 → ../sidecar → ../../sidecar。
+/// sidecar 位置解析顺序：
+/// 1. OXELIA_SIDECAR env
+/// 2. Tauri 资源目录（打包后 externalBin 放置处）
+/// 3. exe 同目录 → ../sidecar → desktop/sidecar（开发布局）
 
 struct Sidecar(Mutex<Option<Child>>);
 
-fn find_sidecar() -> Option<PathBuf> {
+fn find_sidecar(app: &AppHandle) -> Option<PathBuf> {
     if let Ok(p) = std::env::var("OXELIA_SIDECAR") {
         let t = p.trim();
         if !t.is_empty() {
@@ -22,6 +26,16 @@ fn find_sidecar() -> Option<PathBuf> {
             if pb.exists() {
                 return Some(pb);
             }
+        }
+    }
+    // 打包后：外部 sidecar 在资源目录（Windows 为 proxy.exe）
+    if let Ok(pb) = app.path().resolve("proxy", BaseDirectory::Resource) {
+        if pb.exists() {
+            return Some(pb);
+        }
+        let with_exe = pb.with_extension("exe");
+        if with_exe.exists() {
+            return Some(with_exe);
         }
     }
     let exe_dir = std::env::current_exe().ok()?.parent()?.to_path_buf();
@@ -34,8 +48,8 @@ fn find_sidecar() -> Option<PathBuf> {
     candidates.into_iter().find(|p| p.exists())
 }
 
-fn spawn_sidecar() -> Option<Child> {
-    let path = find_sidecar()?;
+fn spawn_sidecar(app: &AppHandle) -> Option<Child> {
+    let path = find_sidecar(app)?;
     Command::new(&path)
         .env("LOCAL_MODE", "true")
         .env("PROXY_PORT", "17800")
@@ -55,7 +69,7 @@ fn kill_sidecar(state: &State<'_, Sidecar>) {
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            let child = spawn_sidecar();
+            let child = spawn_sidecar(app.handle());
             app.manage(Sidecar(Mutex::new(child)));
             Ok(())
         })

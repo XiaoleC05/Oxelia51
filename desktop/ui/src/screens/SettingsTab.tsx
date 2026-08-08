@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchPricing, fetchSettings, saveSetting, type PricedItem, type Settings } from "../api";
 
-export function SettingsTab({ theme, onTheme }: { theme: string; onTheme: (t: "cosmos" | "cozy") => void }) {
+export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onTheme: (t: "cosmos" | "cozy") => void; appVersion: string }) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [pricing, setPricing] = useState<PricedItem[]>([]);
   const [port, setPort] = useState("17800");
@@ -141,6 +141,11 @@ export function SettingsTab({ theme, onTheme }: { theme: string; onTheme: (t: "c
         ) : (
           <p className="empty">未开启（规划中，P4）。开启后可把本地账本同步到云端账户，多设备共用。</p>
         )}
+      </div>
+
+      <div className="card">
+        <h2 className="card-title">关于</h2>
+        <p className="empty">Oxelia51 桌面版 v{appVersion} · 本地优先的个人 Token 记账本 · MIT 开源</p>
       </div>
     </>
   );
