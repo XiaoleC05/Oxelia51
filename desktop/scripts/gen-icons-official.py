@@ -15,17 +15,30 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # desktop/
 ICONS = os.path.join(ROOT, "src-tauri", "icons")
-SRC_DIR = r"C:\Users\71408\AppData\Local\Temp\ox-shots"
+SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".build")
 
-MASTER = os.path.join(SRC_DIR, "official-icon-1024.png")
+MASTER = os.path.join(SRC_DIR, "official-icon-1024.png")       # 官方原版（大字清晰）
+SEM_MASTER = os.path.join(SRC_DIR, "official-icon-sem-1024.png")  # 小尺寸语义版（环+38%/点+47%）
 GLYPH_LIGHT = os.path.join(SRC_DIR, "glyph-light-256.png")
 GLYPH_DARK = os.path.join(SRC_DIR, "glyph-dark-256.png")
+
+# 语义版仅用于 ≤32px（任务栏/资源管理器小图标处细环会糊）
+SEM_SIZES = {16, 24, 32}
 
 
 def master_img():
     im = Image.open(MASTER).convert("RGBA")
     assert im.size == (1024, 1024), f"master not 1024: {im.size}"
     return im
+
+
+def sem_master_img():
+    return Image.open(SEM_MASTER).convert("RGBA")
+
+
+def pick(size):
+    """按尺寸选官方原版或语义版 1024 源。"""
+    return sem_master_img() if size in SEM_SIZES else master_img()
 
 
 def scale(im, size):
@@ -38,15 +51,15 @@ def save_png(img, path):
 
 
 def build_ico(path, master):
-    """多层 ICO：16/24/32/48/64/128/256，全部由官方主图降采样。"""
+    """多层 ICO：16/24/32 用语义版（小尺寸可辨），48+ 用官方原版。"""
     sizes = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
     master.save(
         path,
         format="ICO",
         sizes=sizes,
-        append_images=[scale(master, s[0]) for s in sizes],
+        append_images=[scale(pick(s[0]), s[0]) for s in sizes],
     )
-    print(f"  {os.path.relpath(path, ROOT)}  ICO(16/24/32/48/64/128/256)")
+    print(f"  {os.path.relpath(path, ROOT)}  ICO(16/24/32语义 48/64/128/256原版)")
 
 
 def build_icns(path, master):
@@ -57,14 +70,14 @@ def build_icns(path, master):
     ]
     chunks = b""
     for typ, size in entries:
-        img = scale(master, size)
+        img = scale(pick(size), size)
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         data = buf.getvalue()
         chunks += typ.encode() + struct.pack(">I", len(data) + 8) + data
     with open(path, "wb") as f:
         f.write(b"icns" + struct.pack(">I", 8 + len(chunks)) + chunks)
-    print(f"  {os.path.relpath(path, ROOT)}  ICNS(16/32/64/128/256/512/1024)")
+    print(f"  {os.path.relpath(path, ROOT)}  ICNS(16/32语义 其余原版)")
 
 
 def main():
@@ -76,7 +89,7 @@ def main():
     build_icns(os.path.join(ICONS, "icon.icns"), master)
 
     save_png(scale(master, 512), os.path.join(ICONS, "icon.png"))
-    save_png(scale(master, 32), os.path.join(ICONS, "32x32.png"))
+    save_png(scale(pick(32), 32), os.path.join(ICONS, "32x32.png"))
     save_png(scale(master, 64), os.path.join(ICONS, "64x64.png"))
     save_png(scale(master, 128), os.path.join(ICONS, "128x128.png"))
     save_png(scale(master, 256), os.path.join(ICONS, "128x128@2x.png"))
@@ -88,7 +101,7 @@ def main():
         (142, "Square142x142Logo.png"), (150, "Square150x150Logo.png"),
         (284, "Square284x284Logo.png"), (310, "Square310x310Logo.png"),
     ]:
-        save_png(scale(master, size), os.path.join(ICONS, name))
+        save_png(scale(pick(size), size), os.path.join(ICONS, name))
 
     save_png(master.copy(), os.path.join(ROOT, "app-icon.png"))
 

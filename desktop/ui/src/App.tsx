@@ -246,7 +246,15 @@ export default function App() {
 
       <main className="content">
         {update.available && update.url && (
-          <a className="update-banner" href={update.url} target="_blank" rel="noreferrer">
+          <a
+            className="update-banner"
+            href={update.url}
+            onClick={(e) => {
+              // 外部链接交给系统浏览器，避免 webview 导航离开应用
+              e.preventDefault();
+              window.open(update.url, "_blank");
+            }}
+          >
             ⬆ 发现新版本 {update.latest}（当前 {APP_VERSION}）——点击前往下载
           </a>
         )}

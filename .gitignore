@@ -37,3 +37,4 @@ deploy/tencent-cloud/health-server
 backend/server.exe
 *.tmp
 backend/coverage*
+desktop/scripts/.build/
