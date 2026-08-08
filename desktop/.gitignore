@@ -1,0 +1,13 @@
+# Node / Vite UI
+ui/node_modules/
+ui/dist/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/binaries/*.exe
+src-tauri/binaries/*.dll
+
+# 本地 SQLite 账本（测试数据）
+*.db
+*.db-shm
+*.db-wal
