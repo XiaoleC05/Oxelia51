@@ -72,6 +72,26 @@ export const saveSetting = (key: string, value: string) =>
     body: JSON.stringify({ key, value }),
   });
 
+export type SyncResult = { ok: boolean; action: string; uploaded?: number; downloaded?: number };
+export const postSync = (action: "upload" | "download") =>
+  j<SyncResult>("/api/sync", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action }),
+  });
+
+// 登录云账户（Go 后端 JWT），返回 token
+export async function cloudLogin(account: string, password: string): Promise<string> {
+  const res = await fetch("https://oxelia51.com/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ account, password }),
+  });
+  if (!res.ok) throw new Error(`登录失败 HTTP ${res.status}`);
+  const data = (await res.json()) as { token: string };
+  return data.token;
+}
+
 // 千分位 + 缩写
 export function fmtTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;

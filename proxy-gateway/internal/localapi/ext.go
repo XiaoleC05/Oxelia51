@@ -305,17 +305,4 @@ func sortItems(items []PricedItem) {
 	sort.Slice(items, func(i, j int) bool { return items[i].Model < items[j].Model })
 }
 
-// ---------- 同步（P4 占位，settings 存储） ----------
-
-func (a *API) handleSync(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		var req struct {
-			Action string `json:"action"` // "upload" | "download"
-		}
-		_ = json.NewDecoder(r.Body).Decode(&req)
-		// P4 实现；当前返回未启用
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "action": req.Action, "status": "not-implemented"})
-		return
-	}
-	writeJSON(w, http.StatusOK, a.loadSettings().Sync)
-}
+// ---------- 同步（P4：见 sync.go 的 handleSync） ----------

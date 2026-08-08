@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchPricing, fetchSettings, saveSetting, type PricedItem, type Settings } from "../api";
+import {
+  cloudLogin,
+  fetchPricing,
+  fetchSettings,
+  postSync,
+  saveSetting,
+  type PricedItem,
+  type Settings,
+} from "../api";
 
 export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onTheme: (t: "cosmos" | "cozy") => void; appVersion: string }) {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -7,6 +15,10 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
   const [port, setPort] = useState("17800");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [account, setAccount] = useState("");
+  const [password, setPassword] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -68,6 +80,47 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
 
   const removePrice = (i: number) => {
     setPricing((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  // 登录云账户：拿 JWT 存进本地设置，之后 sidecar 用它做同步
+  const doLogin = async () => {
+    if (!account.trim() || !password) {
+      setSyncMsg("请输入账户和密码");
+      return;
+    }
+    setSyncing(true);
+    setSyncMsg("登录中…");
+    try {
+      const token = await cloudLogin(account.trim(), password);
+      await Promise.all([
+        saveSetting("sync_token", token),
+        saveSetting("sync_account", account.trim()),
+      ]);
+      setSyncMsg(`已登录 ${account.trim()}，可开始同步`);
+      setPassword("");
+    } catch (e) {
+      setSyncMsg(e instanceof Error ? e.message : "登录失败");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const doSync = async (action: "upload" | "download") => {
+    setSyncing(true);
+    setSyncMsg(action === "upload" ? "上传中…" : "下载中…");
+    try {
+      const r = await postSync(action);
+      setSyncMsg(
+        action === "upload"
+          ? `已上传 ${r.uploaded ?? 0} 条`
+          : `已下载 ${r.downloaded ?? 0} 条`,
+      );
+      void load();
+    } catch (e) {
+      setSyncMsg(e instanceof Error ? e.message : "同步失败");
+    } finally {
+      setSyncing(false);
+    }
   };
 
   return (
@@ -136,11 +189,31 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
 
       <div className="card">
         <h2 className="card-title">多设备同步</h2>
-        {settings?.sync.enabled ? (
-          <p className="empty">已开启 · 账户 {settings.sync.account}{settings.sync.lastSync ? ` · 上次同步 ${settings.sync.lastSync}` : ""}</p>
+        {settings?.sync.account ? (
+          <p className="empty">已登录账户：{settings.sync.account}
+            {settings.sync.lastSync ? ` · 上次同步 ${settings.sync.lastSync}` : ""}
+          </p>
         ) : (
-          <p className="empty">未开启（规划中，P4）。开启后可把本地账本同步到云端账户，多设备共用。</p>
+          <div className="form-row">
+            <input className="input grow" value={account} onChange={(e) => setAccount(e.target.value)} placeholder="账户（邮箱）" />
+            <input className="input grow" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="密码" />
+            <button type="button" className="btn primary" onClick={doLogin} disabled={syncing}>
+              {syncing ? "处理中…" : "登录账户"}
+            </button>
+          </div>
         )}
+        {settings?.sync.account && (
+          <div className="form-row">
+            <button type="button" className="btn primary" onClick={() => doSync("upload")} disabled={syncing}>
+              上传到云
+            </button>
+            <button type="button" className="btn" onClick={() => doSync("download")} disabled={syncing}>
+              从云下载
+            </button>
+          </div>
+        )}
+        {syncMsg && <p className="ok-note">{syncMsg}</p>}
+        <p className="empty">同步后本地账本与云端账户关联，多设备共用；按事件去重合并，隐私仅在你主动同步时上行。</p>
       </div>
 
       <div className="card">

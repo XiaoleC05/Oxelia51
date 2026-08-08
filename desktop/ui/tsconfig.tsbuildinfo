@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/api.ts","./src/main.tsx","./src/vite-env.d.ts","./src/screens/alertstab.tsx","./src/screens/overviewtab.tsx","./src/screens/projectstab.tsx","./src/screens/sessionstab.tsx","./src/screens/settingstab.tsx"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/api.ts","./src/main.tsx","./src/version.ts","./src/vite-env.d.ts","./src/screens/alertstab.tsx","./src/screens/overviewtab.tsx","./src/screens/projectstab.tsx","./src/screens/sessionstab.tsx","./src/screens/settingstab.tsx"],"version":"5.9.3"}

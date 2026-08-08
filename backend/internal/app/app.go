@@ -13,6 +13,7 @@ import (
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/health"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/hero"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/proxykey"
+	"github.com/XiaoleC05/oxelia51-backend/internal/domain/sync"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/tool"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/user"
 	"github.com/XiaoleC05/oxelia51-backend/internal/gateway"
@@ -105,6 +106,11 @@ func New(cfg *config.Config) *gin.Engine {
 		protected.POST("/auth/logout", authH.Logout)
 		protected.GET("/users/me", userH.Me)
 		protected.PATCH("/auth/profile", userH.PatchProfile)
+
+		// P4 多设备同步
+		syncH := sync.NewHandler(pool)
+		protected.POST("/sync/upload", syncH.Upload)
+		protected.GET("/sync/download", syncH.Download)
 
 		gw := gateway.NewHandler(pool, cfg)
 		r.Any("/api/tools/:slug/proxy/*path", gw.Proxy)
