@@ -13,7 +13,6 @@ import {
 export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onTheme: (t: "cosmos" | "cozy") => void; appVersion: string }) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [pricing, setPricing] = useState<PricedItem[]>([]);
-  const [port, setPort] = useState("17800");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [account, setAccount] = useState("");
@@ -26,7 +25,6 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
       const [s, p] = await Promise.all([fetchSettings(), fetchPricing()]);
       setSettings(s);
       setPricing(p.pricing ?? []);
-      setPort(String(s.port || 17800));
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "加载失败");
@@ -36,21 +34,6 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
   useEffect(() => {
     void load();
   }, [load]);
-
-  const savePort = async () => {
-    const n = Number(port);
-    if (!Number.isFinite(n) || n <= 0 || n > 65535) {
-      setError("端口无效");
-      return;
-    }
-    try {
-      await saveSetting("port", String(n));
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "保存失败");
-    }
-  };
 
   const setTheme = async (t: "cosmos" | "cozy") => {
     onTheme(t);
@@ -142,16 +125,10 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
 
       <div className="card" id="proxy-section">
         <h2 className="card-title">本地代理</h2>
-        <div className="form-row">
-          <input
-            className="input"
-            value={port}
-            onChange={(e) => setPort(e.target.value)}
-            placeholder="端口"
-          />
-          <button type="button" className="btn primary" onClick={savePort}>保存</button>
-        </div>
-        <p className="empty">当前监听 :{settings?.port ?? 17800}。修改后需重启应用生效。</p>
+        <p className="empty">
+          监听端口固定为 <code>127.0.0.1:17800</code>（本地优先，无需修改）。
+          把模型工具的 BASE_URL 指向它即可开始记账。
+        </p>
       </div>
 
       <div className="card">

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { fetchHealth, fetchOverview, type Overview } from "./api";
+import { fetchHealth, fetchOverview, fetchSettings, saveSetting, type Overview } from "./api";
 import { APP_VERSION, checkForUpdate, type UpdateInfo } from "./version";
 import { OverviewTab } from "./screens/OverviewTab";
 import { ProjectsTab } from "./screens/ProjectsTab";
@@ -128,6 +128,23 @@ export default function App() {
     void checkForUpdate().then(setUpdate);
   }, []);
 
+  // 启动时读取已保存的主题（设置页/顶栏切换会持久化）
+  useEffect(() => {
+    void fetchSettings()
+      .then((s) => {
+        if (s.theme === "cosmos" || s.theme === "cozy") setTheme(s.theme);
+      })
+      .catch(() => {});
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme((t) => {
+      const next = t === "cosmos" ? "cozy" : "cosmos";
+      void saveSetting("theme", next).catch(() => {});
+      return next;
+    });
+  };
+
   const refresh = useCallback(async () => {
     const [overview, health] = await Promise.all([
       fetchOverview().catch(() => null),
@@ -218,7 +235,7 @@ export default function App() {
           <button
             type="button"
             className="theme-toggle"
-            onClick={() => setTheme((t) => (t === "cosmos" ? "cozy" : "cosmos"))}
+            onClick={toggleTheme}
             title="切换主题"
           >
             {theme === "cosmos" ? "☀" : "☾"}
