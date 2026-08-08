@@ -27,13 +27,14 @@ DOT = (229, 72, 77, 255)          # #E5484D
 RADIUS_FRAC = 0.175               # 圆角半径占画布比（仅 Windows/Linux 烘焙；macOS 方形源）
 
 # 品牌几何（相对画布 S 的比例）
+# UI Polish v1 修订：主环加粗 0.093→0.115、星点 0.070→0.078，小尺寸辨识度更佳
 R_OUT = 0.359
-R_IN_STD = 0.266
-R_IN_SEM = 0.359 - (0.359 - 0.266) * 1.35     # 线宽 +35%
-DOT_R_STD = 0.070
-DOT_R_SEM = 0.070 * 1.40                      # 星点 +40%
+R_IN_STD = 0.359 - 0.115                     # 环厚 0.115
+R_IN_SEM = 0.359 - 0.115 * 1.35              # 小尺寸语义版：线宽 +35%
+DOT_R_STD = 0.078
+DOT_R_SEM = 0.078 * 1.40                     # 星点 +40%
 DOT_D_STD = 0.563
-DOT_D_SEM = 0.359 + 0.070 * 1.40 + 0.045      # 贴近主环，留 0.045S 间隙
+DOT_D_SEM = 0.359 + 0.078 * 1.40 + 0.045     # 贴近主环，留 0.045S 间隙
 
 
 def render(size, semantic=False, rounded=True):
@@ -125,20 +126,21 @@ def build_icns(path):
 
 
 GLYPH_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="20" fill="none" stroke="{ring}" stroke-width="6"/>
-  <circle cx="57" cy="57" r="4.5" fill="#E5484D"/>
+  <circle cx="32" cy="32" r="19.5" fill="none" stroke="{ring}" stroke-width="7"/>
+  <circle cx="57" cy="57" r="5" fill="#E5484D"/>
 </svg>"""
 
 
 def gen_glyphs():
-    """品牌伴星 glyph（透明底），顶栏/标题栏用。深浅双主题，SVG + 128px PNG。"""
+    """品牌伴星 glyph（透明底），顶栏/标题栏用。深浅双主题，SVG + 128px PNG。
+    几何与图标同版：环外径 23/64、厚 7/64，星点 r5 于右下 45°。"""
     out_dir = os.path.join(ROOT, "ui", "src", "assets")
     os.makedirs(out_dir, exist_ok=True)
     for theme, ring_hex in (("light", "#111111"), ("dark", "#F0F0F0")):
         svg = GLYPH_SVG.format(ring=ring_hex)
         with open(os.path.join(out_dir, f"brand-glyph-{theme}.svg"), "w", encoding="utf-8") as f:
             f.write(svg)
-        # PNG 128px：透明底渲染环 + 点（语义光栅化：放大渲染再降采样）
+        # PNG 128px：透明底渲染环 + 点（超采样渲染再降采样）
         S = 128
         SS = 8
         img = Image.new("RGBA", (S * SS, S * SS), (0, 0, 0, 0))
@@ -146,11 +148,11 @@ def gen_glyphs():
         cx = cy = (S * SS) / 2.0
         ring = (17, 17, 17, 255) if theme == "light" else (240, 240, 240, 255)
         rout = 23 * SS
-        rin = 17 * SS
+        rin = (23 - 7) * SS
         d.ellipse([cx - rout, cy - rout, cx + rout, cy + rout], fill=ring)
         d.ellipse([cx - rin, cy - rin, cx + rin, cy + rin], fill=(0, 0, 0, 0))
-        d.ellipse([cx + 25.5 * SS - 4.5 * SS, cy + 25.5 * SS - 4.5 * SS,
-                   cx + 25.5 * SS + 4.5 * SS, cy + 25.5 * SS + 4.5 * SS], fill=DOT)
+        d.ellipse([cx + 25.5 * SS - 5 * SS, cy + 25.5 * SS - 5 * SS,
+                   cx + 25.5 * SS + 5 * SS, cy + 25.5 * SS + 5 * SS], fill=DOT)
         img = img.resize((S, S), Image.LANCZOS)
         img.save(os.path.join(out_dir, f"brand-glyph-{theme}.png"), format="PNG")
         print(f"  ui/src/assets/brand-glyph-{theme}.svg/.png")

@@ -1,9 +1,12 @@
 use std::path::PathBuf;
 use std::process::{Child, Command};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
-use tauri::{AppHandle, Manager, RunEvent, State};
+use tauri::{AppHandle, Manager, RunEvent, State, WindowEvent};
+use tauri::menu::{Menu, MenuItem};
 use tauri::path::BaseDirectory;
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
@@ -18,8 +21,14 @@ use tauri::TitleBarStyle;
 /// 1. OXELIA_SIDECAR env
 /// 2. Tauri 资源目录（打包后 externalBin 放置处）
 /// 3. exe 同目录 → ../sidecar → desktop/sidecar（开发布局）
+///
+/// 托盘驻留（UI Polish v1）：关闭窗口 = 隐藏到系统托盘，程序后台常驻；
+/// 托盘左键/「打开」重新显示窗口，「退出」才真正结束（并杀掉 sidecar）。
 
 struct Sidecar(Mutex<Option<Child>>);
+
+/// 托盘「退出」已点击（显式退出）；否则窗口关闭一律阻止退出（驻留托盘）。
+static QUIT: AtomicBool = AtomicBool::new(false);
 
 fn find_sidecar(app: &AppHandle) -> Option<PathBuf> {
     if let Ok(p) = std::env::var("OXELIA_SIDECAR") {
@@ -53,11 +62,15 @@ fn find_sidecar(app: &AppHandle) -> Option<PathBuf> {
 
 fn spawn_sidecar(app: &AppHandle) -> Option<Child> {
     let path = find_sidecar(app)?;
-    Command::new(&path)
-        .env("LOCAL_MODE", "true")
-        .env("PROXY_PORT", "17800")
-        .spawn()
-        .ok()
+    let mut cmd = Command::new(&path);
+    cmd.env("LOCAL_MODE", "true").env("PROXY_PORT", "17800");
+    // Windows：CREATE_NO_WINDOW —— 不让 sidecar 控制台窗口弹出（用户反馈的「打开就多个终端」）
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd.spawn().ok()
 }
 
 fn kill_sidecar(state: &State<'_, Sidecar>) {
@@ -66,6 +79,15 @@ fn kill_sidecar(state: &State<'_, Sidecar>) {
             let _ = child.kill();
             let _ = child.wait();
         }
+    }
+}
+
+/// 显示并聚焦主窗口（托盘「打开」/ 左键点击时）。
+fn show_main_window(app: &AppHandle) {
+    if let Some(win) = app.get_webview_window("main") {
+        let _ = win.show();
+        let _ = win.unminimize();
+        let _ = win.set_focus();
     }
 }
 
@@ -84,11 +106,54 @@ pub fn run() {
                 let _ = win.set_hidden_title(true);
             }
 
+            // 系统托盘：左键/「打开」唤出窗口，「退出」才真正结束
+            if let Some(icon) = app.default_window_icon() {
+                let open = MenuItem::with_id(app, "open", "打开 Oxelia51", true, None::<&str>)?;
+                let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
+                let menu = Menu::with_items(app, &[&open, &quit])?;
+                TrayIconBuilder::with_id("main")
+                    .icon(icon.clone())
+                    .menu(&menu)
+                    .show_menu_on_left_click(false)
+                    .on_menu_event(|app, event| match event.id.as_ref() {
+                        "open" => show_main_window(app),
+                        "quit" => {
+                            QUIT.store(true, Ordering::SeqCst);
+                            app.exit(0);
+                        }
+                        _ => {}
+                    })
+                    .on_tray_icon_event(|tray, event| {
+                        if let TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        } = event
+                        {
+                            show_main_window(tray.app_handle());
+                        }
+                    })
+                    .build(app)?;
+            }
+
             Ok(())
+        })
+        // 关闭窗口 → 隐藏到托盘（程序后台驻留），不退出
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                let _ = window.hide();
+                api.prevent_close();
+            }
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app_handle: &AppHandle, event| match event {
+            // 非托盘「退出」触发的退出一律阻止（驻留托盘）
+            RunEvent::ExitRequested { api, .. } => {
+                if !QUIT.load(Ordering::SeqCst) {
+                    api.prevent_exit();
+                }
+            }
             RunEvent::Exit => {
                 if let Some(state) = app_handle.try_state::<Sidecar>() {
                     kill_sidecar(&state);
