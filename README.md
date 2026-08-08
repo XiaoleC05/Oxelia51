@@ -93,19 +93,45 @@ Oxelia51 让你**零代码**统计所有 LLM 调用的 Token 消耗：
 └──────────────────────────────┘
 ```
 
-## 快速开始
+## 仓库结构（为什么是两个仓库）
 
-### 你自己部署（5 分钟）
+Oxelia51 的产品代码**分布在两个仓库**，各自职责清晰。初次接触的人常会疑惑「为什么网关和后端在一个仓，网站又在另一个仓」，这里一次说清：
+
+| 仓库 | 内容 | 为什么单独存在 |
+| --- | --- | --- |
+| **Oxelia51**（本仓） | Go 代理网关 `proxy-gateway/`、C++ 分析引擎 `analytics/`、Go 管理后端 `backend/`、桌面应用 `desktop/`（🚧 v4 P3） | **全部为自研代码**，独立演进，不掺第三方 |
+| **langfuse-token** | web 前端：落地页 / 文档站 / 仪表盘 / 管理后台 UI | 它是 **Langfuse (MIT) 的 fork + 深度定制**。Langfuse 是独立开源项目，web 端代码量巨大且要持续跟踪上游；单独成仓，便于单独跟踪上游更新、单独 CI 构建镜像，也避免产品仓被 fork 代码淹没 |
+
+**两者如何协作**：web（langfuse-token）提供界面与数据查询；Go 网关（本仓 `proxy-gateway/`）负责代理转发与 Token 落账；C++ 引擎（`analytics/`）做聚合与定价；数据存 ClickHouse + PostgreSQL。部署时两个仓库的构建产物被编排成同一套服务（见下）。
+
+**自部署 = 同时拿到两个仓库**：
 
 ```bash
+# 1) 产品仓：网关 / 引擎 / 后端 / 桌面
+git clone https://github.com/XiaoleC05/Oxelia51.git
+# 2) web 前端仓：Langfuse MIT fork
+git clone https://github.com/XiaoleC05/langfuse-token.git
+```
+
+> 部署关系：**web 走「CI → Docker 镜像 → compose」**（langfuse-token 的 `build-docker.yml`）；**Go 网关/后端走「GitHub Release → 下载安装 → systemd」**；**C++ 引擎走 systemd timer**；**桌面（v4 P3）本地自足，无需服务器**。v4 正在收敛「桌面本地优先」，届时个人用户不需要部署任何服务器。
+
+## 快速开始
+
+### 你自己部署
+
+> ⚠️ 完整的 Oxelia51（含 web 界面）需要**两个仓库**协作，见上节「仓库结构」。下文 v3 的云端形态依赖托管环境；v4 桌面端（🚧）将提供免服务器的本地形态。
+
+```bash
+# 1) 网关 / 引擎 / 后端（本仓）
 git clone https://github.com/XiaoleC05/Oxelia51.git
 cd Oxelia51/deploy
 cp .env.example .env
 # 编辑 .env，填入安全密钥
-docker compose up -d
+# 2) web 前端（langfuse-token 仓，Langfuse MIT fork）
+git clone https://github.com/XiaoleC05/langfuse-token.git
 ```
 
-浏览器打开 `http://localhost:3000` → 注册 → 创建项目 → 获得代理 URL。
+web 界面打开 `http://localhost:3000` → 注册 → 创建项目 → 获得代理 URL。
 
 ### 在你的 AI 工具中配置
 
