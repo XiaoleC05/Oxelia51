@@ -18,7 +18,7 @@ type API struct {
 // New 创建本地 API（db 来自 recorder.SQLiteWriter.DB()）
 func New(db *sql.DB) *API { return &API{db: db} }
 
-// Handler 返回路由 mux
+// Handler 返回路由 mux（全局 CORS 中间件处理 OPTIONS 预检，POST 才不被浏览器拦）
 func (a *API) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/overview", a.handleOverview)
@@ -30,8 +30,22 @@ func (a *API) Handler() http.Handler {
 	mux.HandleFunc("/api/pricing", a.handlePricing)
 	mux.HandleFunc("/api/sync", a.handleSync)
 	mux.HandleFunc("/api/health", a.handleHealth)
-	mux.HandleFunc("/api/", a.handleOptions) // OPTIONS 预检 + 未知路径 404
-	return mux
+	mux.HandleFunc("/api/", a.handleOptions) // 未知路径 404
+	return withCORS(mux)
+}
+
+// withCORS 全局 CORS 中间件：放行桌面 webview / Vite dev 跨源，OPTIONS 预检直接 204。
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -45,13 +59,6 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func (a *API) handleOptions(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodOptions {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
 	writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
 }
 
