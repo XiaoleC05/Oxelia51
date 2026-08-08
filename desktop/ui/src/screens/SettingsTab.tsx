@@ -129,7 +129,7 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
       {error && <p className="empty">错误：{error}</p>}
       {saved && <p className="ok-note">已保存</p>}
 
-      <div className="card">
+      <div className="card" id="proxy-section">
         <h2 className="card-title">本地代理</h2>
         <div className="form-row">
           <input

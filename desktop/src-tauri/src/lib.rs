@@ -5,6 +5,9 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Manager, RunEvent, State};
 use tauri::path::BaseDirectory;
 
+#[cfg(target_os = "macos")]
+use tauri::TitleBarStyle;
+
 /// Tauri 2 桌面壳（Oxelia51 本地优先桌面应用，P3）。
 ///
 /// 职责：开一个窗口加载桌面 UI（desktop/ui），并在应用生命周期内托管
@@ -71,6 +74,16 @@ pub fn run() {
         .setup(|app| {
             let child = spawn_sidecar(app.handle());
             app.manage(Sidecar(Mutex::new(child)));
+
+            // 标题栏（UI Polish §5）：Windows/Linux 无边框自绘（tauri.conf decorations:false）；
+            // macOS 恢复原生装饰并切 Overlay 标题栏——保留红黄绿交通灯，隐藏原生标题。
+            #[cfg(target_os = "macos")]
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.set_decorations(true);
+                let _ = win.set_title_bar_style(TitleBarStyle::Overlay);
+                let _ = win.set_hidden_title(true);
+            }
+
             Ok(())
         })
         .build(tauri::generate_context!())

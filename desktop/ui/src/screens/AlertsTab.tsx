@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchAlerts,
+  fetchOverview,
   fetchSettings,
   fmtTokens,
   saveSetting,
   type AlertItem,
   type BudgetItem,
 } from "../api";
+import { EmptyState } from "../EmptyState";
 
 // 已触发集合（跨轮询记忆，用于"首次触发时通知"）
 let prevTriggered = new Set<string>();
@@ -29,10 +31,13 @@ export function AlertsTab() {
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [budgets, setBudgets] = useState<BudgetItem[]>([]);
   const [model, setModel] = useState("*");
+  const [customModel, setCustomModel] = useState("");
+  const [realModels, setRealModels] = useState<string[]>([]);
   const [daily, setDaily] = useState("100000");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const notified = useRef(false);
+  const addCardRef = useRef<HTMLDivElement | null>(null);
 
   // 请求通知权限（首次）
   useEffect(() => {
@@ -43,9 +48,12 @@ export function AlertsTab() {
 
   const load = useCallback(async () => {
     try {
-      const [a, s] = await Promise.all([fetchAlerts(), fetchSettings()]);
+      const [a, s, o] = await Promise.all([fetchAlerts(), fetchSettings(), fetchOverview()]);
       setAlerts(a.alerts);
       setBudgets(s.budgets ?? []);
+      // 模型下拉只来自真实记录（幽灵数据清除：不硬编码任何模型名）
+      const models = [...new Set((o?.byModel ?? []).map((m) => m.model).filter(Boolean))].sort();
+      setRealModels(models);
       setError("");
       // 新触发 → 系统通知（同一条只通知一次）
       const now = new Set<string>();
@@ -86,7 +94,9 @@ export function AlertsTab() {
   const addBudget = () => {
     const n = Number(daily);
     if (!Number.isFinite(n) || n <= 0) return;
-    const next = [...budgets.filter((b) => b.model !== model), { model, dailyTokens: n }];
+    const target = model === "other" ? customModel.trim() : model;
+    if (!target) return;
+    const next = [...budgets.filter((b) => b.model !== target), { model: target, dailyTokens: n }];
     void saveBudgets(next);
   };
 
@@ -102,7 +112,15 @@ export function AlertsTab() {
       <div className="card">
         <h2 className="card-title">今日预算使用</h2>
         {alerts.length === 0 ? (
-          <p className="empty">还没有预算——在下方添加一个每日 Token 预算，超限时本地通知你。</p>
+          <EmptyState
+            compact
+            title="还没有预算"
+            desc="在下方添加一个每日 Token 预算，超限时本地通知你。"
+            action={{
+              label: "添加预算",
+              onClick: () => addCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+            }}
+          />
         ) : (
           <div className="budget-list">
             {alerts.map((b) => (
@@ -126,16 +144,34 @@ export function AlertsTab() {
         )}
       </div>
 
-      <div className="card">
+      <div className="card" ref={addCardRef}>
         <h2 className="card-title">添加预算</h2>
         <div className="form-row">
-          <select className="input" value={model} onChange={(e) => setModel(e.target.value)}>
+          <select
+            className="input"
+            value={model}
+            onChange={(e) => {
+              setModel(e.target.value);
+              if (e.target.value !== "other") setCustomModel("");
+            }}
+          >
             <option value="*">全局（所有模型）</option>
-            <option value="claude-sonnet-5">claude-sonnet-5</option>
-            <option value="gpt-5">gpt-5</option>
-            <option value="deepseek-chat">deepseek-chat</option>
+            {realModels.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
             <option value="other">其他模型（手填）</option>
           </select>
+          {model === "other" && (
+            <input
+              className="input"
+              type="text"
+              value={customModel}
+              onChange={(e) => setCustomModel(e.target.value)}
+              placeholder="输入模型名，如 my-model"
+            />
+          )}
           <input
             className="input"
             type="number"
@@ -148,7 +184,9 @@ export function AlertsTab() {
             添加
           </button>
         </div>
-        <p className="empty">提醒：通知需要浏览器通知权限；Tauri 桌面端通过系统通知展示。</p>
+        <p className="empty">
+          模型列表来自本地账本的真实记录{realModels.length === 0 ? "（暂无记录，先让代理落账）" : ""}。
+        </p>
       </div>
 
       {budgets.length > 0 && (

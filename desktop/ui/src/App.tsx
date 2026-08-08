@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { fetchHealth, fetchOverview, type Overview } from "./api";
 import { APP_VERSION, checkForUpdate, type UpdateInfo } from "./version";
 import { OverviewTab } from "./screens/OverviewTab";
@@ -6,7 +7,96 @@ import { ProjectsTab } from "./screens/ProjectsTab";
 import { SessionsTab } from "./screens/SessionsTab";
 import { AlertsTab } from "./screens/AlertsTab";
 import { SettingsTab } from "./screens/SettingsTab";
+import glyphLight from "./assets/brand-glyph-light.png";
+import glyphDark from "./assets/brand-glyph-dark.png";
 import "./app.css";
+
+/** 是否运行在 Tauri 壳内（浏览器 dev 模式下无窗口 API，自绘控件需隐藏）。 */
+const isTauri =
+  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+/** macOS 保留原生红黄绿交通灯，不自绘窗口按钮。 */
+const isMac = typeof navigator !== "undefined" && /mac|iphone|ipad/i.test(navigator.userAgent);
+
+/**
+ * 自绘窗口控制（Windows/Linux，无边框标题栏）：最小化 / 最大化还原 / 关闭。
+ * 最大化图标随窗口状态切换；Aero Snap / 拖到顶部最大化后同步状态。
+ */
+function WindowControls() {
+  const [maximized, setMaximized] = useState(false);
+
+  useEffect(() => {
+    const win = getCurrentWindow();
+    let alive = true;
+    let unlisten: (() => void) | undefined;
+    void win.isMaximized().then((m) => alive && setMaximized(m));
+    void win
+      .onResized(() => {
+        void win.isMaximized().then((m) => alive && setMaximized(m));
+      })
+      .then((fn) => (unlisten = fn));
+    return () => {
+      alive = false;
+      unlisten?.();
+    };
+  }, []);
+
+  return (
+    <div className="win-controls">
+      <button
+        type="button"
+        className="win-btn"
+        onClick={() => void getCurrentWindow().minimize()}
+        title="最小化"
+        aria-label="最小化"
+      >
+        <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true">
+          <path d="M0 5h10" stroke="currentColor" strokeWidth="1" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        className="win-btn"
+        onClick={() => void getCurrentWindow().toggleMaximize()}
+        title={maximized ? "还原" : "最大化"}
+        aria-label={maximized ? "还原" : "最大化"}
+      >
+        {maximized ? (
+          <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true">
+            <path
+              d="M2.5 0.5v2H0.5v7h7V7.5h2v-7z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true">
+            <rect
+              x="0.5"
+              y="0.5"
+              width="9"
+              height="9"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
+          </svg>
+        )}
+      </button>
+      <button
+        type="button"
+        className="win-btn win-close"
+        onClick={() => void getCurrentWindow().close()}
+        title="关闭"
+        aria-label="关闭"
+      >
+        <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true">
+          <path d="M0 0l10 10M10 0L0 10" stroke="currentColor" strokeWidth="1" />
+        </svg>
+      </button>
+    </div>
+  );
+}
 
 /**
  * Oxelia51 桌面端（P3.2）。
@@ -57,10 +147,26 @@ export default function App() {
   }, [theme]);
 
   return (
-    <div className="app">
-      <header className="topbar">
+    <div className="app" data-platform={isMac ? "mac" : "win"}>
+      {/* 无边框标题栏：整条顶栏为拖曳区（交互元素不标记 data-tauri-drag-region），
+          空白处双击切换最大化；右上为自绘窗口三键（macOS 保留原生交通灯，不渲染）。 */}
+      <header
+        className="topbar"
+        data-tauri-drag-region
+        onDoubleClick={(e) => {
+          if (!isTauri) return;
+          const t = e.target as HTMLElement;
+          if (t.closest(".tab, .win-btn, .theme-toggle, .status")) return;
+          void getCurrentWindow().toggleMaximize();
+        }}
+      >
         <div className="brand">
-          <span className="brand-glyph" />
+          <img
+            className="brand-glyph"
+            src={theme === "cosmos" ? glyphDark : glyphLight}
+            alt=""
+            draggable={false}
+          />
           <span className="brand-name">Oxelia51</span>
           <span className="brand-sub">本地账本</span>
         </div>
@@ -81,10 +187,28 @@ export default function App() {
         </nav>
 
         <div className="topbar-right">
-          <span className={`status ${online ? "ok" : "down"}`}>
-            <span className="dot" />
-            {online ? "代理在线 · :17800" : "代理离线"}
-          </span>
+          {online ? (
+            <span className="status ok">
+              <span className="dot" />
+              代理在线 · :17800
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="status down clickable"
+              onClick={() => {
+                setTab("settings");
+                setTimeout(() => {
+                  document
+                    .getElementById("proxy-section")
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 120);
+              }}
+            >
+              <span className="dot" />
+              代理离线 · 点击排查
+            </button>
+          )}
           <button
             type="button"
             className="theme-toggle"
@@ -93,6 +217,7 @@ export default function App() {
           >
             {theme === "cosmos" ? "☀" : "☾"}
           </button>
+          {isTauri && !isMac && <WindowControls />}
         </div>
       </header>
 

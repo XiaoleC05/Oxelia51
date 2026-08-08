@@ -10,8 +10,10 @@ body,
 }
 
 body {
-  font-family: "Manrope", "PingFang SC", "Microsoft YaHei", -apple-system,
-    system-ui, sans-serif;
+  /* 中文显式字体栈（UI Polish §3.1）：Manrope 无中文字形，中文显式回退，
+     避免 Windows 渲染过细；Noto Sans CJK SC 兜底 Linux。 */
+  font-family: "Manrope", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC",
+    system-ui, -apple-system, sans-serif;
   font-size: 14px;
   background-color: var(--ox-bg);
   color: var(--ox-text);

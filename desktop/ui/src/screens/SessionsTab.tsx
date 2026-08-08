@@ -7,6 +7,8 @@ import {
   type SessionDetail,
   type SessionStat,
 } from "../api";
+import { EmptyState } from "../EmptyState";
+import { copyText, PROXY_CMD } from "../clipboard";
 
 function SessionDetailView({ id, onBack }: { id: string; onBack: () => void }) {
   const [detail, setDetail] = useState<SessionDetail | null>(null);
@@ -87,6 +89,7 @@ export function SessionsTab() {
   const [sessions, setSessions] = useState<SessionStat[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -107,12 +110,23 @@ export function SessionsTab() {
     return <SessionDetailView id={selected} onBack={() => setSelected(null)} />;
   }
 
+  const copy = async () => {
+    if (await copyText(PROXY_CMD)) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <>
       <h1 className="page-title">会话</h1>
       {error && <p className="empty">加载失败：{error}</p>}
       {sessions.length === 0 && !error && (
-        <p className="empty">暂无会话——代理落账后按 session_id 自动聚合。</p>
+        <EmptyState
+          title="暂无会话"
+          desc="代理落账后按 session_id 自动聚合。先配置模型工具指向本地代理："
+          action={{ label: copied ? "已复制 ✓" : "复制代理命令", onClick: () => void copy() }}
+        />
       )}
       <div className="card-list">
         {sessions.map((s) => (

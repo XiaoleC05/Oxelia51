@@ -11,13 +11,14 @@
   --ox-bg-glass: rgba(250, 247, 244, 0.75);
   --ox-text: #3a332d;
   --ox-text-h: #241f1b;
-  --ox-text-muted: #857a6e;
+  --ox-text-muted: #6f6459; /* WCAG AA ≥4.5:1（bg 5.40 / bg-alt 5.03，实测） */
   --ox-accent: #e5484d;
   --ox-accent-hover: #dc3e42;
   --ox-accent-border: rgba(229, 72, 77, 0.35);
   --ox-border: #e5ded4;
   --ox-border-light: #efeae2;
   --ox-radius: 10px;
+  --ox-radius-lg: 12px;
   --ox-speed: 0.3s;
   --ox-ok: #4a7c59;
   --ox-danger: #c8553d;
@@ -35,13 +36,14 @@
   --ox-bg-glass: rgba(20, 20, 20, 0.78);
   --ox-text: #c9c9c9;
   --ox-text-h: #e6e6e6;
-  --ox-text-muted: #737373;
+  --ox-text-muted: #8f8f8f; /* WCAG AA ≥4.5:1（bg 6.12 / bg-alt 5.70，实测） */
   --ox-accent: #e5484d;
   --ox-accent-hover: #f2555a;
   --ox-accent-border: rgba(229, 72, 77, 0.4);
   --ox-border: #1f1f1f;
   --ox-border-light: #262626;
   --ox-radius: 6px;
+  --ox-radius-lg: 12px;
   --ox-speed: 0.2s;
   --ox-ok: #3fb950;
   --ox-danger: #f85149;

@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchProjects, fmtCost, fmtTokens, fmtDate, type ProjectStat } from "../api";
+import { EmptyState } from "../EmptyState";
+import { copyText, PROXY_CMD } from "../clipboard";
 
 export function ProjectsTab() {
   const [projects, setProjects] = useState<ProjectStat[]>([]);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -20,12 +23,23 @@ export function ProjectsTab() {
     return () => clearInterval(t);
   }, [load]);
 
+  const copy = async () => {
+    if (await copyText(PROXY_CMD)) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <>
       <h1 className="page-title">项目</h1>
       {error && <p className="empty">加载失败：{error}</p>}
       {projects.length === 0 && !error && (
-        <p className="empty">暂无项目——代理落账后按 project_id 自动聚合。</p>
+        <EmptyState
+          title="暂无项目"
+          desc="代理落账后按 project_id 自动聚合。先配置模型工具指向本地代理："
+          action={{ label: copied ? "已复制 ✓" : "复制代理命令", onClick: () => void copy() }}
+        />
       )}
       <div className="card-list">
         {projects.map((p) => (

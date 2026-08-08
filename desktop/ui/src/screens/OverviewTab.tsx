@@ -1,4 +1,21 @@
+import { useState } from "react";
 import { fmtCost, fmtTokens, type ModelStat, type Overview, type ProjectStat, type TrendPoint } from "../api";
+import { EmptyState } from "../EmptyState";
+import { copyText, PROXY_CMD } from "../clipboard";
+
+/** 复制代理配置命令，返回是否成功（成功时短暂提示按钮文字）。 */
+function useCopyCmd() {
+  const [copied, setCopied] = useState(false);
+  return {
+    copied,
+    copy: async () => {
+      if (await copyText(PROXY_CMD)) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    },
+  };
+}
 
 function StatCard({ label, tokens, requests, cost }: { label: string; tokens: number; requests: number; cost: number }) {
   return (
@@ -16,7 +33,7 @@ function TrendChart({ trend }: { trend: TrendPoint[] }) {
     <div className="card">
       <h2 className="card-title">近 14 天用量趋势</h2>
       {trend.length === 0 ? (
-        <p className="empty">还没有数据——配置代理指向 127.0.0.1:17800 后自动落账。</p>
+        <EmptyState compact title="趋势待有数据后展示" desc="代理落账后按天自动聚合。" />
       ) : (
         <div className="trend">
           {trend.map((t) => (
@@ -37,7 +54,7 @@ function Ranking({ title, rows }: { title: string; rows: { name: string; tokens:
     <div className="card">
       <h2 className="card-title">{title}</h2>
       {rows.length === 0 ? (
-        <p className="empty">暂无数据</p>
+        <EmptyState compact title="暂无排行数据" desc="落账后按维度自动聚合。" />
       ) : (
         <div className="rank">
           {rows.map((r) => (
@@ -62,7 +79,7 @@ function RecentSessions({ sessions }: { sessions: { sessionId: string; tokens: n
     <div className="card">
       <h2 className="card-title">最近会话</h2>
       {sessions.length === 0 ? (
-        <p className="empty">暂无数据</p>
+        <EmptyState compact title="暂无会话" desc="代理落账后按 session_id 自动聚合。" />
       ) : (
         <ul className="session-list">
           {sessions.map((s) => (
@@ -79,6 +96,22 @@ function RecentSessions({ sessions }: { sessions: { sessionId: string; tokens: n
 }
 
 export function OverviewTab({ data, online }: { data: Overview | null; online: boolean }) {
+  const { copied, copy } = useCopyCmd();
+  // 全新安装零数据：整屏引导空态，不展示空卡片/占位
+  const isEmpty = online && data != null && data.total.tokens === 0;
+
+  if (isEmpty) {
+    return (
+      <>
+        <EmptyState
+          title="还没有 Token 记录"
+          desc="把模型工具的 BASE_URL 指向本地代理即可开始记账。复制下面的命令到你的 Claude Code / Cursor 终端："
+          action={{ label: copied ? "已复制 ✓" : "复制代理命令", onClick: () => void copy() }}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       {!online && (
