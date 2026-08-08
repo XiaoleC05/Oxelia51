@@ -27,6 +27,7 @@ func (a *API) Handler() http.Handler {
 	mux.HandleFunc("/api/sessions/", a.handleSessionDetail)
 	mux.HandleFunc("/api/alerts", a.handleAlerts)
 	mux.HandleFunc("/api/settings", a.handleSettings)
+	mux.HandleFunc("/api/pricing/defaults", a.handlePricingDefaults)
 	mux.HandleFunc("/api/pricing", a.handlePricing)
 	mux.HandleFunc("/api/sync", a.handleSync)
 	mux.HandleFunc("/api/health", a.handleHealth)

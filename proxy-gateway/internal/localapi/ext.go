@@ -286,7 +286,7 @@ func (a *API) handleSettings(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 }
 
-// handlePricing 返回完整定价映射（默认 + 用户覆盖），供设置页展示。
+// handlePricing 返回完整定价映射（仅用户已保存），供设置页展示。
 func (a *API) handlePricing(w http.ResponseWriter, r *http.Request) {
 	m := a.getPricingMap()
 	items := []PricedItem{}
@@ -295,6 +295,11 @@ func (a *API) handlePricing(w http.ResponseWriter, r *http.Request) {
 	}
 	sortItems(items)
 	writeJSON(w, http.StatusOK, map[string]any{"pricing": items})
+}
+
+// handlePricingDefaults 返回内置常见模型参考价（设置页「一键填入」用；默认不展示、不参与成本）。
+func (a *API) handlePricingDefaults(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"pricing": a.defaultPricingList()})
 }
 
 func f2s(f float64) string {

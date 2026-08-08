@@ -82,12 +82,10 @@ func (a *API) setSetting(key, value string) {
 	)
 }
 
-// getPricingMap 返回 model → ModelPrice 的定价映射（优先用户设置，缺失用默认表）。
+// getPricingMap 返回 model → ModelPrice 的定价映射（仅用户已保存的定价）。
+// 全新安装为空表（UI Polish v1：不虚构模型名/价目）；未配置的模型成本按 0 计。
 func (a *API) getPricingMap() map[string]ModelPrice {
-	m := make(map[string]ModelPrice, len(defaultPricing))
-	for k, v := range defaultPricing {
-		m[k] = v
-	}
+	m := make(map[string]ModelPrice)
 	raw := a.getSetting("pricing")
 	if raw == "" {
 		return m
@@ -104,6 +102,21 @@ func (a *API) getPricingMap() map[string]ModelPrice {
 		}
 	}
 	return m
+}
+
+// defaultPricingList 返回内置常见模型参考价（供设置页「一键填入」；默认不展示、不参与成本）。
+func (a *API) defaultPricingList() []PricedItem {
+	models := make([]string, 0, len(defaultPricing))
+	for m := range defaultPricing {
+		models = append(models, m)
+	}
+	sort.Strings(models)
+	items := make([]PricedItem, 0, len(models))
+	for _, m := range models {
+		p := defaultPricing[m]
+		items = append(items, PricedItem{Model: m, Prompt: f2s(p.Prompt), Completion: f2s(p.Completion)})
+	}
+	return items
 }
 
 func parseFloat(s string) float64 {

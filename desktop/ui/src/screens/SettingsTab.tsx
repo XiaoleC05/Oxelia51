@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   cloudLogin,
   fetchPricing,
+  fetchPricingDefaults,
   fetchSettings,
   postSync,
   saveSetting,
@@ -80,6 +81,16 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
 
   const removePrice = (i: number) => {
     setPricing((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  // 一键填入内置常见模型参考价（空表起步的快捷入口；仍点「保存定价」才生效）
+  const fillDefaults = async () => {
+    try {
+      const d = await fetchPricingDefaults();
+      setPricing(d.pricing ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "加载参考价失败");
+    }
   };
 
   // 登录云账户：拿 JWT 存进本地设置，之后 sidecar 用它做同步
@@ -182,9 +193,10 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
         </div>
         <div className="form-row">
           <button type="button" className="btn" onClick={addPrice}>+ 添加模型</button>
+          <button type="button" className="btn" onClick={() => void fillDefaults()}>填入常见模型参考价</button>
           <button type="button" className="btn primary" onClick={savePricing}>保存定价</button>
         </div>
-        <p className="empty">未列出的模型成本按 0 计，不虚构。</p>
+        <p className="empty">空表起步：未填定价的模型成本按 0 计，不虚构。可一键填入常见模型参考价再保存。</p>
       </div>
 
       <div className="card">

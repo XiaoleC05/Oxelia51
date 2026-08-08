@@ -65,6 +65,7 @@ export const fetchSessionDetail = (id: string) => j<SessionDetail>(`/api/session
 export const fetchAlerts = () => j<{ alerts: AlertItem[]; globalToday: number }>("/api/alerts");
 export const fetchSettings = () => j<Settings>("/api/settings");
 export const fetchPricing = () => j<{ pricing: PricedItem[] }>("/api/pricing");
+export const fetchPricingDefaults = () => j<{ pricing: PricedItem[] }>("/api/pricing/defaults");
 export const saveSetting = (key: string, value: string) =>
   j<{ ok: boolean }>("/api/settings", {
     method: "POST",
