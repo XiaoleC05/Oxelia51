@@ -160,11 +160,11 @@ export OPENAI_BASE_URL="https://oxelia51.com/api/proxy/openai"
 
 ```
 Oxelia51/
-├── proxy-gateway/        # Go 代理网关
+├── proxy-gateway/        # Go 代理网关（云端 + 本地优先 sidecar）
 ├── analytics/            # C++ 分析引擎
-├── backend/              # 管理后台（Go）
-├── frontend/             # 管理后台 UI（React，逐步废弃）
-├── deploy/               # Docker Compose · Nginx · Webhook
+├── backend/              # Go 后端（认证 / 管理 / 多设备同步）
+├── desktop/              # 桌面应用（Tauri 2 + Vite React + sidecar）
+├── deploy/               # Docker Compose · Nginx · 发布脚本
 ├── docs/                 # 全部文档（6 份 + dev 归档）
 │   ├── README.md                # 文档索引
 │   ├── 1-feasibility.md         # 可行性分析
