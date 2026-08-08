@@ -85,8 +85,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p desktop/dist
-          find desktop/src-tauri/target/release/bundle -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) -exec cp {} desktop/dist/ \;
-          ls -la desktop/dist/
+          echo "bundle files:"; find desktop/src-tauri/target/release/bundle -type f 2>/dev/null | head -30 || true
+          find desktop/src-tauri/target/release/bundle -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) -exec cp {} desktop/dist/ \; 2>/dev/null || true
+          echo "dist:"; ls -la desktop/dist/ 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
