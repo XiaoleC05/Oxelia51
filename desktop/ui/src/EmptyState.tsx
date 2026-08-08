@@ -16,9 +16,9 @@ export function EmptyState({
 }) {
   return (
     <div className={`empty-state${compact ? " compact" : ""}`}>
-      <svg className="empty-icon" viewBox="0 0 64 64" aria-hidden="true">
-        <circle cx="32" cy="32" r="20" fill="none" stroke="currentColor" strokeWidth="6" />
-        <circle cx="57" cy="57" r="4.5" fill="#E5484D" />
+      <svg className="empty-icon" viewBox="0 0 512 512" aria-hidden="true">
+        <circle cx="228" cy="228" r="140" fill="none" stroke="currentColor" strokeWidth="52" />
+        <circle cx="412" cy="412" r="34" fill="#E5484D" />
       </svg>
       <p className="empty-title">{title}</p>
       {desc && <p className="empty-desc">{desc}</p>}

@@ -27,26 +27,22 @@
 
 .brand-glyph {
   display: block;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+/* 官方字标（wordart SVG 转曲，Manrope 300 小写 oxelia51）——字缩小 */
+.brand-wordmark {
+  display: block;
+  height: 15px;
+  width: auto;
   flex-shrink: 0;
 }
 
 /* macOS Overlay 标题栏：左侧交通灯占位，品牌区右移避让 */
 .app[data-platform="mac"] .topbar {
   padding-left: 78px;
-}
-
-.brand-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ox-text-h);
-  letter-spacing: 0.05em;
-}
-
-.brand-sub {
-  font-size: 12px;
-  color: var(--ox-text-muted);
 }
 
 /* 标签导航（§1.2：激活态 = accent 文字 + 底部 2px 指示条） */

@@ -9,6 +9,8 @@ import { AlertsTab } from "./screens/AlertsTab";
 import { SettingsTab } from "./screens/SettingsTab";
 import glyphLight from "./assets/brand-glyph-light.png";
 import glyphDark from "./assets/brand-glyph-dark.png";
+import wordLight from "./assets/wordart-light.svg";
+import wordDark from "./assets/wordart-dark.svg";
 import "./app.css";
 
 /** 是否运行在 Tauri 壳内（浏览器 dev 模式下无窗口 API，自绘控件需隐藏）。 */
@@ -148,11 +150,11 @@ export default function App() {
 
   return (
     <div className="app" data-platform={isMac ? "mac" : "win"}>
-      {/* 无边框标题栏：整条顶栏为拖曳区（交互元素不标记 data-tauri-drag-region），
+      {/* 无边框标题栏：整条顶栏为拖曳区（deep：子元素空白也可拖，按钮仍点击），
           空白处双击切换最大化；右上为自绘窗口三键（macOS 保留原生交通灯，不渲染）。 */}
       <header
         className="topbar"
-        data-tauri-drag-region
+        data-tauri-drag-region="deep"
         onDoubleClick={(e) => {
           if (!isTauri) return;
           const t = e.target as HTMLElement;
@@ -167,8 +169,12 @@ export default function App() {
             alt=""
             draggable={false}
           />
-          <span className="brand-name">Oxelia51</span>
-          <span className="brand-sub">本地账本</span>
+          <img
+            className="brand-wordmark"
+            src={theme === "cosmos" ? wordDark : wordLight}
+            alt="oxelia51"
+            draggable={false}
+          />
         </div>
 
         <nav className="tabs" role="tablist">
