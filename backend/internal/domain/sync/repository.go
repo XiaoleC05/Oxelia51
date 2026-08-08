@@ -23,7 +23,7 @@ type SyncEvent struct {
 }
 
 const createTableSQL = `
-CREATE TABLE IF NOT EXISTS oxelia51.synced_events (
+CREATE TABLE IF NOT EXISTS synced_events (
   event_id          TEXT PRIMARY KEY,
   user_id           BIGINT NOT NULL,
   device_id         TEXT NOT NULL DEFAULT '',
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS oxelia51.synced_events (
   ts                TIMESTAMPTZ NOT NULL,
   synced_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS idx_synced_events_user_ts ON oxelia51.synced_events (user_id, ts);
+CREATE INDEX IF NOT EXISTS idx_synced_events_user_ts ON synced_events (user_id, ts);
 `
 
 // Repository 同步事件存储
@@ -70,7 +70,7 @@ func (r *Repository) InsertEvents(ctx context.Context, userID int64, events []Sy
 	var inserted int64
 	for _, e := range events {
 		tag, err := tx.Exec(ctx, `
-			INSERT INTO oxelia51.synced_events
+			INSERT INTO synced_events
 			  (event_id, user_id, device_id, project_id, session_id, provider, model,
 			   prompt_tokens, completion_tokens, total_tokens, duration_ms, ts)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
@@ -91,7 +91,7 @@ func (r *Repository) ListEventsAfter(ctx context.Context, userID int64, after ti
 	rows, err := r.pool.Query(ctx, `
 		SELECT event_id, device_id, project_id, session_id, provider, model,
 		       prompt_tokens, completion_tokens, total_tokens, duration_ms, ts
-		FROM oxelia51.synced_events
+		FROM synced_events
 		WHERE user_id = $1 AND ts > $2 AND device_id != $3
 		ORDER BY ts ASC
 		LIMIT $4`,
