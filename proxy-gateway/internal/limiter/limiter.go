@@ -48,7 +48,25 @@ func (b *TokenBucket) Allow() bool {
 	return false
 }
 
-// RateLimiter 按 project 维度限流
+// idleSince 返回该桶最后一次被使用至今的时长（用于淘汰判定）。
+func (b *TokenBucket) idleSince(now time.Time) time.Duration {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return now.Sub(b.lastUpdate)
+}
+
+// bucketIdleTTL 桶空闲多久后可被淘汰。远大于补满时间（burst/rate = 60s），
+// 淘汰后重建等价于满桶，不会给攻击者额外配额。
+const bucketIdleTTL = 10 * time.Minute
+
+// bucketSweepThreshold 桶数超过此值时触发惰性清扫。
+const bucketSweepThreshold = 1024
+
+// RateLimiter 按 project 维度限流。
+//
+// 内存安全（原实现 buckets 永不淘汰）：云端 keystore 为 nil 时 X-Project-ID 由
+// 客户端自填，攻击者发随机 project_id 可无限撑大 map（systemd MemoryMax=384M 会 OOM）。
+// 现按 bucketIdleTTL 惰性淘汰空闲桶，上限受活跃 project 数约束。
 type RateLimiter struct {
 	ratePerMin int
 	buckets    map[string]*TokenBucket
@@ -79,9 +97,30 @@ func (l *RateLimiter) Allow(projectID string) bool {
 		if !ok {
 			bucket = NewTokenBucket(l.ratePerMin)
 			l.buckets[projectID] = bucket
+			// 桶数超阈值时清扫空闲桶，防止 project_id 洪泛撑爆内存
+			if len(l.buckets) > bucketSweepThreshold {
+				l.sweepLocked()
+			}
 		}
 		l.mu.Unlock()
 	}
 
 	return bucket.Allow()
+}
+
+// sweepLocked 淘汰空闲超过 bucketIdleTTL 的桶。调用方必须持有写锁。
+func (l *RateLimiter) sweepLocked() {
+	now := time.Now()
+	for id, b := range l.buckets {
+		if b.idleSince(now) > bucketIdleTTL {
+			delete(l.buckets, id)
+		}
+	}
+}
+
+// Size 返回当前桶数（测试与可观测性用）。
+func (l *RateLimiter) Size() int {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return len(l.buckets)
 }
