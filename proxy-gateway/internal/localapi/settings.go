@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ModelPrice 单模型定价（USD / 每 1M tokens）。
@@ -16,6 +17,10 @@ type ModelPrice struct {
 
 // 默认定价表（USD/1M tokens，近似公开价，可在设置页修改）。
 // 缺失模型按 0 成本计，不虚构。
+//
+// #25：与 analytics/deploy/migrations/003_model_pricing_seed.sql（云端成本基准）
+// 的共有模型价格保持一致，避免桌面「一键填入」参考价与云端实际成本口径不同。
+// 共有模型价格有 TestDefaultPricingMatchesSeed 防漂移。
 var defaultPricing = map[string]ModelPrice{
 	"claude-sonnet-5":   {Prompt: 3.0, Completion: 15.0},
 	"claude-sonnet-4":   {Prompt: 3.0, Completion: 15.0},
@@ -26,9 +31,9 @@ var defaultPricing = map[string]ModelPrice{
 	"gpt-4.1":           {Prompt: 2.0, Completion: 8.0},
 	"deepseek-chat":     {Prompt: 0.27, Completion: 1.1},
 	"deepseek-reasoner": {Prompt: 0.55, Completion: 2.19},
-	"moonshot-v1-8k":    {Prompt: 12.0, Completion: 12.0},
-	"glm-4":             {Prompt: 0.1, Completion: 0.1},
-	"qwen-max":          {Prompt: 20.0, Completion: 20.0},
+	"moonshot-v1-8k":    {Prompt: 0.06, Completion: 0.12},
+	"glm-4":             {Prompt: 0.2, Completion: 0.6},
+	"qwen-max":          {Prompt: 1.6, Completion: 6.4},
 	"doubao-pro-32k":    {Prompt: 0.8, Completion: 2.0},
 	"gemini-2.5-pro":    {Prompt: 1.25, Completion: 10.0},
 	"mistral-large":     {Prompt: 2.0, Completion: 6.0},
@@ -77,23 +82,45 @@ func (a *API) getSetting(key string) string {
 }
 
 func (a *API) setSetting(key, value string) {
+	// #26：定价变更时主动失效缓存，成本立即按新价算（不等 TTL 到期）
+	if key == "pricing" {
+		a.pmu.Lock()
+		a.pricingCached = nil
+		a.pmu.Unlock()
+	}
 	_, _ = a.db.Exec(
 		"INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
 		key, value,
 	)
 }
 
+// pricingCacheTTL 定价缓存有效期（#26）。UI 轮询 5s，此值保证保存定价后
+// 最迟 5s 成本刷新；设置变更另有 setSetting 主动失效。
+const pricingCacheTTL = 5 * time.Second
+
 // getPricingMap 返回 model → ModelPrice 的定价映射（仅用户已保存的定价）。
 // 全新安装为空表（UI Polish v1：不虚构模型名/价目）；未配置的模型成本按 0 计。
+// 缓存：调用方只读不修改返回的 map，可安全共享。
 func (a *API) getPricingMap() map[string]ModelPrice {
+	a.pmu.Lock()
+	defer a.pmu.Unlock()
+
+	if a.pricingCached != nil && time.Since(a.pricingCachedAt) < pricingCacheTTL {
+		return a.pricingCached
+	}
+
 	m := make(map[string]ModelPrice)
 	raw := a.getSetting("pricing")
 	if raw == "" {
+		a.pricingCached = m
+		a.pricingCachedAt = time.Now()
 		return m
 	}
 	var items []PricedItem
 	if err := json.Unmarshal([]byte(raw), &items); err != nil {
 		log.Printf("settings pricing parse failed: %v", err)
+		a.pricingCached = m
+		a.pricingCachedAt = time.Now()
 		return m
 	}
 	for _, it := range items {
@@ -102,6 +129,8 @@ func (a *API) getPricingMap() map[string]ModelPrice {
 			m[it.Model] = ModelPrice{Prompt: p, Completion: c}
 		}
 	}
+	a.pricingCached = m
+	a.pricingCachedAt = time.Now()
 	return m
 }
 

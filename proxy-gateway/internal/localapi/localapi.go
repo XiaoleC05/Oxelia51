@@ -7,12 +7,19 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"sync"
 	"time"
 )
 
 // API 本地只读统计 API
 type API struct {
 	db *sql.DB
+
+	// #26：定价缓存。getPricingMap 被 overview/projects/sessions 频繁调用，
+	// 原实现每次查 settings 表 + 解析 JSON。缓存 5s，保存定价时主动失效。
+	pmu             sync.Mutex
+	pricingCached   map[string]ModelPrice
+	pricingCachedAt time.Time
 }
 
 // New 创建本地 API（db 来自 recorder.SQLiteWriter.DB()）

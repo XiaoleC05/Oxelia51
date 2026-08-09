@@ -1,6 +1,6 @@
 -- 模型定价扩充（per 1M tokens，USD），ON CONFLICT 跳过已存在
 INSERT INTO oxelia51.model_pricing (model, provider, prompt_price_usd, completion_price_usd) VALUES
-  ('claude-opus-5',        'anthropic', 5.00, 25.00),
+  ('claude-opus-5',        'anthropic', 15.00, 75.00),
   ('claude-sonnet-5',      'anthropic', 3.00, 15.00),
   ('claude-haiku-4-5',     'anthropic', 1.00, 5.00),
   ('gpt-4o',               'openai',    2.50, 10.00),
