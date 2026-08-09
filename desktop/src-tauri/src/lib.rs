@@ -132,11 +132,12 @@ pub fn run() {
 
             // 标题栏（UI Polish §5）：Windows/Linux 无边框自绘（tauri.conf decorations:false）；
             // macOS 恢复原生装饰并切 Overlay 标题栏——保留红黄绿交通灯，隐藏原生标题。
+            // 注：不调用 set_hidden_title —— 该方法在当前 tauri 版本的 WebviewWindow 上不存在
+            // （macOS 编译失败，Error E0599）；Overlay 样式本身已隐藏原生标题。
             #[cfg(target_os = "macos")]
             if let Some(win) = app.get_webview_window("main") {
                 let _ = win.set_decorations(true);
                 let _ = win.set_title_bar_style(TitleBarStyle::Overlay);
-                let _ = win.set_hidden_title(true);
             }
 
             // 系统托盘：左键/「打开」唤出窗口，「退出」才真正结束
