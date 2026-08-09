@@ -117,6 +117,11 @@ pub fn run() {
         }));
     }
 
+    // #27 系统通知：预算告警可靠弹出（WebView2 的 Web Notification API 不可靠）
+    builder = builder.plugin(tauri_plugin_notification::init());
+    // #29 外链打开：update-banner / 下载页用系统浏览器打开（webview 内 window.open 不可靠）
+    builder = builder.plugin(tauri_plugin_opener::init());
+
     builder
         .setup(|app| {
             let child = spawn_sidecar(app.handle());

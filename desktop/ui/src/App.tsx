@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { fetchHealth, fetchOverview, fetchSettings, saveSetting, type Overview } from "./api";
 import { APP_VERSION, checkForUpdate, type UpdateInfo } from "./version";
 import { OverviewTab } from "./screens/OverviewTab";
@@ -12,6 +13,18 @@ import glyphDark from "./assets/brand-glyph-dark.png";
 import wordLight from "./assets/wordart-light.svg";
 import wordDark from "./assets/wordart-dark.svg";
 import "./app.css";
+
+/**
+ * 用系统浏览器打开外链（#29）。
+ * Tauri 内走 opener 插件；浏览器 dev 模式回退 window.open。
+ */
+async function openExternal(url: string) {
+  try {
+    await openUrl(url);
+  } catch {
+    window.open(url, "_blank");
+  }
+}
 
 /** 是否运行在 Tauri 壳内（浏览器 dev 模式下无窗口 API，自绘控件需隐藏）。 */
 const isTauri =
@@ -245,19 +258,23 @@ export default function App() {
       </header>
 
       <main className="content">
-        {update.available && update.url && (
-          <a
-            className="update-banner"
-            href={update.url}
-            onClick={(e) => {
-              // 外部链接交给系统浏览器，避免 webview 导航离开应用
-              e.preventDefault();
-              window.open(update.url, "_blank");
-            }}
-          >
-            ⬆ 发现新版本 {update.latest}（当前 {APP_VERSION}）——点击前往下载
-          </a>
-        )}
+        {update.available && update.url && (() => {
+          // 闭包内 TS 不窄化 update.url，取局部变量保证类型非空
+          const url = update.url;
+          return (
+            <a
+              className="update-banner"
+              href={url}
+              onClick={(e) => {
+                // #29：外链交给系统浏览器（webview 内 window.open 不可靠）
+                e.preventDefault();
+                void openExternal(url);
+              }}
+            >
+              ⬆ 发现新版本 {update.latest}（当前 {APP_VERSION}）——点击前往下载
+            </a>
+          );
+        })()}
         {tab === "overview" && <OverviewTab data={data} online={online} />}
         {tab === "projects" && <ProjectsTab />}
         {tab === "sessions" && <SessionsTab />}

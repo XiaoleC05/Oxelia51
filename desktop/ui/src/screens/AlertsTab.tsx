@@ -9,21 +9,32 @@ import {
   type BudgetItem,
 } from "../api";
 import { EmptyState } from "../EmptyState";
+// #27：系统通知走 Tauri 插件（WebView2 的 Web Notification API 不可靠）
+import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 
 // 已触发集合（跨轮询记忆，用于"首次触发时通知"）
 let prevTriggered = new Set<string>();
+// 通知权限状态（惰性请求一次，之后直接发）
+let notifPermission: "granted" | "denied" | "unknown" = "unknown";
 
-function notifyBudgetTriggered(b: AlertItem) {
+async function notifyBudgetTriggered(b: AlertItem) {
   const name = b.model === "*" ? "全局" : b.model;
   try {
-    // 浏览器通知（Tauri webview 支持）；不可用时静默
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      new Notification("Oxelia51 预算告警", {
+    if (notifPermission === "unknown") {
+      notifPermission = (await isPermissionGranted()) ? "granted" : "denied";
+    }
+    if (notifPermission === "denied") {
+      // 首次被拒：尝试请求权限（用户此前没授权过时弹系统授权）
+      notifPermission = (await requestPermission()) ? "granted" : "denied";
+    }
+    if (notifPermission === "granted") {
+      sendNotification({
+        title: "Oxelia51 预算告警",
         body: `${name} 今日已用 ${fmtTokens(b.usedTokens)} tokens，超过预算 ${fmtTokens(b.dailyTokens)}。`,
       });
     }
   } catch {
-    // ignore
+    // 插件不可用（浏览器 dev 模式）时静默
   }
 }
 
@@ -36,15 +47,7 @@ export function AlertsTab() {
   const [daily, setDaily] = useState("100000");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const notified = useRef(false);
   const addCardRef = useRef<HTMLDivElement | null>(null);
-
-  // 请求通知权限（首次）
-  useEffect(() => {
-    if (typeof Notification !== "undefined" && Notification.permission === "default") {
-      void Notification.requestPermission();
-    }
-  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -55,14 +58,14 @@ export function AlertsTab() {
       const models = [...new Set((o?.byModel ?? []).map((m) => m.model).filter(Boolean))].sort();
       setRealModels(models);
       setError("");
-      // 新触发 → 系统通知（同一条只通知一次）
+      // 新触发 → 系统通知（同一条只通知一次：key=model:dailyTokens，跨轮询记忆）
       const now = new Set<string>();
       for (const b of a.alerts) {
         if (b.triggered) {
           const key = `${b.model}:${b.dailyTokens}`;
           now.add(key);
-          if (!prevTriggered.has(key) && !notified.current) {
-            notifyBudgetTriggered(b);
+          if (!prevTriggered.has(key)) {
+            void notifyBudgetTriggered(b);
           }
         }
       }
@@ -83,7 +86,7 @@ export function AlertsTab() {
     try {
       await saveSetting("budgets", JSON.stringify(next));
       setBudgets(next);
-      notified.current = false; // 预算变化后允许重新通知
+      // 预算变化 → key(model:dailyTokens) 或触发状态变化，prevTriggered 会重新学习，无需额外复位
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存失败");
     } finally {
