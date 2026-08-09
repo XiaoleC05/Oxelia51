@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/adapter"
@@ -32,7 +33,8 @@ CREATE TABLE IF NOT EXISTS token_events (
     total_tokens       INTEGER NOT NULL DEFAULT 0,
     duration_ms        INTEGER NOT NULL DEFAULT 0,
     timestamp          TEXT NOT NULL,
-    api_key_hash       TEXT NOT NULL DEFAULT ''
+    api_key_hash       TEXT NOT NULL DEFAULT '',
+    partial            INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_token_events_ts      ON token_events (timestamp);
 CREATE INDEX IF NOT EXISTS idx_token_events_session ON token_events (session_id, timestamp);
@@ -88,6 +90,13 @@ func NewSQLiteWriter(path string) (*SQLiteWriter, error) {
 		db.Close()
 		return nil, fmt.Errorf("sqlite create tables: %w", err)
 	}
+	// #11: 老库补 partial 列（CREATE TABLE IF NOT EXISTS 不会给既有表加列）。
+	// 已存在时 SQLite 报 "duplicate column name"，属预期，忽略。
+	if _, err := db.ExecContext(context.Background(),
+		`ALTER TABLE token_events ADD COLUMN partial INTEGER NOT NULL DEFAULT 0`,
+	); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+		log.Printf("sqlite migrate partial column: %v", err)
+	}
 	log.Printf("sqlite ready at %s", path)
 	return &SQLiteWriter{db: db}, nil
 }
@@ -105,8 +114,8 @@ func (w *SQLiteWriter) WriteBatch(records []adapter.TokenRecord) error {
 
 	stmt, err := tx.Prepare(`INSERT OR IGNORE INTO token_events
 		(event_id, project_id, session_id, provider, model,
-		 prompt_tokens, completion_tokens, total_tokens, duration_ms, timestamp, api_key_hash)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+		 prompt_tokens, completion_tokens, total_tokens, duration_ms, timestamp, api_key_hash, partial)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return err
 	}
@@ -129,10 +138,14 @@ func (w *SQLiteWriter) WriteBatch(records []adapter.TokenRecord) error {
 		if ts.IsZero() {
 			ts = time.Now()
 		}
+		partial := 0
+		if r.Partial {
+			partial = 1
+		}
 		if _, err := stmt.Exec(
 			eventID, r.ProjectID, r.SessionID, r.Provider, r.Model,
 			r.PromptTokens, r.CompletionTokens, r.TotalTokens, r.DurationMs,
-			ts.Format(timeLayout), apiKeyHash,
+			ts.Format(timeLayout), apiKeyHash, partial,
 		); err != nil {
 			return err
 		}

@@ -58,14 +58,22 @@ type sseRecorder struct {
 	source     io.ReadCloser
 	buffer     bytes.Buffer
 	adapter    adapter.Adapter
-	record     func(*adapter.TokenUsage)
-	encoding   string // 上游 Content-Encoding（gzip 时 Close 时解压再解析，#1）
+	record     func(*adapter.TokenUsage, bool) // #11: 新增 partial 参数
+	encoding   string                          // 上游 Content-Encoding（gzip 时 Close 时解压再解析，#1）
+	completed  bool                            // #11: 流是否完整结束（遇到 [DONE] / message_stop）
 }
 
 func (r *sseRecorder) Read(p []byte) (int, error) {
 	n, err := r.source.Read(p)
 	if n > 0 {
 		r.buffer.Write(p[:n])
+		// #11: 检测流式响应完成标记
+		// OpenAI: data: [DONE]
+		// Anthropic: event: message_stop
+		chunk := string(p[:n])
+		if strings.Contains(chunk, "data: [DONE]") || strings.Contains(chunk, "event: message_stop") {
+			r.completed = true
+		}
 	}
 	return n, err
 }
@@ -84,7 +92,8 @@ func (r *sseRecorder) Close() error {
 		}
 		usage, _ := r.adapter.ExtractUsageFromStream(bytes.NewReader(data))
 		if usage != nil {
-			r.record(usage)
+			// #11: partial=true 表示客户端中断流式响应（未收到完成标记）
+			r.record(usage, !r.completed)
 		}
 	}
 	return r.source.Close()
@@ -188,8 +197,8 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					source:   originalBody,
 					adapter:  route.Adapter,
 					encoding: resp.Header.Get("Content-Encoding"),
-					record: func(usage *adapter.TokenUsage) {
-						f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, model, duration))
+					record: func(usage *adapter.TokenUsage, partial bool) {
+						f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, model, duration, partial))
 					},
 				}
 				return nil
@@ -215,7 +224,8 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			resp.ContentLength = int64(len(rawBody))
 
 			if usage != nil {
-				f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, model, duration))
+				// #11: 非流式响应视为完整（partial=false）
+				f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, model, duration, false))
 			}
 
 			return nil
@@ -283,7 +293,7 @@ func effectivePromptTokens(usage *adapter.TokenUsage) uint32 {
 }
 
 // buildRecord 从 usage 构造一条 TokenRecord（#4：cache 折算进 PromptTokens）。
-func buildRecord(usage *adapter.TokenUsage, projectID, sessionID, provider, model string, duration uint32) adapter.TokenRecord {
+func buildRecord(usage *adapter.TokenUsage, projectID, sessionID, provider, model string, duration uint32, partial bool) adapter.TokenRecord {
 	prompt := effectivePromptTokens(usage)
 	completion := uint32(usage.CompletionTokens)
 	return adapter.TokenRecord{
@@ -297,6 +307,7 @@ func buildRecord(usage *adapter.TokenUsage, projectID, sessionID, provider, mode
 		TotalTokens:      prompt + completion,
 		DurationMs:       duration,
 		Timestamp:        time.Now(),
+		Partial:          partial,
 	}
 }
 

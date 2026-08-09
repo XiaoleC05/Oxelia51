@@ -31,6 +31,7 @@ type TokenRecord struct {
 	DurationMs       uint32
 	Timestamp        time.Time
 	APIKeyHash       string
+	Partial          bool // #11: 客户端中断流式响应，usage 不完整
 }
 
 // Adapter 抽象不同 LLM 供应商的 token 用量提取逻辑
