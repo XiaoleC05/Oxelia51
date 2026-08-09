@@ -1,5 +1,8 @@
 # Oxelia51 生产部署
 
+> **运维操作手册见 [RUNBOOK.md](RUNBOOK.md)**（exec API 操作技巧、五条部署管线实操、常见坑速查）。
+> 服务器访问方式见下方 §服务器清单 与本地记忆 `server-access-topology`。
+
 ## 架构
 
 ```

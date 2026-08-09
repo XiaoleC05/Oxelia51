@@ -103,6 +103,7 @@ Fork：
 - 腾讯云 118.25.138.177，Workbench 操作，22 端口不对外
 - 阿里云可通过 `/api/admin/exec`（JWT + IP 白名单）执行命令
 - 阿里云可通过 `~/.ssh/tencent_cloud` SSH 到腾讯云
+- **运维操作先查 `deploy/RUNBOOK.md`**——exec API 引号陷阱、setsid 后台、五条部署管线、常见坑
 - 已配环境变量不得重复询问：`CRAWLER_*` `QQ_BOT_*`
 - 工具部署路径：`/opt/<tool>/<tool>-server`，systemd 管理
 - 腾讯云 Langfuse：Docker Compose，部署在 `/opt/langfuse/`，管理脚本 `langfuse-deploy.sh`
@@ -111,6 +112,14 @@ Fork：
 - `deploy.sh` 有自愈循环，`receiver.py` 按 repo 路由到 `tool-deploy.sh`
 - **所有编译在本地完成**，禁止在服务器上运行 `go build`/`npm run build`/`make`/`cmake` 等编译命令
 - 服务器上只做：下载二进制、重启服务、执行 SQL、查看日志
+
+### 部署铁律（踩坑教训，详见 RUNBOOK.md）
+
+1. **exec 后台任务必须 `setsid`**：`setsid bash -c '...' </dev/null >/dev/null 2>&1 &`，直接 `nohup &` 会被 kill（exec 进程树问题）。
+2. **ssh 远端命令单引号包裹**，避免 `|` `&&` `{{}}` 被两层 bash 展开。
+3. **打桌面 release tag 前统一版本号**：`tauri.conf.json` / `ui/package.json` / `ui/src/version.ts` 三处一致，否则安装包显示旧版本号。
+4. **macOS 编译错误 Windows 本地发现不了**（`cfg(target_os="macos")` 排除），桌面改动必须 CI 验证三平台。
+5. **仓库文档不得写服务器密码**（公开仓库）。密码仅在本地记忆，操作时用占位符。
 
 ---
 
