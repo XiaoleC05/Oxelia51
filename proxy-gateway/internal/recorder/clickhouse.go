@@ -8,9 +8,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/adapter"
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/adapter"
 	"github.com/google/uuid"
 )
 

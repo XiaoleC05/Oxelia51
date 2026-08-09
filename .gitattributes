@@ -1,0 +1,39 @@
+# 统一换行符，避免 Windows 开发时 gofmt -l / CI fmt 检查全量报错。
+# Go 源码与配置一律 LF；二进制显式标记不做转换。
+
+*.go        text eol=lf
+*.mod       text eol=lf
+*.sum       text eol=lf
+*.rs        text eol=lf
+*.toml      text eol=lf
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.js        text eol=lf
+*.mjs       text eol=lf
+*.json      text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.sh        text eol=lf
+*.sql       text eol=lf
+*.cpp       text eol=lf
+*.h         text eol=lf
+*.py        text eol=lf
+
+# Windows 批处理保留 CRLF
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# 二进制
+*.png       binary
+*.jpg       binary
+*.ico       binary
+*.icns      binary
+*.exe       binary
+*.dll       binary
+*.db        binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary

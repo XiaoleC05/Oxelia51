@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"unicode/utf8"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 	"unsafe"
 
 	"github.com/XiaoleC05/oxelia51-backend/internal/infra"
@@ -410,6 +410,11 @@ func Exec(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"exitCode": cmd.ProcessState.ExitCode(),
 		"stdout":   string(output),
-		"error":    func() string { if err != nil { return err.Error() }; return "" }(),
+		"error": func() string {
+			if err != nil {
+				return err.Error()
+			}
+			return ""
+		}(),
 	})
 }

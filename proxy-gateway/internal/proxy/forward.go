@@ -55,12 +55,12 @@ func NewForwarder(reg *adapter.Registry, rec recorder.Recorder, st *stats.Stats)
 
 // sseRecorder 包装 SSE 流式响应体，在流结束后解析 usage
 type sseRecorder struct {
-	source     io.ReadCloser
-	buffer     bytes.Buffer
-	adapter    adapter.Adapter
-	record     func(*adapter.TokenUsage, bool) // #11: 新增 partial 参数
-	encoding   string                          // 上游 Content-Encoding（gzip 时 Close 时解压再解析，#1）
-	completed  bool                            // #11: 流是否完整结束（遇到 [DONE] / message_stop）
+	source    io.ReadCloser
+	buffer    bytes.Buffer
+	adapter   adapter.Adapter
+	record    func(*adapter.TokenUsage, bool) // #11: 新增 partial 参数
+	encoding  string                          // 上游 Content-Encoding（gzip 时 Close 时解压再解析，#1）
+	completed bool                            // #11: 流是否完整结束（遇到 [DONE] / message_stop）
 }
 
 func (r *sseRecorder) Read(p []byte) (int, error) {
@@ -352,4 +352,3 @@ func isStreamRequest(body []byte) bool {
 	}
 	return data.Stream
 }
-

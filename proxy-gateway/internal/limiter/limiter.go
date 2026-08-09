@@ -7,9 +7,9 @@ import (
 
 // TokenBucket 实现 token bucket 限流算法
 type TokenBucket struct {
-	rate       float64       // tokens per second
-	burst      float64       // max tokens
-	tokens     float64       // current tokens
+	rate       float64 // tokens per second
+	burst      float64 // max tokens
+	tokens     float64 // current tokens
 	lastUpdate time.Time
 	mu         sync.Mutex
 }

@@ -113,7 +113,7 @@ func (a *API) syncUpload(token, deviceID string) (int, error) {
 	}
 	type localRow struct {
 		eventID, projectID, sessionID, provider, model, ts string
-		prompt, completion, total, duration               int64
+		prompt, completion, total, duration                int64
 	}
 	localRows := []localRow{}
 	q := "SELECT event_id, project_id, session_id, provider, model, prompt_tokens, completion_tokens, total_tokens, duration_ms, timestamp FROM token_events"

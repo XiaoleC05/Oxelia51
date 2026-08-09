@@ -10,7 +10,7 @@ import (
 
 func TestIssueAccess_IncludesEmailVerified(t *testing.T) {
 	cfg := &config.Config{
-		JWTSecret:     "test-secret-key",
+		JWTSecret:      "test-secret-key",
 		AccessTokenTTL: time.Hour,
 	}
 	svc := NewTokenService(cfg)

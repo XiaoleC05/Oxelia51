@@ -38,12 +38,12 @@ func (a *API) Handler() http.Handler {
 // allowedLocalOrigins 桌面 UI 可能的来源：Tauri webview（tauri.localhost）与 Vite dev。
 // 本地 sidecar 只听回环，但仍需校验 Origin，防止本机任意网页跨源读账本 / 改设置（#5）。
 var allowedLocalOrigins = map[string]bool{
-	"http://localhost:5173":    true, // Vite dev
-	"http://127.0.0.1:5173":    true,
-	"http://tauri.localhost":   true, // Tauri 2 Windows webview
-	"https://tauri.localhost":  true, // Tauri 2 部分配置
-	"http://localhost:17800":   true, // 同源兜底
-	"http://127.0.0.1:17800":   true,
+	"http://localhost:5173":   true, // Vite dev
+	"http://127.0.0.1:5173":   true,
+	"http://tauri.localhost":  true, // Tauri 2 Windows webview
+	"https://tauri.localhost": true, // Tauri 2 部分配置
+	"http://localhost:17800":  true, // 同源兜底
+	"http://127.0.0.1:17800":  true,
 }
 
 // withCORS 全局 CORS 中间件：仅放行桌面 webview / Vite dev 已知来源，OPTIONS 预检 204。
