@@ -74,17 +74,20 @@ func New(cfg *config.Config) *gin.Engine {
 		slog.Warn("trusted proxy setup failed", "error", err)
 	}
 
-	// pprof
-	r.GET("/debug/pprof/", gin.WrapF(pprof.Index))
-	r.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
-	r.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
-	r.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
-	r.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
-	r.GET("/debug/pprof/heap", gin.WrapH(pprof.Handler("heap")))
-	r.GET("/debug/pprof/goroutine", gin.WrapH(pprof.Handler("goroutine")))
-	r.GET("/debug/pprof/allocs", gin.WrapH(pprof.Handler("allocs")))
-	r.GET("/debug/pprof/block", gin.WrapH(pprof.Handler("block")))
-	r.GET("/debug/pprof/mutex", gin.WrapH(pprof.Handler("mutex")))
+	// pprof：仅 DEBUG_PPROF=true 时注册（#14：原默认公开，泄漏 heap/goroutine 内存内容）
+	if os.Getenv("DEBUG_PPROF") == "true" {
+		r.GET("/debug/pprof/", gin.WrapF(pprof.Index))
+		r.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
+		r.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
+		r.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
+		r.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
+		r.GET("/debug/pprof/heap", gin.WrapH(pprof.Handler("heap")))
+		r.GET("/debug/pprof/goroutine", gin.WrapH(pprof.Handler("goroutine")))
+		r.GET("/debug/pprof/allocs", gin.WrapH(pprof.Handler("allocs")))
+		r.GET("/debug/pprof/block", gin.WrapH(pprof.Handler("block")))
+		r.GET("/debug/pprof/mutex", gin.WrapH(pprof.Handler("mutex")))
+		slog.Warn("pprof endpoints enabled (DEBUG_PPROF=true) — do not use in production")
+	}
 
 	// Handler init
 	healthH := health.NewHealthHandler(pool)

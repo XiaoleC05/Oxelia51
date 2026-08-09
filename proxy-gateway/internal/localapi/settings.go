@@ -31,7 +31,6 @@ var defaultPricing = map[string]ModelPrice{
 	"qwen-max":               {Prompt: 20.0, Completion: 20.0},
 	"doubao-pro-32k":         {Prompt: 0.8, Completion: 2.0},
 	"gemini-2.5-pro":         {Prompt: 1.25, Completion: 10.0},
-	"grok-4":                 {Prompt: 2.0, Completion: 8.0},
 	"mistral-large":          {Prompt: 2.0, Completion: 6.0},
 	"o1":                     {Prompt: 15.0, Completion: 60.0},
 	"o3":                     {Prompt: 2.0, Completion: 8.0},

@@ -26,6 +26,7 @@ type Forwarder struct {
 	registry *adapter.Registry
 	recorder recorder.Recorder
 	stats    *stats.Stats
+	sessions *Sessionizer // #6：无 X-Session-ID 时按指纹+空闲窗口推断
 }
 
 // upstreamBase 测试/演示钩子：设置 PROXY_UPSTREAM_BASE 时，把所有上游请求改指到该
@@ -48,6 +49,7 @@ func NewForwarder(reg *adapter.Registry, rec recorder.Recorder, st *stats.Stats)
 		registry: reg,
 		recorder: rec,
 		stats:    st,
+		sessions: NewSessionizer(30 * time.Minute),
 	}
 }
 
@@ -104,7 +106,8 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	sessionID := r.Header.Get("X-Session-ID")
 	if sessionID == "" {
-		sessionID = uuid.NewString()
+		// #6：客户端不发 X-Session-ID 时按指纹+空闲窗口推断，避免每请求新会话
+		sessionID = f.sessions.Get(sessionFingerprint(r))
 	}
 
 	// 3) 读取请求体提取 model + stream 标志

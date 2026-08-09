@@ -62,6 +62,14 @@ fn find_sidecar(app: &AppHandle) -> Option<PathBuf> {
 
 fn spawn_sidecar(app: &AppHandle) -> Option<Child> {
     let path = find_sidecar(app)?;
+
+    // #9：端口探测——若 17800 已有 sidecar 在跑（另一实例残留 / macOS 无单实例锁），
+    // 不再启动第二个（否则 bind 冲突静默失败，UI 显示「代理离线」）。复用已有实例。
+    if std::net::TcpStream::connect("127.0.0.1:17800").is_ok() {
+        log_sidecar("sidecar 已在 17800 运行，复用现有实例");
+        return None;
+    }
+
     let mut cmd = Command::new(&path);
     cmd.env("LOCAL_MODE", "true").env("PROXY_PORT", "17800");
     // Windows：CREATE_NO_WINDOW —— 不让 sidecar 控制台窗口弹出（用户反馈的「打开就多个终端」）
@@ -71,6 +79,11 @@ fn spawn_sidecar(app: &AppHandle) -> Option<Child> {
         cmd.creation_flags(0x0800_0000);
     }
     cmd.spawn().ok()
+}
+
+/// sidecar 日志：Tauri 无标准 log 宏时写 stderr（便于 dev 控制台查看）。
+fn log_sidecar(msg: &str) {
+    eprintln!("[oxelia51] {msg}");
 }
 
 fn kill_sidecar(state: &State<'_, Sidecar>) {
@@ -92,7 +105,19 @@ fn show_main_window(app: &AppHandle) {
 }
 
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+
+    // 单实例锁（#9）：第二次启动唤出已有窗口而非开第二份。
+    // 避免：第二个实例再起一个 sidecar，17800 端口冲突静默失败 → UI 显示「代理离线」。
+    // macOS 由系统激活机制保证单实例，插件在 macOS 需额外处理，故仅 win/linux。
+    #[cfg(not(target_os = "macos"))]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            show_main_window(app);
+        }));
+    }
+
+    builder
         .setup(|app| {
             let child = spawn_sidecar(app.handle());
             app.manage(Sidecar(Mutex::new(child)));

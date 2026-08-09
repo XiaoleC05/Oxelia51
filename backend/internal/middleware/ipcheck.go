@@ -26,16 +26,20 @@ func clientIP(c *gin.Context) string {
 	return c.ClientIP()
 }
 
-// IPWhitelist 返回一个中间件，校验请求者 IP 是否在白名单中。
-// 白名单为空时放行所有；DB 故障时放行以避免锁死管理员。
+// IPWhitelist 返回一个中间件，校验请求者 IP 是否在白名单中（#13：fail-close）。
+// DB 故障时拒绝（保护 /api/admin/exec RCE 接口）；紧急救援用 OXELIA_BREAK_GLASS_IP。
 func IPWhitelist(repo *admin.WhitelistRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := clientIP(c)
 		allowed, err := repo.IsAllowed(c.Request.Context(), ip)
 		if err != nil {
-			// DB 故障时放行，避免锁死所有管理员
-			slog.Warn("ip whitelist check failed, allowing", "error", err, "ip", ip)
-			c.Next()
+			// fail-close：DB 故障时拒绝，避免 RCE 接口在 DB 抖动期对所有人开放。
+			// 紧急情况设 OXELIA_BREAK_GLASS_IP 环境变量（IsAllowed 内部判定）。
+			slog.Warn("ip whitelist check failed, denying", "error", err, "ip", ip)
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error": "IP 白名单校验不可用，已拒绝（紧急救援请设 OXELIA_BREAK_GLASS_IP）",
+				"code":  "IP_CHECK_FAILED",
+			})
 			return
 		}
 		if !allowed {

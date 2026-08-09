@@ -178,7 +178,7 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
       </div>
 
       <div className="card">
-        <h2 className="card-title">多设备同步</h2>
+        <h2 className="card-title">多设备同步 <span className="budget-tag">🚧 开发中</span></h2>
         {settings?.sync.account ? (
           <p className="empty">已登录账户：{settings.sync.account}
             {settings.sync.lastSync ? ` · 上次同步 ${settings.sync.lastSync}` : ""}
