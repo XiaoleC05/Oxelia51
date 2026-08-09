@@ -57,6 +57,8 @@ try {
   await new Promise((r) => (ws.onopen = r));
   await send("Page.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: size, height: size, deviceScaleFactor: 1, mobile: false });
+  // 透明背景：SVG 圆角外的透明区域保持透明，不被页面白底填充
+  await send("Emulation.setDefaultBackgroundColorOverride", { color: { r: 0, g: 0, b: 0, a: 0 } });
   await sleep(1500);
   const shot = await send("Page.captureScreenshot", { format: "png" });
   writeFileSync(outPath, Buffer.from(shot.data, "base64"));

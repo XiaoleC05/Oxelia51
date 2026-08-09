@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""从官方品牌素材生成全套图标（白底黑圈版）。
+"""从官方品牌素材生成全套图标（黑底白圈版，默认）。
 
-源（C:\\Users\\71408\\Desktop\\oxelia51-logo\\，已由 render-svg.mjs 栅格化）：
-  final-icon-light.png       1024 —— 应用图标主图（白底 #FAFAFA + 黑环 + 红点）
-  brand-glyph-on-light.png   256  —— 顶栏 glyph（浅色面，黑环，透明底）
-  brand-glyph-on-dark.png    256  —— 顶栏 glyph（深色面，白环，透明底）
+源（desktop/scripts/assets/，已由 render-svg.mjs 栅格化到 .build/）：
+  final-icon-dark.svg     1024 —— 应用图标主图（黑底 #0A0A0A + 白环 #FAFAFA + 红点 #E5484D）
+  final-icon-dark-sem.svg 1024 —— 小尺寸语义版（环+38%、点+47%）
+  brand-glyph-on-light.png 256 —— 顶栏 glyph（浅色面，黑环，透明底）
+  brand-glyph-on-dark.png  256 —— 顶栏 glyph（深色面，白环，透明底）
 
 产物：src-tauri/icons/ 全套 + app-icon.png + ui/src/assets/brand-glyph-*.png
 """
@@ -17,7 +18,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # desktop/
 ICONS = os.path.join(ROOT, "src-tauri", "icons")
 SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".build")
 
-MASTER = os.path.join(SRC_DIR, "official-icon-1024.png")       # 官方原版（大字清晰）
+MASTER = os.path.join(SRC_DIR, "official-icon-1024.png")       # 官方原版（黑底白圈，大字清晰）
 SEM_MASTER = os.path.join(SRC_DIR, "official-icon-sem-1024.png")  # 小尺寸语义版（环+38%/点+47%）
 GLYPH_LIGHT = os.path.join(SRC_DIR, "glyph-light-256.png")
 GLYPH_DARK = os.path.join(SRC_DIR, "glyph-dark-256.png")

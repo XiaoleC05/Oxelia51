@@ -97,7 +97,7 @@ pub fn run() {
             let child = spawn_sidecar(app.handle());
             app.manage(Sidecar(Mutex::new(child)));
 
-            // 原生 UI（托盘菜单/系统菜单）统一浅色——白底黑边，与白底黑圈图标一致
+            // 原生 UI（托盘菜单/系统菜单）统一浅色（白底黑边菜单）；应用图标为黑底白圈（品牌规范）
             let _ = app.handle().set_theme(Some(tauri::Theme::Light));
 
             // 标题栏（UI Polish §5）：Windows/Linux 无边框自绘（tauri.conf decorations:false）；
