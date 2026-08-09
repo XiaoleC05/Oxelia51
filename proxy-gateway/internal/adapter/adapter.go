@@ -11,6 +11,11 @@ type TokenUsage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
 	TotalTokens      int `json:"total_tokens"`
+	// Anthropic prompt caching（#4）：cache_creation 按计价 1.25×、cache_read 0.1×
+	// 折算进 PromptTokens，使 costOf 无需改 schema 即可准确计成本。
+	// OpenAI 系无此字段，保持 0。
+	CacheCreationTokens int `json:"cache_creation_tokens"`
+	CacheReadTokens     int `json:"cache_read_tokens"`
 }
 
 // TokenRecord 是写入 ClickHouse 的一行记录

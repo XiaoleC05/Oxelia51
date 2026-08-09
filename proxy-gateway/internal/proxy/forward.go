@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -115,6 +116,17 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	model := extractModel(requestBody)
 	stream := isStreamRequest(requestBody)
+	provider := route.Adapter.ProviderName()
+
+	// #10：OpenAI 系流式默认末帧无 usage → 无法落账。
+	// 注入 stream_options.include_usage（Anthropic 流式天然带 usage，跳过）。
+	if stream && provider != "anthropic" {
+		if modified := ensureStreamUsage(requestBody); modified != nil {
+			requestBody = modified
+			r.Body = io.NopCloser(bytes.NewReader(requestBody))
+			r.ContentLength = int64(len(requestBody))
+		}
+	}
 
 	// 4) 解析上游 URL（拼接供应商路径前缀）
 	upstreamPath := route.PathPrefix + "/" + strings.TrimPrefix(f.registry.ResolveTarget(r.URL.Path, prefix), "/")
@@ -130,7 +142,6 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	start := time.Now()
-	provider := route.Adapter.ProviderName()
 
 	// 5) 创建反向代理
 	proxy := &httputil.ReverseProxy{
@@ -175,18 +186,7 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					adapter:  route.Adapter,
 					encoding: resp.Header.Get("Content-Encoding"),
 					record: func(usage *adapter.TokenUsage) {
-						f.recorder.Record(adapter.TokenRecord{
-							EventID:          uuid.NewString(),
-							ProjectID:        projectID,
-							SessionID:        sessionID,
-							Provider:         provider,
-							Model:            model,
-							PromptTokens:     uint32(usage.PromptTokens),
-							CompletionTokens: uint32(usage.CompletionTokens),
-							TotalTokens:      uint32(usage.TotalTokens),
-							DurationMs:       duration,
-							Timestamp:        time.Now(),
-						})
+						f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, model, duration))
 					},
 				}
 				return nil
@@ -212,18 +212,7 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			resp.ContentLength = int64(len(rawBody))
 
 			if usage != nil {
-				f.recorder.Record(adapter.TokenRecord{
-					EventID:          uuid.NewString(),
-					ProjectID:        projectID,
-					SessionID:        sessionID,
-					Provider:         provider,
-					Model:            model,
-					PromptTokens:     uint32(usage.PromptTokens),
-					CompletionTokens: uint32(usage.CompletionTokens),
-					TotalTokens:      uint32(usage.TotalTokens),
-					DurationMs:       duration,
-					Timestamp:        time.Now(),
-				})
+				f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, model, duration))
 			}
 
 			return nil
@@ -248,6 +237,64 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
+}
+
+// ensureStreamUsage 对 OpenAI 系流式请求注入 stream_options.include_usage（#10）。
+// 末帧才会带 usage，否则无法落账。返回修改后的 body；无需修改时返回 nil。
+func ensureStreamUsage(body []byte) []byte {
+	if len(body) == 0 {
+		return nil
+	}
+	var data map[string]any
+	if err := json.Unmarshal(body, &data); err != nil {
+		return nil
+	}
+	so, _ := data["stream_options"].(map[string]any)
+	if so == nil {
+		so = map[string]any{}
+	}
+	if v, ok := so["include_usage"]; ok && v == true {
+		return nil // 已显式开启
+	}
+	so["include_usage"] = true
+	data["stream_options"] = so
+	out, err := json.Marshal(data)
+	if err != nil {
+		return nil
+	}
+	return out
+}
+
+// effectivePromptTokens 把 Anthropic prompt caching 折算成计价等效 input token（#4）。
+// cache_creation 1.25×、cache_read 0.1×；折算后存入 PromptTokens，
+// 使 costOf(pricing, model, prompt, completion) 无需改 schema 即可准确计成本。
+// total = 折算 prompt + completion（略高于真实 token 数，但成本准确，UI 显示总量更合理）。
+func effectivePromptTokens(usage *adapter.TokenUsage) uint32 {
+	if usage == nil {
+		return 0
+	}
+	eff := float64(usage.PromptTokens) +
+		float64(usage.CacheCreationTokens)*1.25 +
+		float64(usage.CacheReadTokens)*0.1
+	return uint32(math.Round(eff))
+}
+
+// buildRecord 从 usage 构造一条 TokenRecord（#4：cache 折算进 PromptTokens）。
+func buildRecord(usage *adapter.TokenUsage, projectID, sessionID, provider, model string, duration uint32) adapter.TokenRecord {
+	prompt := effectivePromptTokens(usage)
+	completion := uint32(usage.CompletionTokens)
+	return adapter.TokenRecord{
+		EventID:          uuid.NewString(),
+		ProjectID:        projectID,
+		SessionID:        sessionID,
+		Provider:         provider,
+		Model:            model,
+		PromptTokens:     prompt,
+		CompletionTokens: completion,
+		TotalTokens:      prompt + completion,
+		DurationMs:       duration,
+		Timestamp:        time.Now(),
+	}
 }
 
 // decodeBody 返回可用于 JSON 解析的明文字节。

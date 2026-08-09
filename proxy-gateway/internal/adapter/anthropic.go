@@ -30,17 +30,21 @@ func (a *AnthropicAdapter) ExtractUsage(resp *http.Response) (*TokenUsage, error
 	var data struct {
 		Model string `json:"model"`
 		Usage struct {
-			InputTokens  int `json:"input_tokens"`
-			OutputTokens int `json:"output_tokens"`
+			InputTokens              int `json:"input_tokens"`
+			OutputTokens             int `json:"output_tokens"`
+			CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
+			CacheReadInputTokens     int `json:"cache_read_input_tokens"`
 		} `json:"usage"`
 	}
 	if err := json.Unmarshal(body, &data); err != nil {
 		return nil, err
 	}
 	return &TokenUsage{
-		PromptTokens:     data.Usage.InputTokens,
-		CompletionTokens: data.Usage.OutputTokens,
-		TotalTokens:      data.Usage.InputTokens + data.Usage.OutputTokens,
+		PromptTokens:        data.Usage.InputTokens,
+		CompletionTokens:    data.Usage.OutputTokens,
+		TotalTokens:         data.Usage.InputTokens + data.Usage.OutputTokens,
+		CacheCreationTokens: data.Usage.CacheCreationInputTokens,
+		CacheReadTokens:     data.Usage.CacheReadInputTokens,
 	}, nil
 }
 
@@ -50,7 +54,10 @@ func (a *AnthropicAdapter) ExtractUsageFromStream(reader io.Reader) (*TokenUsage
 	scanner := bufio.NewScanner(reader)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 
-	var lastUsage *TokenUsage
+	// 累积式解析（#4 + #15）：message_start 带 input + cache_*，message_delta 带 output。
+	// 修复前用「整体覆盖」导致 input 丢失、cache 完全不记。
+	var input, output, cacheCreate, cacheRead int
+	seen := false
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -62,36 +69,61 @@ func (a *AnthropicAdapter) ExtractUsageFromStream(reader io.Reader) (*TokenUsage
 		var data struct {
 			Type string `json:"type"`
 			Usage *struct {
-				InputTokens  int `json:"input_tokens"`
-				OutputTokens int `json:"output_tokens"`
+				InputTokens              int `json:"input_tokens"`
+				OutputTokens             int `json:"output_tokens"`
+				CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
+				CacheReadInputTokens     int `json:"cache_read_input_tokens"`
 			} `json:"usage"`
 			Message *struct {
 				Usage *struct {
-					InputTokens  int `json:"input_tokens"`
-					OutputTokens int `json:"output_tokens"`
+					InputTokens              int `json:"input_tokens"`
+					OutputTokens             int `json:"output_tokens"`
+					CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
+					CacheReadInputTokens     int `json:"cache_read_input_tokens"`
 				} `json:"usage"`
 			} `json:"message"`
 		}
 		if err := json.Unmarshal([]byte(payload), &data); err != nil {
 			continue
 		}
-		// message_start 事件包含 message.usage（input_tokens）
-		// message_delta 事件包含 usage（output_tokens）
+		// message_delta.usage 带 output_tokens（累积，取末值）
 		if data.Usage != nil {
-			lastUsage = &TokenUsage{
-				PromptTokens:     data.Usage.InputTokens,
-				CompletionTokens: data.Usage.OutputTokens,
-				TotalTokens:      data.Usage.InputTokens + data.Usage.OutputTokens,
+			seen = true
+			if data.Usage.OutputTokens > 0 {
+				output = data.Usage.OutputTokens
 			}
+			if data.Usage.InputTokens > 0 {
+				input = data.Usage.InputTokens
+			}
+			cacheCreate = maxInt(cacheCreate, data.Usage.CacheCreationInputTokens)
+			cacheRead = maxInt(cacheRead, data.Usage.CacheReadInputTokens)
 		}
+		// message_start.message.usage 带 input_tokens + cache_*
 		if data.Message != nil && data.Message.Usage != nil {
-			lastUsage = &TokenUsage{
-				PromptTokens:     data.Message.Usage.InputTokens,
-				CompletionTokens: data.Message.Usage.OutputTokens,
-				TotalTokens:      data.Message.Usage.InputTokens + data.Message.Usage.OutputTokens,
+			seen = true
+			if data.Message.Usage.InputTokens > 0 {
+				input = data.Message.Usage.InputTokens
 			}
+			cacheCreate = maxInt(cacheCreate, data.Message.Usage.CacheCreationInputTokens)
+			cacheRead = maxInt(cacheRead, data.Message.Usage.CacheReadInputTokens)
 		}
 	}
 
-	return lastUsage, nil
+	if !seen {
+		return nil, nil
+	}
+	return &TokenUsage{
+		PromptTokens:        input,
+		CompletionTokens:    output,
+		TotalTokens:         input + output,
+		CacheCreationTokens: cacheCreate,
+		CacheReadTokens:     cacheRead,
+	}, nil
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
