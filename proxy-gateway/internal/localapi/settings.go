@@ -37,8 +37,10 @@ var defaultPricing = map[string]ModelPrice{
 }
 
 // Settings 本地设置（存 settings 表，key→value JSON）。
+//
+// 注：不含 port —— sidecar 端口由 Tauri 壳硬编码 17800（lib.rs），
+// 且 port 不在 allowedSettingKeys 白名单内，前端零引用。原字段为死代码（#30）。
 type Settings struct {
-	Port    int          `json:"port"`
 	Theme   string       `json:"theme"`
 	Pricing []PricedItem `json:"pricing"`
 	Budgets []BudgetItem `json:"budgets"`
@@ -152,14 +154,8 @@ func (a *API) getBudgets() []BudgetItem {
 	return items
 }
 
-// loadSettings 读取全部设置（端口/主题/定价/预算/同步）。
+// loadSettings 读取全部设置（主题/定价/预算/同步）。
 func (a *API) loadSettings() Settings {
-	port := 17800
-	if p := a.getSetting("port"); p != "" {
-		if v, err := strconv.Atoi(strings.TrimSpace(p)); err == nil && v > 0 {
-			port = v
-		}
-	}
 	theme := a.getSetting("theme")
 	if theme == "" {
 		theme = "cosmos"
@@ -171,5 +167,5 @@ func (a *API) loadSettings() Settings {
 	}
 	sort.Slice(items, func(i, j int) bool { return items[i].Model < items[j].Model })
 	sync := SyncConfig{Enabled: a.getSetting("sync_enabled") == "true", Account: a.getSetting("sync_account"), LastSync: a.getSetting("sync_last")}
-	return Settings{Port: port, Theme: theme, Pricing: items, Budgets: a.getBudgets(), Sync: sync}
+	return Settings{Theme: theme, Pricing: items, Budgets: a.getBudgets(), Sync: sync}
 }

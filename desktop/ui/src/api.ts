@@ -38,7 +38,6 @@ export type BudgetItem = { model: string; dailyTokens: number };
 export type PricedItem = { model: string; prompt: string; completion: string };
 
 export type Settings = {
-  port: number;
   theme: string;
   pricing: PricedItem[] | null;
   budgets: BudgetItem[] | null;
@@ -100,10 +99,21 @@ export function fmtTokens(n: number): string {
   return String(n);
 }
 
+/**
+ * CNY/USD 参考汇率（#34）。桌面端为本地优先、不联网取汇率，故用固定参考值；
+ * 云端 oxelia51.exchange_rates 有每日汇率，两侧口径不同属预期。
+ * 展示为「参考值」而非精确记账，避免伪精确。
+ */
+export const CNY_PER_USD = 7.2;
+
+/**
+ * 格式化成本。未配置定价的模型成本为 0，此时显示「未配置定价」而非「¥0」，
+ * 避免用户误以为该模型免费（空定价表是全新安装的默认状态）。
+ */
 export function fmtCost(cost: number | null | undefined): string {
   const c = Number(cost);
-  if (!Number.isFinite(c) || c <= 0) return "¥0 / $0";
-  return `¥${(c * 7.2).toFixed(2)} / $${c.toFixed(4)}`;
+  if (!Number.isFinite(c) || c <= 0) return "未配置定价";
+  return `≈¥${(c * CNY_PER_USD).toFixed(2)} / $${c.toFixed(4)}`;
 }
 
 export function fmtDate(ts: string): string {

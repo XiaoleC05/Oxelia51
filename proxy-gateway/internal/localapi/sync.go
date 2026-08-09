@@ -9,11 +9,22 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
 	"time"
 )
 
-// 云同步端点（Oxelia51 云平台；生产即 oxelia51.com）
-const cloudSyncBase = "https://oxelia51.com/api/sync"
+// defaultCloudSyncBase 官方云同步端点。
+const defaultCloudSyncBase = "https://oxelia51.com/api/sync"
+
+// cloudSyncBase 返回云同步端点（#33：原硬编码，自建部署无法改）。
+// 由 OXELIA_SYNC_BASE 覆盖，末尾斜杠自动剥离。
+func cloudSyncBase() string {
+	if v := strings.TrimSpace(os.Getenv("OXELIA_SYNC_BASE")); v != "" {
+		return strings.TrimRight(v, "/")
+	}
+	return defaultCloudSyncBase
+}
 
 const localTimeLayout = "2006-01-02 15:04:05.000"
 
@@ -156,7 +167,7 @@ func (a *API) syncUpload(token, deviceID string) (int, error) {
 	}
 
 	body, _ := json.Marshal(map[string]any{"deviceId": deviceID, "events": events})
-	req, err := http.NewRequest(http.MethodPost, cloudSyncBase+"/upload", bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPost, cloudSyncBase()+"/upload", bytes.NewReader(body))
 	if err != nil {
 		return 0, err
 	}
@@ -183,7 +194,7 @@ func (a *API) syncUpload(token, deviceID string) (int, error) {
 func (a *API) syncDownload(token, deviceID string) (int, error) {
 	last := a.syncLast()
 	after := last.UTC().Format(time.RFC3339)
-	u := fmt.Sprintf("%s/download?after=%s&deviceId=%s", cloudSyncBase, url.QueryEscape(after), url.QueryEscape(deviceID))
+	u := fmt.Sprintf("%s/download?after=%s&deviceId=%s", cloudSyncBase(), url.QueryEscape(after), url.QueryEscape(deviceID))
 
 	req, err := http.NewRequest(http.MethodGet, u, nil)
 	if err != nil {
