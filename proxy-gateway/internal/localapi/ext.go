@@ -257,7 +257,22 @@ func ratioOf(used, budget int64) float64 {
 
 // ---------- 设置 ----------
 
-// handleSettings GET 返回全部设置；POST 更新单个 key。
+// allowedSettingKeys 允许经 /api/settings 写入的 key 白名单（#5）。
+// sync_token 仅供桌面端登录流程写入（SettingsTab.doLogin 拿到 JWT 后存储）；
+// GET /api/settings 的 Settings struct 不含该字段，故凭证不会被读出。
+// 纵深防御另由「回环绑定 + CORS Origin 白名单」承担，远程无法触达此接口。
+var allowedSettingKeys = map[string]bool{
+	"theme":        true,
+	"pricing":      true,
+	"budgets":      true,
+	"sync_token":   true,
+	"sync_account": true,
+	"sync_enabled": true,
+	"sync_last":    true,
+	"sync_device":  true,
+}
+
+// handleSettings GET 返回全部设置（不含 sync_token 等凭证）；POST 更新单个 key。
 func (a *API) handleSettings(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		writeJSON(w, http.StatusOK, a.loadSettings())
@@ -270,6 +285,11 @@ func (a *API) handleSettings(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Key == "" {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
+			return
+		}
+		// key 白名单：拒绝写 sync_token 等未列入的 key（防远程覆盖云账户凭证）
+		if !allowedSettingKeys[req.Key] {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "key not allowed"})
 			return
 		}
 		// 校验 pricing / budgets 为合法 JSON

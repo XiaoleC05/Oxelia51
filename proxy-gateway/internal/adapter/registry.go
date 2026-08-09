@@ -101,11 +101,63 @@ func (r *Registry) Match(path string) (*Route, string) {
 	return &route, bestPrefix
 }
 
-// ResolveTarget 将代理路径转为上游路径（含供应商路径前缀）
-// /api/proxy/openai/v1/chat/completions → /v1/chat/completions
-// /api/proxy/qwen/chat/completions    → /compatible-mode/v1/chat/completions
+// ResolveTarget 将代理路径转为上游路径（含供应商路径前缀）。
+// 幂等处理客户端可能重复传入的路径前缀（#3：双 /v1 修复）：
+//
+//	/api/proxy/openai/v1/chat/completions   → chat/completions      （客户端带 /v1，pathPrefix=/v1）
+//	/api/proxy/openai/chat/completions      → chat/completions      （客户端未带）
+//	/api/proxy/anthropic/v1/messages        → v1/messages           （pathPrefix 空，/v1 是真实端点，保留）
+//	/api/proxy/qwen/v1/chat/completions     → chat/completions      （pathPrefix=/compatible-mode/v1，客户端只带末尾段 v1）
+//	/api/proxy/qwen/compatible-mode/v1/...  → ...                   （客户端带完整 pathPrefix，同样去重）
+//
+// 规则：
+//  1. 剥代理前缀后得 rest；若 rest 以「完整 pathPrefix」开头则去整段（覆盖客户端带完整前缀）。
+//  2. 否则，若 pathPrefix 多段且末尾段形如版本号（v1 / v3 / v1beta），而 rest 恰以该段开头，
+//     去掉该段（覆盖 OpenAI SDK 习惯只带 /v1，而供应商 pathPrefix 是 /compatible-mode/v1 这类）。
+//     末尾段非版本号（如 gemini 的 .../openai）不去重，避免误伤。
 func (r *Registry) ResolveTarget(path, prefix string) string {
-	return strings.TrimPrefix(path, prefix)
+	rest := strings.TrimPrefix(path, prefix)
+	rest = strings.TrimPrefix(rest, "/")
+	route, ok := r.routes[prefix]
+	if !ok {
+		return rest
+	}
+	pp := strings.TrimPrefix(route.PathPrefix, "/")
+	if pp == "" {
+		return rest
+	}
+	// 规则 1：完整 pathPrefix 前缀
+	if rest == pp {
+		return ""
+	}
+	if strings.HasPrefix(rest, pp+"/") {
+		return strings.TrimPrefix(rest, pp+"/")
+	}
+	// 规则 2：多段 pathPrefix 的末尾版本段
+	if idx := strings.LastIndex(pp, "/"); idx >= 0 {
+		seg := pp[idx+1:]
+		if looksLikeVersion(seg) {
+			if rest == seg {
+				return ""
+			}
+			if strings.HasPrefix(rest, seg+"/") {
+				return strings.TrimPrefix(rest, seg+"/")
+			}
+		}
+	}
+	return rest
+}
+
+// looksLikeVersion 判断路径段是否形如版本号（v1 / v3 / v1beta / 2），
+// 用于限定「末尾段去重」只对版本段生效，避免把 openai / api 这类语义段误删。
+func looksLikeVersion(seg string) bool {
+	if seg == "" {
+		return false
+	}
+	if seg[0] == 'v' && len(seg) > 1 && seg[1] >= '0' && seg[1] <= '9' {
+		return true
+	}
+	return seg[0] >= '0' && seg[0] <= '9'
 }
 
 // Providers 返回所有已注册的供应商名称

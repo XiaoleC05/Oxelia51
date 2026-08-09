@@ -35,12 +35,32 @@ func (a *API) Handler() http.Handler {
 	return withCORS(mux)
 }
 
-// withCORS 全局 CORS 中间件：放行桌面 webview / Vite dev 跨源，OPTIONS 预检直接 204。
+// allowedLocalOrigins 桌面 UI 可能的来源：Tauri webview（tauri.localhost）与 Vite dev。
+// 本地 sidecar 只听回环，但仍需校验 Origin，防止本机任意网页跨源读账本 / 改设置（#5）。
+var allowedLocalOrigins = map[string]bool{
+	"http://localhost:5173":    true, // Vite dev
+	"http://127.0.0.1:5173":    true,
+	"http://tauri.localhost":   true, // Tauri 2 Windows webview
+	"https://tauri.localhost":  true, // Tauri 2 部分配置
+	"http://localhost:17800":   true, // 同源兜底
+	"http://127.0.0.1:17800":   true,
+}
+
+// withCORS 全局 CORS 中间件：仅放行桌面 webview / Vite dev 已知来源，OPTIONS 预检 204。
+// 无 Origin 头（非浏览器，如 curl / sidecar 自身）放行；未知 Origin 拒绝。
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			if !allowedLocalOrigins[origin] {
+				http.Error(w, "origin not allowed", http.StatusForbidden)
+				return
+			}
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Vary", "Origin")
+		}
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -50,10 +70,7 @@ func withCORS(next http.Handler) http.Handler {
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
-	// 桌面 UI（Tauri webview / Vite dev）跨源读取本地接口
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	// CORS 头由 withCORS 中间件统一注入；此处只设内容类型
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)

@@ -111,8 +111,14 @@ func main() {
 		mux.Handle("/api/", localapi.New(sqliteWriter.DB()).Handler())
 	}
 
+	// 本地优先模式只听回环（#5：原 0.0.0.0 让同网段任意主机可读账本 / 改设置）；
+	// 云端模式仍监听全部地址（nginx 同机反代）。
+	addr := ":" + port
+	if localMode {
+		addr = "127.0.0.1:" + port
+	}
 	srv := &http.Server{
-		Addr:         ":" + port,
+		Addr:         addr,
 		Handler:      mux,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 10 * time.Minute, // SSE 流式响应可能很长

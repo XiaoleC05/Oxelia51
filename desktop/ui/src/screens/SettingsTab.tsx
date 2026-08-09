@@ -126,8 +126,9 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
       <div className="card" id="proxy-section">
         <h2 className="card-title">本地代理</h2>
         <p className="empty">
-          监听端口固定为 <code>127.0.0.1:17800</code>（本地优先，无需修改）。
-          把模型工具的 BASE_URL 指向它即可开始记账。
+          监听地址固定为 <code>127.0.0.1:17800</code>（本地优先，无需修改）。
+          把模型工具的 BASE_URL 指向 <code>http://127.0.0.1:17800/api/proxy/anthropic</code>（Anthropic）
+          或 <code>/api/proxy/openai</code>（OpenAI 系）即可开始记账。
         </p>
       </div>
 

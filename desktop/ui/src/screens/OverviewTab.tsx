@@ -117,7 +117,7 @@ export function OverviewTab({ data, online }: { data: Overview | null; online: b
       {!online && (
         <div className="offline-banner">
           sidecar 未运行。请配置 Claude Code / Cursor 的代理指向{" "}
-          <code>http://127.0.0.1:17800</code>。
+          <code>http://127.0.0.1:17800/api/proxy/anthropic</code>。
         </div>
       )}
       <section className="stats">

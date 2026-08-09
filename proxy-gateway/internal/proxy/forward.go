@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"io"
@@ -51,10 +52,11 @@ func NewForwarder(reg *adapter.Registry, rec recorder.Recorder, st *stats.Stats)
 
 // sseRecorder 包装 SSE 流式响应体，在流结束后解析 usage
 type sseRecorder struct {
-	source  io.ReadCloser
-	buffer  bytes.Buffer
-	adapter adapter.Adapter
-	record  func(*adapter.TokenUsage)
+	source     io.ReadCloser
+	buffer     bytes.Buffer
+	adapter    adapter.Adapter
+	record     func(*adapter.TokenUsage)
+	encoding   string // 上游 Content-Encoding（gzip 时 Close 时解压再解析，#1）
 }
 
 func (r *sseRecorder) Read(p []byte) (int, error) {
@@ -66,9 +68,18 @@ func (r *sseRecorder) Read(p []byte) (int, error) {
 }
 
 func (r *sseRecorder) Close() error {
-	// 流结束，解析 usage
+	// 流结束，解析 usage；gzip 流先解压再扫描（#1）
 	if r.buffer.Len() > 0 {
-		usage, _ := r.adapter.ExtractUsageFromStream(&r.buffer)
+		data := r.buffer.Bytes()
+		if strings.EqualFold(r.encoding, "gzip") {
+			if zr, err := gzip.NewReader(bytes.NewReader(data)); err == nil {
+				if dec, derr := io.ReadAll(io.LimitReader(zr, 8<<20)); derr == nil {
+					data = dec
+				}
+				zr.Close()
+			}
+		}
+		usage, _ := r.adapter.ExtractUsageFromStream(bytes.NewReader(data))
 		if usage != nil {
 			r.record(usage)
 		}
@@ -108,9 +119,10 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 4) 解析上游 URL（拼接供应商路径前缀）
 	upstreamPath := route.PathPrefix + "/" + strings.TrimPrefix(f.registry.ResolveTarget(r.URL.Path, prefix), "/")
 	targetURL := &url.URL{
-		Scheme: "https",
-		Host:   route.Target,
-		Path:   "/" + strings.TrimPrefix(upstreamPath, "/"),
+		Scheme:   "https",
+		Host:     route.Target,
+		Path:     "/" + strings.TrimPrefix(upstreamPath, "/"),
+		RawQuery: r.URL.RawQuery, // 透传查询串（Azure api-version / 部分 CDN 鉴权依赖）
 	}
 	if upstreamBase != nil {
 		targetURL.Scheme = upstreamBase.Scheme
@@ -129,6 +141,11 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			} else {
 				req.Host = route.Target
 			}
+
+			// 强制上游返回未压缩响应：usage 提取需读 JSON 明文，gzip 字节流会
+			// 导致 json.Unmarshal 失败、整笔记录 token 为 0（#1）。
+			// 本地回环场景带宽可忽略；云端亦由网关统一解压，不向客户端暴露此改动。
+			req.Header.Set("Accept-Encoding", "identity")
 
 			// Oxelia51 产品化：客户端真实上游 LLM key 经 X-Oxelia51-Upstream-Key 传递，
 			// 按供应商协议写回鉴权头（Anthropic 用 x-api-key，OpenAI 兼容系用 Authorization）。
@@ -154,8 +171,9 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				// 流式：包装 body 为 sseRecorder
 				originalBody := resp.Body
 				resp.Body = &sseRecorder{
-					source:  originalBody,
-					adapter: route.Adapter,
+					source:   originalBody,
+					adapter:  route.Adapter,
+					encoding: resp.Header.Get("Content-Encoding"),
 					record: func(usage *adapter.TokenUsage) {
 						f.recorder.Record(adapter.TokenRecord{
 							EventID:          uuid.NewString(),
@@ -181,8 +199,9 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 
-			// 用临时 response 供 adapter 读取
-			tmpResp := &http.Response{Body: io.NopCloser(bytes.NewReader(rawBody))}
+			// 用解压后的明文提取 usage（#1：gzip 响应导致 token 丢失）
+			decBody := decodeBody(rawBody, resp.Header.Get("Content-Encoding"))
+			tmpResp := &http.Response{Body: io.NopCloser(bytes.NewReader(decBody))}
 			usage, err := route.Adapter.ExtractUsage(tmpResp)
 			if err != nil {
 				log.Printf("extract usage failed: %v", err)
@@ -229,6 +248,26 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
+}
+
+// decodeBody 返回可用于 JSON 解析的明文字节。
+// 上游可能忽略 Accept-Encoding: identity 仍返回 gzip（部分 CDN/网关强制压缩），
+// 此时按 Content-Encoding 解压；解压失败则回退原字节（交由调用方报错）。
+// 限制 8MB 防止解压炸弹。
+func decodeBody(raw []byte, encoding string) []byte {
+	if !strings.EqualFold(encoding, "gzip") {
+		return raw
+	}
+	zr, err := gzip.NewReader(bytes.NewReader(raw))
+	if err != nil {
+		return raw
+	}
+	defer zr.Close()
+	dec, err := io.ReadAll(io.LimitReader(zr, 8<<20))
+	if err != nil || len(dec) == 0 {
+		return raw
+	}
+	return dec
 }
 
 // extractModel 从请求体中提取 model 字段
