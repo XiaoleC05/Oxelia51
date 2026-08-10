@@ -1,5 +1,7 @@
 # Oxelia51 v3.0 — 项目状态 & 待办任务汇总
 
+> ⚠️ 已过期：v3.0 时代待办快照（2026-07），保留存档；现状以 docs/README.md 与 CHANGELOG.md 为准。
+
 ## 已完成
 
 ### Phase 1: Langfuse 部署

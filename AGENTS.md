@@ -45,7 +45,7 @@
 **职责**：React 组件、页面、路由、状态管理、CSS、响应式、动画。
 
 **修改范围**：
-- `frontend/src/**/*.{jsx,css,tsx}`
+- `desktop/ui/src/**/*.{ts,tsx,css}`
 - `langfuse-token/web/src/**/*`
 
 **不得修改**：后端代码、API 定义、数据库、部署配置。

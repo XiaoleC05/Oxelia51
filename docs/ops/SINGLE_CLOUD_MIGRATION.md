@@ -15,7 +15,7 @@
 │  ├─ /api/auth/login → Go 后端 :8080                                         │
 │  ├─ /api/trpc|auth|project|public → SSH 隧道 → 腾讯云 web                    │
 │  └─ /api/ → Go 后端 :8080                                                    │
-│  Go 代理网关 :9090（公网，30 供应商代理）                                     │
+│  Go 代理网关 :9090（公网，43 供应商代理（撰写时 30））                        │
 │  Go 管理后台 :8080（SmartKB Postgres :5432、Redis :6379）                    │
 └──────────────────────────────────────────────────────────────────────────┘
       │ SSH 隧道（token-tunnel.service）

@@ -1,6 +1,6 @@
 # oxelia51.com 文档索引
 
-**版本**：v4.0（规划中） | **更新**：2026-08-08
+**版本**：v4.0（已发布，2026-08-09） | **更新**：2026-08-08
 
 ---
 
@@ -21,6 +21,8 @@ v4 转向**本地优先的个人 Token 记账本**（桌面应用 + 弱认证 + 
 | 5 | [自动化部署](5-deployment.md) | 运维 | CI/CD、Webhook、Docker Compose、systemd |
 | 6 | [维护与服务器](6-maintenance.md) | 运维 | 服务器信息、日常命令、故障排查、备份、安全 |
 
+> 注：以上 1–6 号为 v3 历史快照，与 v4 现状有出入。
+
 ## 运维文档（随变更维护）
 
 | 文档 | 说明 |
@@ -39,4 +41,4 @@ v4 转向**本地优先的个人 Token 记账本**（桌面应用 + 弱认证 + 
 | [AGENTS.md](../AGENTS.md) | 任务分工规则（后端/前端/审查/架构） |
 | [CLAUDE.md](../CLAUDE.md) | 文件所有权 + 行为边界 + 提示词模板 |
 | [7-i18n-glossary.md](7-i18n-glossary.md) | 汉化术语标准（i18n 路由已移除，现为文案口径规范） |
-| [prompts/current-task.md](prompts/current-task.md) | 当前任务提示词模板 |
+| [prompts/current-task.md](prompts/current-task.md) | v3 待办快照（已过期，存档） |

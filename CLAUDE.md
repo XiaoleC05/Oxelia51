@@ -33,7 +33,7 @@
 
 | 路径模式 | 归属 | 我的行为 |
 |----------|:--:|------|
-| `**/frontend/src/**/*.{jsx,css,tsx}` | 前端任务 | 只读，产出提示词 |
+| `**/desktop/ui/src/**/*.{ts,tsx,css}` | 前端任务 | 只读，产出提示词 |
 | `**/backend/internal/handler/*.go` | 后端任务 | 只读，产出提示词 |
 | `**/backend/internal/model/*.go` | 后端任务 | 只读，产出提示词 |
 | `**/backend/internal/service/*.go` | 后端任务 | 只读，产出提示词 |
@@ -72,7 +72,7 @@ Oxelia51/                    ← 平台主仓库（v3.0）
   proxy-gateway/             ← Go 代理网关（自研）
   analytics/                 ← C++ 分析引擎（自研）
   backend/                   ← Go 管理后台
-  frontend/                  ← React 前端（旧页面逐步废弃）
+  desktop/                   ← Tauri 2 桌面应用（React UI 在 desktop/ui/）
   deploy/                    ← 部署配置
   docs/                      ← 全部文档
 
