@@ -1,0 +1,11 @@
+{
+  "identifier": "widget",
+  "description": "悬浮玻璃卡片能力：拖拽移动 / 关闭即隐藏",
+  "windows": ["widget"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-hide",
+    "core:window:allow-show"
+  ]
+}

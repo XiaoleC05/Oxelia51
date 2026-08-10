@@ -1,8 +1,9 @@
 {
   "name": "oxelia51-desktop-ui",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

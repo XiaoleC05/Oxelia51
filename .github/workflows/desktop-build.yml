@@ -21,7 +21,7 @@ jobs:
           - platform: macos-14        # Apple Silicon
             bundles: dmg
           - platform: ubuntu-latest
-            bundles: deb
+            bundles: deb,rpm,appimage
     env:
       UI_DIR: desktop/ui
       SRC_TAURI: desktop/src-tauri
@@ -83,6 +83,23 @@ jobs:
         working-directory: desktop
         # tauri CLI 需在 src-tauri 父目录运行（它只向下找 tauri.conf.json）
         run: npm exec --prefix ui -- tauri build --bundles ${{ matrix.bundles }}
+
+      # Windows 便携版：把应用 exe + sidecar 打成一个免安装 zip（解压即用）。
+      # sidecar 解析逻辑（lib.rs find_sidecar）会找 exe 同目录的 proxy.exe，故同一目录即可。
+      # 用 powershell Compress-Archive 打真 zip（GNU tar 的 auto-compress 不支持 .zip，
+      # 会产出「伪 .zip 的真 tar 文件」，Explorer/解压工具打不开）。
+      - name: Package Windows portable ZIP
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          APP=$(find desktop/src-tauri/target -path "*/release/oxelia51-desktop.exe" | head -1)
+          SIDECAR=$(find desktop -path "*proxy-x86_64-pc-windows-msvc.exe" | head -1)
+          mkdir -p portable
+          cp "$APP" portable/oxelia51.exe
+          cp "$SIDECAR" portable/proxy.exe
+          powershell -Command "Compress-Archive -Path 'portable\oxelia51.exe','portable\proxy.exe' -DestinationPath 'oxelia51-windows-portable.zip' -Force"
+          cp oxelia51-windows-portable.zip desktop/dist/ 2>/dev/null || { mkdir -p desktop/dist && cp oxelia51-windows-portable.zip desktop/dist/; }
+          echo "portable zip:"; ls -la desktop/dist/*.zip 2>/dev/null || true
 
       - name: Collect artifacts
         shell: bash

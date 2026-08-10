@@ -3,12 +3,14 @@ name = "oxelia51-desktop"
 version = "0.1.0"
 description = "Oxelia51 本地优先的个人 Token 记账本"
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/XiaoleC05/Oxelia51"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
 tauri-plugin-single-instance = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-opener = "2"
