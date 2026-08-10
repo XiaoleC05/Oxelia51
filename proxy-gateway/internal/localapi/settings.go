@@ -22,23 +22,157 @@ type ModelPrice struct {
 // 的共有模型价格保持一致，避免桌面「一键填入」参考价与云端实际成本口径不同。
 // 共有模型价格有 TestDefaultPricingMatchesSeed 防漂移。
 var defaultPricing = map[string]ModelPrice{
-	"claude-sonnet-5":   {Prompt: 3.0, Completion: 15.0},
-	"claude-sonnet-4":   {Prompt: 3.0, Completion: 15.0},
-	"claude-opus-5":     {Prompt: 15.0, Completion: 75.0},
-	"claude-haiku-4.5":  {Prompt: 1.0, Completion: 5.0},
-	"gpt-5":             {Prompt: 1.25, Completion: 10.0},
-	"gpt-4o":            {Prompt: 2.5, Completion: 10.0},
-	"gpt-4.1":           {Prompt: 2.0, Completion: 8.0},
-	"deepseek-chat":     {Prompt: 0.27, Completion: 1.1},
-	"deepseek-reasoner": {Prompt: 0.55, Completion: 2.19},
-	"moonshot-v1-8k":    {Prompt: 0.06, Completion: 0.12},
-	"glm-4":             {Prompt: 0.2, Completion: 0.6},
-	"qwen-max":          {Prompt: 1.6, Completion: 6.4},
-	"doubao-pro-32k":    {Prompt: 0.8, Completion: 2.0},
-	"gemini-2.5-pro":    {Prompt: 1.25, Completion: 10.0},
-	"mistral-large":     {Prompt: 2.0, Completion: 6.0},
-	"o1":                {Prompt: 15.0, Completion: 60.0},
-	"o3":                {Prompt: 2.0, Completion: 8.0},
+	// Anthropic（现行五代）
+	"claude-fable-5":     {Prompt: 10.0, Completion: 50.0},
+	"claude-opus-5":      {Prompt: 5.0, Completion: 25.0},
+	"claude-sonnet-5":    {Prompt: 3.0, Completion: 15.0},
+	"claude-haiku-4.5":   {Prompt: 1.0, Completion: 5.0},
+	// OpenAI（现行 5.6 家族 + 通用档）
+	"gpt-5.6-sol":        {Prompt: 5.0, Completion: 30.0},
+	"gpt-5.6-terra":      {Prompt: 2.0, Completion: 12.0},
+	"gpt-5.6-luna":       {Prompt: 0.2, Completion: 1.2},
+	"gpt-5":              {Prompt: 1.25, Completion: 10.0},
+	"gpt-5-mini":         {Prompt: 0.25, Completion: 2.0},
+	"gpt-4o":             {Prompt: 2.5, Completion: 10.0},
+	"o3":                 {Prompt: 10.0, Completion: 40.0},
+	"o4-mini":            {Prompt: 1.1, Completion: 4.4},
+	// DeepSeek（现行 v4 系列；deepseek-chat/reasoner 为 v4-flash 别名）
+	"deepseek-v4-pro":    {Prompt: 0.42, Completion: 0.83},
+	"deepseek-v4-flash":  {Prompt: 0.14, Completion: 0.28},
+	"deepseek-chat":      {Prompt: 0.14, Completion: 0.28},
+	"deepseek-reasoner":  {Prompt: 0.14, Completion: 0.28},
+	// Kimi / Moonshot
+	"kimi-k3":            {Prompt: 2.78, Completion: 13.89},
+	"kimi-k2.6":          {Prompt: 0.95, Completion: 4.0},
+	"kimi-k2":            {Prompt: 0.6, Completion: 2.4},
+	// moonshot-v1-8k：官方 ¥2.00/¥10.00 每 1M tokens（platform.kimi.com/docs/pricing/chat-v1），÷7.2 折算
+	"moonshot-v1-8k":     {Prompt: 0.28, Completion: 1.39},
+	// 智谱
+	"glm-5.2":            {Prompt: 1.11, Completion: 3.89},
+	"glm-4":              {Prompt: 0.2, Completion: 0.6},
+	// 通义千问
+	"qwen3.8max":         {Prompt: 1.67, Completion: 5.0},
+	"qwen3.5-plus":       {Prompt: 0.11, Completion: 0.67},
+	"qwen-max":           {Prompt: 1.6, Completion: 6.4},
+	// 豆包 / 火山方舟
+	"doubao-seed-2.1-pro":   {Prompt: 0.83, Completion: 4.17},
+	"doubao-seed-2.1-turbo": {Prompt: 0.42, Completion: 2.08},
+	"doubao-pro-32k":        {Prompt: 0.11, Completion: 0.28},
+	// Gemini
+	"gemini-3-pro":       {Prompt: 1.5, Completion: 9.0},
+	"gemini-3-flash":     {Prompt: 1.5, Completion: 7.5},
+	"gemini-2.5-pro":     {Prompt: 1.25, Completion: 10.0},
+	// xAI / Mistral
+	"grok-4.5":           {Prompt: 2.0, Completion: 6.0},
+	"mistral-large-3":    {Prompt: 0.5, Completion: 1.5},
+}
+
+// CatalogItem 模型价格目录（供价格表展示）。Provider 为供应商标签，价格 USD/1M tokens。
+type CatalogItem struct {
+	Model      string  `json:"model"`
+	Provider   string  `json:"provider"`
+	Prompt     float64 `json:"prompt"`
+	Completion float64 `json:"completion"`
+}
+
+// pricingCatalog 内置常见模型参考价（按供应商归类，近似公开价，可在设置页修改）。
+// 用于「模型价格表」按价格/性价比排行；桌面离线可用，标注为参考价而非实时。
+// 数据按 2026-08 各厂商现行公开价整理（美元 / 每 1M tokens；国内按人民币官方价 ÷7.2 折算，
+// 展示时由 /api/pricing/rate 的每日汇率换算回人民币）。
+var pricingCatalog = []CatalogItem{
+	// Claude / Anthropic（现行五代：Fable / Opus 5 / Sonnet 5 / Haiku 4.5）
+	{"claude-fable-5", "Anthropic", 10.0, 50.0},
+	{"claude-opus-5", "Anthropic", 5.0, 25.0},
+	{"claude-sonnet-5", "Anthropic", 3.0, 15.0},
+	{"claude-haiku-4.5", "Anthropic", 1.0, 5.0},
+	// OpenAI（现行 5.6 家族，2026-07 GA）
+	{"gpt-5.6-sol", "OpenAI", 5.0, 30.0},
+	{"gpt-5.6-terra", "OpenAI", 2.0, 12.0},
+	{"gpt-5.6-luna", "OpenAI", 0.2, 1.2},
+	{"gpt-5.5", "OpenAI", 5.0, 30.0},
+	{"gpt-5.5-pro", "OpenAI", 30.0, 180.0},
+	{"gpt-5.4-mini", "OpenAI", 0.75, 4.5},
+	{"gpt-5.4-nano", "OpenAI", 0.2, 1.25},
+	{"gpt-5", "OpenAI", 1.25, 10.0},
+	{"gpt-5-mini", "OpenAI", 0.25, 2.0},
+	{"o3", "OpenAI", 10.0, 40.0},
+	{"o4-mini", "OpenAI", 1.1, 4.4},
+	// DeepSeek（现行 v4 系列，2026-07）
+	{"deepseek-v4-pro", "DeepSeek", 0.42, 0.83},
+	{"deepseek-v4-flash", "DeepSeek", 0.14, 0.28},
+	// Moonshot / Kimi（现行 K2.x / K3）
+	{"kimi-k3", "Kimi", 2.78, 13.89},
+	{"kimi-k2.6", "Kimi", 0.95, 4.0},
+	{"kimi-k2.7-code", "Kimi", 0.95, 4.0},
+	{"kimi-k2.5", "Kimi", 0.6, 3.0},
+	{"kimi-k2", "Kimi", 0.6, 2.4},
+	// moonshot-v1 经典系列（官方 ¥10/¥30 每 1M，÷7.2；官方公告 2026-08-31 全平台下线）
+	{"moonshot-v1-128k", "Kimi", 1.39, 4.17},
+	// 智谱 GLM（现行 5.x）
+	{"glm-5.2", "智谱 GLM", 1.11, 3.89},
+	{"glm-5", "智谱 GLM", 0.56, 2.5},
+	{"glm-5-code", "智谱 GLM", 0.83, 3.89},
+	{"glm-4.6", "智谱 GLM", 0.55, 2.1},
+	{"glm-4.5-air", "智谱 GLM", 0.13, 0.85},
+	// 通义千问（现行 Qwen3.7/3.8）
+	{"qwen3.8max", "通义千问", 1.67, 5.0},
+	{"qwen3.7plus", "通义千问", 0.28, 1.11},
+	{"qwen3.5-plus", "通义千问", 0.11, 0.67},
+	{"qwen3-max", "通义千问", 0.35, 1.39},
+	{"qwen3-235b-a22b", "通义千问", 0.56, 1.67},
+	{"qwen3-32b", "通义千问", 0.28, 1.11},
+	{"qwen-long", "通义千问", 0.07, 0.28},
+	{"qwen-plus", "通义千问", 0.11, 0.28},
+	// 豆包 / 火山方舟（现行 seed-2.x）
+	{"doubao-seed-2.1-pro", "火山方舟", 0.83, 4.17},
+	{"doubao-seed-2.1-turbo", "火山方舟", 0.42, 2.08},
+	{"doubao-seed-2.0-mini", "火山方舟", 0.03, 0.28},
+	{"doubao-seed-1.6", "火山方舟", 0.11, 1.11},
+	{"doubao-pro-32k", "火山方舟", 0.11, 0.28},
+	// MiniMax
+	{"minimax-text-01", "MiniMax", 0.14, 1.11},
+	{"minimax-m1", "MiniMax", 0.11, 1.11},
+	// 讯飞星火：spark-4.0-ultra 官方为分档套餐价（2026-08 核查 0.5~0.7 元/万 tokens，
+	// 随套餐浮动且含限时折扣），无法确定单一官方价，按「不虚构」原则不收录，留「未配置定价」。
+	// 阶跃星辰（现行 step-3.x / step-2）
+	{"step-3.5-flash", "阶跃星辰", 0.1, 0.29},
+	{"step-2-mini", "阶跃星辰", 0.14, 0.28},
+	{"step-2-16k", "阶跃星辰", 5.28, 16.67},
+	// 百川
+	{"baichuan4-air", "百川", 0.14, 0.14},
+	{"baichuan4-turbo", "百川", 2.08, 2.08},
+	// Google Gemini（现行 Gemini 3.x / 2.5）
+	{"gemini-3-pro", "Google Gemini", 1.5, 9.0},
+	{"gemini-3-flash", "Google Gemini", 1.5, 7.5},
+	{"gemini-2.5-pro", "Google Gemini", 1.25, 10.0},
+	{"gemini-2.5-flash", "Google Gemini", 0.3, 2.5},
+	{"gemini-2.5-flash-lite", "Google Gemini", 0.1, 0.4},
+	// xAI Grok（现行 4.5 / 4.3）
+	{"grok-4.5", "xAI", 2.0, 6.0},
+	{"grok-4.3", "xAI", 1.25, 2.5},
+	// Mistral
+	{"mistral-large-3", "Mistral", 0.5, 1.5},
+	{"mistral-medium-3", "Mistral", 0.4, 2.0},
+	{"mistral-small-4", "Mistral", 0.15, 0.6},
+	{"mistral-small-3.2", "Mistral", 0.06, 0.18},
+	{"codestral", "Mistral", 0.3, 0.9},
+	// Mistral 推理模型（官方 API 价，USD）
+	{"magistral-medium", "Mistral", 2.0, 5.0},
+	{"magistral-small", "Mistral", 0.5, 1.5},
+	// Meta Llama（开源，按主流托管商参考价）
+	{"llama-4-maverick-17b-128e", "Meta / 开源", 0.15, 0.6},
+	{"llama-4-scout-17b-16e", "Meta / 开源", 0.08, 0.3},
+	// Groq 托管
+	{"llama-3.3-70b-versatile", "Groq", 0.59, 0.79},
+	{"llama-3.1-8b-instant", "Groq", 0.05, 0.08},
+	{"llama-4-scout-17b-16e-instruct", "Groq", 0.11, 0.34},
+	// Perplexity Sonar
+	{"sonar-pro", "Perplexity", 3.0, 15.0},
+	{"sonar", "Perplexity", 1.0, 1.0},
+	{"sonar-reasoning-pro", "Perplexity", 2.0, 8.0},
+	// Cohere
+	{"command-a", "Cohere", 2.5, 10.0},
+	{"command-r", "Cohere", 0.15, 0.6},
 }
 
 // Settings 本地设置（存 settings 表，key→value JSON）。
@@ -46,10 +180,11 @@ var defaultPricing = map[string]ModelPrice{
 // 注：不含 port —— sidecar 端口由 Tauri 壳硬编码 17800（lib.rs），
 // 且 port 不在 allowedSettingKeys 白名单内，前端零引用。原字段为死代码（#30）。
 type Settings struct {
-	Theme   string       `json:"theme"`
-	Pricing []PricedItem `json:"pricing"`
-	Budgets []BudgetItem `json:"budgets"`
-	Sync    SyncConfig   `json:"sync"`
+	Theme        string       `json:"theme"`
+	Pricing      []PricedItem `json:"pricing"`
+	Budgets      []BudgetItem `json:"budgets"`
+	Sync         SyncConfig   `json:"sync"`
+	WidgetFields []string     `json:"widgetFields"` // 悬浮卡片显示字段（空 = 全部）
 }
 
 // PricedItem 定价表中的一行（前端可编辑）。
@@ -59,16 +194,21 @@ type PricedItem struct {
 	Completion string `json:"completion"`
 }
 
-// BudgetItem 预算阈值（model="*" 表示全局）。
+// BudgetItem 预算阈值。dimension ∈ {global, provider, agent, model}，
+// global 时 target 为空；其余维度 target 为具体名称（如 provider=deepseek、agent=cursor、model=gpt-5）。
 type BudgetItem struct {
-	Model       string `json:"model"`
+	Dimension   string `json:"dimension"`             // global / provider / agent / model
+	Target      string `json:"target,omitempty"`      // 具体名称（global 为空）
+	Model       string `json:"model,omitempty"`       // 兼容旧格式：dimension=model 时等价于 target
 	DailyTokens int64  `json:"dailyTokens"`
 }
 
 // SyncConfig 多设备同步配置（P4）。
 type SyncConfig struct {
-	Enabled  bool   `json:"enabled"`
-	Account  string `json:"account"`
+	Enabled bool   `json:"enabled"`
+	Account string `json:"account"`
+	// LastSync 上次同步成功时间（sync_last，RFC3339），仅展示用。
+	// 同步游标另存 sync_up_ts（上传）/ sync_dl_seq（下载），见 sync.go。
 	LastSync string `json:"lastSync"`
 }
 
@@ -87,6 +227,10 @@ func (a *API) setSetting(key, value string) {
 		a.pmu.Lock()
 		a.pricingCached = nil
 		a.pmu.Unlock()
+	}
+	// 自定义供应商写入后 Match 立即可见（不等 TTL）
+	if key == customProvidersKey {
+		a.invalidateCustomProviders()
 	}
 	_, _ = a.db.Exec(
 		"INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -183,7 +327,20 @@ func (a *API) getBudgets() []BudgetItem {
 	return items
 }
 
-// loadSettings 读取全部设置（主题/定价/预算/同步）。
+// getWidgetFields 读取悬浮卡片显示字段（JSON 字符串数组）；未设置返回 nil = 全部。
+func (a *API) getWidgetFields() []string {
+	raw := a.getSetting("widget_fields")
+	if raw == "" {
+		return nil
+	}
+	var f []string
+	if json.Unmarshal([]byte(raw), &f) == nil {
+		return f
+	}
+	return nil
+}
+
+// loadSettings 读取全部设置（主题/定价/预算/同步/悬浮卡片字段）。
 func (a *API) loadSettings() Settings {
 	theme := a.getSetting("theme")
 	if theme == "" {
@@ -196,5 +353,5 @@ func (a *API) loadSettings() Settings {
 	}
 	sort.Slice(items, func(i, j int) bool { return items[i].Model < items[j].Model })
 	sync := SyncConfig{Enabled: a.getSetting("sync_enabled") == "true", Account: a.getSetting("sync_account"), LastSync: a.getSetting("sync_last")}
-	return Settings{Theme: theme, Pricing: items, Budgets: a.getBudgets(), Sync: sync}
+	return Settings{Theme: theme, Pricing: items, Budgets: a.getBudgets(), Sync: sync, WidgetFields: a.getWidgetFields()}
 }

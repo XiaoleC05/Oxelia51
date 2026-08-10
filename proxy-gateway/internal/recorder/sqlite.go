@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS token_events (
     project_id         TEXT NOT NULL,
     session_id         TEXT NOT NULL DEFAULT '',
     provider           TEXT NOT NULL DEFAULT '',
+    agent              TEXT NOT NULL DEFAULT '',
     model              TEXT NOT NULL DEFAULT '',
     prompt_tokens      INTEGER NOT NULL DEFAULT 0,
     completion_tokens  INTEGER NOT NULL DEFAULT 0,
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS token_events (
 CREATE INDEX IF NOT EXISTS idx_token_events_ts      ON token_events (timestamp);
 CREATE INDEX IF NOT EXISTS idx_token_events_session ON token_events (session_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_token_events_project ON token_events (project_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_token_events_provider ON token_events (provider, timestamp);
 
 CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
@@ -97,6 +99,19 @@ func NewSQLiteWriter(path string) (*SQLiteWriter, error) {
 	); err != nil && !strings.Contains(err.Error(), "duplicate column") {
 		log.Printf("sqlite migrate partial column: %v", err)
 	}
+	// 老库补 agent 列（Agent 维度：用户使用的客户端工具）。
+	// 注意：agent 索引不能在主建表 SQL 里创建——老库还没有 agent 列时会先报错。
+	// 这里先补列、再建索引，顺序保证新旧库都成立。
+	if _, err := db.ExecContext(context.Background(),
+		`ALTER TABLE token_events ADD COLUMN agent TEXT NOT NULL DEFAULT ''`,
+	); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+		log.Printf("sqlite migrate agent column: %v", err)
+	}
+	if _, err := db.ExecContext(context.Background(),
+		`CREATE INDEX IF NOT EXISTS idx_token_events_agent ON token_events (agent, timestamp)`,
+	); err != nil {
+		log.Printf("sqlite create agent index: %v", err)
+	}
 	log.Printf("sqlite ready at %s", path)
 	return &SQLiteWriter{db: db}, nil
 }
@@ -113,9 +128,9 @@ func (w *SQLiteWriter) WriteBatch(records []adapter.TokenRecord) error {
 	defer tx.Rollback()
 
 	stmt, err := tx.Prepare(`INSERT OR IGNORE INTO token_events
-		(event_id, project_id, session_id, provider, model,
+		(event_id, project_id, session_id, provider, agent, model,
 		 prompt_tokens, completion_tokens, total_tokens, duration_ms, timestamp, api_key_hash, partial)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return err
 	}
@@ -143,7 +158,7 @@ func (w *SQLiteWriter) WriteBatch(records []adapter.TokenRecord) error {
 			partial = 1
 		}
 		if _, err := stmt.Exec(
-			eventID, r.ProjectID, r.SessionID, r.Provider, r.Model,
+			eventID, r.ProjectID, r.SessionID, r.Provider, r.Agent, r.Model,
 			r.PromptTokens, r.CompletionTokens, r.TotalTokens, r.DurationMs,
 			ts.Format(timeLayout), apiKeyHash, partial,
 		); err != nil {

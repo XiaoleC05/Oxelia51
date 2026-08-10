@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/adapter"
 )
 
 // API 本地只读统计 API
@@ -20,21 +22,42 @@ type API struct {
 	pmu             sync.Mutex
 	pricingCached   map[string]ModelPrice
 	pricingCachedAt time.Time
+
+	// 自定义供应商缓存（custom.go）：Registry.Match 热路径经 CustomSource 读取，
+	// 短 TTL + 写入时主动失效，不每请求查 SQL。
+	cmu            sync.Mutex
+	customCached   []adapter.CustomProvider
+	customCachedAt time.Time
+
+	// 汇率缓存（rate.go）：USD→CNY 每日更新，离线回退上次成功值 / 内置参考值。
+	rateMu sync.Mutex
+	rate   *rateCache
 }
 
-// New 创建本地 API（db 来自 recorder.SQLiteWriter.DB()）
-func New(db *sql.DB) *API { return &API{db: db} }
+// New 创建本地 API（db 来自 recorder.SQLiteWriter.DB()）；
+// 启动时读取上次汇率并挂起每日更新后台任务。
+func New(db *sql.DB) *API {
+	a := &API{db: db}
+	a.loadRateFromSettings()
+	a.ensureRateLoop()
+	return a
+}
 
 // Handler 返回路由 mux（全局 CORS 中间件处理 OPTIONS 预检，POST 才不被浏览器拦）
 func (a *API) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/overview", a.handleOverview)
-	mux.HandleFunc("/api/projects", a.handleProjects)
-	mux.HandleFunc("/api/sessions", a.handleSessions)
-	mux.HandleFunc("/api/sessions/", a.handleSessionDetail)
+	mux.HandleFunc("/api/providers", a.handleProviders)
+	mux.HandleFunc("/api/providers/", a.handleProviderDetail)
+	mux.HandleFunc("/api/agents", a.handleAgents)
+	mux.HandleFunc("/api/agents/", a.handleAgentDetail)
 	mux.HandleFunc("/api/alerts", a.handleAlerts)
 	mux.HandleFunc("/api/settings", a.handleSettings)
+	mux.HandleFunc("/api/custom-providers", a.handleCustomProviders)
+	mux.HandleFunc("/api/custom-providers/delete", a.handleCustomProvidersDelete)
 	mux.HandleFunc("/api/pricing/defaults", a.handlePricingDefaults)
+	mux.HandleFunc("/api/pricing/catalog", a.handlePricingCatalog)
+	mux.HandleFunc("/api/pricing/rate", a.handlePricingRate)
 	mux.HandleFunc("/api/pricing", a.handlePricing)
 	mux.HandleFunc("/api/sync", a.handleSync)
 	mux.HandleFunc("/api/health", a.handleHealth)
@@ -195,59 +218,6 @@ func (a *API) handleOverview(w http.ResponseWriter, r *http.Request) {
 		rows.Close()
 	}
 
-	byProject := []struct {
-		ProjectID string  `json:"projectId"`
-		Tokens    int64   `json:"tokens"`
-		Requests  int64   `json:"requests"`
-		Cost      float64 `json:"cost"`
-	}{}
-	rows, err = a.db.Query(
-		"SELECT project_id, COALESCE(SUM(total_tokens),0), COALESCE(SUM(prompt_tokens),0), COALESCE(SUM(completion_tokens),0), COUNT(*) FROM token_events WHERE project_id != '' GROUP BY project_id ORDER BY SUM(total_tokens) DESC LIMIT 10",
-	)
-	if err == nil {
-		for rows.Next() {
-			var p struct {
-				ProjectID string  `json:"projectId"`
-				Tokens    int64   `json:"tokens"`
-				Requests  int64   `json:"requests"`
-				Cost      float64 `json:"cost"`
-			}
-			var prompt, comp int64
-			if rows.Scan(&p.ProjectID, &p.Tokens, &prompt, &comp, &p.Requests) == nil {
-				byProject = append(byProject, p)
-			}
-		}
-		rows.Close()
-		// 先关主查询再逐项算成本，避免单连接下嵌套查询死锁
-		for i := range byProject {
-			byProject[i].Cost = a.projectCost(byProject[i].ProjectID)
-		}
-	}
-
-	sessions := []struct {
-		SessionID string `json:"sessionId"`
-		Tokens    int64  `json:"tokens"`
-		Requests  int64  `json:"requests"`
-		LastTs    string `json:"lastTs"`
-	}{}
-	rows, err = a.db.Query(
-		"SELECT session_id, COALESCE(SUM(total_tokens),0), COUNT(*), MAX(timestamp) FROM token_events WHERE session_id != '' GROUP BY session_id ORDER BY MAX(timestamp) DESC LIMIT 10",
-	)
-	if err == nil {
-		for rows.Next() {
-			var s struct {
-				SessionID string `json:"sessionId"`
-				Tokens    int64  `json:"tokens"`
-				Requests  int64  `json:"requests"`
-				LastTs    string `json:"lastTs"`
-			}
-			if rows.Scan(&s.SessionID, &s.Tokens, &s.Requests, &s.LastTs) == nil {
-				sessions = append(sessions, s)
-			}
-		}
-		rows.Close()
-	}
-
 	trend := []struct {
 		Date     string `json:"date"`
 		Tokens   int64  `json:"tokens"`
@@ -271,13 +241,13 @@ func (a *API) handleOverview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"today":     today,
-		"week":      week,
-		"month":     month,
-		"total":     total,
-		"byModel":   byModel,
-		"byProject": byProject,
-		"sessions":  sessions,
-		"trend":     trend,
+		"today":      today,
+		"week":       week,
+		"month":      month,
+		"total":      total,
+		"byModel":    byModel,
+		"byProvider": a.loadDimStats("provider", "", nil),
+		"byAgent":    a.loadDimStats("agent", "", nil),
+		"trend":      trend,
 	})
 }

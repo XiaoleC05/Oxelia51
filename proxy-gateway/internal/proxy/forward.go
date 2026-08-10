@@ -130,6 +130,12 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	stream := isStreamRequest(requestBody)
 	provider := route.Adapter.ProviderName()
 
+	// Agent（用户使用的软件）：客户端头 X-Oxelia51-Agent 优先，否则按 UA 推断。
+	agent := strings.TrimSpace(r.Header.Get("X-Oxelia51-Agent"))
+	if agent == "" {
+		agent = InferAgent(r.Header.Get("User-Agent"))
+	}
+
 	// #10：OpenAI 系流式默认末帧无 usage → 无法落账。
 	// 注入 stream_options.include_usage（Anthropic 流式天然带 usage，跳过）。
 	if stream && provider != "anthropic" {
@@ -142,8 +148,12 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// 4) 解析上游 URL（拼接供应商路径前缀）
 	upstreamPath := route.PathPrefix + "/" + strings.TrimPrefix(f.registry.ResolveTarget(r.URL.Path, prefix), "/")
+	scheme := route.Scheme
+	if scheme == "" {
+		scheme = "https" // 内置供应商默认 https；自定义供应商允许 http 回环
+	}
 	targetURL := &url.URL{
-		Scheme:   "https",
+		Scheme:   scheme,
 		Host:     route.Target,
 		Path:     "/" + strings.TrimPrefix(upstreamPath, "/"),
 		RawQuery: r.URL.RawQuery, // 透传查询串（Azure api-version / 部分 CDN 鉴权依赖）
@@ -170,12 +180,12 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// 本地回环场景带宽可忽略；云端亦由网关统一解压，不向客户端暴露此改动。
 			req.Header.Set("Accept-Encoding", "identity")
 
-			// Oxelia51 产品化：客户端真实上游 LLM key 经 X-Oxelia51-Upstream-Key 传递，
-			// 按供应商协议写回鉴权头（Anthropic 用 x-api-key，OpenAI 兼容系用 Authorization）。
+			// Oxelia51 产品化：客户端真实上游 LLM 经 X-Oxelia51-Upstream-Key 传递，
+			// 按供应商协议写回鉴权头（Anthropic 协议用 x-api-key，OpenAI 兼容系用 Authorization）。
 			// 该头由中间件 keyAuth 校验代理密钥后保留；代理密钥本身不上行。
 			if k := req.Header.Get("X-Oxelia51-Upstream-Key"); k != "" {
 				req.Header.Del("X-Oxelia51-Upstream-Key")
-				if route.Adapter.ProviderName() == "anthropic" {
+				if route.XAPIKeyAuth {
 					req.Header.Set("x-api-key", k)
 				} else {
 					req.Header.Set("Authorization", "Bearer "+k)
@@ -198,7 +208,7 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					adapter:  route.Adapter,
 					encoding: resp.Header.Get("Content-Encoding"),
 					record: func(usage *adapter.TokenUsage, partial bool) {
-						f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, model, duration, partial))
+						f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, agent, model, duration, partial))
 					},
 				}
 				return nil
@@ -225,7 +235,7 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			if usage != nil {
 				// #11: 非流式响应视为完整（partial=false）
-				f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, model, duration, false))
+				f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, agent, model, duration, false))
 			}
 
 			return nil
@@ -293,7 +303,7 @@ func effectivePromptTokens(usage *adapter.TokenUsage) uint32 {
 }
 
 // buildRecord 从 usage 构造一条 TokenRecord（#4：cache 折算进 PromptTokens）。
-func buildRecord(usage *adapter.TokenUsage, projectID, sessionID, provider, model string, duration uint32, partial bool) adapter.TokenRecord {
+func buildRecord(usage *adapter.TokenUsage, projectID, sessionID, provider, agent, model string, duration uint32, partial bool) adapter.TokenRecord {
 	prompt := effectivePromptTokens(usage)
 	completion := uint32(usage.CompletionTokens)
 	return adapter.TokenRecord{
@@ -301,6 +311,7 @@ func buildRecord(usage *adapter.TokenUsage, projectID, sessionID, provider, mode
 		ProjectID:        projectID,
 		SessionID:        sessionID,
 		Provider:         provider,
+		Agent:            agent,
 		Model:            model,
 		PromptTokens:     prompt,
 		CompletionTokens: completion,

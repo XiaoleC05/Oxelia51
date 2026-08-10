@@ -108,7 +108,10 @@ func main() {
 
 	// 本地优先：挂只读统计接口（桌面 UI 数据源）
 	if localMode && sqliteWriter != nil {
-		mux.Handle("/api/", localapi.New(sqliteWriter.DB()).Handler())
+		api := localapi.New(sqliteWriter.DB())
+		mux.Handle("/api/", api.Handler())
+		// 自定义供应商：静态路由表查无后按 slug 回退解析（见 adapter/custom.go）
+		adapterRegistry.SetCustomSource(api.CustomSource())
 	}
 
 	// 本地优先模式只听回环（#5：原 0.0.0.0 让同网段任意主机可读账本 / 改设置）；

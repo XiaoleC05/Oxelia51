@@ -82,3 +82,35 @@ func sessionFingerprint(r *http.Request) string {
 	}
 	return ua + "|" + host
 }
+
+// InferAgent 根据 User-Agent 推断客户端工具（Agent = 用户使用的软件，LLM + harness）。
+// 精确识别由客户端头 X-Oxelia51-Agent 覆盖（forward.go 优先读头）；推断失败归 "其他"。
+func InferAgent(ua string) string {
+	lower := strings.ToLower(strings.TrimSpace(ua))
+	switch {
+	case strings.Contains(lower, "claude-code"),
+		strings.Contains(lower, "claude-cli"),
+		strings.Contains(lower, "anthropic-cli"):
+		return "claude-code"
+	case strings.Contains(lower, "codex"):
+		return "codex"
+	case strings.Contains(lower, "cursor"):
+		return "cursor"
+	case strings.Contains(lower, "trae"):
+		return "trae"
+	case strings.Contains(lower, "qoder"):
+		return "qoder"
+	case strings.Contains(lower, "hermes"):
+		return "hermes"
+	case strings.Contains(lower, "windsurf"):
+		return "windsurf"
+	case strings.Contains(lower, "cc-switch"), strings.Contains(lower, "ccswitch"):
+		return "cc-switch"
+	case strings.Contains(lower, "ccv"):
+		return "ccv"
+	case strings.Contains(lower, "chatgpt"), strings.Contains(lower, "openai"):
+		return "openai"
+	default:
+		return "其他"
+	}
+}

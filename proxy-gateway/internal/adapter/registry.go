@@ -34,6 +34,8 @@ var providerSpecs = []providerSpec{
 	{"ppio", "ppio", "api.ppinfra.com", "/v3/openai", false},
 	{"gitee", "gitee", "ai.gitee.com", "/v1", false},
 	{"modelscope", "modelscope", "api-inference.modelscope.cn", "/v1", false},
+	{"kimi-for-coding", "kimi-for-coding", "api.kimi.com", "/coding/v1", true},
+	{"baidu-qianfan", "baidu-qianfan", "qianfan.baidubce.com", "/v2", false},
 
 	// ---- 聚合网关（一个入口覆盖数百模型）----
 	{"openrouter", "openrouter", "openrouter.ai", "/api/v1", false},
@@ -60,11 +62,57 @@ var providerSpecs = []providerSpec{
 	{"friendli", "friendli", "api.friendli.ai", "/serverless/v1", false},
 	{"nvidia", "nvidia", "integrate.api.nvidia.com", "/v1", false},
 	{"github-models", "github-models", "models.inference.ai.azure.com", "/v1", false},
+	{"minimax-io", "minimax-io", "api.minimax.io", "/v1", false},
+	{"zai", "zai", "api.z.ai", "/api/paas/v4", false},
+	{"stepfun-ai", "stepfun-ai", "api.stepfun.ai", "/v1", false},
+
+	// ---- 第三方平台（中转/聚合站，按各官方文档核实接入）----
+	// 注意前缀差异：胜算云 /api/v1、StreamLake /api/gateway/coding/v1、
+	// OpenCode /zen/v1、LongCat /openai；apito/claudecn 走 Anthropic 协议
+	// 根域（SDK 自补 /v1/messages），a6api 官方 base 即根域（/v1 仍兼容）。
+	{"packyapi", "packyapi", "www.packyapi.ai", "/v1", false},
+	{"zetaapi", "zetaapi", "api.zetaapi.ai", "/v1", false},
+	{"apinebula", "apinebula", "api.apinebula.ai", "/v1", false},
+	{"pateway", "pateway", "api.pateway.ai", "/v1", false},
+	{"fenno", "fenno", "api.fenno.ai", "/v1", false},
+	{"runapi", "runapi", "runapi.ai", "/v1", false},
+	{"shengsuanyun", "shengsuanyun", "router.shengsuanyun.com", "/api/v1", false},
+	{"aigocode", "aigocode", "api.aigocode.app", "/v1", false},
+	{"aicoding", "aicoding", "api.aicoding.inc", "/v1", false},
+	{"subrouter", "subrouter", "subrouter.ai", "/v1", false},
+	{"apikeyfun", "apikeyfun", "api.apikey.fun", "/v1", false},
+	{"apito", "apito", "gw.apito.ai", "", true},
+	{"code0", "code0", "code0.ai", "/v1", false},
+	{"teamorouter", "teamorouter", "api.teamorouter.com", "/v1", false},
+	{"claudecn", "claudecn", "claudecn.ai", "", true},
+	{"a6api", "a6api", "a6api.com", "", false},
+	{"atlascloud", "atlascloud", "api.atlascloud.ai", "/v1", false},
+	{"compshare", "compshare", "api.modelverse.cn", "/v1", false},
+	{"ccsub", "ccsub", "www.ccsub.net", "/v1", false},
+	{"micuapi", "micuapi", "www.micuapi.ai", "/v1", false},
+	{"rightapi", "rightapi", "api.rightapi.ai", "/v1", false},
+	{"cubence", "cubence", "api.cubence.com", "/v1", false},
+	{"crazyrouter", "crazyrouter", "crazyrouter.com", "/v1", false},
+	{"dmxapi", "dmxapi", "www.dmxapi.cn", "/v1", false},
+	{"aihubmix", "aihubmix", "aihubmix.com", "/v1", false},
+	{"cherryin", "cherryin", "open.cherryin.ai", "/v1", false},
+	{"eflowcode", "eflowcode", "e-flowcode.cc", "/v1", false},
+	{"streamlake", "streamlake", "wanqing.streamlakeapi.com", "/api/gateway/coding/v1", false},
+	{"longcat", "longcat", "api.longcat.chat", "/openai", false},
+	{"opencode", "opencode", "opencode.ai", "/zen/v1", false},
+	{"pipellm", "pipellm", "api.pipellm.ai", "/v1", false},
+	{"relaxycode", "relaxycode", "api.relaxycode.com", "/v1", false},
+	{"therouter", "therouter", "api.therouter.ai", "/v1", false},
 }
+
+// CustomSource 返回当前生效的自定义供应商列表（由 localapi 实现，带短 TTL 缓存，
+// Match 热路径不直接打 SQL）。nil 或未设置时行为与纯静态表一致。
+type CustomSource func() []CustomProvider
 
 // Registry 管理路由映射表
 type Registry struct {
-	routes map[string]Route
+	routes    map[string]Route
+	customSrc CustomSource // 自定义供应商回退源（静态表查无后按 slug 解析）
 }
 
 // NewRegistry 创建默认路由注册表
@@ -78,15 +126,36 @@ func NewRegistry() *Registry {
 			ad = NewOpenAIAdapter(p.name)
 		}
 		routes["/api/proxy/"+p.slug+"/"] = Route{
-			Adapter:    ad,
-			Target:     p.host,
-			PathPrefix: p.pathPrefix,
+			Adapter:     ad,
+			Target:      p.host,
+			PathPrefix:  p.pathPrefix,
+			XAPIKeyAuth: p.anthropic && p.name != "kimi-for-coding", // 见 Route.XAPIKeyAuth
 		}
 	}
 	return &Registry{routes: routes}
 }
 
-// Match 返回最长前缀匹配的 Route，未匹配返回 nil
+// SetCustomSource 挂自定义供应商回退源（main 在本地模式接线）。
+func (r *Registry) SetCustomSource(src CustomSource) {
+	r.customSrc = src
+}
+
+// matchCustom 在自定义供应商中按前缀匹配（slug 唯一，前缀即命中）。
+func (r *Registry) matchCustom(path string) (*Route, string) {
+	if r.customSrc == nil {
+		return nil, ""
+	}
+	for _, p := range r.customSrc() {
+		route, prefix, err := p.route()
+		if err == nil && strings.HasPrefix(path, prefix) {
+			return &route, prefix
+		}
+	}
+	return nil, ""
+}
+
+// Match 返回最长前缀匹配的 Route，未匹配返回 nil。
+// 静态表查无后回退自定义供应商（以 settings 当前值为准，经 CustomSource 缓存）。
 func (r *Registry) Match(path string) (*Route, string) {
 	bestPrefix := ""
 	for prefix := range r.routes {
@@ -94,11 +163,11 @@ func (r *Registry) Match(path string) (*Route, string) {
 			bestPrefix = prefix
 		}
 	}
-	if bestPrefix == "" {
-		return nil, ""
+	if bestPrefix != "" {
+		route := r.routes[bestPrefix]
+		return &route, bestPrefix
 	}
-	route := r.routes[bestPrefix]
-	return &route, bestPrefix
+	return r.matchCustom(path)
 }
 
 // ResolveTarget 将代理路径转为上游路径（含供应商路径前缀）。
@@ -119,6 +188,12 @@ func (r *Registry) ResolveTarget(path, prefix string) string {
 	rest := strings.TrimPrefix(path, prefix)
 	rest = strings.TrimPrefix(rest, "/")
 	route, ok := r.routes[prefix]
+	if !ok {
+		// 自定义供应商：前缀不在静态表，按 slug 回退解析（pathPrefix 去重同内置）
+		if cr, cp := r.matchCustom(prefix); cr != nil && cp == prefix {
+			route, ok = *cr, true
+		}
+	}
 	if !ok {
 		return rest
 	}
@@ -167,4 +242,15 @@ func (r *Registry) Providers() []string {
 		names = append(names, p.name)
 	}
 	return names
+}
+
+// BuiltinProviders 返回全部内置供应商 slug（含零用量路由）。
+// /api/providers 全量化用：UI 交叉核验「已接入」依赖完整列表，
+// 只看用量聚合会把没用过的内置路由误标「未接入」。
+func BuiltinProviders() []string {
+	slugs := make([]string, 0, len(providerSpecs))
+	for _, p := range providerSpecs {
+		slugs = append(slugs, p.slug)
+	}
+	return slugs
 }

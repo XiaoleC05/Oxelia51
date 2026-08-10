@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -28,12 +29,17 @@ func cloudSyncBase() string {
 
 const localTimeLayout = "2006-01-02 15:04:05.000"
 
+// syncDownloadMaxRounds 单次下载的最大分页轮数（防对端 hasMore 异常导致死循环）。
+// 每页 2000 条，5 轮足够覆盖正常 backlog；未拉完的游标已落地，下次同步继续。
+const syncDownloadMaxRounds = 5
+
 type cloudSyncEvent struct {
 	EventID          string `json:"eventId"`
 	DeviceID         string `json:"deviceId"`
 	ProjectID        string `json:"projectId"`
 	SessionID        string `json:"sessionId"`
 	Provider         string `json:"provider"`
+	Agent            string `json:"agent"`
 	Model            string `json:"model"`
 	PromptTokens     int64  `json:"promptTokens"`
 	CompletionTokens int64  `json:"completionTokens"`
@@ -55,24 +61,45 @@ func (a *API) syncDeviceID() string {
 
 func (a *API) syncToken() string { return a.getSetting("sync_token") }
 
-func (a *API) syncLast() time.Time {
-	s := a.getSetting("sync_last")
-	if s == "" {
-		return time.Time{}
+// 同步游标拆为两个，互不影响（旧版上下行共用 sync_last 且按事件 ts 推进，
+// 对端设备晚上传的历史事件 ts 早于游标会被永久漏掉）：
+//   - sync_up_ts：上传游标，本地事件 ts（localTimeLayout，本地时区），只由上传推进。
+//   - sync_dl_seq：下载游标，云端单调序号（int64 字符串），只由下载推进。
+// sync_last 此后仅作「上次同步成功时间」展示用（见 markSyncSuccess）。
+
+// syncUploadTS 返回上传游标（空 = 全量上传）。
+// 迁移：sync_up_ts 为空且旧 sync_last 有值时，用 sync_last 初始化（RFC3339 → 本地时间）。
+func (a *API) syncUploadTS() string {
+	if v := a.getSetting("sync_up_ts"); v != "" {
+		return v
 	}
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		return time.Time{}
+	if s := a.getSetting("sync_last"); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			v := t.Local().Format(localTimeLayout)
+			a.setSetting("sync_up_ts", v)
+			return v
+		}
 	}
-	return t
+	return ""
 }
 
-func (a *API) setSyncLast(t time.Time) {
-	a.setSetting("sync_last", t.UTC().Format(time.RFC3339))
+// syncDownloadSeq 返回下载游标（缺省 0 = 首次全量下载，event_id 去重保证幂等）。
+func (a *API) syncDownloadSeq() int64 {
+	v, _ := strconv.ParseInt(a.getSetting("sync_dl_seq"), 10, 64)
+	return v
+}
+
+// markSyncSuccess 每次成功同步后记录：sync_enabled 置位，
+// sync_last 写当前时间（RFC3339，仅「上次同步成功时间」展示，不再参与游标）。
+func (a *API) markSyncSuccess() {
+	a.setSetting("sync_enabled", "true")
+	a.setSetting("sync_last", time.Now().UTC().Format(time.RFC3339))
 }
 
 // handleSync POST /api/sync：上传或下载，与云账户同步本地 token 事件。
 // body: {"action":"upload"|"download"}，账户 token 来自 settings（UI 登录时写入）。
+// 响应 {ok, action, uploaded?|downloaded?, conflicts}；conflicts 为内容不一致的
+// event_id 数（防御性检测：账本事件不可变 + event_id 去重合并，正常恒 0）。
 func (a *API) handleSync(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
@@ -95,39 +122,38 @@ func (a *API) handleSync(w http.ResponseWriter, r *http.Request) {
 
 	switch req.Action {
 	case "upload":
-		n, err := a.syncUpload(token, deviceID)
+		n, conflicts, err := a.syncUpload(token, deviceID)
 		if err != nil {
 			writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "action": "upload", "uploaded": n})
+		a.markSyncSuccess()
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "action": "upload", "uploaded": n, "conflicts": conflicts})
 	case "download":
-		n, err := a.syncDownload(token, deviceID)
+		n, conflicts, err := a.syncDownload(token, deviceID)
 		if err != nil {
 			writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "action": "download", "downloaded": n})
+		a.markSyncSuccess()
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "action": "download", "downloaded": n, "conflicts": conflicts})
 	default:
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "未知 action"})
 	}
 }
 
-// syncUpload 把 lastSync 之后的本地事件上行到云。
-func (a *API) syncUpload(token, deviceID string) (int, error) {
-	last := a.syncLast()
+// syncUpload 把上传游标（sync_up_ts）之后的本地事件上行到云。
+// 返回云端实际插入条数与冲突数（云端按 event_id 去重，冲突正常恒 0，原样透传给 UI）。
+func (a *API) syncUpload(token, deviceID string) (int, int, error) {
+	cutoff := a.syncUploadTS()
 
-	// 读取 lastSync 之后的事件（本地时间戳为字符串格式）
-	cutoff := ""
-	if !last.IsZero() {
-		cutoff = last.Local().Format(localTimeLayout)
-	}
+	// 读取游标之后的事件（本地时间戳为字符串格式）
 	type localRow struct {
-		eventID, projectID, sessionID, provider, model, ts string
-		prompt, completion, total, duration                int64
+		eventID, projectID, sessionID, provider, agent, model, ts string
+		prompt, completion, total, duration                       int64
 	}
 	localRows := []localRow{}
-	q := "SELECT event_id, project_id, session_id, provider, model, prompt_tokens, completion_tokens, total_tokens, duration_ms, timestamp FROM token_events"
+	q := "SELECT event_id, project_id, session_id, provider, agent, model, prompt_tokens, completion_tokens, total_tokens, duration_ms, timestamp FROM token_events"
 	args := []any{}
 	if cutoff != "" {
 		q += " WHERE timestamp > ?"
@@ -136,19 +162,19 @@ func (a *API) syncUpload(token, deviceID string) (int, error) {
 	q += " ORDER BY timestamp ASC LIMIT 2000"
 	rr, err := a.db.Query(q, args...)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer rr.Close()
 	for rr.Next() {
 		var l localRow
-		if err := rr.Scan(&l.eventID, &l.projectID, &l.sessionID, &l.provider, &l.model,
+		if err := rr.Scan(&l.eventID, &l.projectID, &l.sessionID, &l.provider, &l.agent, &l.model,
 			&l.prompt, &l.completion, &l.total, &l.duration, &l.ts); err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 		localRows = append(localRows, l)
 	}
 	if len(localRows) == 0 {
-		return 0, nil
+		return 0, 0, nil
 	}
 
 	// 组装云端事件
@@ -161,7 +187,7 @@ func (a *API) syncUpload(token, deviceID string) (int, error) {
 		}
 		events = append(events, cloudSyncEvent{
 			EventID: l.eventID, DeviceID: deviceID, ProjectID: l.projectID, SessionID: l.sessionID,
-			Provider: l.provider, Model: l.model, PromptTokens: l.prompt, CompletionTokens: l.completion,
+			Provider: l.provider, Agent: l.agent, Model: l.model, PromptTokens: l.prompt, CompletionTokens: l.completion,
 			TotalTokens: l.total, DurationMs: l.duration, TS: t.UTC().Format(time.RFC3339),
 		})
 	}
@@ -169,98 +195,135 @@ func (a *API) syncUpload(token, deviceID string) (int, error) {
 	body, _ := json.Marshal(map[string]any{"deviceId": deviceID, "events": events})
 	req, err := http.NewRequest(http.MethodPost, cloudSyncBase()+"/upload", bytes.NewReader(body))
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return 0, fmt.Errorf("cloud upload: %w", err)
+		return 0, 0, fmt.Errorf("cloud upload: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(io.LimitReader(resp.Body, 300))
-		return 0, fmt.Errorf("cloud upload HTTP %d: %s", resp.StatusCode, string(b))
+		return 0, 0, fmt.Errorf("cloud upload HTTP %d: %s", resp.StatusCode, string(b))
 	}
-	// 成功后推进游标
+	var up struct {
+		Inserted  int `json:"inserted"`
+		Conflicts int `json:"conflicts"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&up); err != nil {
+		return 0, 0, fmt.Errorf("cloud upload response: %w", err)
+	}
+	// 成功后推进上传游标到本批最大事件 ts（localTimeLayout，与 token_events.timestamp 同格式）
 	if !maxT.IsZero() {
-		a.setSyncLast(maxT)
+		a.setSetting("sync_up_ts", maxT.Format(localTimeLayout))
 	}
-	a.setSetting("sync_enabled", "true")
-	return len(events), nil
+	return up.Inserted, up.Conflicts, nil
 }
 
-// syncDownload 下载他人设备在 after 之后的事件，按 event_id 去重合并进本地。
-func (a *API) syncDownload(token, deviceID string) (int, error) {
-	last := a.syncLast()
-	after := last.UTC().Format(time.RFC3339)
-	u := fmt.Sprintf("%s/download?after=%s&deviceId=%s", cloudSyncBase(), url.QueryEscape(after), url.QueryEscape(deviceID))
+// syncDownload 按下载游标（sync_dl_seq，云端单调序号）循环分页拉取其他设备的事件，
+// 按 event_id 去重合并进本地，直到 hasMore=false（上限 syncDownloadMaxRounds 轮）。
+// 全部完成后写 sync_dl_seq=最后返回的 nextCursor。返回新合并条数与冲突数。
+func (a *API) syncDownload(token, deviceID string) (int, int, error) {
+	after := a.syncDownloadSeq()
+	total, conflicts := 0, 0
+	for round := 0; round < syncDownloadMaxRounds; round++ {
+		u := fmt.Sprintf("%s/download?after=%d&deviceId=%s", cloudSyncBase(), after, url.QueryEscape(deviceID))
+		req, err := http.NewRequest(http.MethodGet, u, nil)
+		if err != nil {
+			return total, conflicts, err
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return total, conflicts, fmt.Errorf("cloud download: %w", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			b, _ := io.ReadAll(io.LimitReader(resp.Body, 300))
+			resp.Body.Close()
+			return total, conflicts, fmt.Errorf("cloud download HTTP %d: %s", resp.StatusCode, string(b))
+		}
+		var page struct {
+			Events     []cloudSyncEvent `json:"events"`
+			NextCursor int64            `json:"nextCursor"`
+			HasMore    bool             `json:"hasMore"`
+		}
+		err = json.NewDecoder(resp.Body).Decode(&page)
+		resp.Body.Close()
+		if err != nil {
+			return total, conflicts, fmt.Errorf("cloud download response: %w", err)
+		}
 
-	req, err := http.NewRequest(http.MethodGet, u, nil)
-	if err != nil {
-		return 0, err
+		n, c, err := a.mergeCloudEvents(page.Events)
+		if err != nil {
+			return total, conflicts, err
+		}
+		total += n
+		conflicts += c
+		after = page.NextCursor
+		if !page.HasMore {
+			break
+		}
 	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return 0, fmt.Errorf("cloud download: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(io.LimitReader(resp.Body, 300))
-		return 0, fmt.Errorf("cloud download HTTP %d: %s", resp.StatusCode, string(b))
-	}
+	a.setSetting("sync_dl_seq", strconv.FormatInt(after, 10))
+	return total, conflicts, nil
+}
 
-	var cloud struct {
-		Events []cloudSyncEvent `json:"events"`
+// mergeCloudEvents 把一页云端事件合并进本地账本（event_id 主键去重，INSERT OR IGNORE）。
+// 冲突检测：被 IGNORE 跳过的 event_id，SELECT 本地已有行比对 provider/model/total_tokens/timestamp，
+// 不一致计 1 次冲突（保留先到版本；防御性检测，正常恒 0）。
+func (a *API) mergeCloudEvents(events []cloudSyncEvent) (int, int, error) {
+	if len(events) == 0 {
+		return 0, 0, nil
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&cloud); err != nil {
-		return 0, err
-	}
-
-	if len(cloud.Events) == 0 {
-		a.setSetting("sync_enabled", "true")
-		return 0, nil
-	}
-
-	// 合并进本地（event_id 主键去重）
 	tx, err := a.db.Begin()
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer tx.Rollback()
-	stmt, err := tx.Prepare(`INSERT OR IGNORE INTO token_events
-		(event_id, project_id, session_id, provider, model,
+	ins, err := tx.Prepare(`INSERT OR IGNORE INTO token_events
+		(event_id, project_id, session_id, provider, agent, model,
 		 prompt_tokens, completion_tokens, total_tokens, duration_ms, timestamp, api_key_hash)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	defer stmt.Close()
+	defer ins.Close()
+	sel, err := tx.Prepare("SELECT provider, model, total_tokens, timestamp FROM token_events WHERE event_id = ?")
+	if err != nil {
+		return 0, 0, err
+	}
+	defer sel.Close()
 
-	var maxT time.Time
-	n := 0
-	for _, e := range cloud.Events {
+	n, conflicts := 0, 0
+	for _, e := range events {
 		t, err := time.Parse(time.RFC3339, e.TS)
 		if err != nil {
 			continue
 		}
-		if t.After(maxT) {
-			maxT = t
+		localTS := t.Local().Format(localTimeLayout)
+		res, err := ins.Exec(e.EventID, e.ProjectID, e.SessionID, e.Provider, e.Agent, e.Model,
+			e.PromptTokens, e.CompletionTokens, e.TotalTokens, e.DurationMs, localTS, "sync")
+		if err != nil {
+			return n, conflicts, err
 		}
-		if _, err := stmt.Exec(e.EventID, e.ProjectID, e.SessionID, e.Provider, e.Model,
-			e.PromptTokens, e.CompletionTokens, e.TotalTokens, e.DurationMs,
-			t.Local().Format(localTimeLayout), "sync"); err != nil {
-			return n, err
+		if ra, _ := res.RowsAffected(); ra > 0 {
+			n++
+			continue
 		}
-		n++
+		// 被 IGNORE：event_id 已存在，比对内容是否一致
+		var provider, model, ts string
+		var totalTokens int64
+		if err := sel.QueryRow(e.EventID).Scan(&provider, &model, &totalTokens, &ts); err != nil {
+			continue // 查不到已有行（理论上不该发生），不计冲突
+		}
+		if provider != e.Provider || model != e.Model || totalTokens != e.TotalTokens || ts != localTS {
+			conflicts++
+		}
 	}
 	if err := tx.Commit(); err != nil {
-		return n, err
+		return n, conflicts, err
 	}
-	if !maxT.IsZero() {
-		a.setSyncLast(maxT)
-	}
-	a.setSetting("sync_enabled", "true")
-	return n, nil
+	return n, conflicts, nil
 }

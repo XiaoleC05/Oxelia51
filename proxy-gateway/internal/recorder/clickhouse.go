@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS oxelia51.token_events (
     project_id String,
     session_id String,
     provider LowCardinality(String),
+    agent LowCardinality(String),
     model String,
     prompt_tokens UInt32,
     completion_tokens UInt32,
@@ -31,6 +32,13 @@ CREATE TABLE IF NOT EXISTS oxelia51.token_events (
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMM(timestamp)
 ORDER BY (project_id, timestamp)
+`
+
+// alterTableAgentSQL 对存量表补 agent 列（2026-08-09 建的 oxelia51.token_events 无此列，
+// CREATE TABLE IF NOT EXISTS 不会自动加列；ADD COLUMN IF NOT EXISTS 幂等，每次启动执行安全）。
+const alterTableAgentSQL = `
+ALTER TABLE oxelia51.token_events
+    ADD COLUMN IF NOT EXISTS agent LowCardinality(String)
 `
 
 // ClickHouseWriter 实现 BatchWriter 接口
@@ -57,6 +65,10 @@ func NewClickHouseWriter(addr, user, password string) (*ClickHouseWriter, error)
 	if err := conn.Exec(ctx, createTableSQL); err != nil {
 		return nil, fmt.Errorf("create table: %w", err)
 	}
+	// 存量表补 agent 列（幂等），保证 WriteBatch 13 列 INSERT 与 byProvider/byAgent 查询可用
+	if err := conn.Exec(ctx, alterTableAgentSQL); err != nil {
+		return nil, fmt.Errorf("alter table agent: %w", err)
+	}
 
 	log.Printf("clickhouse connected, table ready")
 	return &ClickHouseWriter{conn: conn}, nil
@@ -65,7 +77,7 @@ func NewClickHouseWriter(addr, user, password string) (*ClickHouseWriter, error)
 // WriteBatch 批量写入 token_events
 func (w *ClickHouseWriter) WriteBatch(records []adapter.TokenRecord) error {
 	ctx := context.Background()
-	batch, err := w.conn.PrepareBatch(ctx, "INSERT INTO oxelia51.token_events (event_id, project_id, session_id, provider, model, prompt_tokens, completion_tokens, total_tokens, cost_usd, duration_ms, timestamp, api_key_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	batch, err := w.conn.PrepareBatch(ctx, "INSERT INTO oxelia51.token_events (event_id, project_id, session_id, provider, agent, model, prompt_tokens, completion_tokens, total_tokens, cost_usd, duration_ms, timestamp, api_key_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
@@ -90,6 +102,7 @@ func (w *ClickHouseWriter) WriteBatch(records []adapter.TokenRecord) error {
 			r.ProjectID,
 			r.SessionID,
 			r.Provider,
+			r.Agent,
 			r.Model,
 			r.PromptTokens,
 			r.CompletionTokens,
