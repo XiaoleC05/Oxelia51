@@ -14,6 +14,7 @@ type SyncEvent struct {
 	ProjectID        string    `json:"projectId"`
 	SessionID        string    `json:"sessionId"`
 	Provider         string    `json:"provider"`
+	Agent            string    `json:"agent"`
 	Model            string    `json:"model"`
 	PromptTokens     int64     `json:"promptTokens"`
 	CompletionTokens int64     `json:"completionTokens"`
@@ -30,6 +31,7 @@ CREATE TABLE IF NOT EXISTS synced_events (
   project_id        TEXT NOT NULL DEFAULT '',
   session_id        TEXT NOT NULL DEFAULT '',
   provider          TEXT NOT NULL DEFAULT '',
+  agent             TEXT NOT NULL DEFAULT '',
   model             TEXT NOT NULL DEFAULT '',
   prompt_tokens     BIGINT NOT NULL DEFAULT 0,
   completion_tokens BIGINT NOT NULL DEFAULT 0,
@@ -39,6 +41,14 @@ CREATE TABLE IF NOT EXISTS synced_events (
   synced_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_synced_events_user_ts ON synced_events (user_id, ts);
+`
+
+// alterTableAgentSQL 对存量 synced_events 补 agent 列（若表已由早前版本建过、无 agent 列，
+// CREATE TABLE IF NOT EXISTS 是空操作，InsertEvents/ListEventsAfter 引用 agent 会报错；
+// ADD COLUMN IF NOT EXISTS 幂等，EnsureTable 每次执行安全）。
+const alterTableAgentSQL = `
+ALTER TABLE synced_events
+    ADD COLUMN IF NOT EXISTS agent TEXT NOT NULL DEFAULT ''
 `
 
 // Repository 同步事件存储
@@ -52,7 +62,11 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 
 // EnsureTable 建表（幂等）
 func (r *Repository) EnsureTable(ctx context.Context) error {
-	_, err := r.pool.Exec(ctx, createTableSQL)
+	if _, err := r.pool.Exec(ctx, createTableSQL); err != nil {
+		return err
+	}
+	// 存量表补 agent 列（幂等）
+	_, err := r.pool.Exec(ctx, alterTableAgentSQL)
 	return err
 }
 
@@ -71,11 +85,11 @@ func (r *Repository) InsertEvents(ctx context.Context, userID int64, events []Sy
 	for _, e := range events {
 		tag, err := tx.Exec(ctx, `
 			INSERT INTO synced_events
-			  (event_id, user_id, device_id, project_id, session_id, provider, model,
+			  (event_id, user_id, device_id, project_id, session_id, provider, agent, model,
 			   prompt_tokens, completion_tokens, total_tokens, duration_ms, ts)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
 			ON CONFLICT (event_id) DO NOTHING`,
-			e.EventID, userID, e.DeviceID, e.ProjectID, e.SessionID, e.Provider, e.Model,
+			e.EventID, userID, e.DeviceID, e.ProjectID, e.SessionID, e.Provider, e.Agent, e.Model,
 			e.PromptTokens, e.CompletionTokens, e.TotalTokens, e.DurationMs, e.TS,
 		)
 		if err != nil {
@@ -89,7 +103,7 @@ func (r *Repository) InsertEvents(ctx context.Context, userID int64, events []Sy
 // ListEventsAfter 返回某用户 after 时间之后的、非本设备上传的事件（增量下行）。
 func (r *Repository) ListEventsAfter(ctx context.Context, userID int64, after time.Time, excludeDevice string, limit int) ([]SyncEvent, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT event_id, device_id, project_id, session_id, provider, model,
+		SELECT event_id, device_id, project_id, session_id, provider, agent, model,
 		       prompt_tokens, completion_tokens, total_tokens, duration_ms, ts
 		FROM synced_events
 		WHERE user_id = $1 AND ts > $2 AND device_id != $3
@@ -105,7 +119,7 @@ func (r *Repository) ListEventsAfter(ctx context.Context, userID int64, after ti
 	events := []SyncEvent{}
 	for rows.Next() {
 		var e SyncEvent
-		if err := rows.Scan(&e.EventID, &e.DeviceID, &e.ProjectID, &e.SessionID, &e.Provider, &e.Model,
+		if err := rows.Scan(&e.EventID, &e.DeviceID, &e.ProjectID, &e.SessionID, &e.Provider, &e.Agent, &e.Model,
 			&e.PromptTokens, &e.CompletionTokens, &e.TotalTokens, &e.DurationMs, &e.TS); err != nil {
 			return nil, err
 		}
