@@ -14,7 +14,7 @@ function validate(form: { name: string; slug: string; baseUrl: string }, existin
   if (!SLUG_RE.test(form.slug)) return "slug 只能用小写字母、数字和连字符（如 my-api）";
   if (PROVIDER_COMMANDS.some((p) => p.slug === form.slug)) return "slug 与内置供应商冲突，请换一个";
   if (existing.some((p) => p.slug === form.slug)) return "slug 与已有自定义供应商重复";
-  if (!BASE_URL_RE.test(form.baseUrl.trim())) return "API 地址需以 https:// 开头（如 https://api.example.com）";
+  if (!BASE_URL_RE.test(form.baseUrl.trim())) return "API 地址无效（填域名即可，如 api.example.com；自动补全 https://）";
   return null;
 }
 
@@ -50,7 +50,10 @@ export function CustomProviders({ items, onChanged }: { items: CustomProvider[];
   };
 
   const submit = async () => {
-    const form = { name: name.trim(), slug: slug.trim(), baseUrl: baseUrl.trim() };
+    // 用户只需填 https:// 之后的部分，自动补全协议；已含协议（如本地 http:// 网关）则原样保留
+    const rawUrl = baseUrl.trim();
+    const fullUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+    const form = { name: name.trim(), slug: slug.trim(), baseUrl: fullUrl };
     const msg = validate(form, items);
     if (msg) {
       setError(msg);
@@ -170,7 +173,7 @@ export function CustomProviders({ items, onChanged }: { items: CustomProvider[];
               className="input grow"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
-              placeholder="API 地址（https://…）"
+              placeholder="api.example.com（自动补全 https://）"
               aria-label="API 地址"
             />
             <Dropdown
