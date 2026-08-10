@@ -4,8 +4,9 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { fetchHealth, fetchOverview, fetchSettings, saveSetting, type Overview } from "./api";
 import { APP_VERSION, checkForUpdate, type UpdateInfo } from "./version";
 import { OverviewTab } from "./screens/OverviewTab";
-import { ProjectsTab } from "./screens/ProjectsTab";
-import { SessionsTab } from "./screens/SessionsTab";
+import { ConnectTab } from "./screens/ConnectTab";
+import { ProvidersTab } from "./screens/ProvidersTab";
+import { AgentsTab } from "./screens/AgentsTab";
 import { AlertsTab } from "./screens/AlertsTab";
 import { SettingsTab } from "./screens/SettingsTab";
 import glyphLight from "./assets/brand-glyph-light.png";
@@ -115,16 +116,17 @@ function WindowControls() {
 
 /**
  * Oxelia51 桌面端（P3.2）。
- * 顶部标签导航：总览 / 项目 / 会话 / 告警 / 设置。
+ * 顶部标签导航：总览 / 供应商消耗 / Agent 消耗 / 告警 / 设置。
  * 数据源：本地 sidecar 只读统计接口；总览由 App 轮询，其余屏各自轮询。
  */
 
-type TabKey = "overview" | "projects" | "sessions" | "alerts" | "settings";
+type TabKey = "overview" | "connect" | "providers" | "agents" | "alerts" | "settings";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "总览" },
-  { key: "projects", label: "项目" },
-  { key: "sessions", label: "会话" },
+  { key: "connect", label: "接入" },
+  { key: "providers", label: "供应商" },
+  { key: "agents", label: "Agent" },
   { key: "alerts", label: "告警" },
   { key: "settings", label: "设置" },
 ];
@@ -135,6 +137,8 @@ export default function App() {
   const [online, setOnline] = useState(false);
   const [theme, setTheme] = useState<"cosmos" | "cozy">("cosmos");
   const [update, setUpdate] = useState<UpdateInfo>({ available: false });
+  // 悬浮统计卡片是否显示（窗口在 tauri.conf 的 app.windows 中声明，初始隐藏）
+  const [widgetOn, setWidgetOn] = useState(false);
 
   // 启动时检查一次新版本
   useEffect(() => {
@@ -156,6 +160,34 @@ export default function App() {
       void saveSetting("theme", next).catch(() => {});
       return next;
     });
+  };
+
+  // 悬浮统计卡片：show/hide（窗口由 tauri.conf 声明，初始隐藏）。
+  // 以窗口实际可见性为准，避免「卡片自身 ✕ 隐藏」后按钮状态失步。
+  // 浏览器 dev 模式没有 Tauri 窗口 API，改为新开一个小窗预览 widget.html
+  //（真实「置顶/无边框/玻璃」仅在 Tauri 应用内生效）。
+  const toggleWidget = () => {
+    if (!isTauri) {
+      window.open("/widget.html", "oxelia51-widget", "width=340,height=192,menubar=no,resizable=no");
+      return;
+    }
+    void (async () => {
+      try {
+        const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+        const win = await WebviewWindow.getByLabel("widget");
+        if (!win) return;
+        const visible = await win.isVisible();
+        if (visible) {
+          await win.hide();
+        } else {
+          await win.show();
+          await win.setFocus();
+        }
+        setWidgetOn(!visible);
+      } catch {
+        // 忽略
+      }
+    })();
   };
 
   const refresh = useCallback(async () => {
@@ -247,6 +279,20 @@ export default function App() {
           )}
           <button
             type="button"
+            className={`widget-toggle ${widgetOn ? "active" : ""}`}
+            onClick={toggleWidget}
+            title={widgetOn ? "隐藏悬浮统计卡片" : "显示悬浮统计卡片"}
+            aria-label="悬浮统计卡片"
+          >
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" />
+              <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.55" />
+              <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.55" />
+              <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" />
+            </svg>
+          </button>
+          <button
+            type="button"
             className="theme-toggle"
             onClick={toggleTheme}
             title="切换主题"
@@ -257,7 +303,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="content">
+      <main className="content" key={tab}>
         {update.available && update.url && (() => {
           // 闭包内 TS 不窄化 update.url，取局部变量保证类型非空
           const url = update.url;
@@ -276,8 +322,9 @@ export default function App() {
           );
         })()}
         {tab === "overview" && <OverviewTab data={data} online={online} />}
-        {tab === "projects" && <ProjectsTab />}
-        {tab === "sessions" && <SessionsTab />}
+        {tab === "connect" && <ConnectTab />}
+        {tab === "providers" && <ProvidersTab />}
+        {tab === "agents" && <AgentsTab />}
         {tab === "alerts" && <AlertsTab />}
         {tab === "settings" && (
           <SettingsTab theme={theme} onTheme={setTheme} appVersion={APP_VERSION} />

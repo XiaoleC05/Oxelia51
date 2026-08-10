@@ -1,0 +1,169 @@
+/* ===== 悬浮玻璃卡片（widget 独立窗口）=====
+   透明窗口前提：html/body/#root 必须全透明，仅 .widget 卡片本身带玻璃背景。
+   global.css 的 body 背景（var(--ox-bg)）在此覆盖为 transparent。 */
+
+html,
+body,
+#root {
+  background: transparent !important;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.widget {
+  position: relative;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 12px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+
+  /* 玻璃拟态：半透明渐变底 + 背景模糊 + 内描边 + 外阴影 */
+  background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ox-accent) 10%, transparent),
+      transparent 55%
+    ),
+    var(--ox-bg-glass);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid color-mix(in srgb, var(--ox-accent) 24%, transparent);
+  border-radius: 20px;
+  box-shadow:
+    0 10px 34px rgba(0, 0, 0, 0.38),
+    0 2px 8px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--ox-text);
+  font-family: "Manrope", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+/* 顶部：品牌 + 关闭 */
+.widget-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.widget-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.widget-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ox-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ox-accent) 70%, transparent);
+  flex-shrink: 0;
+}
+
+.widget-name {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ox-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.widget-close {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ox-text-muted);
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.widget-close:hover {
+  color: var(--ox-text-h);
+  background: color-mix(in srgb, var(--ox-accent) 12%, transparent);
+}
+
+/* 今日 Token 大数字 */
+.widget-tokens {
+  margin-top: 2px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ox-text-h);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.widget-tokens-unit {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ox-text-muted);
+}
+
+/* 今日成本 */
+.widget-cost {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ox-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 底部：近7日 / 请求数 */
+.widget-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--ox-border) 70%, transparent);
+  font-size: 12px;
+  color: var(--ox-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 离线态 */
+.widget-offline {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--ox-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.widget-offline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ox-danger);
+  box-shadow: 0 0 8px var(--ox-danger);
+}
+
+.widget-offline-sub {
+  font-size: 12px;
+  font-weight: 400;
+}

@@ -1,21 +1,9 @@
-import { useState } from "react";
-import { fmtCost, fmtTokens, type ModelStat, type Overview, type ProjectStat, type TrendPoint } from "../api";
+import { useCallback, useEffect, useState } from "react";
+import { fetchAgents, fetchProviders, fmtCost, fmtTokens, type DimStat, type ModelStat, type Overview, type TrendPoint } from "../api";
 import { EmptyState } from "../EmptyState";
-import { copyText, PROXY_CMD } from "../clipboard";
-
-/** 复制代理配置命令，返回是否成功（成功时短暂提示按钮文字）。 */
-function useCopyCmd() {
-  const [copied, setCopied] = useState(false);
-  return {
-    copied,
-    copy: async () => {
-      if (await copyText(PROXY_CMD)) {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }
-    },
-  };
-}
+import { Dropdown } from "../components/Dropdown";
+import { DateRangePicker } from "./DateRangePicker";
+import { copyText, PROVIDER_COMMANDS, PROVIDER_GROUPS, providerCmd, proxyUrl } from "../clipboard";
 
 function StatCard({ label, tokens, requests, cost }: { label: string; tokens: number; requests: number; cost: number }) {
   return (
@@ -57,11 +45,12 @@ function Ranking({ title, rows }: { title: string; rows: { name: string; tokens:
         <EmptyState compact title="暂无排行数据" desc="落账后按维度自动聚合。" />
       ) : (
         <div className="rank">
-          {rows.map((r) => (
+          {rows.slice(0, 8).map((r, i) => (
             <div key={r.name} className="rank-row">
+              <span className={`rank-index ${i < 3 ? `top top-${i + 1}` : ""}`}>{i + 1}</span>
               <span className="rank-name">{r.name}</span>
               <div className="rank-track">
-                <div className="rank-fill" style={{ width: `${Math.max(2, (r.tokens / max) * 100)}%` }} />
+                <div className={`rank-fill ${i < 3 ? `fill-top fill-top-${i + 1}` : ""}`} style={{ width: `${Math.max(2, (r.tokens / max) * 100)}%` }} />
               </div>
               <span className="rank-val tabular">
                 {fmtTokens(r.tokens)} · {fmtCost(r.cost)}
@@ -74,52 +63,124 @@ function Ranking({ title, rows }: { title: string; rows: { name: string; tokens:
   );
 }
 
-function RecentSessions({ sessions }: { sessions: { sessionId: string; tokens: number; requests: number; lastTs: string }[] }) {
+/** 首次接入空态：先选 LLM 供应商 → 复制对应代理地址。 */
+function SetupEmptyState({ online }: { online: boolean }) {
+  const [slug, setSlug] = useState(PROVIDER_COMMANDS[0].slug);
+  const [copied, setCopied] = useState<"url" | "cmd" | null>(null);
+  const sel = PROVIDER_COMMANDS.find((p) => p.slug === slug) ?? PROVIDER_COMMANDS[0];
+
+  const copy = async (kind: "url" | "cmd") => {
+    const text = kind === "url" ? proxyUrl(sel.slug) : providerCmd(sel.slug, sel.anthropic);
+    if (await copyText(text)) {
+      setCopied(kind);
+      setTimeout(() => setCopied(null), 2000);
+    }
+  };
+
   return (
-    <div className="card">
-      <h2 className="card-title">最近会话</h2>
-      {sessions.length === 0 ? (
-        <EmptyState compact title="暂无会话" desc="代理落账后按 session_id 自动聚合。" />
-      ) : (
-        <ul className="session-list">
-          {sessions.map((s) => (
-            <li key={s.sessionId} className="session-row">
-              <span className="session-id">{s.sessionId.slice(0, 12)}</span>
-              <span className="session-meta tabular">{fmtTokens(s.tokens)} · {s.requests} 次</span>
-              <span className="session-ts">{s.lastTs.slice(5, 16)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="empty-state">
+      <svg className="empty-icon" viewBox="0 0 512 512" aria-hidden="true">
+        <circle cx="228" cy="228" r="140" fill="none" stroke="currentColor" strokeWidth="52" />
+        <circle cx="412" cy="412" r="34" fill="#E5484D" />
+      </svg>
+      <p className="empty-title">还没有 Token 记录</p>
+      <p className="empty-desc">
+        选择你使用的 LLM 供应商，把模型工具的 Base URL 指向本地代理即可开始记账。
+      </p>
+      <div className="setup-card">
+        <div className="form-row">
+          <Dropdown
+            grow
+            groups={PROVIDER_GROUPS.map((g) => ({
+              group: g.group,
+              options: g.providers.map((p) => ({ value: p.slug, label: p.label })),
+            }))}
+            value={slug}
+            onChange={setSlug}
+            ariaLabel="LLM 供应商"
+          />
+        </div>
+        {/* 代理地址：自定义 Base URL 的界面直接填这个 */}
+        <div className="setup-cmd-row">
+          <pre className="setup-cmd">
+            <code>{proxyUrl(sel.slug)}</code>
+          </pre>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => void copy("url")}
+            title="适用于在工具的自定义 Base URL 输入框直接填写"
+          >
+            {copied === "url" ? "已复制 ✓" : "复制地址"}
+          </button>
+        </div>
+        {/* export 命令：支持环境变量的工具用这个 */}
+        <div className="setup-cmd-row">
+          <pre className="setup-cmd">
+            <code>{providerCmd(sel.slug, sel.anthropic)}</code>
+          </pre>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => void copy("cmd")}
+            title="适用于通过 export 环境变量配置的工具"
+          >
+            {copied === "cmd" ? "已复制 ✓" : "复制命令"}
+          </button>
+        </div>
+        <p className="empty">
+          {sel.anthropic
+            ? "适用于使用 Anthropic 协议的工具。"
+            : "适用于使用 OpenAI 兼容协议的工具。"}
+          {!online && "（当前代理未运行，配置完成后请先启动）"}
+        </p>
+      </div>
     </div>
   );
 }
 
 export function OverviewTab({ data, online }: { data: Overview | null; online: boolean }) {
-  const { copied, copy } = useCopyCmd();
+  const [days, setDays] = useState<number | undefined>(undefined);
+  const [byProvider, setByProvider] = useState<DimStat[]>([]);
+  const [byAgent, setByAgent] = useState<DimStat[]>([]);
+
+  // 日期范围变化时刷新供应商/Agent 排行（联动下方统计）
+  const loadDims = useCallback(async () => {
+    try {
+      const [pv, ag] = await Promise.all([fetchProviders(days), fetchAgents(days)]);
+      setByProvider(pv.providers);
+      setByAgent(ag.agents);
+    } catch {
+      // 静默：排行区保持上一帧
+    }
+  }, [days]);
+
+  useEffect(() => {
+    void loadDims();
+  }, [loadDims]);
+
   // 全新安装零数据：整屏引导空态，不展示空卡片/占位
   const isEmpty = online && data != null && data.total.tokens === 0;
 
   if (isEmpty) {
-    return (
-      <>
-        <EmptyState
-          title="还没有 Token 记录"
-          desc="把模型工具的 BASE_URL 指向本地代理即可开始记账。复制下面的命令到你的 Claude Code / Cursor 终端："
-          action={{ label: copied ? "已复制 ✓" : "复制代理命令", onClick: () => void copy() }}
-        />
-      </>
-    );
+    return <SetupEmptyState online={online} />;
   }
 
   return (
     <>
       {!online && (
         <div className="offline-banner">
-          sidecar 未运行。请配置 Claude Code / Cursor 的代理指向{" "}
-          <code>http://127.0.0.1:17800/api/proxy/anthropic</code>。
+          sidecar 未运行。请先把模型工具的 Base URL 指向本地代理（见设置页），再启动代理。
         </div>
       )}
+      {/* 页头：标题 + 日期范围在页面顶部，统计区随之联动 */}
+      <div className="tab-head">
+        <div>
+          <h1 className="page-title">总览</h1>
+          <p className="page-sub">按供应商 / Agent / 模型聚合的 Token 用量与成本，日期范围联动下方统计。</p>
+        </div>
+        <DateRangePicker value={days} onChange={setDays} />
+      </div>
       <section className="stats">
         <StatCard label="今日" tokens={data?.today.tokens ?? 0} requests={data?.today.requests ?? 0} cost={data?.today.cost ?? 0} />
         <StatCard label="近 7 日" tokens={data?.week.tokens ?? 0} requests={data?.week.requests ?? 0} cost={data?.week.cost ?? 0} />
@@ -128,10 +189,21 @@ export function OverviewTab({ data, online }: { data: Overview | null; online: b
       </section>
       <TrendChart trend={data?.trend ?? []} />
       <section className="grid-2">
-        <Ranking title="按模型" rows={(data?.byModel ?? []).map((m: ModelStat) => ({ name: m.model, tokens: m.tokens, requests: m.requests, cost: m.cost }))} />
-        <Ranking title="按项目" rows={(data?.byProject ?? []).map((p: ProjectStat) => ({ name: p.projectId, tokens: p.tokens, requests: p.requests, cost: p.cost }))} />
+        <Ranking
+          title="按供应商"
+          rows={byProvider.map((d: DimStat) => ({ name: d.name, tokens: d.tokens, requests: d.requests, cost: d.cost }))}
+        />
+        <Ranking
+          title="按 Agent"
+          rows={byAgent.map((d: DimStat) => ({ name: d.name, tokens: d.tokens, requests: d.requests, cost: d.cost }))}
+        />
       </section>
-      <RecentSessions sessions={data?.sessions ?? []} />
+      <section className="grid-2">
+        <Ranking
+          title="按模型"
+          rows={(data?.byModel ?? []).map((m: ModelStat) => ({ name: m.model, tokens: m.tokens, requests: m.requests, cost: m.cost }))}
+        />
+      </section>
     </>
   );
 }

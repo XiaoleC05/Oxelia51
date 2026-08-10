@@ -1,5 +1,5 @@
 // 应用版本与更新检查。与 src-tauri/tauri.conf.json 的 version 保持一致。
-export const APP_VERSION = "0.1.2";
+export const APP_VERSION = "0.1.3";
 
 export type UpdateInfo = {
   available: boolean;

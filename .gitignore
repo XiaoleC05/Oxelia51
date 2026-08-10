@@ -22,6 +22,7 @@ node_modules/
 dist/
 build/
 release/
+*.tsbuildinfo
 oxelia51-release.tar.gz
 backend/oxelia51-server
 backend/oxelia51-server.exe

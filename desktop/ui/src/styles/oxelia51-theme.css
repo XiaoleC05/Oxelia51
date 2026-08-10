@@ -17,8 +17,8 @@
   --ox-accent-border: rgba(229, 72, 77, 0.35);
   --ox-border: #e5ded4;
   --ox-border-light: #efeae2;
-  --ox-radius: 10px;
-  --ox-radius-lg: 12px;
+  --ox-radius: 12px;
+  --ox-radius-lg: 16px;
   --ox-speed: 0.3s;
   --ox-ok: #4a7c59;
   --ox-danger: #c8553d;
@@ -42,8 +42,8 @@
   --ox-accent-border: rgba(229, 72, 77, 0.4);
   --ox-border: #1f1f1f;
   --ox-border-light: #262626;
-  --ox-radius: 6px;
-  --ox-radius-lg: 12px;
+  --ox-radius: 10px;
+  --ox-radius-lg: 16px;
   --ox-speed: 0.2s;
   --ox-ok: #3fb950;
   --ox-danger: #f85149;
