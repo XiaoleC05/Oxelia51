@@ -128,7 +128,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* 底部：近7日 / 请求数 */
+/* 底部：请求数 */
 .widget-foot {
   margin-top: auto;
   display: flex;
@@ -140,6 +140,79 @@ body {
   font-size: 12px;
   color: var(--ox-text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* 今日模型 Top5 排名（前三名渐变） */
+.widget-top {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--ox-border) 70%, transparent);
+}
+.widget-top-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ox-text-muted);
+  margin-bottom: 2px;
+}
+.widget-top-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  border-radius: 6px;
+  padding: 1px 6px;
+  color: var(--ox-text-muted);
+}
+.widget-top-rank {
+  width: 14px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.widget-top-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.widget-top-tokens {
+  font-variant-numeric: tabular-nums;
+}
+/* 前三名渐变（品牌红，透明度递减）+ 排名号品牌色 */
+.widget-top-row.rank-1 {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ox-accent) 30%, transparent),
+    transparent
+  );
+  color: var(--ox-text-h);
+}
+.widget-top-row.rank-2 {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ox-accent) 17%, transparent),
+    transparent
+  );
+}
+.widget-top-row.rank-3 {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ox-accent) 9%, transparent),
+    transparent
+  );
+}
+.widget-top-row.rank-1 .widget-top-rank {
+  color: var(--ox-accent);
+}
+.widget-top-row.rank-2 .widget-top-rank {
+  color: color-mix(in srgb, var(--ox-accent) 72%, var(--ox-text-muted));
+}
+.widget-top-row.rank-3 .widget-top-rank {
+  color: color-mix(in srgb, var(--ox-accent) 48%, var(--ox-text-muted));
 }
 
 /* 离线态 */

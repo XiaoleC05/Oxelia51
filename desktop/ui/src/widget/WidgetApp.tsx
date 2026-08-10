@@ -5,6 +5,7 @@ import {
   fetchSettings,
   fmtCost,
   fmtTokens,
+  saveSetting,
   type Overview,
 } from "../api";
 
@@ -13,7 +14,7 @@ export const WIDGET_FIELDS: { key: string; label: string }[] = [
   { key: "tokens", label: "今日 Token" },
   { key: "cost", label: "今日成本" },
   { key: "requests", label: "请求数" },
-  { key: "week", label: "近 7 日" },
+  { key: "top", label: "模型 Top5" },
 ];
 
 /**
@@ -31,8 +32,10 @@ export default function WidgetApp() {
   const [online, setOnline] = useState(false);
   // null = 设置还没加载（默认全显）；数组 = 用户勾选的字段
   const [fields, setFields] = useState<string[] | null>(null);
+  // 悬浮卡片不透明度（0-100，默认 100）
+  const [opacity, setOpacity] = useState(100);
 
-  // 读取本地设置：主题 + 悬浮卡片显示字段
+  // 读取本地设置：主题 + 悬浮卡片显示字段 + 不透明度 + 恢复上次拖拽位置
   useEffect(() => {
     void fetchSettings()
       .then((s) => {
@@ -40,23 +43,52 @@ export default function WidgetApp() {
           document.documentElement.dataset.theme = s.theme;
         }
         setFields(s.widgetFields?.length ? s.widgetFields : WIDGET_FIELDS.map((f) => f.key));
+        if (s?.widgetOpacity) setOpacity(s.widgetOpacity);
+        const wp = s?.widgetPos;
+        if (wp) {
+          void (async () => {
+            try {
+              const { getCurrentWindow, PhysicalPosition } = await import(
+                "@tauri-apps/api/window"
+              );
+              await getCurrentWindow().setPosition(
+                new PhysicalPosition(wp.x, wp.y),
+              );
+            } catch {
+              // 浏览器 dev 模式无窗口 API，忽略
+            }
+          })();
+        }
       })
       .catch(() => {});
   }, []);
 
   const show = (key: string) => fields === null || fields.includes(key);
 
-  // 实时轮询：每 2.5s 刷新一次今日统计
+  // 实时轮询：每 2.5s 刷新统计，并重新读取设置（主窗口改了主题/悬浮字段后即时生效）
   useEffect(() => {
     let alive = true;
     const tick = async () => {
-      const [overview, health] = await Promise.all([
+      const [overview, health, settings] = await Promise.all([
         fetchOverview().catch(() => null),
         fetchHealth(),
+        fetchSettings().catch(() => null),
       ]);
       if (!alive) return;
       setData(overview);
       setOnline(health);
+      if (settings) {
+        if (settings.theme === "cosmos" || settings.theme === "cozy") {
+          document.documentElement.dataset.theme = settings.theme;
+        }
+        const next = settings.widgetFields?.length
+          ? settings.widgetFields
+          : WIDGET_FIELDS.map((f) => f.key);
+        setFields((prev) =>
+          JSON.stringify(prev ?? []) === JSON.stringify(next) ? prev : next,
+        );
+        if (settings.widgetOpacity) setOpacity(settings.widgetOpacity);
+      }
     };
     void tick();
     const timer = setInterval(tick, 2500);
@@ -66,12 +98,22 @@ export default function WidgetApp() {
     };
   }, []);
 
-  // 关闭 = 隐藏窗口（右上角 ✕）
+  // 关闭 = 隐藏窗口（右上角 ✕）：先记录当前位置（下次打开恢复），再隐藏
   const hide = () => {
     void (async () => {
       try {
         const { getCurrentWindow } = await import("@tauri-apps/api/window");
-        await getCurrentWindow().hide();
+        const win = getCurrentWindow();
+        try {
+          const pos = await win.outerPosition();
+          await saveSetting(
+            "widget_pos",
+            JSON.stringify({ x: pos.x, y: pos.y }),
+          );
+        } catch {
+          // 保存失败不影响隐藏
+        }
+        await win.hide();
       } catch {
         // 浏览器 dev 模式无窗口 API，忽略
       }
@@ -79,7 +121,11 @@ export default function WidgetApp() {
   };
 
   return (
-    <div className="widget" data-tauri-drag-region="deep">
+    <div
+      className="widget"
+      data-tauri-drag-region="deep"
+      style={{ opacity: opacity / 100 }}
+    >
       <header className="widget-head" data-tauri-drag-region>
         <span className="widget-brand" data-tauri-drag-region>
           <span className="widget-dot" data-tauri-drag-region />
@@ -111,15 +157,30 @@ export default function WidgetApp() {
               {fmtCost(data?.today.cost ?? 0)}
             </div>
           )}
-          {(show("requests") || show("week")) && (
+          {show("requests") && (
             <footer className="widget-foot" data-tauri-drag-region>
-              {show("week") && (
-                <span className="tabular">近 7 日 {fmtTokens(data?.week.tokens ?? 0)}</span>
-              )}
-              {show("requests") && (
-                <span className="tabular">{data?.today.requests ?? 0} 次请求</span>
-              )}
+              <span className="tabular">{data?.today.requests ?? 0} 次请求</span>
             </footer>
+          )}
+          {show("top") && data?.todayByModel && data.todayByModel.length > 0 && (
+            <div className="widget-top" data-tauri-drag-region>
+              <div className="widget-top-title">今日模型 Top5</div>
+              {data.todayByModel.slice(0, 5).map((m, i) => (
+                <div
+                  key={m.model}
+                  className={`widget-top-row${i < 3 ? ` rank-${i + 1}` : ""}`}
+                  data-tauri-drag-region
+                >
+                  <span className="widget-top-rank">{i + 1}</span>
+                  <span className="widget-top-name" title={m.model}>
+                    {m.model}
+                  </span>
+                  <span className="widget-top-tokens tabular">
+                    {fmtTokens(m.tokens)}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
         </>
       )}

@@ -316,6 +316,8 @@ var allowedSettingKeys = map[string]bool{
 	"sync_last":     true,
 	"sync_device":   true,
 	"widget_fields": true, // 悬浮卡片显示字段（JSON 字符串数组）
+	"widget_pos":    true, // 悬浮卡片窗口位置（JSON {x,y}）
+	"widget_opacity": true, // 悬浮卡片不透明度（0-100 整数）
 }
 
 // handleSettings GET 返回全部设置（不含 sync_token 等凭证）；POST 更新单个 key。

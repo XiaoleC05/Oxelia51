@@ -26,7 +26,7 @@
         "url": "widget.html",
         "title": "Oxelia51 悬浮统计",
         "width": 340,
-        "height": 192,
+        "height": 300,
         "resizable": false,
         "decorations": false,
         "transparent": true,

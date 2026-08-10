@@ -15,6 +15,8 @@ export type Overview = {
   month: RowCount;
   total: RowCount;
   byModel: ModelStat[];
+  /** 今日 top-5 模型（悬浮卡片排名用） */
+  todayByModel: ModelStat[];
   byProvider: DimStat[];
   byAgent: DimStat[];
   trend: TrendPoint[];
@@ -45,6 +47,10 @@ export type Settings = {
   sync: { enabled: boolean; account: string; lastSync: string };
   /** 悬浮卡片显示字段（tokens/cost/requests/week）；空 = 全部 */
   widgetFields: string[];
+  /** 悬浮卡片窗口位置（拖动后持久化，重启恢复） */
+  widgetPos?: { x: number; y: number };
+  /** 悬浮卡片不透明度（0-100，默认 100） */
+  widgetOpacity?: number;
 };
 
 async function j<T>(url: string, init?: RequestInit): Promise<T> {

@@ -64,6 +64,8 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
   const syncBusy = syncStatus.kind === "busy";
   // 悬浮卡片显示字段（默认全部）
   const [widgetFields, setWidgetFields] = useState<string[]>(WIDGET_FIELDS.map((f) => f.key));
+  // 悬浮卡片不透明度（0-100，默认 100）
+  const [widgetOpacity, setWidgetOpacity] = useState(100);
 
   const load = useCallback(async () => {
     try {
@@ -71,6 +73,7 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
       setSettings(s);
       setPricing(p.pricing ?? []);
       setWidgetFields(s.widgetFields?.length ? s.widgetFields : WIDGET_FIELDS.map((f) => f.key));
+      setWidgetOpacity(s.widgetOpacity ?? 100);
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "加载失败");
@@ -97,6 +100,12 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
       void saveSetting("widget_fields", JSON.stringify(next)).catch(() => {});
       return next;
     });
+  };
+
+  // 悬浮卡片不透明度：拖动即时保存，悬浮卡片实时生效
+  const changeWidgetOpacity = (v: number) => {
+    setWidgetOpacity(v);
+    void saveSetting("widget_opacity", String(v)).catch(() => {});
   };
 
   const savePricing = async () => {
@@ -210,6 +219,27 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
               {widgetFields.includes(f.key) ? "✓ " : ""}{f.label}
             </button>
           ))}
+          <button
+            type="button"
+            className="btn"
+            onClick={() => void saveSetting("widget_pos", "").catch(() => {})}
+            title="清除保存的悬浮卡片位置，下次打开回到默认位置"
+          >
+            重置位置
+          </button>
+        </div>
+        <div className="form-row">
+          <span className="empty">不透明度</span>
+          <input
+            type="range"
+            min={40}
+            max={100}
+            value={widgetOpacity}
+            onChange={(e) => changeWidgetOpacity(Number(e.target.value))}
+            style={{ flex: 1 }}
+            aria-label="悬浮卡片不透明度"
+          />
+          <span className="tabular">{widgetOpacity}%</span>
         </div>
       </div>
 

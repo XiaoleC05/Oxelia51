@@ -218,6 +218,34 @@ func (a *API) handleOverview(w http.ResponseWriter, r *http.Request) {
 		rows.Close()
 	}
 
+	// 今日 top-5 模型（悬浮卡片排名用，按今日 token 降序）
+	todayByModel := []struct {
+		Model    string  `json:"model"`
+		Tokens   int64   `json:"tokens"`
+		Requests int64   `json:"requests"`
+		Cost     float64 `json:"cost"`
+	}{}
+	rows, err = a.db.Query(
+		"SELECT model, COALESCE(SUM(total_tokens),0), COALESCE(SUM(prompt_tokens),0), COALESCE(SUM(completion_tokens),0), COUNT(*) FROM token_events WHERE timestamp >= ? AND model != '' GROUP BY model ORDER BY SUM(total_tokens) DESC LIMIT 5",
+		day0,
+	)
+	if err == nil {
+		for rows.Next() {
+			var m struct {
+				Model    string  `json:"model"`
+				Tokens   int64   `json:"tokens"`
+				Requests int64   `json:"requests"`
+				Cost     float64 `json:"cost"`
+			}
+			var p, c int64
+			if rows.Scan(&m.Model, &m.Tokens, &p, &c, &m.Requests) == nil {
+				m.Cost = costOf(pricing, m.Model, p, c)
+				todayByModel = append(todayByModel, m)
+			}
+		}
+		rows.Close()
+	}
+
 	trend := []struct {
 		Date     string `json:"date"`
 		Tokens   int64  `json:"tokens"`
@@ -245,8 +273,9 @@ func (a *API) handleOverview(w http.ResponseWriter, r *http.Request) {
 		"week":       week,
 		"month":      month,
 		"total":      total,
-		"byModel":    byModel,
-		"byProvider": a.loadDimStats("provider", "", nil),
+		"byModel":      byModel,
+		"todayByModel": todayByModel,
+		"byProvider":   a.loadDimStats("provider", "", nil),
 		"byAgent":    a.loadDimStats("agent", "", nil),
 		"trend":      trend,
 	})
