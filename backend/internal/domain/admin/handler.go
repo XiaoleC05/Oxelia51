@@ -377,6 +377,38 @@ func (h *WhitelistHandler) UpdateWhitelist(c *gin.Context) {
 
 // --- 安全命令执行 ---
 
+// maxExecOutputBytes 命令输出上限（1MB）：防止 `yes` 之类无限输出的命令撑爆内存（DoS 面）。
+const maxExecOutputBytes = 1 << 20
+
+// maxExecCommandLogLen 命令入日志的最大长度：命令全文可能很长或夹带敏感参数，
+// 日志只记前 80 字符，够定位操作即可，不落全文。
+const maxExecCommandLogLen = 80
+
+// cappedBuffer 上限截断的输出缓冲：写满 max 后丢弃后续字节并标记 truncated，
+// 但照常消费（返回 len(p)），避免阻塞子进程写端造成死锁。
+// exec 对非 *os.File 的 Stdout/Stderr 会各起一个 goroutine 并发写，故加锁。
+type cappedBuffer struct {
+	mu        sync.Mutex
+	buf       strings.Builder
+	truncated bool
+}
+
+func (b *cappedBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	remaining := maxExecOutputBytes - b.buf.Len()
+	switch {
+	case remaining <= 0:
+		b.truncated = true
+	case len(p) > remaining:
+		b.buf.Write(p[:remaining])
+		b.truncated = true
+	default:
+		b.buf.Write(p)
+	}
+	return len(p), nil
+}
+
 // ExecReq 命令执行请求
 type ExecReq struct {
 	Command string `json:"command" binding:"required"`
@@ -399,17 +431,34 @@ func Exec(c *gin.Context) {
 		timeout = req.Timeout
 	}
 
-	slog.Warn("exec", "command", req.Command)
+	// 命令全文可能夹带敏感参数，日志只记前缀（见 maxExecCommandLogLen）
+	logCmd := req.Command
+	if len(logCmd) > maxExecCommandLogLen {
+		logCmd = logCmd[:maxExecCommandLogLen] + "..."
+	}
+	slog.Warn("exec", "command", logCmd)
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(timeout)*time.Second)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "bash", "-c", req.Command)
-	output, err := cmd.CombinedOutput()
+	// 上限截断代替 CombinedOutput：输出无界会把进程内存打爆
+	out := &cappedBuffer{}
+	cmd.Stdout = out
+	cmd.Stderr = out
+	err := cmd.Run()
 
+	stdout := out.buf.String()
+	if out.truncated {
+		stdout += "\n... [output truncated at 1MB]"
+	}
+	exitCode := -1
+	if cmd.ProcessState != nil {
+		exitCode = cmd.ProcessState.ExitCode()
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"exitCode": cmd.ProcessState.ExitCode(),
-		"stdout":   string(output),
+		"exitCode": exitCode,
+		"stdout":   stdout,
 		"error": func() string {
 			if err != nil {
 				return err.Error()

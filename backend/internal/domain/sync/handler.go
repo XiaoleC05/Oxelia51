@@ -21,6 +21,12 @@ func NewHandler(pool *pgxpool.Pool) *SyncHandler {
 	return &SyncHandler{repo: NewRepository(pool)}
 }
 
+// maxUploadEvents 单次上传事件数上限。
+// 安全：当前主路径是 web 侧 /api/sync/upload（zod max(SYNC_PAGE_SIZE)=2000 已限），
+// 本 Go 接口为遗留路径，此前无上限且 nginx /api/ 放行 500MB body，
+// 超大 events 数组会撑爆内存（DoS 面），这里补上同样的防御上限。
+const maxUploadEvents = 2000
+
 // Upload 上传本地 token 事件（幂等：按 event_id 去重）。
 // body: {"deviceId":"...", "events":[{eventId, projectId, sessionId, provider, model, promptTokens, completionTokens, totalTokens, durationMs, ts}]}
 func (h *SyncHandler) Upload(c *gin.Context) {
@@ -36,6 +42,10 @@ func (h *SyncHandler) Upload(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil || req.DeviceID == "" {
 		infra.ApiError(c, http.StatusBadRequest, "BAD_REQUEST", "参数错误")
+		return
+	}
+	if len(req.Events) > maxUploadEvents {
+		infra.ApiError(c, http.StatusBadRequest, "BAD_REQUEST", "单次上传事件数超过上限")
 		return
 	}
 

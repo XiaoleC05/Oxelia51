@@ -103,6 +103,29 @@ func TestCopyResponseHeaders_KeepsClientIPHeaders(t *testing.T) {
 	}
 }
 
+// TestIsAllowedUpstreamBase 锁住上游地址校验：url.Parse 后校验 Hostname + userinfo，
+// 字符串前缀判断会被 userinfo URL（http://127.0.0.1:80@evil.com）绕过。
+func TestIsAllowedUpstreamBase(t *testing.T) {
+	cases := map[string]bool{
+		"http://127.0.0.1:8080":          true,
+		"http://127.0.0.1:8080/api":      true,
+		"http://localhost:9000":          true,
+		"http://127.0.0.1:80@evil.com":   false, // userinfo 绕过：真实主机是 evil.com
+		"http://localhost:80@evil.com":   false,
+		"http://127.0.0.1.evil.com:8080": false, // 后缀域名冒充
+		"http://evil.com:8080":           false,
+		"https://127.0.0.1:8080":         false, // 仅允许 http（内网明文口径不变）
+		"ftp://127.0.0.1:21":             false,
+		"":                               false,
+		"not a url":                      false,
+	}
+	for base, want := range cases {
+		if got := isAllowedUpstreamBase(base); got != want {
+			t.Errorf("isAllowedUpstreamBase(%q) = %v, want %v", base, got, want)
+		}
+	}
+}
+
 func TestIsClientIPForwardHeader(t *testing.T) {
 	cases := map[string]bool{
 		"X-Real-IP":                true,

@@ -17,6 +17,10 @@ type contextKey string
 
 const projectIDKey contextKey = "project_id"
 
+// anonymousProjectID optional 鉴权模式下无密钥请求的统一匿名项目：
+// 防客户端伪造 X-Project-ID 把用量归属到任意项目。
+const anonymousProjectID = "anonymous"
+
 func contextWithProjectID(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, projectIDKey, id)
 }
@@ -43,7 +47,8 @@ func writeJSON(w http.ResponseWriter, status int, body map[string]string) {
 
 // keyAuth 代理密钥鉴权：Bearer <key> 或 x-api-key <key> → 查 proxy_keys →
 // 用 key 解析出的 project_id 覆盖 X-Project-ID（防伪造）。
-// authMode: "required" 强制密钥；"optional"（默认）无密钥时回退旧逻辑（仅 X-Project-ID 非空）。
+// authMode: "required" 强制密钥；"optional"（默认）无密钥时放行但忽略客户端
+// X-Project-ID，统一归并到固定匿名项目（防用量归属伪造）。
 func keyAuth(ks *KeyStore, authMode string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -92,16 +97,10 @@ func keyAuth(ks *KeyStore, authMode string) func(http.Handler) http.Handler {
 				})
 				return
 			}
-			// optional：兼容旧客户端（仅校验 X-Project-ID 非空）
-			projectID := r.Header.Get("X-Project-ID")
-			if strings.TrimSpace(projectID) == "" {
-				writeJSON(w, http.StatusBadRequest, map[string]string{
-					"error": "缺少 X-Project-ID 头",
-					"code":  "MISSING_PROJECT_ID",
-				})
-				return
-			}
-			ctx := contextWithProjectID(r.Context(), projectID)
+			// optional：无密钥请求不采纳客户端自填的 X-Project-ID（可任意伪造，
+			// 会把用量记到他人/任意项目头上），统一归并到固定匿名项目。
+			r.Header.Set("X-Project-ID", anonymousProjectID)
+			ctx := contextWithProjectID(r.Context(), anonymousProjectID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

@@ -16,6 +16,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// dummyBcryptHash 防登录时序枚举的固定 dummy hash（bcrypt DefaultCost，与真实密码哈希同成本）。
+// 仅用于账户不存在时的占位比对（见 Login），不是任何真实账户的哈希。
+var dummyBcryptHash = []byte("$2a$10$CGkSVUGvBSObpyJ4sTsBj.XKa5gm1IjI2sK98mIJL9gaCybzBONCW")
+
 type AuthHandler struct {
 	db        *pgxpool.Pool
 	userRepo  *user.Repository
@@ -70,6 +74,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		u, err = h.userRepo.FetchByAccountID(ctx, req.Account)
 	}
 	if err != nil {
+		// 防时序枚举：账户不存在时也做一次 dummy bcrypt 比对拉平耗时，
+		// 否则「是否执行 bcrypt」的 50-100ms 时差会泄露账户是否存在。
+		// 比较结果丢弃，仅用于均衡响应时间。
+		_ = bcrypt.CompareHashAndPassword(dummyBcryptHash, []byte(req.Password))
 		h.recordLoginFailure(ctx, c.ClientIP())
 		infra.ApiError(c, http.StatusUnauthorized, "INVALID_CREDENTIALS", "账号或密码错误")
 		return

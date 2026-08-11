@@ -186,7 +186,6 @@ type Settings struct {
 	Sync         SyncConfig   `json:"sync"`
 	WidgetFields  []string   `json:"widgetFields"`        // 悬浮卡片显示字段（空 = 全部）
 	WidgetPos     *WidgetPos `json:"widgetPos,omitempty"` // 悬浮卡片窗口位置（持久化）
-	WidgetOpacity int        `json:"widgetOpacity,omitempty"` // 悬浮卡片不透明度（0-100）
 }
 
 // WidgetPos 悬浮卡片窗口位置（主窗口拖动后保存，重启恢复）。
@@ -361,19 +360,6 @@ func (a *API) getWidgetPos() *WidgetPos {
 	return nil
 }
 
-// getWidgetOpacity 读取悬浮卡片不透明度（0-100）；未设置或无效返回 100。
-func (a *API) getWidgetOpacity() int {
-	raw := a.getSetting("widget_opacity")
-	if raw == "" {
-		return 100
-	}
-	v, err := strconv.Atoi(strings.TrimSpace(raw))
-	if err != nil || v <= 0 || v > 100 {
-		return 100
-	}
-	return v
-}
-
 // loadSettings 读取全部设置（主题/定价/预算/同步/悬浮卡片字段与位置）。
 func (a *API) loadSettings() Settings {
 	theme := a.getSetting("theme")
@@ -387,5 +373,5 @@ func (a *API) loadSettings() Settings {
 	}
 	sort.Slice(items, func(i, j int) bool { return items[i].Model < items[j].Model })
 	sync := SyncConfig{Enabled: a.getSetting("sync_enabled") == "true", Account: a.getSetting("sync_account"), LastSync: a.getSetting("sync_last")}
-	return Settings{Theme: theme, Pricing: items, Budgets: a.getBudgets(), Sync: sync, WidgetFields: a.getWidgetFields(), WidgetPos: a.getWidgetPos(), WidgetOpacity: a.getWidgetOpacity()}
+	return Settings{Theme: theme, Pricing: items, Budgets: a.getBudgets(), Sync: sync, WidgetFields: a.getWidgetFields(), WidgetPos: a.getWidgetPos()}
 }

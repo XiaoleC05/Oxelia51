@@ -98,7 +98,7 @@ func (h *Handler) Proxy(c *gin.Context) {
 		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "工具上游地址未配置")
 		return
 	}
-	if !strings.HasPrefix(base, "http://127.0.0.1:") && !strings.HasPrefix(base, "http://localhost:") {
+	if !isAllowedUpstreamBase(base) {
 		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游地址配置无效")
 		return
 	}
@@ -162,6 +162,21 @@ func (h *Handler) Proxy(c *gin.Context) {
 	if _, err := c.Writer.Write(respBody); err != nil {
 		fmt.Printf("gateway write response: %v\n", err)
 	}
+}
+
+// isAllowedUpstreamBase 校验工具上游地址只允许本机回环 http。
+// 安全：必须 url.Parse 后校验 Hostname 与 userinfo，字符串前缀判断会被
+// userinfo URL（如 http://127.0.0.1:80@evil.com，真实主机是 evil.com）绕过。
+func isAllowedUpstreamBase(base string) bool {
+	u, err := url.Parse(base)
+	if err != nil || u.User != nil {
+		return false
+	}
+	if u.Scheme != "http" {
+		return false
+	}
+	h := strings.ToLower(u.Hostname())
+	return h == "127.0.0.1" || h == "localhost"
 }
 
 type toolRow struct {

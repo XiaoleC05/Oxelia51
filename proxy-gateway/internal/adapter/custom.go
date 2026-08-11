@@ -1,11 +1,15 @@
 package adapter
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/netip"
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -48,8 +52,53 @@ func ValidateCustomProvider(p CustomProvider) error {
 	if p.Protocol != "openai" && p.Protocol != "anthropic" {
 		return fmt.Errorf("invalid protocol %q: must be openai or anthropic", p.Protocol)
 	}
-	_, _, _, err := ParseCustomBaseURL(p.BaseURL)
-	return err
+	scheme, host, _, err := ParseCustomBaseURL(p.BaseURL)
+	if err != nil {
+		return err
+	}
+	// SSRF 面：自定义上游会由服务端主动外发请求，须阻断指向内网的地址
+	return validateResolvedHostNotPrivate(scheme, host)
+}
+
+// validateResolvedHostNotPrivate 写入时阻断解析到私有/环回/链路本地地址的上游 host。
+// 取舍说明：
+//   - 这是「写入时」校验；DNS rebinding（写入时解析为公网、连接时变为内网）只能在
+//     连接时校验才能真正防住，当前仅做写入时校验（连接时校验为后续加固项）。
+//   - DNS 解析失败（离线环境、域名未注册）放行，避免离线场景无法配置自托管上游；
+//     相应的风险由「仅本机 127.0.0.1 可写自定义供应商」的部署约束兜底。
+func validateResolvedHostNotPrivate(scheme, hostport string) error {
+	// http 已被 ParseCustomBaseURL 限定为 127.0.0.1/localhost（本机自托管例外），无需再查
+	if scheme == "http" {
+		return nil
+	}
+	host := hostport
+	if h, _, err := net.SplitHostPort(hostport); err == nil {
+		host = h
+	}
+	reject := func(ip netip.Addr) error {
+		if ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() {
+			return fmt.Errorf("invalid baseUrl: host %q resolves to private/loopback/link-local address", host)
+		}
+		return nil
+	}
+	// IP 字面量无需 DNS，直接判断
+	if ip, err := netip.ParseAddr(host); err == nil {
+		return reject(ip)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	ips, err := net.DefaultResolver.LookupIP(ctx, "ip", host)
+	if err != nil {
+		return nil // 解析失败放行（见函数注释的取舍说明）
+	}
+	for _, ip := range ips {
+		if addr, ok := netip.AddrFromSlice(ip); ok {
+			if err := reject(addr); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // ParseCustomBaseURL 解析自定义供应商 baseUrl 为 (scheme, host, pathPrefix)。
