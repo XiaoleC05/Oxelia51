@@ -128,7 +128,7 @@
 
 原则：**圆润、人文、不尖锐也不发泡**（Claude 同款精神）。下拉浮层必须是自绘圆角组件（见 §4.4），不用系统原生 select 展开。
 
-> 注：桌面端 token 名为 `--ox-radius` / `--ox-radius-lg`；web 端映射为 shadcn `--radius`（值 10px，控制件/卡片共用）。`--ox-radius` 在 web 主题中已移除（web 零消费，2026-08-11），仅桌面端定义。
+> 注：桌面端 token 名为 `--ox-radius` / `--ox-radius-lg`；web 端映射为 shadcn `--radius-lg`（卡片 16px）、`--radius-input`（输入 10px）、`rounded-md`（按钮 8px，基准 `--radius` 10px − 2px）。`--ox-radius` 在 web 主题中已移除（web 零消费，2026-08-11），仅桌面端定义。
 
 ### 3.5 阴影
 
@@ -381,10 +381,10 @@
 
 | 维度 | 桌面端现状 | 网站现状 | 统一标准 | 是否改 |
 | --- | --- | --- | --- | --- |
-| 卡片圆角 | `--ox-radius-lg` 16px | shadcn `--radius` Cozy 10px / Cosmos 10px | 12–16px，两端一致 | ✅ 已对齐（web cosmos 原 6px → 10px） |
+| 卡片圆角 | `--ox-radius-lg` 16px | shadcn Card `rounded-lg` = `--radius-lg` 16px | 16px 两端一致 | ✅ 已对齐 |
 | 卡片阴影 | 静止无阴影，hover `0 4px 16px` | 静止 `0 1px 3px`，hover 浮起 | 静止可无/微影，hover 同档 `0 4px 16px` | ✅ 已一致（微影属合理差异） |
 | 按钮圆角 | `.btn` 8px | shadcn Button 8px | 8px | ✅ 已一致 |
-| 输入圆角 | `.input` 10px / 下拉 14px | shadcn Input `--radius` 10px（cosmos 已对齐） | 10–14px | ✅ 已对齐（随 cosmos `--radius` 修复） |
+| 输入圆角 | `.input` 10px / 下拉 14px | shadcn Input 经 `--radius-input` 10px | 10–14px | ✅ 已对齐 |
 | 聚焦环 | 3px `color-mix(accent 15%)` 光晕 | `--ring` 已映射 accent | 红色光晕两端统一 | ✅ 已一致 |
 | 页面标题 | `.page-title` 21px/600 | 站点 Tailwind `text-2xl~4xl` + 覆盖 | 站点比应用大一档属合理（营销页） | ✅ 刻意差异 |
 | 卡片标题 | `.card-title` 15px/600 | shadcn CardHeader 默认 | 14–15px/600 | ✅ |
@@ -419,7 +419,8 @@
 | 主题 tokens | `web/src/features/theming/oxelia51-theme.css` |
 | shadcn 变量映射 | `web/src/styles/oxelia51-vars.css` |
 | 站点/工作台组件 | `web/src/features/oxelia51/components/**` |
-| 应用页 | `web/src/pages/app/*`（overview / analytics / agents / providers / settings） |
+| 云同步/站点内容/站点统计/管理台鉴权 | `web/src/features/oxelia51/server/`（`syncStore` / `syncRouter` / `siteContentRouter` / `siteStatsRouter` / `adminAuth`）+ `web/src/pages/api/sync/*` |
+| 应用页 | `web/src/pages/app/*`（overview / analytics / agents / providers / settings；index 重定向 overview） |
 | 落地页/文档/下载 | `web/src/pages/`（LandingPage / docs / download / changelog） |
 | 字体变量 | `web/src/styles/globals.css`（`--font-sans` 等） |
 
