@@ -198,7 +198,7 @@ export function OverviewTab({ data, online }: { data: Overview | null; online: b
           rows={byAgent.map((d: DimStat) => ({ name: d.name, tokens: d.tokens, requests: d.requests, cost: d.cost }))}
         />
       </section>
-      <section className="grid-2">
+      <section>
         <Ranking
           title="按模型"
           rows={(data?.byModel ?? []).map((m: ModelStat) => ({ name: m.model, tokens: m.tokens, requests: m.requests, cost: m.cost }))}

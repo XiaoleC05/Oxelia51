@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { fetchHealth, fetchOverview, fetchSettings, saveSetting, type Overview } from "./api";
+import { openExternal } from "./openExternal";
 import { APP_VERSION, checkForUpdate, type UpdateInfo } from "./version";
 import { OverviewTab } from "./screens/OverviewTab";
 import { ConnectTab } from "./screens/ConnectTab";
@@ -14,18 +14,6 @@ import glyphDark from "./assets/brand-glyph-dark.png";
 import wordLight from "./assets/wordart-light.svg";
 import wordDark from "./assets/wordart-dark.svg";
 import "./app.css";
-
-/**
- * 用系统浏览器打开外链（#29）。
- * Tauri 内走 opener 插件；浏览器 dev 模式回退 window.open。
- */
-async function openExternal(url: string) {
-  try {
-    await openUrl(url);
-  } catch {
-    window.open(url, "_blank");
-  }
-}
 
 /** 是否运行在 Tauri 壳内（浏览器 dev 模式下无窗口 API，自绘控件需隐藏）。 */
 const isTauri =

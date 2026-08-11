@@ -2,18 +2,7 @@ import { useMemo, useState } from "react";
 import { PROVIDER_GROUPS, proxyUrl, type ProviderDef } from "../clipboard";
 import { copyText } from "../clipboard";
 import type { CustomProvider } from "../api";
-
-/** 用系统浏览器打开外链（Tauri 内 opener 插件；dev 模式 window.open）。 */
-async function openExternal(url: string) {
-  try {
-    // 动态 import 避免在非 Tauri 环境报错
-    const { openUrl } = await import("@tauri-apps/plugin-opener");
-    await openUrl(url);
-    return;
-  } catch {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-}
+import { openExternal } from "../openExternal";
 
 /** 自定义供应商 → 目录卡片模型（复用 provider-cell 渲染与复制逻辑）。 */
 function customToDef(p: CustomProvider): ProviderDef {

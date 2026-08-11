@@ -11,16 +11,7 @@ import {
 } from "../api";
 import { ModelPriceTab } from "./ModelPriceTab";
 import { WIDGET_FIELDS } from "../widget/WidgetApp";
-
-/** 用系统浏览器打开外链（Tauri 内 opener 插件；dev 模式 window.open）。 */
-async function openExternal(url: string) {
-  try {
-    const { openUrl } = await import("@tauri-apps/plugin-opener");
-    await openUrl(url);
-  } catch {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-}
+import { openExternal } from "../openExternal";
 
 /** 关于区外链（与官网 / GitHub 保持一致，可点击跳转）。 */
 const SITE_URL = "https://oxelia51.com";
