@@ -1,0 +1,46 @@
+# Umami 自托管（stats.oxelia51.com）—— 站点访问统计
+#
+# 设计：自带独立 postgres（umami-db），与主栈解耦，compose up 即可用，运维最简单。
+# 不复用主栈 PG 的原因：主库只绑 127.0.0.1:5432（见 deploy/docker/compose.prod.yml），
+# 跨 compose 从容器内不可达，复用需改主库监听地址，代价高于多跑一个小实例。
+#
+# 若日后确要复用主库：
+#   1) 建库：psql -U root -h 127.0.0.1 -d postgres -c "CREATE DATABASE umami;"
+#   2) umami 服务 DATABASE_URL 改为 postgresql://root:<密码>@<主库容器可达地址>:5432/umami
+#   3) 删除下方 umami-db 服务与 depends_on。
+#
+# 环境变量（本目录 .env，勿提交）：
+#   UMAMI_DB_PASSWORD  数据库密码（openssl rand -hex 16）
+#   UMAMI_APP_SECRET   会话签名密钥（openssl rand -hex 32）
+
+services:
+  umami-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${UMAMI_DB_USER:-umami}
+      POSTGRES_PASSWORD: ${UMAMI_DB_PASSWORD:?set UMAMI_DB_PASSWORD in .env}
+      POSTGRES_DB: umami
+    volumes:
+      - umami-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-umami} -d umami"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${UMAMI_DB_USER:-umami}:${UMAMI_DB_PASSWORD}@umami-db:5432/umami
+      DATABASE_TYPE: postgresql
+      APP_SECRET: ${UMAMI_APP_SECRET:?set UMAMI_APP_SECRET in .env}
+    depends_on:
+      umami-db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3033:3000" # 仅监听本机回环，对外经 nginx（stats.oxelia51.com）
+
+volumes:
+  umami-pgdata:
