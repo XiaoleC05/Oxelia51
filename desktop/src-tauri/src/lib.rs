@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 use std::process::{Child, Command};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
+use std::sync::{Mutex, PoisonError};
+use std::time::Duration;
 
 use tauri::{AppHandle, Manager, RunEvent, State, WindowEvent};
 use tauri::menu::{Menu, MenuItem};
@@ -65,7 +66,14 @@ fn spawn_sidecar(app: &AppHandle) -> Option<Child> {
 
     // #9：端口探测——若 17800 已有 sidecar 在跑（另一实例残留 / macOS 无单实例锁），
     // 不再启动第二个（否则 bind 冲突静默失败，UI 显示「代理离线」）。复用已有实例。
-    if std::net::TcpStream::connect("127.0.0.1:17800").is_ok() {
+    // 使用 500ms 连接超时避免 OS 默认 TCP SYN 超时（Win ~20-60s / Linux ~127s）
+    // 导致启动时主线程长时间阻塞。
+    if std::net::TcpStream::connect_timeout(
+        &"127.0.0.1:17800".parse().ok()?,
+        Duration::from_millis(500),
+    )
+    .is_ok()
+    {
         log_sidecar("sidecar 已在 17800 运行，复用现有实例");
         return None;
     }
@@ -87,11 +95,12 @@ fn log_sidecar(msg: &str) {
 }
 
 fn kill_sidecar(state: &State<'_, Sidecar>) {
-    if let Ok(mut guard) = state.0.lock() {
-        if let Some(mut child) = guard.take() {
-            let _ = child.kill();
-            let _ = child.wait();
-        }
+    // PoisonError::into_inner 确保即使锁被毒化也能清理 sidecar 进程，
+    // 避免孤儿进程残留。
+    let mut guard = state.0.lock().unwrap_or_else(PoisonError::into_inner);
+    if let Some(mut child) = guard.take() {
+        let _ = child.kill();
+        let _ = child.wait();
     }
 }
 
