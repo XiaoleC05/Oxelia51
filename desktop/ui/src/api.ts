@@ -49,8 +49,6 @@ export type Settings = {
   widgetFields: string[];
   /** 悬浮卡片窗口位置（拖动后持久化，重启恢复） */
   widgetPos?: { x: number; y: number };
-  /** 悬浮卡片不透明度（0-100，默认 100） */
-  widgetOpacity?: number;
 };
 
 async function j<T>(url: string, init?: RequestInit): Promise<T> {

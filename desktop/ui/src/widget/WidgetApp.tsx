@@ -32,10 +32,8 @@ export default function WidgetApp() {
   const [online, setOnline] = useState(false);
   // null = 设置还没加载（默认全显）；数组 = 用户勾选的字段
   const [fields, setFields] = useState<string[] | null>(null);
-  // 悬浮卡片不透明度（0-100，默认 100）
-  const [opacity, setOpacity] = useState(100);
 
-  // 读取本地设置：主题 + 悬浮卡片显示字段 + 不透明度 + 恢复上次拖拽位置
+  // 读取本地设置：主题 + 悬浮卡片显示字段 + 恢复上次拖拽位置
   useEffect(() => {
     void fetchSettings()
       .then((s) => {
@@ -43,7 +41,6 @@ export default function WidgetApp() {
           document.documentElement.dataset.theme = s.theme;
         }
         setFields(s.widgetFields?.length ? s.widgetFields : WIDGET_FIELDS.map((f) => f.key));
-        if (s?.widgetOpacity) setOpacity(s.widgetOpacity);
         const wp = s?.widgetPos;
         if (wp) {
           void (async () => {
@@ -87,7 +84,6 @@ export default function WidgetApp() {
         setFields((prev) =>
           JSON.stringify(prev ?? []) === JSON.stringify(next) ? prev : next,
         );
-        if (settings.widgetOpacity) setOpacity(settings.widgetOpacity);
       }
     };
     void tick();
@@ -121,11 +117,7 @@ export default function WidgetApp() {
   };
 
   return (
-    <div
-      className="widget"
-      data-tauri-drag-region="deep"
-      style={{ opacity: opacity / 100 }}
-    >
+    <div className="widget" data-tauri-drag-region="deep">
       <header className="widget-head" data-tauri-drag-region>
         <span className="widget-brand" data-tauri-drag-region>
           <span className="widget-dot" data-tauri-drag-region />
