@@ -10,9 +10,9 @@ import (
 type TokenUsage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
-	// Anthropic prompt caching（#4）：cache_creation 按计价 1.25×、cache_read 0.1×
-	// 折算进 PromptTokens，使 costOf 无需改 schema 即可准确计成本。
+	// Anthropic prompt caching：cache_creation / cache_read 与 input_tokens 是
+	// 不相交的三个字段（input_tokens 只含未缓存输入，见 §缓存）。此处原样保留，
+	// 由 buildRecord 折算成「计价输入」存 prompt_tokens、并单独落缓存细分列。
 	// OpenAI 系无此字段，保持 0。
 	CacheCreationTokens int `json:"cache_creation_tokens"`
 	CacheReadTokens     int `json:"cache_read_tokens"`
@@ -20,19 +20,26 @@ type TokenUsage struct {
 
 // TokenRecord 是写入 ClickHouse 的一行记录
 type TokenRecord struct {
-	EventID          string
-	ProjectID        string
-	SessionID        string
-	Provider         string // 供应商：LLM 模型提供商（deepseek / anthropic / openai …）
-	Agent            string // Agent：用户使用的客户端工具（claude-code / codex / cursor / trae …）
-	Model            string
+	EventID   string
+	ProjectID string
+	SessionID string
+	Provider  string // 供应商：LLM 模型提供商（deepseek / anthropic / openai …）
+	Agent     string // Agent：用户使用的客户端工具（claude-code / codex / cursor / trae …）
+	Model     string
+	// PromptTokens 存「计价输入 token」（Anthropic 缓存按 1.25×/0.1× 折算，见 forward.buildRecord），
+	// 供 costOf 直接乘单价计成本；TotalTokens 存「原始 token」（含缓存，1×），供 UI 展示真实消耗。
+	// 两者口径不同（TotalTokens ≥ PromptTokens + CompletionTokens），勿以 total = prompt + completion 反推。
 	PromptTokens     uint32
 	CompletionTokens uint32
 	TotalTokens      uint32
-	DurationMs       uint32
-	Timestamp        time.Time
-	APIKeyHash       string
-	Partial          bool // #11: 客户端中断流式响应，usage 不完整
+	// 缓存细分（Anthropic：cache_creation/cache_read 与 input_tokens 不相交；OpenAI 恒 0），
+	// 供缓存命中/写入的可视化与后续成本折扣分析，不参与现有成本计算。
+	CacheReadTokens     uint32
+	CacheCreationTokens uint32
+	DurationMs          uint32
+	Timestamp           time.Time
+	APIKeyHash          string
+	Partial             bool // #11: 客户端中断流式响应，usage 不完整
 }
 
 // Adapter 抽象不同 LLM 供应商的 token 用量提取逻辑

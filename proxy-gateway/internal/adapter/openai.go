@@ -49,7 +49,6 @@ func (a *OpenAIAdapter) ExtractUsage(resp *http.Response) (*TokenUsage, error) {
 	return &TokenUsage{
 		PromptTokens:     prompt,
 		CompletionTokens: completion,
-		TotalTokens:      data.Usage.TotalTokens,
 	}, nil
 }
 
@@ -99,13 +98,11 @@ func (a *OpenAIAdapter) ExtractUsageFromStream(reader io.Reader) (*TokenUsage, e
 			lastUsage = &TokenUsage{
 				PromptTokens:     prompt,
 				CompletionTokens: completion,
-				TotalTokens:      data.Usage.TotalTokens,
 			}
 		} else if data.Response != nil && data.Response.Usage != nil {
 			lastUsage = &TokenUsage{
 				PromptTokens:     data.Response.Usage.InputTokens,
 				CompletionTokens: data.Response.Usage.OutputTokens,
-				TotalTokens:      data.Response.Usage.TotalTokens,
 			}
 		}
 	}

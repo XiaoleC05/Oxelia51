@@ -211,7 +211,7 @@ func TestNon2xxNotRecorded(t *testing.T) {
 }
 
 // Test2xxWithoutUsageStillRecorded 锁住 P2-1 的可见性口径：2xx 但无 usage 仍落账
-//（0 token + model），区别于「model 也为空」的纯垃圾行。
+// （0 token + model），区别于「model 也为空」的纯垃圾行。
 func Test2xxWithoutUsageStillRecorded(t *testing.T) {
 	f, rec := withUpstream(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -303,5 +303,31 @@ func TestStreamNon2xxNotRecorded(t *testing.T) {
 	}
 	if n := len(rec.records()); n != 0 {
 		t.Fatalf("non-2xx stream must not record, got %d", n)
+	}
+}
+
+// TestBuildRecordCacheAccounting 锁住缓存记账口径：
+// TotalTokens 存原始 token（含缓存，1×），PromptTokens 存计价输入（缓存折算），
+// 缓存细分单独落 CacheRead/CacheCreation 列。Anthropic 的 input_tokens 不含缓存，
+// 故原始输入 = input + cache_creation + cache_read。
+func TestBuildRecordCacheAccounting(t *testing.T) {
+	u := &adapter.TokenUsage{
+		PromptTokens:        100,
+		CompletionTokens:    50,
+		CacheCreationTokens: 20000,
+		CacheReadTokens:     300000,
+	}
+	r := buildRecord(u, "p", "s", "anthropic", "claude-code", "claude-opus-5", 100, false)
+
+	// 计价输入：100 + 20000×1.25 + 300000×0.1 = 55100
+	if r.PromptTokens != 55100 {
+		t.Fatalf("prompt(billing) = %d, want 55100", r.PromptTokens)
+	}
+	// 原始输入：100 + 20000 + 300000 = 320100；原始总量 = 320100 + 50 = 320150
+	if r.TotalTokens != 320150 {
+		t.Fatalf("total(raw) = %d, want 320150", r.TotalTokens)
+	}
+	if r.CacheReadTokens != 300000 || r.CacheCreationTokens != 20000 {
+		t.Fatalf("cache cols: read=%d create=%d, want 300000/20000", r.CacheReadTokens, r.CacheCreationTokens)
 	}
 }

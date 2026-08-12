@@ -18,9 +18,9 @@ func TestOpenAIExtractUsageResponseAPI(t *testing.T) {
 	if err != nil || u == nil {
 		t.Fatalf("ExtractUsage err=%v u=%v", err, u)
 	}
-	if u.PromptTokens != 120 || u.CompletionTokens != 60 || u.TotalTokens != 180 {
-		t.Fatalf("response api usage: in=%d out=%d total=%d, want 120/60/180",
-			u.PromptTokens, u.CompletionTokens, u.TotalTokens)
+	if u.PromptTokens != 120 || u.CompletionTokens != 60 {
+		t.Fatalf("response api usage: in=%d out=%d, want 120/60",
+			u.PromptTokens, u.CompletionTokens)
 	}
 }
 
@@ -33,9 +33,9 @@ func TestOpenAIExtractUsageChatCompletions(t *testing.T) {
 	if err != nil || u == nil {
 		t.Fatalf("ExtractUsage err=%v u=%v", err, u)
 	}
-	if u.PromptTokens != 500 || u.CompletionTokens != 222 || u.TotalTokens != 722 {
-		t.Fatalf("chat completions usage: in=%d out=%d total=%d, want 500/222/722",
-			u.PromptTokens, u.CompletionTokens, u.TotalTokens)
+	if u.PromptTokens != 500 || u.CompletionTokens != 222 {
+		t.Fatalf("chat completions usage: in=%d out=%d, want 500/222",
+			u.PromptTokens, u.CompletionTokens)
 	}
 }
 
@@ -50,8 +50,8 @@ func TestOpenAIExtractUsageFromStreamResponseAPI(t *testing.T) {
 	if err != nil || u == nil {
 		t.Fatalf("ExtractUsageFromStream err=%v u=%v", err, u)
 	}
-	if u.PromptTokens != 300 || u.CompletionTokens != 150 || u.TotalTokens != 450 {
-		t.Fatalf("response api stream usage: in=%d out=%d total=%d, want 300/150/450",
-			u.PromptTokens, u.CompletionTokens, u.TotalTokens)
+	if u.PromptTokens != 300 || u.CompletionTokens != 150 {
+		t.Fatalf("response api stream usage: in=%d out=%d, want 300/150",
+			u.PromptTokens, u.CompletionTokens)
 	}
 }

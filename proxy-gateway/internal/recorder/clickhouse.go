@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS oxelia51.token_events (
     prompt_tokens UInt32,
     completion_tokens UInt32,
     total_tokens UInt32,
+    cache_read_tokens UInt32,
+    cache_creation_tokens UInt32,
     cost_usd Float64,
     duration_ms UInt32,
     timestamp DateTime64(3),
@@ -39,6 +41,14 @@ ORDER BY (project_id, timestamp)
 const alterTableAgentSQL = `
 ALTER TABLE oxelia51.token_events
     ADD COLUMN IF NOT EXISTS agent LowCardinality(String)
+`
+
+// alterTableCacheSQL 对存量表补缓存细分列（缓存命中/写入，见 adapter.TokenRecord）。
+// 与 agent 列同理幂等。ADD COLUMN IF NOT EXISTS 每次启动执行安全。
+const alterTableCacheSQL = `
+ALTER TABLE oxelia51.token_events
+    ADD COLUMN IF NOT EXISTS cache_read_tokens UInt32,
+    ADD COLUMN IF NOT EXISTS cache_creation_tokens UInt32
 `
 
 // ClickHouseWriter 实现 BatchWriter 接口
@@ -69,6 +79,10 @@ func NewClickHouseWriter(addr, user, password string) (*ClickHouseWriter, error)
 	if err := conn.Exec(ctx, alterTableAgentSQL); err != nil {
 		return nil, fmt.Errorf("alter table agent: %w", err)
 	}
+	// 存量表补缓存细分列（幂等）
+	if err := conn.Exec(ctx, alterTableCacheSQL); err != nil {
+		return nil, fmt.Errorf("alter table cache: %w", err)
+	}
 
 	log.Printf("clickhouse connected, table ready")
 	return &ClickHouseWriter{conn: conn}, nil
@@ -77,7 +91,7 @@ func NewClickHouseWriter(addr, user, password string) (*ClickHouseWriter, error)
 // WriteBatch 批量写入 token_events
 func (w *ClickHouseWriter) WriteBatch(records []adapter.TokenRecord) error {
 	ctx := context.Background()
-	batch, err := w.conn.PrepareBatch(ctx, "INSERT INTO oxelia51.token_events (event_id, project_id, session_id, provider, agent, model, prompt_tokens, completion_tokens, total_tokens, cost_usd, duration_ms, timestamp, api_key_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	batch, err := w.conn.PrepareBatch(ctx, "INSERT INTO oxelia51.token_events (event_id, project_id, session_id, provider, agent, model, prompt_tokens, completion_tokens, total_tokens, cache_read_tokens, cache_creation_tokens, cost_usd, duration_ms, timestamp, api_key_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
@@ -107,6 +121,8 @@ func (w *ClickHouseWriter) WriteBatch(records []adapter.TokenRecord) error {
 			r.PromptTokens,
 			r.CompletionTokens,
 			r.TotalTokens,
+			r.CacheReadTokens,
+			r.CacheCreationTokens,
 			0.0, // cost_usd 暂不计算
 			r.DurationMs,
 			r.Timestamp,

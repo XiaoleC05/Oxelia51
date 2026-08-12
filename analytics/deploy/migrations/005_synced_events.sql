@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS oxelia51.synced_events (
     prompt_tokens     BIGINT NOT NULL DEFAULT 0,
     completion_tokens BIGINT NOT NULL DEFAULT 0,
     total_tokens      BIGINT NOT NULL DEFAULT 0,
+    cache_read_tokens      BIGINT NOT NULL DEFAULT 0,
+    cache_creation_tokens  BIGINT NOT NULL DEFAULT 0,
     duration_ms       BIGINT NOT NULL DEFAULT 0,
     ts                TIMESTAMPTZ NOT NULL,
     seq               BIGSERIAL,

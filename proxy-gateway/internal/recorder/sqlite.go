@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS token_events (
     prompt_tokens      INTEGER NOT NULL DEFAULT 0,
     completion_tokens  INTEGER NOT NULL DEFAULT 0,
     total_tokens       INTEGER NOT NULL DEFAULT 0,
+    cache_read_tokens  INTEGER NOT NULL DEFAULT 0,
+    cache_creation_tokens INTEGER NOT NULL DEFAULT 0,
     duration_ms        INTEGER NOT NULL DEFAULT 0,
     timestamp          TEXT NOT NULL,
     api_key_hash       TEXT NOT NULL DEFAULT '',
@@ -112,6 +114,18 @@ func NewSQLiteWriter(path string) (*SQLiteWriter, error) {
 	); err != nil {
 		log.Printf("sqlite create agent index: %v", err)
 	}
+	// 老库补缓存细分列（缓存命中/写入，见 adapter.TokenRecord）。已存在时 SQLite 报
+	// "duplicate column name"，属预期，忽略。
+	if _, err := db.ExecContext(context.Background(),
+		`ALTER TABLE token_events ADD COLUMN cache_read_tokens INTEGER NOT NULL DEFAULT 0`,
+	); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+		log.Printf("sqlite migrate cache_read_tokens column: %v", err)
+	}
+	if _, err := db.ExecContext(context.Background(),
+		`ALTER TABLE token_events ADD COLUMN cache_creation_tokens INTEGER NOT NULL DEFAULT 0`,
+	); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+		log.Printf("sqlite migrate cache_creation_tokens column: %v", err)
+	}
 	log.Printf("sqlite ready at %s", path)
 	return &SQLiteWriter{db: db}, nil
 }
@@ -129,8 +143,8 @@ func (w *SQLiteWriter) WriteBatch(records []adapter.TokenRecord) error {
 
 	stmt, err := tx.Prepare(`INSERT OR IGNORE INTO token_events
 		(event_id, project_id, session_id, provider, agent, model,
-		 prompt_tokens, completion_tokens, total_tokens, duration_ms, timestamp, api_key_hash, partial)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+		 prompt_tokens, completion_tokens, total_tokens, cache_read_tokens, cache_creation_tokens, duration_ms, timestamp, api_key_hash, partial)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return err
 	}
@@ -159,7 +173,7 @@ func (w *SQLiteWriter) WriteBatch(records []adapter.TokenRecord) error {
 		}
 		if _, err := stmt.Exec(
 			eventID, r.ProjectID, r.SessionID, r.Provider, r.Agent, r.Model,
-			r.PromptTokens, r.CompletionTokens, r.TotalTokens, r.DurationMs,
+			r.PromptTokens, r.CompletionTokens, r.TotalTokens, r.CacheReadTokens, r.CacheCreationTokens, r.DurationMs,
 			ts.Format(timeLayout), apiKeyHash, partial,
 		); err != nil {
 			return err

@@ -19,6 +19,8 @@ func newSyncTestAPI(t *testing.T) *API {
 		prompt_tokens      INTEGER NOT NULL DEFAULT 0,
 		completion_tokens  INTEGER NOT NULL DEFAULT 0,
 		total_tokens       INTEGER NOT NULL DEFAULT 0,
+		cache_read_tokens  INTEGER NOT NULL DEFAULT 0,
+		cache_creation_tokens INTEGER NOT NULL DEFAULT 0,
 		duration_ms        INTEGER NOT NULL DEFAULT 0,
 		timestamp          TEXT NOT NULL,
 		api_key_hash       TEXT NOT NULL DEFAULT '',

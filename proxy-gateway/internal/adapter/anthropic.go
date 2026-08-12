@@ -42,7 +42,6 @@ func (a *AnthropicAdapter) ExtractUsage(resp *http.Response) (*TokenUsage, error
 	return &TokenUsage{
 		PromptTokens:        data.Usage.InputTokens,
 		CompletionTokens:    data.Usage.OutputTokens,
-		TotalTokens:         data.Usage.InputTokens + data.Usage.OutputTokens,
 		CacheCreationTokens: data.Usage.CacheCreationInputTokens,
 		CacheReadTokens:     data.Usage.CacheReadInputTokens,
 	}, nil
@@ -115,7 +114,6 @@ func (a *AnthropicAdapter) ExtractUsageFromStream(reader io.Reader) (*TokenUsage
 	return &TokenUsage{
 		PromptTokens:        input,
 		CompletionTokens:    output,
-		TotalTokens:         input + output,
 		CacheCreationTokens: cacheCreate,
 		CacheReadTokens:     cacheRead,
 	}, nil

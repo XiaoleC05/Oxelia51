@@ -34,18 +34,20 @@ const localTimeLayout = "2006-01-02 15:04:05.000"
 const syncDownloadMaxRounds = 5
 
 type cloudSyncEvent struct {
-	EventID          string `json:"eventId"`
-	DeviceID         string `json:"deviceId"`
-	ProjectID        string `json:"projectId"`
-	SessionID        string `json:"sessionId"`
-	Provider         string `json:"provider"`
-	Agent            string `json:"agent"`
-	Model            string `json:"model"`
-	PromptTokens     int64  `json:"promptTokens"`
-	CompletionTokens int64  `json:"completionTokens"`
-	TotalTokens      int64  `json:"totalTokens"`
-	DurationMs       int64  `json:"durationMs"`
-	TS               string `json:"ts"`
+	EventID             string `json:"eventId"`
+	DeviceID            string `json:"deviceId"`
+	ProjectID           string `json:"projectId"`
+	SessionID           string `json:"sessionId"`
+	Provider            string `json:"provider"`
+	Agent               string `json:"agent"`
+	Model               string `json:"model"`
+	PromptTokens        int64  `json:"promptTokens"`
+	CompletionTokens    int64  `json:"completionTokens"`
+	TotalTokens         int64  `json:"totalTokens"`
+	CacheReadTokens     int64  `json:"cacheReadTokens"`
+	CacheCreationTokens int64  `json:"cacheCreationTokens"`
+	DurationMs          int64  `json:"durationMs"`
+	TS                  string `json:"ts"`
 }
 
 func (a *API) syncDeviceID() string {
@@ -149,11 +151,11 @@ func (a *API) syncUpload(token, deviceID string) (int, int, error) {
 
 	// 读取游标之后的事件（本地时间戳为字符串格式）
 	type localRow struct {
-		eventID, projectID, sessionID, provider, agent, model, ts string
-		prompt, completion, total, duration                       int64
+		eventID, projectID, sessionID, provider, agent, model, ts     string
+		prompt, completion, total, cacheRead, cacheCreation, duration int64
 	}
 	localRows := []localRow{}
-	q := "SELECT event_id, project_id, session_id, provider, agent, model, prompt_tokens, completion_tokens, total_tokens, duration_ms, timestamp FROM token_events"
+	q := "SELECT event_id, project_id, session_id, provider, agent, model, prompt_tokens, completion_tokens, total_tokens, cache_read_tokens, cache_creation_tokens, duration_ms, timestamp FROM token_events"
 	args := []any{}
 	if cutoff != "" {
 		q += " WHERE timestamp > ?"
@@ -168,7 +170,7 @@ func (a *API) syncUpload(token, deviceID string) (int, int, error) {
 	for rr.Next() {
 		var l localRow
 		if err := rr.Scan(&l.eventID, &l.projectID, &l.sessionID, &l.provider, &l.agent, &l.model,
-			&l.prompt, &l.completion, &l.total, &l.duration, &l.ts); err != nil {
+			&l.prompt, &l.completion, &l.total, &l.cacheRead, &l.cacheCreation, &l.duration, &l.ts); err != nil {
 			return 0, 0, err
 		}
 		localRows = append(localRows, l)
@@ -188,7 +190,8 @@ func (a *API) syncUpload(token, deviceID string) (int, int, error) {
 		events = append(events, cloudSyncEvent{
 			EventID: l.eventID, DeviceID: deviceID, ProjectID: l.projectID, SessionID: l.sessionID,
 			Provider: l.provider, Agent: l.agent, Model: l.model, PromptTokens: l.prompt, CompletionTokens: l.completion,
-			TotalTokens: l.total, DurationMs: l.duration, TS: t.UTC().Format(time.RFC3339),
+			TotalTokens: l.total, CacheReadTokens: l.cacheRead, CacheCreationTokens: l.cacheCreation,
+			DurationMs: l.duration, TS: t.UTC().Format(time.RFC3339),
 		})
 	}
 
@@ -284,8 +287,8 @@ func (a *API) mergeCloudEvents(events []cloudSyncEvent) (int, int, error) {
 	defer tx.Rollback()
 	ins, err := tx.Prepare(`INSERT OR IGNORE INTO token_events
 		(event_id, project_id, session_id, provider, agent, model,
-		 prompt_tokens, completion_tokens, total_tokens, duration_ms, timestamp, api_key_hash)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
+		 prompt_tokens, completion_tokens, total_tokens, cache_read_tokens, cache_creation_tokens, duration_ms, timestamp, api_key_hash)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -304,7 +307,7 @@ func (a *API) mergeCloudEvents(events []cloudSyncEvent) (int, int, error) {
 		}
 		localTS := t.Local().Format(localTimeLayout)
 		res, err := ins.Exec(e.EventID, e.ProjectID, e.SessionID, e.Provider, e.Agent, e.Model,
-			e.PromptTokens, e.CompletionTokens, e.TotalTokens, e.DurationMs, localTS, "sync")
+			e.PromptTokens, e.CompletionTokens, e.TotalTokens, e.CacheReadTokens, e.CacheCreationTokens, e.DurationMs, localTS, "sync")
 		if err != nil {
 			return n, conflicts, err
 		}

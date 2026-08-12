@@ -303,10 +303,11 @@ func ensureStreamUsage(body []byte) []byte {
 	return out
 }
 
-// effectivePromptTokens 把 Anthropic prompt caching 折算成计价等效 input token（#4）。
-// cache_creation 1.25×、cache_read 0.1×；折算后存入 PromptTokens，
+// effectivePromptTokens 把 Anthropic prompt caching 折算成计价等效 input token。
+// cache_creation 1.25×、cache_read 0.1×；折算后存入 PromptTokens（计价口径），
 // 使 costOf(pricing, model, prompt, completion) 无需改 schema 即可准确计成本。
-// total = 折算 prompt + completion（略高于真实 token 数，但成本准确，UI 显示总量更合理）。
+// 注：Anthropic 的 input_tokens 本身不含缓存（cache 字段与其不相交），故此处是
+// 「未缓存 + 缓存写溢价 + 缓存读折扣」三者之和，而非在已含缓存的 input 上再加。
 func effectivePromptTokens(usage *adapter.TokenUsage) uint32 {
 	if usage == nil {
 		return 0
@@ -315,6 +316,16 @@ func effectivePromptTokens(usage *adapter.TokenUsage) uint32 {
 		float64(usage.CacheCreationTokens)*1.25 +
 		float64(usage.CacheReadTokens)*0.1
 	return uint32(math.Round(eff))
+}
+
+// rawPromptTokens 返回原始输入 token（含缓存，1× 计）。
+// Anthropic：input_tokens + cache_creation + cache_read（三者不相交）；
+// OpenAI：cache 字段为 0，raw = prompt_tokens（其本身已含缓存）。
+func rawPromptTokens(usage *adapter.TokenUsage) uint32 {
+	if usage == nil {
+		return 0
+	}
+	return uint32(usage.PromptTokens + usage.CacheCreationTokens + usage.CacheReadTokens)
 }
 
 // recordUsage 落一条账。P2-1 防御：model 为空且 usage 全 0 的行无分析价值
@@ -327,23 +338,27 @@ func (f *Forwarder) recordUsage(usage *adapter.TokenUsage, projectID, sessionID,
 	f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, agent, model, duration, partial))
 }
 
-// buildRecord 从 usage 构造一条 TokenRecord（#4：cache 折算进 PromptTokens）。
+// buildRecord 从 usage 构造一条 TokenRecord。
+// PromptTokens = 计价输入（缓存折算，供 costOf 计成本）；TotalTokens = 原始 token（含缓存，供展示）；
+// 缓存细分单独落 CacheRead/CacheCreation 列。见 adapter.TokenRecord 的字段注释。
 func buildRecord(usage *adapter.TokenUsage, projectID, sessionID, provider, agent, model string, duration uint32, partial bool) adapter.TokenRecord {
 	prompt := effectivePromptTokens(usage)
 	completion := uint32(usage.CompletionTokens)
 	return adapter.TokenRecord{
-		EventID:          uuid.NewString(),
-		ProjectID:        projectID,
-		SessionID:        sessionID,
-		Provider:         provider,
-		Agent:            agent,
-		Model:            model,
-		PromptTokens:     prompt,
-		CompletionTokens: completion,
-		TotalTokens:      prompt + completion,
-		DurationMs:       duration,
-		Timestamp:        time.Now(),
-		Partial:          partial,
+		EventID:             uuid.NewString(),
+		ProjectID:           projectID,
+		SessionID:           sessionID,
+		Provider:            provider,
+		Agent:               agent,
+		Model:               model,
+		PromptTokens:        prompt,
+		CompletionTokens:    completion,
+		TotalTokens:         rawPromptTokens(usage) + completion,
+		CacheReadTokens:     uint32(usage.CacheReadTokens),
+		CacheCreationTokens: uint32(usage.CacheCreationTokens),
+		DurationMs:          duration,
+		Timestamp:           time.Now(),
+		Partial:             partial,
 	}
 }
 
