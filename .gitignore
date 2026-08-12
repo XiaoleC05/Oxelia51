@@ -30,6 +30,9 @@ backend/oxelia51-server-linux
 oxelia51-server-linux.zip
 backend/*.exe
 proxy-gateway/*.exe
+desktop/sidecar/*.exe
+desktop/sidecar/*.exe.bak*
+desktop/sidecar/*.log
 deploy/tencent-cloud/health-server
 
 #docker 配置

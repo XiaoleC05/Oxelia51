@@ -6,6 +6,9 @@
 
 :root,
 [data-theme="cozy"] {
+  /* 全局字体缩放倍数（UI 反馈：整体字体偏小）。body zoom 引用此变量，
+     改这里一处即可整体放大/缩小；默认 1.3（≈原 15px → 19.5px 等效）。 */
+  --ox-font-scale: 1.3;
   --ox-bg: #faf7f4;
   --ox-bg-alt: #f3efe9;
   --ox-bg-glass: rgba(250, 247, 244, 0.75);

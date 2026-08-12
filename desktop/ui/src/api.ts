@@ -49,6 +49,8 @@ export type Settings = {
   widgetFields: string[];
   /** 悬浮卡片窗口位置（拖动后持久化，重启恢复） */
   widgetPos?: { x: number; y: number };
+  /** Agent 显示名别名（原始名 → 自定义名；如把「其他」重命名），#问题 4 */
+  agentAliases?: Record<string, string>;
 };
 
 async function j<T>(url: string, init?: RequestInit): Promise<T> {
@@ -77,6 +79,8 @@ export const fetchAgentDetail = (name: string, days?: number) =>
   j<{ agent: string; rows: DimDetailRow[] }>(
     `/api/agents/${encodeURIComponent(name)}${days ? `?days=${days}` : ""}`,
   );
+export const fetchModels = (days?: number) =>
+  j<{ models: DimStat[] }>(days ? `/api/models?days=${days}` : "/api/models");
 export const fetchAlerts = () =>
   j<{ alerts: AlertItem[]; globalToday: number; providers: string[]; agents: string[] }>("/api/alerts");
 export const fetchSettings = () => j<Settings>("/api/settings");
@@ -179,8 +183,9 @@ export function fmtTokens(n: number): string {
 }
 
 /**
- * CNY/USD 参考汇率（#34）。桌面端为本地优先、不联网取汇率，故用固定参考值；
- * 云端 oxelia51.exchange_rates 有每日汇率，两侧口径不同属预期。
+ * CNY/USD 兜底汇率（#34）。总览排行的人民币换算走 /api/pricing/rate 实时汇率
+ *（sidecar 每日更新），仅在汇率接口不可用时回退到本固定参考值，保持本地优先容错；
+ * 悬浮卡片等轻量展示仍用本参考值，不额外拉取汇率。
  * 展示为「参考值」而非精确记账，避免伪精确。
  */
 export const CNY_PER_USD = 7.2;
@@ -188,11 +193,28 @@ export const CNY_PER_USD = 7.2;
 /**
  * 格式化成本。未配置定价的模型成本为 0，此时显示「未配置定价」而非「¥0」，
  * 避免用户误以为该模型免费（空定价表是全新安装的默认状态）。
+ * rate 为 USD→CNY 汇率，缺省用兜底参考值 CNY_PER_USD。
  */
-export function fmtCost(cost: number | null | undefined): string {
+export function fmtCost(cost: number | null | undefined, rate: number = CNY_PER_USD): string {
   const c = Number(cost);
   if (!Number.isFinite(c) || c <= 0) return "未配置定价";
-  return `≈¥${(c * CNY_PER_USD).toFixed(2)} / $${c.toFixed(4)}`;
+  return `≈¥${(c * rate).toFixed(2)} / $${c.toFixed(4)}`;
+}
+
+/** 币种（总览显示模式：美元 / 人民币）。 */
+export type Currency = "usd" | "cny";
+
+/** 按币种格式化成本：未配置定价或非正数返回「未配置定价」。rate 缺省用兜底参考值。 */
+export function fmtCostByCurrency(
+  cost: number | null | undefined,
+  currency: Currency,
+  rate: number = CNY_PER_USD,
+): string {
+  const c = Number(cost);
+  if (!Number.isFinite(c) || c <= 0) return "未配置定价";
+  return currency === "cny"
+    ? `≈¥${(c * rate).toFixed(2)}`
+    : `$${c.toFixed(4)}`;
 }
 
 export function fmtDate(ts: string): string {

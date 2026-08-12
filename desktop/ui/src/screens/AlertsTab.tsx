@@ -108,6 +108,8 @@ export function AlertsTab() {
     try {
       await saveSetting("budgets", JSON.stringify(next));
       setBudgets(next);
+      // 保存成功后立即刷新「今日预算使用」，不等下一轮 15s 轮询
+      void load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存失败");
     } finally {

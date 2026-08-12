@@ -490,8 +490,11 @@
   background: linear-gradient(90deg, #e5484d, color-mix(in srgb, #e5484d 50%, transparent));
 }
 
+/* 排行行布局：name 可收缩 + track 保底宽度，避免长模型名 / 大字体把用量条挤没（#总览布局） */
 .rank-name {
   width: 120px;
+  min-width: 0;
+  flex-shrink: 1;
   font-size: 13px;
   color: var(--ox-text);
   white-space: nowrap;
@@ -500,7 +503,8 @@
 }
 
 .rank-track {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 48px;
   height: 8px;
   border-radius: 6px;
   background: var(--ox-border-light);
@@ -515,6 +519,7 @@
 }
 
 .rank-val {
+  flex-shrink: 0;
   font-size: 13px;
   color: var(--ox-text-muted);
   white-space: nowrap;
@@ -830,6 +835,17 @@
 
 .date-range-picker {
   display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--ox-border);
+  border-radius: 12px;
+  background: var(--ox-bg-alt);
+}
+
+/* 总览显示模式：与日期范围选择器同款分组容器（边框 + 圆角 + 底色胶囊） */
+.rank-mode {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
   padding: 3px;
   border: 1px solid var(--ox-border);

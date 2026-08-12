@@ -4,12 +4,11 @@ import { EmptyState } from "../EmptyState";
 import { Dropdown } from "../components/Dropdown";
 
 /**
- * 模型价格表：按 输入价 / 综合成本 排行，美元 / 人民币一键切换。
- * 综合成本 = 输出价 × 0.6 + 输入价 × 0.4（输出更贵、权重更高；值越小越划算）。
+ * 模型价格表：按 输入价 / 输出价 排行，美元 / 人民币一键切换。
  * 价格为内置参考价（/api/pricing/catalog），标注为参考价，桌面离线可用；
  * 人民币按 sidecar 每日更新的汇率换算（/api/pricing/rate），汇率源标注在表格下方。
  */
-type SortMode = "price" | "blended";
+type SortMode = "price" | "output";
 type SortDir = "asc" | "desc";
 type Currency = "usd" | "cny";
 
@@ -51,11 +50,11 @@ export function ModelPriceTab() {
   const sorted = useMemo(() => {
     let list = provider ? items.filter((i) => i.provider === provider) : items;
     const mul = dir === "asc" ? 1 : -1;
-    if (sort === "blended") {
-      // 综合成本：输出价 * 0.6 + 输入价 * 0.4（输出更贵、权重更高；越低越划算）
+    if (sort === "output") {
+      // 按输出价：输出 token 单价（通常更贵，按实际计费关注输出成本）
       list = [...list].sort(
         (a, b) =>
-          (a.completion * 0.6 + a.prompt * 0.4 - (b.completion * 0.6 + b.prompt * 0.4)) * mul,
+          ((a.completion - b.completion) || (a.prompt - b.prompt)) * mul,
       );
     } else {
       list = [...list].sort(
@@ -99,10 +98,10 @@ export function ModelPriceTab() {
             </button>
             <button
               type="button"
-              className={`range-chip ${sort === "blended" ? "active" : ""}`}
-              onClick={() => setSort("blended")}
+              className={`range-chip ${sort === "output" ? "active" : ""}`}
+              onClick={() => setSort("output")}
             >
-              按综合成本
+              按输出价
             </button>
             <button
               type="button"
@@ -145,7 +144,7 @@ export function ModelPriceTab() {
         </div>
       )}
       <p className="price-note">
-        参考价 · 离线可用 · 综合成本 = 输出×0.6 + 输入×0.4
+        参考价 · 离线可用 · 按输入价 / 输出价排序
         {currency === "cny" && rate
           ? ` · 汇率 1 USD = ¥${rate.usd_to_cny.toFixed(4)}（${rate.source}${rate.updated_at ? ` · ${rate.updated_at}` : ""}，每日更新）`
           : ""}

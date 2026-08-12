@@ -147,10 +147,19 @@ export function proxyUrl(slug: string): string {
   return `${PROXY_BASE}/${slug}`;
 }
 
+// 声明了 Anthropic 兼容端点的内置供应商（与 proxy-gateway registry.go 的
+// anthropicEndpoints 保持一致）。Claude Code 走这些供应商时 base URL 需追加
+// /anthropic 后缀（代理据此路由到 Anthropic 协议端点），OpenAI 客户端不受影响。
+const ANTHROPIC_SUFFIX_SLUGS = new Set(["deepseek", "zhipu"]);
+
+/** Claude Code 场景的 base URL：有 anthropic 变体端点的供应商追加 /anthropic 后缀。 */
+export function claudeBaseUrl(slug: string): string {
+  return ANTHROPIC_SUFFIX_SLUGS.has(slug) ? `${proxyUrl(slug)}/anthropic` : proxyUrl(slug);
+}
+
 /** 生成某供应商的 export 配置命令（Anthropic 协议 vs OpenAI 兼容协议）。 */
 export function providerCmd(slug: string, anthropic: boolean): string {
-  const url = proxyUrl(slug);
   return anthropic
-    ? `export ANTHROPIC_BASE_URL="${url}"`
-    : `export OPENAI_BASE_URL="${url}"`;
+    ? `export ANTHROPIC_BASE_URL="${claudeBaseUrl(slug)}"`
+    : `export OPENAI_BASE_URL="${proxyUrl(slug)}"`;
 }

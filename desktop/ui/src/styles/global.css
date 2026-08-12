@@ -18,6 +18,10 @@ body {
   background-color: var(--ox-bg);
   color: var(--ox-text);
   -webkit-font-smoothing: antialiased;
+  /* 字体缩放（UI 反馈：整体字体偏小）：zoom 整页等比放大，布局/间距随字体
+     同步缩放不会溢出；倍数由主题变量 --ox-font-scale 统一控制，设计侧只需
+     调一处。桌面 WebView2 / Chromium 完整支持 zoom。 */
+  zoom: var(--ox-font-scale, 1.3);
 }
 
 button {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { fmtCost, fmtTokens, fmtDate, type DimDetailRow, type DimStat } from "../api";
 import { EmptyState } from "../EmptyState";
 import { DateRangePicker } from "./DateRangePicker";
@@ -8,8 +8,12 @@ import { DateRangePicker } from "./DateRangePicker";
  * provider = LLM 模型提供商（DeepSeek / Claude / OpenAI …）；agent = 用户使用的软件（Claude Code / Codex …）。
  * 顶部日期范围可切换（全部 / 近7日 / 近30日 / 近90日），下方统计联动刷新。
  * 点击条目可下钻交叉明细：Agent → 该 Agent 用到的各供应商×模型；Provider → 该供应商被哪些 Agent 使用。
+ *
+ * #问题 5：组件用 memo 包裹——父级（App）每 5s 轮询总览会重渲染，但只要
+ * fetcher/detailFetcher 身份稳定（由调用方 useCallback 保证），memo 直接跳过本次
+ * 重渲染，轮询 effect 不再反复拆建，杜绝异常自动刷新与下钻折叠闪烁。
  */
-export function DimTab({
+export const DimTab = memo(function DimTab({
   title,
   subtitle,
   emptyHint,
@@ -17,6 +21,8 @@ export function DimTab({
   detailFetcher,
   detailLabel,
   dimLabel,
+  displayNames,
+  onRename,
 }: {
   title: string;
   subtitle: string;
@@ -28,12 +34,23 @@ export function DimTab({
   detailLabel: string;
   /** 主维度标签：如「供应商」/「Agent」。 */
   dimLabel: string;
+  /** 显示名别名（原始名 → 自定义名）。列表与下钻标题用别名展示，#问题 4。 */
+  displayNames?: Record<string, string>;
+  /** 保存别名（原始名 → 新名；空值或同原始名视为删除别名）。 */
+  onRename?: (original: string, display: string) => Promise<void>;
 }) {
   const [rows, setRows] = useState<DimStat[]>([]);
   const [error, setError] = useState("");
   const [days, setDays] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<DimStat | null>(null);
   const [detail, setDetail] = useState<DimDetailRow[] | null>(null);
+  // 下钻内联重命名：是否正在编辑 + 当前输入值
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameSaving, setRenameSaving] = useState(false);
+
+  // 展示名：别名优先，无别名用原始名。
+  const displayOf = (name: string) => displayNames?.[name] || name;
 
   const load = useCallback(async () => {
     try {
@@ -78,11 +95,66 @@ export function DimTab({
           <DateRangePicker value={days} onChange={setDays} />
         </div>
         <h1 className="page-title">
-          {dimLabel} · {selected.name}
+          {dimLabel} · {displayOf(selected.name)}
         </h1>
         <p className="page-sub">
           {selected.models} 个模型 · 最近 {fmtDate(selected.lastTs)} · 该{dimLabel}接入的{detailLabel}与模型明细：
         </p>
+        {/* 下钻内联重命名（#问题 4）：仅 Agent 维度（onRename 存在时）展示 */}
+        {onRename && selected && (
+          <div className="form-row rename-row" style={{ marginBottom: 8, gap: 8 }}>
+            {renaming ? (
+              <>
+                <input
+                  className="input grow"
+                  value={renameValue}
+                  placeholder="输入显示名（留空恢复原始名）"
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={renameSaving}
+                  onClick={() => {
+                    const original = selected.name;
+                    const v = renameValue.trim();
+                    setRenameSaving(true);
+                    void onRename(original, v).finally(() => {
+                      setRenameSaving(false);
+                      setRenaming(false);
+                      setRenameValue("");
+                    });
+                  }}
+                >
+                  {renameSaving ? "保存中…" : "保存"}
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setRenaming(false);
+                    setRenameValue("");
+                  }}
+                >
+                  取消
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => {
+                  setRenameValue(displayNames?.[selected.name] ?? "");
+                  setRenaming(true);
+                }}
+                title="自定义该 Agent 的显示名"
+              >
+                ✎ 重命名
+              </button>
+            )}
+          </div>
+        )}
         {detail === null ? (
           <p className="empty">加载中…</p>
         ) : detail.length === 0 ? (
@@ -134,7 +206,7 @@ export function DimTab({
             onClick={() => detailFetcher && setSelected(r)}
           >
             <div className="list-main">
-              <span className="list-title">{r.name || "其他"}</span>
+              <span className="list-title">{displayOf(r.name) || "其他"}</span>
               <span className="list-sub">
                 {r.models} 个模型 · 最近 {fmtDate(r.lastTs)}
               </span>
@@ -149,4 +221,4 @@ export function DimTab({
       </div>
     </>
   );
-}
+});

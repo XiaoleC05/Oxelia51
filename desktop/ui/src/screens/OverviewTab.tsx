@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchAgents, fetchProviders, fmtCost, fmtTokens, type DimStat, type ModelStat, type Overview, type TrendPoint } from "../api";
+import { CNY_PER_USD, fetchAgents, fetchModels, fetchPricingRate, fetchProviders, fmtCost, fmtCostByCurrency, fmtTokens, type Currency, type DimStat, type Overview, type TrendPoint } from "../api";
 import { EmptyState } from "../EmptyState";
 import { Dropdown } from "../components/Dropdown";
 import { DateRangePicker } from "./DateRangePicker";
 import { copyText, PROVIDER_COMMANDS, PROVIDER_GROUPS, providerCmd, proxyUrl } from "../clipboard";
 
-function StatCard({ label, tokens, requests, cost }: { label: string; tokens: number; requests: number; cost: number }) {
+/** 排行显示模式：#总览——全部（token+成本）/ 仅 Token / 仅成本（美元·人民币切换）。 */
+type RankMode = "all" | "tokens" | "cost";
+
+function StatCard({ label, tokens, requests, cost, rate }: { label: string; tokens: number; requests: number; cost: number; rate: number }) {
   return (
     <div className="card stat-card">
       <span className="stat-label">{label}</span>
       <span className="stat-value tabular">{fmtTokens(tokens)}</span>
-      <span className="stat-sub tabular">请求 {requests} · {fmtCost(cost)}</span>
+      <span className="stat-sub tabular">请求 {requests} · {fmtCost(cost, rate)}</span>
     </div>
   );
 }
@@ -36,25 +39,43 @@ function TrendChart({ trend }: { trend: TrendPoint[] }) {
   );
 }
 
-function Ranking({ title, rows }: { title: string; rows: { name: string; tokens: number; requests: number; cost: number }[] }) {
-  const max = Math.max(1, ...rows.map((r) => r.tokens));
+function Ranking({
+  title,
+  rows,
+  mode,
+  currency,
+  rate,
+}: {
+  title: string;
+  rows: { name: string; tokens: number; requests: number; cost: number }[];
+  mode: RankMode;
+  currency: Currency;
+  rate: number;
+}) {
+  // 排行只展示有实际用量的条目：/api/providers 会为未用过的内置供应商补零值条目
+  //（供设置页「已接入」核验用），这些不该出现在用量排行里（#0 token 排行问题）。
+  const used = rows.filter((r) => r.tokens > 0);
+  const max = Math.max(1, ...used.map((r) => r.tokens));
+  const fmtVal = (r: { tokens: number; cost: number }) => {
+    if (mode === "tokens") return fmtTokens(r.tokens);
+    if (mode === "cost") return fmtCostByCurrency(r.cost, currency, rate);
+    return `${fmtTokens(r.tokens)} · ${fmtCost(r.cost, rate)}`;
+  };
   return (
     <div className="card">
       <h2 className="card-title">{title}</h2>
-      {rows.length === 0 ? (
+      {used.length === 0 ? (
         <EmptyState compact title="暂无排行数据" desc="落账后按维度自动聚合。" />
       ) : (
         <div className="rank">
-          {rows.slice(0, 8).map((r, i) => (
+          {used.slice(0, 8).map((r, i) => (
             <div key={r.name} className="rank-row">
               <span className={`rank-index ${i < 3 ? `top top-${i + 1}` : ""}`}>{i + 1}</span>
               <span className="rank-name">{r.name}</span>
               <div className="rank-track">
                 <div className={`rank-fill ${i < 3 ? `fill-top fill-top-${i + 1}` : ""}`} style={{ width: `${Math.max(2, (r.tokens / max) * 100)}%` }} />
               </div>
-              <span className="rank-val tabular">
-                {fmtTokens(r.tokens)} · {fmtCost(r.cost)}
-              </span>
+              <span className="rank-val tabular">{fmtVal(r)}</span>
             </div>
           ))}
         </div>
@@ -141,15 +162,31 @@ function SetupEmptyState({ online }: { online: boolean }) {
 
 export function OverviewTab({ data, online }: { data: Overview | null; online: boolean }) {
   const [days, setDays] = useState<number | undefined>(undefined);
+  const [mode, setMode] = useState<RankMode>("all");
+  const [currency, setCurrency] = useState<Currency>("usd");
   const [byProvider, setByProvider] = useState<DimStat[]>([]);
   const [byAgent, setByAgent] = useState<DimStat[]>([]);
+  const [byModel, setByModel] = useState<DimStat[]>([]);
+  // USD→CNY 汇率：与价格表同源（/api/pricing/rate 实时值），加载失败回退兜底参考值 7.2
+  const [rate, setRate] = useState<number>(CNY_PER_USD);
 
-  // 日期范围变化时刷新供应商/Agent 排行（联动下方统计）
+  useEffect(() => {
+    fetchPricingRate()
+      .then((r) => {
+        if (Number.isFinite(r.usd_to_cny) && r.usd_to_cny > 0) setRate(r.usd_to_cny);
+      })
+      .catch(() => {
+        // 静默：回退兜底参考值，排行仍可读
+      });
+  }, []);
+
+  // 日期范围变化时刷新供应商 / Agent / 模型排行（联动下方统计，三个卡片同一日期口径）
   const loadDims = useCallback(async () => {
     try {
-      const [pv, ag] = await Promise.all([fetchProviders(days), fetchAgents(days)]);
+      const [pv, ag, md] = await Promise.all([fetchProviders(days), fetchAgents(days), fetchModels(days)]);
       setByProvider(pv.providers);
       setByAgent(ag.agents);
+      setByModel(md.models);
     } catch {
       // 静默：排行区保持上一帧
     }
@@ -173,35 +210,78 @@ export function OverviewTab({ data, online }: { data: Overview | null; online: b
           sidecar 未运行。请先把模型工具的 Base URL 指向本地代理（见设置页），再启动代理。
         </div>
       )}
-      {/* 页头：标题 + 日期范围在页面顶部，统计区随之联动 */}
+      {/* 页头：仅标题；日期选择器移到趋势图下方（联动其下三个排行卡片） */}
       <div className="tab-head">
         <div>
           <h1 className="page-title">总览</h1>
           <p className="page-sub">按供应商 / Agent / 模型聚合的 Token 用量与成本，日期范围联动下方统计。</p>
         </div>
-        <DateRangePicker value={days} onChange={setDays} />
       </div>
       <section className="stats">
-        <StatCard label="今日" tokens={data?.today.tokens ?? 0} requests={data?.today.requests ?? 0} cost={data?.today.cost ?? 0} />
-        <StatCard label="近 7 日" tokens={data?.week.tokens ?? 0} requests={data?.week.requests ?? 0} cost={data?.week.cost ?? 0} />
-        <StatCard label="近 30 日" tokens={data?.month.tokens ?? 0} requests={data?.month.requests ?? 0} cost={data?.month.cost ?? 0} />
-        <StatCard label="累计" tokens={data?.total.tokens ?? 0} requests={data?.total.requests ?? 0} cost={data?.total.cost ?? 0} />
+        <StatCard label="今日" tokens={data?.today.tokens ?? 0} requests={data?.today.requests ?? 0} cost={data?.today.cost ?? 0} rate={rate} />
+        <StatCard label="近 7 日" tokens={data?.week.tokens ?? 0} requests={data?.week.requests ?? 0} cost={data?.week.cost ?? 0} rate={rate} />
+        <StatCard label="近 30 日" tokens={data?.month.tokens ?? 0} requests={data?.month.requests ?? 0} cost={data?.month.cost ?? 0} rate={rate} />
+        <StatCard label="累计" tokens={data?.total.tokens ?? 0} requests={data?.total.requests ?? 0} cost={data?.total.cost ?? 0} rate={rate} />
       </section>
       <TrendChart trend={data?.trend ?? []} />
+      {/* 日期范围选择 + 显示模式：同一行，位于趋势图下方，共同控制其下三个排行卡片 */}
+      <div className="tab-head range-under-trend">
+        <DateRangePicker value={days} onChange={setDays} />
+        <div className="rank-mode" role="group" aria-label="排行显示模式">
+          <button
+            type="button"
+            className={`range-chip ${mode === "all" ? "active" : ""}`}
+            onClick={() => setMode("all")}
+          >
+            全部
+          </button>
+          <button
+            type="button"
+            className={`range-chip ${mode === "tokens" ? "active" : ""}`}
+            onClick={() => setMode("tokens")}
+          >
+            Token
+          </button>
+          <button
+            type="button"
+            className={`range-chip ${mode === "cost" ? "active" : ""}`}
+            onClick={() => {
+              // 点击成本模式：首次进入默认美元，再点切换币种
+              if (mode === "cost") {
+                setCurrency((c) => (c === "usd" ? "cny" : "usd"));
+              } else {
+                setMode("cost");
+              }
+            }}
+            title={mode === "cost" ? `切换币种（当前 ${currency === "usd" ? "美元" : "人民币"}）` : "仅显示成本"}
+          >
+            {mode === "cost" ? (currency === "usd" ? "$ 美元" : "¥ 人民币") : "成本"}
+          </button>
+        </div>
+      </div>
       <section className="grid-2">
         <Ranking
           title="按供应商"
           rows={byProvider.map((d: DimStat) => ({ name: d.name, tokens: d.tokens, requests: d.requests, cost: d.cost }))}
+          mode={mode}
+          currency={currency}
+          rate={rate}
         />
         <Ranking
           title="按 Agent"
           rows={byAgent.map((d: DimStat) => ({ name: d.name, tokens: d.tokens, requests: d.requests, cost: d.cost }))}
+          mode={mode}
+          currency={currency}
+          rate={rate}
         />
       </section>
       <section>
         <Ranking
           title="按模型"
-          rows={(data?.byModel ?? []).map((m: ModelStat) => ({ name: m.model, tokens: m.tokens, requests: m.requests, cost: m.cost }))}
+          rows={byModel.map((d: DimStat) => ({ name: d.name, tokens: d.tokens, requests: d.requests, cost: d.cost }))}
+          mode={mode}
+          currency={currency}
+          rate={rate}
         />
       </section>
     </>
