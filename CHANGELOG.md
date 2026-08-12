@@ -4,7 +4,24 @@
 
 ---
 
-## v0.1.6 —（未发布）
+## v0.1.7 —（未发布）
+
+### 已新增
+- **本地 Agent 检测**：接入页新增「已检测到的工具」，自动扫描本机已安装的 AI Agent（Claude Code / Codex / Cursor / Gemini CLI / Aider / OpenCode / Windsurf / Cline / Roo Code / Continue / GitHub Copilot / Augment Code），CLI 与 VS Code 插件显示版本号
+- **模型价格表独立导航**：从设置页独立为顶部「模型价格」Tab，点击模型条目可直接编辑价格并保存到「模型定价」（影响成本计算）
+- **复制地址按协议适配**：DeepSeek / 智谱等双协议供应商卡片新增「Anthropic」按钮，Claude Code 走 `/anthropic` 变体地址，无需手动加后缀；变体名单由后端单一数据源下发
+- **清除本地数据**：设置页新增「清除本地数据」，一键清空本地用量账本（保留主题 / 定价 / 预算 / 自定义供应商等配置）
+- **更新提示直达安装包**：发现新版本时横幅直接下载当前平台安装包（不再跳转到 release 页）
+- **模型与价格扩充**：新增 Claude Opus 4.6 / 4.7 / 4.8、Claude Sonnet 4.6、GPT-5.5、腾讯混元 Hy3 定价
+- **OpenAI Response API 记账**：`/v1/responses` 的 input / output tokens 正确落账（非流式 + 流式）
+
+### 已修复
+- 修复「预算使用」页添加预算无响应：预算为空或未选目标时给出明确提示（此前静默无响应）
+- 修复 claude-haiku-4-5 模型名点号 / 连字符不一致，导致该模型成本恒显示「未配置定价」
+
+---
+
+## v0.1.6 — 2026-08-12（已发布）
 
 ### 已新增
 - **Anthropic 协议路由**：DeepSeek / 智谱 GLM 新增 `/anthropic` 后缀路由，Claude Code 等 Anthropic 协议客户端可直接经本地代理记账，无需依赖独立 slug
