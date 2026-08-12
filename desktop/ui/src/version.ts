@@ -1,5 +1,5 @@
 // 应用版本与更新检查。与 src-tauri/tauri.conf.json 的 version 保持一致。
-export const APP_VERSION = "0.1.5";
+export const APP_VERSION = "0.1.6";
 
 export type UpdateInfo = {
   available: boolean;
@@ -10,6 +10,9 @@ export type UpdateInfo = {
 
 // 检查 GitHub Releases 中是否有更新的语义化版本（v* 或纯数字）。
 // Oxelia51 的自动 release（release-*）是 CI commit 噪声，不视为版本，故只认 v* 标签。
+// 失败（含 api.github.com 匿名限流 403）一律静默返回 error 标记，不打 console.error：
+// 检查更新是锦上添花，失败不该打扰用户；有更新横幅逻辑不受影响（仅 available=true 时展示）。
+// 注：浏览器会对非 2xx 资源请求自动生成网络日志条目，JS 侧无法抑制，属预期噪音。
 export async function checkForUpdate(): Promise<UpdateInfo> {
   try {
     const res = await fetch("https://api.github.com/repos/XiaoleC05/Oxelia51/releases?per_page=20");
