@@ -231,6 +231,9 @@ services:
       OXELIA51_ADMIN_PASSWORD: ${OXELIA51_ADMIN_PASSWORD:?set in .env}
       # 管理员邮箱名单（空 = 无人是管理员，管理台关闭）。逗号分隔，须为已注册用户
       OXELIA51_ADMIN_EMAILS: ${OXELIA51_ADMIN_EMAILS:-}
+      # 超级管理员邮箱（唯一可执行写操作的账户）。之前硬编码在 constants.ts 里，
+      # 被打进了管理后台前端 JS bundle——2026-08-12 改为环境变量，必须显式配置。
+      OXELIA_SUPER_ADMIN_EMAIL: ${OXELIA_SUPER_ADMIN_EMAIL:?set in .env}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET in .env}
       LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-}
       LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-Oxelia51}
