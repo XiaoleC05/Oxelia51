@@ -1027,6 +1027,19 @@
   border-color: var(--ox-accent-hover);
 }
 
+/* Anthropic 协议变体按钮：次级描边样式，与主「复制地址」区分 */
+.provider-cell-copy.alt {
+  background: transparent;
+  color: var(--ox-accent);
+  border-color: var(--ox-accent-border);
+}
+
+.provider-cell-copy.alt:hover {
+  background: color-mix(in srgb, var(--ox-accent) 6%, transparent);
+  color: var(--ox-accent);
+  border-color: var(--ox-accent-border);
+}
+
 .provider-cell-site {
   appearance: none;
   display: inline-flex;
@@ -1536,7 +1549,7 @@ select.input option {
 
 .price-row {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 0.8fr 0.8fr;
+  grid-template-columns: 1.6fr 1fr 0.7fr 0.7fr auto;
   gap: 8px;
   align-items: center;
   padding: 7px 12px;
@@ -1547,6 +1560,36 @@ select.input option {
 
 .price-row:first-child {
   border-top: none;
+}
+
+/* 可编辑的普通行：点击进入编辑 */
+.price-row-clickable {
+  cursor: pointer;
+}
+
+.price-row-clickable:hover {
+  background: var(--ox-bg-alt);
+}
+
+/* 编辑态行内的价格输入框 */
+.price-row-edit .num input {
+  width: 100%;
+  padding: 3px 6px;
+  font-size: 13px;
+}
+
+/* 第 5 列：已定价提示 + 编辑操作按钮 */
+.price-edit-hint {
+  font-size: 12px;
+  color: var(--ox-accent);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.price-edit-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
 }
 
 .price-head-row {

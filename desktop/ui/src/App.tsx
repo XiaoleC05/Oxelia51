@@ -9,6 +9,7 @@ import { ProvidersTab } from "./screens/ProvidersTab";
 import { AgentsTab } from "./screens/AgentsTab";
 import { AlertsTab } from "./screens/AlertsTab";
 import { SettingsTab } from "./screens/SettingsTab";
+import { ModelPriceTab } from "./screens/ModelPriceTab";
 import glyphLight from "./assets/brand-glyph-light.png";
 import glyphDark from "./assets/brand-glyph-dark.png";
 import wordLight from "./assets/wordart-light.svg";
@@ -108,7 +109,7 @@ function WindowControls() {
  * 数据源：本地 sidecar 只读统计接口；总览由 App 轮询，其余屏各自轮询。
  */
 
-type TabKey = "overview" | "connect" | "providers" | "agents" | "alerts" | "settings";
+type TabKey = "overview" | "connect" | "providers" | "agents" | "alerts" | "prices" | "settings";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "总览" },
@@ -116,6 +117,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "providers", label: "供应商" },
   { key: "agents", label: "Agent" },
   { key: "alerts", label: "告警" },
+  { key: "prices", label: "模型价格" },
   { key: "settings", label: "设置" },
 ];
 
@@ -305,7 +307,7 @@ export default function App() {
                 void openExternal(url);
               }}
             >
-              ⬆ 发现新版本 {update.latest}（当前 {APP_VERSION}）——点击前往下载
+              ⬆ 发现新版本 {update.latest}（当前 {APP_VERSION}）——点击下载安装包
             </a>
           );
         })()}
@@ -314,6 +316,7 @@ export default function App() {
         {tab === "providers" && <ProvidersTab />}
         {tab === "agents" && <AgentsTab />}
         {tab === "alerts" && <AlertsTab />}
+        {tab === "prices" && <ModelPriceTab />}
         {tab === "settings" && (
           <SettingsTab theme={theme} onTheme={setTheme} appVersion={APP_VERSION} />
         )}

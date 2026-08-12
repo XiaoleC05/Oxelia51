@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { PROVIDER_GROUPS, proxyUrl, type ProviderDef } from "../clipboard";
+import { PROVIDER_GROUPS, proxyUrl, anthropicVariantUrl, type ProviderDef } from "../clipboard";
 import { copyText } from "../clipboard";
 import type { CustomProvider } from "../api";
 import { openExternal } from "../openExternal";
@@ -22,16 +22,18 @@ function customToDef(p: CustomProvider): ProviderDef {
 export function ProviderCatalog({
   custom = [],
   routeSlugs = null,
+  anthropicVariants = null,
 }: {
   custom?: CustomProvider[];
   routeSlugs?: Set<string> | null;
+  anthropicVariants?: Set<string> | null;
 }) {
   const [copied, setCopied] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
-  const copy = async (p: ProviderDef) => {
-    if (await copyText(proxyUrl(p.slug))) {
-      setCopied(p.slug);
+  const copy = async (text: string, key: string) => {
+    if (await copyText(text)) {
+      setCopied(key);
       setTimeout(() => setCopied(null), 1500);
     }
   };
@@ -107,16 +109,30 @@ export function ProviderCatalog({
                         disabled={off}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (!off) void copy(p);
+                          if (!off) void copy(proxyUrl(p.slug), p.slug);
                         }}
                         title={
                           off
                             ? "该平台暂未接入，可用自定义供应商自行添加"
-                            : `复制 ${proxyUrl(p.slug)}`
+                            : `复制 OpenAI 兼容协议地址：${proxyUrl(p.slug)}`
                         }
                       >
                         {copied === p.slug ? "已复制 ✓" : "复制地址"}
                       </button>
+                      {anthropicVariants?.has(p.slug) && (
+                        <button
+                          type="button"
+                          className="provider-cell-copy alt"
+                          disabled={off}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!off) void copy(anthropicVariantUrl(p.slug), `${p.slug}-anthropic`);
+                          }}
+                          title={`复制 Anthropic Messages 协议地址（Claude Code 用）：${anthropicVariantUrl(p.slug)}`}
+                        >
+                          {copied === `${p.slug}-anthropic` ? "已复制 ✓" : "Anthropic"}
+                        </button>
+                      )}
                       {!isCustom && (
                         <button
                           type="button"

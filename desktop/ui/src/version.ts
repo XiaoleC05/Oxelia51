@@ -1,5 +1,5 @@
 // 应用版本与更新检查。与 src-tauri/tauri.conf.json 的 version 保持一致。
-export const APP_VERSION = "0.1.6";
+export const APP_VERSION = "0.1.7";
 
 export type UpdateInfo = {
   available: boolean;
@@ -17,7 +17,11 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
   try {
     const res = await fetch("https://api.github.com/repos/XiaoleC05/Oxelia51/releases?per_page=20");
     if (!res.ok) return { available: false, error: true };
-    const releases = (await res.json()) as { tag_name: string; html_url: string }[];
+    const releases = (await res.json()) as {
+      tag_name: string;
+      html_url: string;
+      assets: { name: string; browser_download_url: string }[];
+    }[];
     // 找语义化版本标签
     const versionTags = releases
       .map((r) => r.tag_name)
@@ -26,12 +30,29 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
     const latest = versionTags[0]; // API 按发布时间倒序
     if (isNewer(latest, APP_VERSION)) {
       const rel = releases.find((r) => r.tag_name === latest);
-      return { available: true, latest, url: rel?.html_url };
+      // url 优先指向当前平台安装包直链（点击即下载），取不到则回退 release 页
+      const assetUrl = pickAsset(rel?.assets ?? []);
+      return { available: true, latest, url: assetUrl ?? rel?.html_url };
     }
     return { available: false };
   } catch {
     return { available: false, error: true };
   }
+}
+
+// 按当前平台选对应安装包：Windows → .exe，macOS → .dmg，Linux → .AppImage（回退 .deb）。
+function pickAsset(assets: { name: string; browser_download_url: string }[]): string | undefined {
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent.toLowerCase() : "";
+  const isMac = /mac|darwin/.test(ua);
+  const isLinux = /linux/.test(ua);
+  const want = isMac ? ".dmg" : isLinux ? ".appimage" : ".exe";
+  const hit = assets.find((a) => a.name.toLowerCase().endsWith(want));
+  if (hit) return hit.browser_download_url;
+  if (isLinux) {
+    const deb = assets.find((a) => a.name.toLowerCase().endsWith(".deb"));
+    if (deb) return deb.browser_download_url;
+  }
+  return undefined;
 }
 
 function isNewer(tag: string, current: string): boolean {

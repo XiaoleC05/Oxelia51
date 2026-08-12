@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  clearData,
   cloudLogin,
   fetchPricing,
   fetchPricingDefaults,
@@ -9,7 +10,6 @@ import {
   type PricedItem,
   type Settings,
 } from "../api";
-import { ModelPriceTab } from "./ModelPriceTab";
 import { WIDGET_FIELDS } from "../widget/WidgetApp";
 import { openExternal } from "../openExternal";
 
@@ -55,6 +55,9 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
   const syncBusy = syncStatus.kind === "busy";
   // 悬浮卡片显示字段（默认全部）
   const [widgetFields, setWidgetFields] = useState<string[]>(WIDGET_FIELDS.map((f) => f.key));
+  const [clearing, setClearing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [clearMsg, setClearMsg] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -78,6 +81,27 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
       await saveSetting("theme", t);
     } catch {
       // ignore
+    }
+  };
+
+  // 清除本地用量数据：二次确认（WebView 的 window.confirm 不可靠，用状态机代替）
+  const doClearData = async () => {
+    if (!confirming) {
+      setConfirming(true);
+      setClearMsg("");
+      setTimeout(() => setConfirming(false), 4000);
+      return;
+    }
+    setConfirming(false);
+    setClearing(true);
+    try {
+      const r = await clearData();
+      setClearMsg(`已清除 ${r.deleted} 条用量记录。`);
+      void load();
+    } catch (e) {
+      setClearMsg(e instanceof Error ? e.message : "清除失败");
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -249,8 +273,6 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
         <p className="empty">空表起步：未填定价的模型成本按 0 计，不虚构。可一键填入常见模型参考价再保存。</p>
       </div>
 
-      <ModelPriceTab />
-
       <div className="card">
         <h2 className="card-title">多设备同步</h2>
         {settings?.sync.account ? (
@@ -281,6 +303,25 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
         {syncStatus.kind === "fail" && <p className="empty">{syncStatus.label}</p>}
         {syncStatus.kind === "conflict" && <p className="ok-note">{syncStatus.label}</p>}
         <p className="empty">同步后本地账本与云端账户关联，多设备共用；按事件去重合并，隐私仅在你主动同步时上行。</p>
+      </div>
+
+      <div className="card">
+        <h2 className="card-title">数据管理</h2>
+        <div className="form-row">
+          <button
+            type="button"
+            className="btn"
+            style={confirming ? { background: "var(--ox-warn)", color: "#fff" } : undefined}
+            onClick={doClearData}
+            disabled={clearing}
+          >
+            {clearing ? "清除中…" : confirming ? "再次点击确认清除" : "清除本地数据"}
+          </button>
+        </div>
+        <p className="empty">
+          清空本地账本中的 Token 用量与成本统计（主题 / 定价 / 预算 / 自定义供应商等设置会保留）。
+        </p>
+        {clearMsg && <p className="empty">{clearMsg}</p>}
       </div>
 
       <div className="card">

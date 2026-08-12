@@ -63,6 +63,7 @@ export function AlertsTab() {
   const [models, setModels] = useState<string[]>([]);
   const [daily, setDaily] = useState("100000");
   const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const addCardRef = useRef<HTMLDivElement | null>(null);
 
@@ -119,9 +120,16 @@ export function AlertsTab() {
 
   const addBudget = () => {
     const n = Number(daily);
-    if (!Number.isFinite(n) || n <= 0) return;
+    if (!Number.isFinite(n) || n <= 0) {
+      setFormError("请输入有效的每日预算（正整数）");
+      return;
+    }
     const t = dimension === "global" ? "" : target.trim();
-    if (dimension !== "global" && !t) return;
+    if (dimension !== "global" && !t) {
+      setFormError("请先选择目标（供应商 / Agent / 模型）");
+      return;
+    }
+    setFormError("");
     // 同维度同目标去重
     const next = [
       ...budgets.filter((b) => !(b.dimension === dimension && (b.target ?? "") === t)),
@@ -186,6 +194,7 @@ export function AlertsTab() {
             onChange={(v) => {
               setDimension(v);
               setTarget("");
+              setFormError("");
             }}
             ariaLabel="告警维度"
           />
@@ -193,7 +202,10 @@ export function AlertsTab() {
             <Dropdown
               options={targetOptions.map((t) => ({ value: t, label: t }))}
               value={target}
-              onChange={setTarget}
+              onChange={(v) => {
+                setTarget(v);
+                setFormError("");
+              }}
               placeholder="请选择…"
               ariaLabel="目标"
             />
@@ -203,13 +215,17 @@ export function AlertsTab() {
             type="number"
             min="1"
             value={daily}
-            onChange={(e) => setDaily(e.target.value)}
+            onChange={(e) => {
+              setDaily(e.target.value);
+              setFormError("");
+            }}
             placeholder="每日 token 上限"
           />
           <button type="button" className="btn primary" onClick={addBudget} disabled={saving}>
             添加
           </button>
         </div>
+        {formError && <p className="empty" style={{ color: "var(--ox-warn)" }}>{formError}</p>}
         <p className="empty">
           目标列表来自本地账本的真实记录（供应商 / Agent / 模型）。
           每个供应商、Agent、模型都可以单独设置每日预算，互不影响。

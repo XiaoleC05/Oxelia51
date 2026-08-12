@@ -68,7 +68,9 @@ export const fetchHealth = async (): Promise<boolean> => {
   }
 };
 export const fetchProviders = (days?: number) =>
-  j<{ providers: DimStat[] }>(days ? `/api/providers?days=${days}` : "/api/providers");
+  j<{ providers: DimStat[]; anthropicVariants?: string[] }>(
+    days ? `/api/providers?days=${days}` : "/api/providers",
+  );
 export const fetchAgents = (days?: number) =>
   j<{ agents: DimStat[] }>(days ? `/api/agents?days=${days}` : "/api/agents");
 export const fetchProviderDetail = (name: string, days?: number) =>
@@ -108,6 +110,14 @@ export const saveSetting = (key: string, value: string) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ key, value }),
   });
+
+/** 清空本地账本（token_events 用量/成本统计）；保留 settings 配置。 */
+export const clearData = () =>
+  j<{ ok: boolean; deleted: number }>("/api/clear-data", { method: "POST" });
+
+export type DetectedTool = { id: string; label: string; version: string };
+/** 扫描本地已安装的 AI Agent 工具（只读探测，见 proxy-gateway detect.go）。 */
+export const fetchDetectedTools = () => j<{ detected: DetectedTool[] }>("/api/detect-tools");
 
 export type SyncResult = { ok: boolean; action: string; uploaded?: number; downloaded?: number; conflicts?: number };
 export const postSync = (action: "upload" | "download") =>
