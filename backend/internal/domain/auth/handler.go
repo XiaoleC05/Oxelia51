@@ -79,13 +79,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		// 比较结果丢弃，仅用于均衡响应时间。
 		_ = bcrypt.CompareHashAndPassword(dummyBcryptHash, []byte(req.Password))
 		h.recordLoginFailure(ctx, c.ClientIP())
-		infra.ApiError(c, http.StatusUnauthorized, "INVALID_CREDENTIALS", "账号或密码错误")
+		infra.ApiError(c, http.StatusUnauthorized, "INVALID_CREDENTIALS", "账户或密码不正确")
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(req.Password)); err != nil {
 		h.recordLoginFailure(ctx, c.ClientIP())
-		infra.ApiError(c, http.StatusUnauthorized, "INVALID_CREDENTIALS", "账号或密码错误")
+		infra.ApiError(c, http.StatusUnauthorized, "INVALID_CREDENTIALS", "账户或密码不正确")
 		return
 	}
 
