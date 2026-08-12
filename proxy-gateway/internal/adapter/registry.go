@@ -282,3 +282,14 @@ func BuiltinProviders() []string {
 	}
 	return slugs
 }
+
+// AnthropicVariantProviders 返回声明了 Anthropic 协议变体端点的内置供应商 slug
+// （如 deepseek、zhipu）。前端复制接入配置时按协议适配以此为单一数据源——
+// 不再在前端硬编码一份名单，避免与 anthropicEndpoints 两处漂移。
+func AnthropicVariantProviders() []string {
+	slugs := make([]string, 0, len(anthropicEndpoints))
+	for slug := range anthropicEndpoints {
+		slugs = append(slugs, slug)
+	}
+	return slugs
+}

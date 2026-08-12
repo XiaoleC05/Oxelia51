@@ -29,10 +29,16 @@ var defaultPricing = map[string]ModelPrice{
 	// 模型 ID 用连字符（claude-haiku-4-5）而非点号——与 Anthropic 官方 API 模型 ID
 	// 及云端 seed 一致；此前点号写法匹配不上真实请求的模型名，该模型成本恒为「未配置定价」。
 	"claude-haiku-4-5":   {Prompt: 1.0, Completion: 5.0},
+	// Claude 4.x（稳定版，官方价同五代对应档位）
+	"claude-opus-4-6":    {Prompt: 5.0, Completion: 25.0},
+	"claude-opus-4-7":    {Prompt: 5.0, Completion: 25.0},
+	"claude-opus-4-8":    {Prompt: 5.0, Completion: 25.0},
+	"claude-sonnet-4-6":  {Prompt: 3.0, Completion: 15.0},
 	// OpenAI（现行 5.6 家族 + 通用档）
 	"gpt-5.6-sol":        {Prompt: 5.0, Completion: 30.0},
 	"gpt-5.6-terra":      {Prompt: 2.0, Completion: 12.0},
 	"gpt-5.6-luna":       {Prompt: 0.2, Completion: 1.2},
+	"gpt-5.5":            {Prompt: 5.0, Completion: 30.0},
 	"gpt-5":              {Prompt: 1.25, Completion: 10.0},
 	"gpt-5-mini":         {Prompt: 0.25, Completion: 2.0},
 	"gpt-4o":             {Prompt: 2.5, Completion: 10.0},
@@ -60,6 +66,8 @@ var defaultPricing = map[string]ModelPrice{
 	"doubao-seed-2.1-pro":   {Prompt: 0.83, Completion: 4.17},
 	"doubao-seed-2.1-turbo": {Prompt: 0.42, Completion: 2.08},
 	"doubao-pro-32k":        {Prompt: 0.11, Completion: 0.28},
+	// 腾讯混元（Hy3 现行旗舰，2026-07 发布；官方 ¥1/¥4 每 1M ÷7.2）
+	"hunyuan-hy3":           {Prompt: 0.14, Completion: 0.56},
 	// Gemini
 	"gemini-3-pro":       {Prompt: 1.5, Completion: 9.0},
 	"gemini-3-flash":     {Prompt: 1.5, Completion: 7.5},
@@ -87,6 +95,11 @@ var pricingCatalog = []CatalogItem{
 	{"claude-opus-5", "Anthropic", 5.0, 25.0},
 	{"claude-sonnet-5", "Anthropic", 3.0, 15.0},
 	{"claude-haiku-4-5", "Anthropic", 1.0, 5.0},
+	// Claude 4.x（稳定版，官方价同五代对应档位）
+	{"claude-opus-4-6", "Anthropic", 5.0, 25.0},
+	{"claude-opus-4-7", "Anthropic", 5.0, 25.0},
+	{"claude-opus-4-8", "Anthropic", 5.0, 25.0},
+	{"claude-sonnet-4-6", "Anthropic", 3.0, 15.0},
 	// OpenAI（现行 5.6 家族，2026-07 GA）
 	{"gpt-5.6-sol", "OpenAI", 5.0, 30.0},
 	{"gpt-5.6-terra", "OpenAI", 2.0, 12.0},
@@ -131,6 +144,8 @@ var pricingCatalog = []CatalogItem{
 	{"doubao-seed-2.0-mini", "火山方舟", 0.03, 0.28},
 	{"doubao-seed-1.6", "火山方舟", 0.11, 1.11},
 	{"doubao-pro-32k", "火山方舟", 0.11, 0.28},
+	// 腾讯混元（Hy3 现行旗舰，2026-07 发布；官方 ¥1/¥4 每 1M ÷7.2）
+	{"hunyuan-hy3", "腾讯混元", 0.14, 0.56},
 	// MiniMax
 	{"minimax-text-01", "MiniMax", 0.14, 1.11},
 	{"minimax-m1", "MiniMax", 0.11, 1.11},

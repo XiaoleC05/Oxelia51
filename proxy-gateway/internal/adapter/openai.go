@@ -33,14 +33,22 @@ func (a *OpenAIAdapter) ExtractUsage(resp *http.Response) (*TokenUsage, error) {
 			PromptTokens     int `json:"prompt_tokens"`
 			CompletionTokens int `json:"completion_tokens"`
 			TotalTokens      int `json:"total_tokens"`
+			// Response API（/v1/responses）字段：input_tokens / output_tokens
+			InputTokens  int `json:"input_tokens"`
+			OutputTokens int `json:"output_tokens"`
 		} `json:"usage"`
 	}
 	if err := json.Unmarshal(body, &data); err != nil {
 		return nil, err
 	}
+	prompt, completion := data.Usage.PromptTokens, data.Usage.CompletionTokens
+	if prompt == 0 && completion == 0 {
+		// Chat Completions 用 prompt_tokens/completion_tokens；Response API 用 input/output
+		prompt, completion = data.Usage.InputTokens, data.Usage.OutputTokens
+	}
 	return &TokenUsage{
-		PromptTokens:     data.Usage.PromptTokens,
-		CompletionTokens: data.Usage.CompletionTokens,
+		PromptTokens:     prompt,
+		CompletionTokens: completion,
 		TotalTokens:      data.Usage.TotalTokens,
 	}, nil
 }
@@ -68,16 +76,36 @@ func (a *OpenAIAdapter) ExtractUsageFromStream(reader io.Reader) (*TokenUsage, e
 				PromptTokens     int `json:"prompt_tokens"`
 				CompletionTokens int `json:"completion_tokens"`
 				TotalTokens      int `json:"total_tokens"`
+				InputTokens      int `json:"input_tokens"`
+				OutputTokens     int `json:"output_tokens"`
 			} `json:"usage"`
+			// Response API 流式：usage 嵌套在 response 对象里（response.completed 事件）
+			Response *struct {
+				Usage *struct {
+					InputTokens  int `json:"input_tokens"`
+					OutputTokens int `json:"output_tokens"`
+					TotalTokens  int `json:"total_tokens"`
+				} `json:"usage"`
+			} `json:"response"`
 		}
 		if err := json.Unmarshal([]byte(payload), &data); err != nil {
 			continue
 		}
 		if data.Usage != nil {
+			prompt, completion := data.Usage.PromptTokens, data.Usage.CompletionTokens
+			if prompt == 0 && completion == 0 {
+				prompt, completion = data.Usage.InputTokens, data.Usage.OutputTokens
+			}
 			lastUsage = &TokenUsage{
-				PromptTokens:     data.Usage.PromptTokens,
-				CompletionTokens: data.Usage.CompletionTokens,
+				PromptTokens:     prompt,
+				CompletionTokens: completion,
 				TotalTokens:      data.Usage.TotalTokens,
+			}
+		} else if data.Response != nil && data.Response.Usage != nil {
+			lastUsage = &TokenUsage{
+				PromptTokens:     data.Response.Usage.InputTokens,
+				CompletionTokens: data.Response.Usage.OutputTokens,
+				TotalTokens:      data.Response.Usage.TotalTokens,
 			}
 		}
 	}

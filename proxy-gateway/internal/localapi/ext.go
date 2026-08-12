@@ -152,7 +152,10 @@ func (a *API) handleProviders(w http.ResponseWriter, r *http.Request) {
 			stats = append(stats, dimStat{Name: p.Slug, Custom: true})
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"providers": stats})
+	writeJSON(w, http.StatusOK, map[string]any{
+		"providers":         stats,
+		"anthropicVariants": adapter.AnthropicVariantProviders(),
+	})
 }
 
 // handleModels 模型聚合（Model = LLM 模型名）。支持 ?days=N。

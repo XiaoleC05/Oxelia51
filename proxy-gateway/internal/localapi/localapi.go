@@ -43,6 +43,22 @@ func New(db *sql.DB) *API {
 	return a
 }
 
+// handleClearData POST /api/clear-data：清空本地账本（token_events 用量/成本统计）。
+// 供设置页「清除本地数据」用——全新开始；保留 settings（主题/定价/预算/自定义供应商等配置）。
+func (a *API) handleClearData(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+	res, err := a.db.Exec("DELETE FROM token_events")
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	n, _ := res.RowsAffected()
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "deleted": n})
+}
+
 // Handler 返回路由 mux（全局 CORS 中间件处理 OPTIONS 预检，POST 才不被浏览器拦）
 func (a *API) Handler() http.Handler {
 	mux := http.NewServeMux()
@@ -62,6 +78,8 @@ func (a *API) Handler() http.Handler {
 	mux.HandleFunc("/api/pricing", a.handlePricing)
 	mux.HandleFunc("/api/sync", a.handleSync)
 	mux.HandleFunc("/api/health", a.handleHealth)
+	mux.HandleFunc("/api/clear-data", a.handleClearData)
+	mux.HandleFunc("/api/detect-tools", a.handleDetectTools)
 	mux.HandleFunc("/api/", a.handleOptions) // 未知路径 404
 	return withCORS(mux)
 }
