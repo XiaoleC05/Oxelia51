@@ -4,7 +4,14 @@
 
 ---
 
-## v0.1.7 —（未发布）
+## v0.1.8 —（未发布）
+
+### 已修复
+- **Token 消耗计入缓存**：Anthropic 的 `input_tokens` 不含缓存（`cache_creation`/`cache_read` 与其不相交），此前缓存按计价倍数（写 1.25× / 读 0.1×）折算进 `prompt_tokens`，导致「Token 消耗」总量也是折算值（缓存读缩水 90%），与真实消耗不符。现 `total_tokens` 改存原始 token（含缓存 1×），`prompt_tokens` 仍存计价输入（成本口径不变），并新增缓存读/写细分列（本地 SQLite / 云 ClickHouse / 同步账本往返）
+
+---
+
+## v0.1.7 — 2026-08-13（已发布）
 
 ### 已新增
 - **本地 Agent 检测**：接入页新增「已检测到的工具」，自动扫描本机已安装的 AI Agent（Claude Code / Codex / Cursor / Gemini CLI / Aider / OpenCode / Windsurf / Cline / Roo Code / Continue / GitHub Copilot / Augment Code），CLI 与 VS Code 插件显示版本号
