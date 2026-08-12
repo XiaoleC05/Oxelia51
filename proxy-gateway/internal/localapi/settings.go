@@ -26,7 +26,9 @@ var defaultPricing = map[string]ModelPrice{
 	"claude-fable-5":     {Prompt: 10.0, Completion: 50.0},
 	"claude-opus-5":      {Prompt: 5.0, Completion: 25.0},
 	"claude-sonnet-5":    {Prompt: 3.0, Completion: 15.0},
-	"claude-haiku-4.5":   {Prompt: 1.0, Completion: 5.0},
+	// 模型 ID 用连字符（claude-haiku-4-5）而非点号——与 Anthropic 官方 API 模型 ID
+	// 及云端 seed 一致；此前点号写法匹配不上真实请求的模型名，该模型成本恒为「未配置定价」。
+	"claude-haiku-4-5":   {Prompt: 1.0, Completion: 5.0},
 	// OpenAI（现行 5.6 家族 + 通用档）
 	"gpt-5.6-sol":        {Prompt: 5.0, Completion: 30.0},
 	"gpt-5.6-terra":      {Prompt: 2.0, Completion: 12.0},
@@ -84,7 +86,7 @@ var pricingCatalog = []CatalogItem{
 	{"claude-fable-5", "Anthropic", 10.0, 50.0},
 	{"claude-opus-5", "Anthropic", 5.0, 25.0},
 	{"claude-sonnet-5", "Anthropic", 3.0, 15.0},
-	{"claude-haiku-4.5", "Anthropic", 1.0, 5.0},
+	{"claude-haiku-4-5", "Anthropic", 1.0, 5.0},
 	// OpenAI（现行 5.6 家族，2026-07 GA）
 	{"gpt-5.6-sol", "OpenAI", 5.0, 30.0},
 	{"gpt-5.6-terra", "OpenAI", 2.0, 12.0},

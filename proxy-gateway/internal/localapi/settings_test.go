@@ -44,8 +44,8 @@ func TestDefaultPricingMatchesSeed(t *testing.T) {
 	}
 
 	// 校验共有模型：价格必须一致
-	// 注意：模型名是精确匹配，seed 的 claude-haiku-4-5 与 defaultPricing 的
-	// claude-haiku-4.5 命名不同（历史遗留），不算共有模型，不在此校验。
+	// 模型名精确匹配。claude-haiku-4-5 曾因桌面误用点号命名（claude-haiku-4.5）
+	// 逃过本校验，2026-08-12 已统一为连字符，纳入校验。
 	var mismatches []string
 	for model, want := range seed {
 		got, ok := defaultPricing[model]
