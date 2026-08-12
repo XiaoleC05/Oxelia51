@@ -19,6 +19,9 @@ type providerSpec struct {
 var providerSpecs = []providerSpec{
 	// ---- 国内可直接访问 ----
 	{"deepseek", "deepseek", "api.deepseek.com", "/v1", false},
+	// DeepSeek 官方 Anthropic 兼容端点（/anthropic/v1/messages）：供 Claude Code 等
+	// Anthropic 协议客户端经本地代理记账使用（纯透传，上游协议与客户端一致）。
+	{"deepseek-anthropic", "deepseek", "api.deepseek.com", "/anthropic", true},
 	{"moonshot", "moonshot", "api.moonshot.cn", "/v1", false},
 	{"zhipu", "zhipu", "open.bigmodel.cn", "/api/paas/v4", false},
 	{"qwen", "qwen", "dashscope.aliyuncs.com", "/compatible-mode/v1", false},
@@ -109,6 +112,20 @@ var providerSpecs = []providerSpec{
 // Match 热路径不直接打 SQL）。nil 或未设置时行为与纯静态表一致。
 type CustomSource func() []CustomProvider
 
+// anthropicEndpoints 声明内置供应商的 Anthropic 协议端点（供 Claude Code 等客户端）。
+// key = 基础 slug（如 deepseek）；value 为 Anthropic 端点的 (host, pathPrefix)。
+// NewRegistry 会为每个条目自动合成一条 "/api/proxy/<slug>/anthropic/" 路由——
+// Claude Code 只需把 base URL 指到该后缀即可，无需另建独立 slug（原 deepseek-anthropic
+// 独立行保留向后兼容，后续可收敛为通用后缀）。
+// 注意：上游为「Anthropic 协议根域」的供应商（anthropic / apito / claudecn 等）
+// 已按 anthropic=true 注册，直接走基础 slug，无需此处声明。
+var anthropicEndpoints = map[string]struct {
+	host, pathPrefix string
+}{
+	"deepseek": {"api.deepseek.com", "/anthropic"},     // 官方 Anthropic 兼容端点（官方文档确认）
+	"zhipu":    {"open.bigmodel.cn", "/api/anthropic"}, // 智谱 GLM Claude Code 兼容端点（官方文档确认）
+}
+
 // Registry 管理路由映射表
 type Registry struct {
 	routes    map[string]Route
@@ -117,7 +134,7 @@ type Registry struct {
 
 // NewRegistry 创建默认路由注册表
 func NewRegistry() *Registry {
-	routes := make(map[string]Route, len(providerSpecs))
+	routes := make(map[string]Route, len(providerSpecs)+len(anthropicEndpoints))
 	for _, p := range providerSpecs {
 		var ad Adapter
 		if p.anthropic {
@@ -130,6 +147,17 @@ func NewRegistry() *Registry {
 			Target:      p.host,
 			PathPrefix:  p.pathPrefix,
 			XAPIKeyAuth: p.anthropic && p.name != "kimi-for-coding", // 见 Route.XAPIKeyAuth
+		}
+	}
+	// 为声明了 Anthropic 端点的供应商合成 "/api/proxy/<slug>/anthropic/" 变体路由：
+	// Claude Code 等 Anthropic 协议客户端把 base URL 指到该后缀即可（无需另建 slug）。
+	// 最长前缀匹配保证普通 OpenAI 流量仍命中基础路由（registry.go Match）。
+	for slug, ep := range anthropicEndpoints {
+		routes["/api/proxy/"+slug+"/anthropic/"] = Route{
+			Adapter:     NewAnthropicAdapter(slug),
+			Target:      ep.host,
+			PathPrefix:  ep.pathPrefix,
+			XAPIKeyAuth: true, // Anthropic 协议 → 上游用 x-api-key
 		}
 	}
 	return &Registry{routes: routes}

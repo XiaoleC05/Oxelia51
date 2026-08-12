@@ -110,6 +110,29 @@ func InferAgent(ua string) string {
 		return "ccv"
 	case strings.Contains(lower, "chatgpt"), strings.Contains(lower, "openai"):
 		return "openai"
+	// 常见 AI 编码/代理工具（2026-08 补充，#问题 4 自动识别增强）
+	case strings.Contains(lower, "gemini-cli"), strings.Contains(lower, "gemini-claude"):
+		return "gemini-cli"
+	case strings.Contains(lower, "cline"):
+		return "cline"
+	case strings.Contains(lower, "roo-code"), strings.Contains(lower, "roo code"):
+		return "roo-code"
+	case strings.Contains(lower, "continue"):
+		return "continue"
+	case strings.Contains(lower, "aider"):
+		return "aider"
+	case strings.Contains(lower, "opencode"):
+		return "opencode"
+	case strings.Contains(lower, "augment"):
+		return "augment"
+	case strings.Contains(lower, "copilot"):
+		return "copilot"
+	case strings.Contains(lower, "kimi"):
+		return "kimi"
+	case strings.Contains(lower, "doubao"):
+		return "doubao"
+	case strings.Contains(lower, "manus"):
+		return "manus"
 	default:
 		return "其他"
 	}

@@ -142,3 +142,32 @@ func TestPricingMapCacheTTL(t *testing.T) {
 		t.Fatalf("after TTL: expected 99, got %v", m["gpt-5"].Prompt)
 	}
 }
+
+// TestCostOfFallsBackToDefaultPricing 锁住 #问题 3：用户未配置定价时，成本计算
+// 回退到内置参考价 defaultPricing，总览不再显示「未配置定价」。
+func TestCostOfFallsBackToDefaultPricing(t *testing.T) {
+	// 用户定价为空 → 参考价收录的模型按参考价计
+	if c := costOf(map[string]ModelPrice{}, "deepseek-v4-flash", 1_000_000, 500_000); c != 0.28 {
+		t.Fatalf("costOf(flash) = %v, want 0.28", c)
+	}
+	// 用户已保存定价 → 优先用户值
+	user := map[string]ModelPrice{"deepseek-v4-flash": {Prompt: 0.07, Completion: 0.14}}
+	if c := costOf(user, "deepseek-v4-flash", 1_000_000, 500_000); c != 0.14 {
+		t.Fatalf("costOf(user flash) = %v, want 0.14", c)
+	}
+	// 参考价未收录的模型 → 0（不虚构）
+	if c := costOf(map[string]ModelPrice{}, "some-unknown-model", 1_000_000, 1_000_000); c != 0 {
+		t.Fatalf("costOf(unknown) = %v, want 0", c)
+	}
+}
+
+// TestCostOfStripsContextSuffix 锁住：Claude Code 等客户端发的模型名带上下文后缀
+//（如 deepseek-v4-pro[1M]），成本计算剥离 [..] 后缀命中参考价。
+func TestCostOfStripsContextSuffix(t *testing.T) {
+	if c := costOf(map[string]ModelPrice{}, "deepseek-v4-pro[1M]", 1_000_000, 1_000_000); c != 1.25 {
+		t.Fatalf("costOf(v4-pro[1M]) = %v, want 1.25", c)
+	}
+	if c := costOf(map[string]ModelPrice{}, "deepseek-v4-flash[2M]", 1_000_000, 500_000); c != 0.28 {
+		t.Fatalf("costOf(v4-flash[2M]) = %v, want 0.28", c)
+	}
+}

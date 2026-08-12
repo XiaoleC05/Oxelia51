@@ -186,6 +186,9 @@ type Settings struct {
 	Sync         SyncConfig   `json:"sync"`
 	WidgetFields  []string   `json:"widgetFields"`        // 悬浮卡片显示字段（空 = 全部）
 	WidgetPos     *WidgetPos `json:"widgetPos,omitempty"` // 悬浮卡片窗口位置（持久化）
+	// AgentAliases Agent 显示名别名（原始名 → 自定义名；如把「其他」重命名），#问题 4。
+	// 仅返回，不参与 Settings 写入白名单（写入走 agent_aliases key 单独校验 JSON）。
+	AgentAliases map[string]string `json:"agentAliases,omitempty"`
 }
 
 // WidgetPos 悬浮卡片窗口位置（主窗口拖动后保存，重启恢复）。
@@ -312,12 +315,35 @@ func parseFloat(s string) float64 {
 }
 
 // costOf 计算一条记录的 USD 成本。
+// 定价优先级：用户保存的定价（settings.pricing）优先；缺失时回退到内置参考价
+// defaultPricing（#问题 3：参考列表已收录的模型不再按 0 计 → 总览/明细显示「未配置定价」）。
+// 模型名带上下文窗口后缀（如 Claude Code 的 deepseek-v4-pro[1M]）时剥离后缀再查，
+// 使 [1M]/[2M] 变体也能命中参考价。defaultPricing 也未收录的模型按 0 计（不虚构）。
 func costOf(pricing map[string]ModelPrice, model string, prompt, completion int64) float64 {
 	p, ok := pricing[model]
 	if !ok {
-		return 0
+		if ref, ok := lookupDefaultPricing(model); ok {
+			p = ref
+		} else {
+			return 0
+		}
 	}
 	return float64(prompt)/1e6*p.Prompt + float64(completion)/1e6*p.Completion
+}
+
+// lookupDefaultPricing 在内置参考价表中查询模型，带上下文窗口后缀（[1M]/[2M]/[32k]…）
+// 时先剥离后缀再查（如 deepseek-v4-pro[1M] → deepseek-v4-pro）。
+func lookupDefaultPricing(model string) (ModelPrice, bool) {
+	if ref, ok := defaultPricing[model]; ok {
+		return ref, true
+	}
+	// 剥离 [..] 上下文后缀：模型名 + [Nk|Nk] 结尾（Claude Code / 部分客户端命名约定）
+	if i := strings.Index(model, "["); i > 0 {
+		if ref, ok := defaultPricing[model[:i]]; ok {
+			return ref, true
+		}
+	}
+	return ModelPrice{}, false
 }
 
 // getBudgets 返回预算列表（settings.budgets）。
@@ -373,5 +399,5 @@ func (a *API) loadSettings() Settings {
 	}
 	sort.Slice(items, func(i, j int) bool { return items[i].Model < items[j].Model })
 	sync := SyncConfig{Enabled: a.getSetting("sync_enabled") == "true", Account: a.getSetting("sync_account"), LastSync: a.getSetting("sync_last")}
-	return Settings{Theme: theme, Pricing: items, Budgets: a.getBudgets(), Sync: sync, WidgetFields: a.getWidgetFields(), WidgetPos: a.getWidgetPos()}
+	return Settings{Theme: theme, Pricing: items, Budgets: a.getBudgets(), Sync: sync, WidgetFields: a.getWidgetFields(), WidgetPos: a.getWidgetPos(), AgentAliases: a.getAgentAliases()}
 }

@@ -140,7 +140,13 @@ func main() {
 		srv.Shutdown(ctx)
 	}()
 
-	log.Printf("proxy gateway listening on :%s", port)
+	// P2-5：模式明示。裸启（未设 LOCAL_MODE）默认落云端 :9090，桌面手动重启极易踩坑；
+	// 默认行为不变（云端部署安全），仅以醒目日志提示当前模式与桌面端正确姿势。
+	if localMode {
+		log.Printf("LOCAL_MODE=true：按【本地】模式启动，监听 %s（桌面 sidecar 口径）", addr)
+	} else {
+		log.Printf("警告：未设置 LOCAL_MODE，按【云端】模式启动监听 %s；桌面端应为 LOCAL_MODE=true PROXY_PORT=17800", addr)
+	}
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatalf("server error: %v", err)
 	}

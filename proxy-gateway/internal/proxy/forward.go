@@ -193,6 +193,8 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		},
 		ModifyResponse: func(resp *http.Response) error {
+			// P2-3：流式响应的 duration 不在此定（此时只是首字节耗时），
+			// 在 sseRecorder.Close（流结束/客户端断开）时按 time.Since(start) 重算，见下文。
 			duration := uint32(time.Since(start).Milliseconds())
 
 			// Oxelia51 网关统计：记录成功请求 + 延迟
@@ -200,7 +202,16 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			isStream := stream || strings.Contains(resp.Header.Get("Content-Type"), "text/event-stream")
 
+			// P2-1：仅 2xx 落账。429/4xx/5xx 的响应体是错误 JSON，ExtractUsage 对
+			// 任意合法 JSON 恒返回非 nil 的 0-token usage，原实现会给限流/错误响应
+			// 落一堆 0-token 垃圾行、虚增请求数（实测限流测试产生 629 条）。
+			ok := resp.StatusCode >= 200 && resp.StatusCode < 300
+
 			if isStream {
+				if !ok {
+					// 非 2xx：不包装、不落账，body 原样透传给客户端
+					return nil
+				}
 				// 流式：包装 body 为 sseRecorder
 				originalBody := resp.Body
 				resp.Body = &sseRecorder{
@@ -208,7 +219,9 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					adapter:  route.Adapter,
 					encoding: resp.Header.Get("Content-Encoding"),
 					record: func(usage *adapter.TokenUsage, partial bool) {
-						f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, agent, model, duration, partial))
+						// P2-3：流式 duration 在流结束（Close 回调）时定，覆盖全程耗时；
+						// partial=1 语义不变（已收到 usage 的客户端中断仍落账）。
+						f.recordUsage(usage, projectID, sessionID, provider, agent, model, uint32(time.Since(start).Milliseconds()), partial)
 					},
 				}
 				return nil
@@ -233,9 +246,11 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			resp.Body = io.NopCloser(bytes.NewReader(rawBody))
 			resp.ContentLength = int64(len(rawBody))
 
-			if usage != nil {
+			// P2-1：仅 2xx 落账。2xx 但无 usage 的响应保持落账（0 token + model），
+			// 可见性优先——用户能看到「请求成功但上游没给 usage」而非凭空消失。
+			if usage != nil && ok {
 				// #11: 非流式响应视为完整（partial=false）
-				f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, agent, model, duration, false))
+				f.recordUsage(usage, projectID, sessionID, provider, agent, model, duration, false)
 			}
 
 			return nil
@@ -300,6 +315,16 @@ func effectivePromptTokens(usage *adapter.TokenUsage) uint32 {
 		float64(usage.CacheCreationTokens)*1.25 +
 		float64(usage.CacheReadTokens)*0.1
 	return uint32(math.Round(eff))
+}
+
+// recordUsage 落一条账。P2-1 防御：model 为空且 usage 全 0 的行无分析价值
+// （既不知道用了哪个模型也没有 token 量），不落账。
+func (f *Forwarder) recordUsage(usage *adapter.TokenUsage, projectID, sessionID, provider, agent, model string, duration uint32, partial bool) {
+	if model == "" && usage.PromptTokens == 0 && usage.CompletionTokens == 0 &&
+		usage.CacheCreationTokens == 0 && usage.CacheReadTokens == 0 {
+		return
+	}
+	f.recorder.Record(buildRecord(usage, projectID, sessionID, provider, agent, model, duration, partial))
 }
 
 // buildRecord 从 usage 构造一条 TokenRecord（#4：cache 折算进 PromptTokens）。

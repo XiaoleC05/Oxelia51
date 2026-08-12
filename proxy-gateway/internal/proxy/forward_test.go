@@ -5,10 +5,16 @@ import (
 	"compress/gzip"
 	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/adapter"
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/stats"
 )
 
 // TestDecodeBody 锁住 #1：gzip 响应必须被解压成可解析的明文 JSON。
@@ -130,4 +136,172 @@ func (m *mockAdapter) ExtractUsage(resp *http.Response) (*adapter.TokenUsage, er
 
 func (m *mockAdapter) ExtractUsageFromStream(stream io.Reader) (*adapter.TokenUsage, error) {
 	return &adapter.TokenUsage{PromptTokens: 10, CompletionTokens: 20}, nil
+}
+
+// ---------- P2-1 / P2-3：Forwarder 落账行为集成测试 ----------
+
+// captureRecorder 捕获所有落账记录（实现 recorder.Recorder 接口）。
+type captureRecorder struct {
+	mu   sync.Mutex
+	recs []adapter.TokenRecord
+}
+
+func (c *captureRecorder) Record(r adapter.TokenRecord) {
+	c.mu.Lock()
+	c.recs = append(c.recs, r)
+	c.mu.Unlock()
+}
+func (c *captureRecorder) Flush() {}
+func (c *captureRecorder) Close() {}
+
+func (c *captureRecorder) records() []adapter.TokenRecord {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	out := make([]adapter.TokenRecord, len(c.recs))
+	copy(out, c.recs)
+	return out
+}
+
+// withUpstream 把 Forwarder 的全部上游指向 mock server（覆盖包级 upstreamBase 钩子）。
+func withUpstream(t *testing.T, handler http.HandlerFunc) (*Forwarder, *captureRecorder) {
+	t.Helper()
+	srv := httptest.NewServer(handler)
+	t.Cleanup(srv.Close)
+	u, err := url.Parse(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prev := upstreamBase
+	upstreamBase = u
+	t.Cleanup(func() { upstreamBase = prev })
+
+	rec := &captureRecorder{}
+	return NewForwarder(adapter.NewRegistry(), rec, stats.New()), rec
+}
+
+// doProxyReq 经 Forwarder 发一笔 OpenAI 协议请求。
+func doProxyReq(t *testing.T, f *Forwarder, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "/api/proxy/openai/v1/chat/completions", strings.NewReader(body))
+	req.Header.Set("X-Project-ID", "p-test")
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	f.ServeHTTP(w, req)
+	return w
+}
+
+// TestNon2xxNotRecorded 锁住 P2-1：429/4xx/5xx 不落 0-token 垃圾行。
+func TestNon2xxNotRecorded(t *testing.T) {
+	for _, status := range []int{http.StatusTooManyRequests, http.StatusBadRequest, http.StatusInternalServerError} {
+		t.Run(strconv.Itoa(status), func(t *testing.T) {
+			f, rec := withUpstream(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(status)
+				w.Write([]byte(`{"error":{"message":"rate limited"}}`))
+			})
+			w := doProxyReq(t, f, `{"model":"mock-model","messages":[]}`)
+			if w.Code != status {
+				t.Fatalf("client should see upstream status %d, got %d", status, w.Code)
+			}
+			if n := len(rec.records()); n != 0 {
+				t.Fatalf("non-2xx must not be recorded, got %d records: %+v", n, rec.records())
+			}
+		})
+	}
+}
+
+// Test2xxWithoutUsageStillRecorded 锁住 P2-1 的可见性口径：2xx 但无 usage 仍落账
+//（0 token + model），区别于「model 也为空」的纯垃圾行。
+func Test2xxWithoutUsageStillRecorded(t *testing.T) {
+	f, rec := withUpstream(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"id":"x","choices":[{"message":{"role":"assistant","content":"hi"}}]}`))
+	})
+	w := doProxyReq(t, f, `{"model":"mock-model","messages":[]}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status: %d", w.Code)
+	}
+	recs := rec.records()
+	if len(recs) != 1 {
+		t.Fatalf("2xx without usage should record 1 row, got %d", len(recs))
+	}
+	if recs[0].Model != "mock-model" || recs[0].TotalTokens != 0 {
+		t.Fatalf("record broken: %+v", recs[0])
+	}
+}
+
+// TestEmptyModelZeroUsageNotRecorded 锁住 P2-1 防御：model 空 + usage 全 0 不落；
+// model 空但 usage 非 0（上游自报 usage）仍落。
+func TestEmptyModelZeroUsageNotRecorded(t *testing.T) {
+	// model 空 + 0 usage → 不落
+	f, rec := withUpstream(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"choices":[]}`))
+	})
+	doProxyReq(t, f, `{"messages":[]}`)
+	if n := len(rec.records()); n != 0 {
+		t.Fatalf("empty model + zero usage must not record, got %d", n)
+	}
+
+	// model 空 + 上游给了 usage → 落（有 token 量就有分析价值）
+	f2, rec2 := withUpstream(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"usage":{"prompt_tokens":7,"completion_tokens":3,"total_tokens":10}}`))
+	})
+	doProxyReq(t, f2, `{"messages":[]}`)
+	if n := len(rec2.records()); n != 1 {
+		t.Fatalf("empty model but real usage should record, got %d", n)
+	}
+}
+
+// TestStreamDurationCoversWholeStream 锁住 P2-3：流式 duration 在流结束时定，
+// 覆盖全程耗时（明显大于首字节耗时，原实现记成 ~1ms）。
+func TestStreamDurationCoversWholeStream(t *testing.T) {
+	f, rec := withUpstream(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		fl, _ := w.(http.Flusher)
+		chunks := []string{
+			`data: {"id":"c1","choices":[{"delta":{"content":"Hello"}}]}`,
+			`data: {"id":"c1","choices":[{"delta":{"content":" world"}}]}`,
+			`data: {"id":"c1","choices":[],"usage":{"prompt_tokens":120,"completion_tokens":30,"total_tokens":150}}`,
+			`data: [DONE]`,
+		}
+		for _, c := range chunks {
+			io.WriteString(w, c+"\n\n")
+			if fl != nil {
+				fl.Flush()
+			}
+			time.Sleep(120 * time.Millisecond) // 全程 ~480ms，首字节 <100ms
+		}
+	})
+	w := doProxyReq(t, f, `{"model":"mock-model","stream":true,"messages":[]}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status: %d", w.Code)
+	}
+	recs := rec.records()
+	if len(recs) != 1 {
+		t.Fatalf("stream should record 1 row, got %d", len(recs))
+	}
+	if recs[0].TotalTokens != 150 {
+		t.Fatalf("stream usage broken: %+v", recs[0])
+	}
+	// 首字节即定 duration 的实现只会记到 <120ms；流结束时应 ≥ 3 个 chunk 间隔
+	if recs[0].DurationMs < 300 {
+		t.Fatalf("stream duration should cover whole stream (>=300ms), got %dms", recs[0].DurationMs)
+	}
+}
+
+// TestStreamNon2xxNotRecorded 锁住 P2-1 流式分支：非 2xx 即使带 SSE 头也不落账。
+func TestStreamNon2xxNotRecorded(t *testing.T) {
+	f, rec := withUpstream(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusTooManyRequests)
+		io.WriteString(w, `data: {"error":"rate limited"}`+"\n\n")
+	})
+	w := doProxyReq(t, f, `{"model":"mock-model","stream":true,"messages":[]}`)
+	if w.Code != http.StatusTooManyRequests {
+		t.Fatalf("status: %d", w.Code)
+	}
+	if n := len(rec.records()); n != 0 {
+		t.Fatalf("non-2xx stream must not record, got %d", n)
+	}
 }

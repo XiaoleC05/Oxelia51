@@ -51,6 +51,7 @@ func (a *API) Handler() http.Handler {
 	mux.HandleFunc("/api/providers/", a.handleProviderDetail)
 	mux.HandleFunc("/api/agents", a.handleAgents)
 	mux.HandleFunc("/api/agents/", a.handleAgentDetail)
+	mux.HandleFunc("/api/models", a.handleModels)
 	mux.HandleFunc("/api/alerts", a.handleAlerts)
 	mux.HandleFunc("/api/settings", a.handleSettings)
 	mux.HandleFunc("/api/custom-providers", a.handleCustomProviders)
@@ -252,7 +253,8 @@ func (a *API) handleOverview(w http.ResponseWriter, r *http.Request) {
 		Requests int64  `json:"requests"`
 	}{}
 	rows, err = a.db.Query(
-		"SELECT substr(timestamp,1,10) AS d, COALESCE(SUM(total_tokens),0), COUNT(*) FROM token_events WHERE timestamp >= date('now','-13 days') GROUP BY d ORDER BY d",
+		// P2-2：date('now',...) 默认 UTC，timestamp 存本地时间，趋势边界需 'localtime' 对齐口径
+		"SELECT substr(timestamp,1,10) AS d, COALESCE(SUM(total_tokens),0), COUNT(*) FROM token_events WHERE timestamp >= date('now','localtime','-13 days') GROUP BY d ORDER BY d",
 	)
 	if err == nil {
 		for rows.Next() {

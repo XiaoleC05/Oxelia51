@@ -2,6 +2,7 @@ package localapi
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"sort"
 	"strconv"
@@ -25,6 +26,9 @@ type dimStat struct {
 
 // daysFilter 解析 ?days= 查询参数；未传或非法时返回空（= 全量）。
 // 返回 SQL 时间过滤子句与参数。
+// 口径（P2-2）：token_events.timestamp 存的是本地时间字符串（recorder timeLayout），
+// 而 SQLite datetime('now',...) 默认 UTC，边界附近会多算/少算 ~8h（东八区），
+// 因此必须加 'localtime' 修饰符与存储口径对齐。
 func daysFilter(r *http.Request) (string, any) {
 	s := strings.TrimSpace(r.URL.Query().Get("days"))
 	if s == "" {
@@ -34,7 +38,18 @@ func daysFilter(r *http.Request) (string, any) {
 	if err != nil || n <= 0 {
 		return "", nil
 	}
-	return " AND timestamp >= datetime('now', ?)", "-" + strconv.Itoa(n) + " days"
+	return " AND timestamp >= datetime('now', 'localtime', ?)", "-" + strconv.Itoa(n) + " days"
+}
+
+// normalizeModelName 归一化模型名：剥离上下文窗口后缀（[1M]/[2M]/[32k]…）。
+// Claude Code 等客户端会把上下文窗口写进模型名（如 deepseek-v4-flash[1M]），
+// 若不归一，同一模型会在排行/明细里出现多个变体（#排行模型名不规范）。
+// 对不含 [..] 的名字原样返回（provider/agent 名不受影响）。
+func normalizeModelName(model string) string {
+	if i := strings.Index(model, "["); i > 0 {
+		return model[:i]
+	}
+	return model
 }
 
 // loadDimStats 按维度列（provider / agent）聚合 token 用量与成本（成本按模型定价现算）。
@@ -59,6 +74,11 @@ func (a *API) loadDimStats(dimCol string, since string, sinceArg any) []dimStat 
 		var p, c, t, req int64
 		if rows.Scan(&dim, &model, &p, &c, &t, &req) != nil {
 			continue
+		}
+		// 模型维度：归一化模型名（剥离 [1M] 等上下文后缀），使同一模型的不同
+		// 上下文变体聚合到一条（#排行模型名不规范）。provider/agent 名无 [..] 后缀不受影响。
+		if dimCol == "model" {
+			dim = normalizeModelName(dim)
 		}
 		st := agg[dim]
 		if st == nil {
@@ -135,10 +155,48 @@ func (a *API) handleProviders(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"providers": stats})
 }
 
+// handleModels 模型聚合（Model = LLM 模型名）。支持 ?days=N。
+// 与 providers/agents 同口径，供总览「按模型」排行在日期范围切换时联动刷新。
+func (a *API) handleModels(w http.ResponseWriter, r *http.Request) {
+	since, sinceArg := daysFilter(r)
+	// loadDimStats("model") 的 Models 字段在此语义为「每个模型自身 = 1」，前端模型排行不使用该字段。
+	writeJSON(w, http.StatusOK, map[string]any{"models": a.loadDimStats("model", since, sinceArg)})
+}
+
 // handleAgents Agent 聚合（Agent = 用户使用的客户端工具）。支持 ?days=N。
+// 返回前应用用户自定义的 Agent 显示名别名（agent_aliases），「其他」等原始名
+// 可按用户偏好重命名展示（#问题 4）。
 func (a *API) handleAgents(w http.ResponseWriter, r *http.Request) {
 	since, sinceArg := daysFilter(r)
-	writeJSON(w, http.StatusOK, map[string]any{"agents": a.loadDimStats("agent", since, sinceArg)})
+	stats := a.loadDimStats("agent", since, sinceArg)
+	aliases := a.getAgentAliases()
+	if len(aliases) > 0 {
+		for i := range stats {
+			if disp, ok := aliases[stats[i].Name]; ok && disp != "" {
+				stats[i].Name = disp
+			}
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"agents": stats})
+}
+
+// agentAliasesKey settings 表存储 key（JSON map：原始 agent 名 → 显示名）。
+const agentAliasesKey = "agent_aliases"
+
+// getAgentAliases 读取用户自定义的 Agent 显示名别名（JSON map：原始名 → 显示名）。
+// 未配置返回空 map。带短 TTL 缓存由 settings 缓存统一承担（getSetting 直接查表，
+// 改动即时可见——与 custom_providers 不同，此处无热路径，无需单独缓存）。
+func (a *API) getAgentAliases() map[string]string {
+	raw := a.getSetting(agentAliasesKey)
+	if raw == "" {
+		return nil
+	}
+	m := map[string]string{}
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		log.Printf("settings agent_aliases parse failed: %v", err)
+		return nil
+	}
+	return m
 }
 
 // dimDetailRow 维度明细：某 Agent 下的各供应商×模型，或某供应商下的各 Agent×模型。
@@ -166,22 +224,37 @@ func (a *API) loadDimDetail(dimCol, xCol, value string, since string, sinceArg a
 		return nil
 	}
 	defer rows.Close()
-	out := []dimDetailRow{}
+	// 按 (交叉维度, 归一化模型名) 合并：同一模型的不同上下文变体（[1M] 等）聚合为一条。
+	merged := map[string]*dimDetailRow{}
+	order := []string{}
 	for rows.Next() {
 		var x, model string
 		var p, c, t, req int64
 		if rows.Scan(&x, &model, &p, &c, &t, &req) != nil {
 			continue
 		}
-		out = append(out, dimDetailRow{
-			Dim: x, Model: model, Tokens: t, Requests: req, Cost: costOf(pricing, model, p, c),
-		})
+		key := x + "\x00" + normalizeModelName(model)
+		row := merged[key]
+		if row == nil {
+			row = &dimDetailRow{Dim: x, Model: normalizeModelName(model)}
+			merged[key] = row
+			order = append(order, key)
+		}
+		row.Tokens += t
+		row.Requests += req
+		row.Cost += costOf(pricing, model, p, c)
+	}
+	out := make([]dimDetailRow, 0, len(order))
+	for _, k := range order {
+		out = append(out, *merged[k])
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Tokens > out[j].Tokens })
 	return out
 }
 
 // handleAgentDetail /api/agents/<agent>：该 Agent 下各供应商×模型的消耗拆解。支持 ?days=N。
+// URL 里的名字可能是显示名别名（Agent 列表按别名展示，#问题 4），查询前需按
+// agent_aliases（原始名 → 显示名）反映射回原始名；无映射时按原名直查。
 func (a *API) handleAgentDetail(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimPrefix(r.URL.Path, "/api/agents/")
 	name = strings.TrimSuffix(name, "/")
@@ -192,8 +265,19 @@ func (a *API) handleAgentDetail(w http.ResponseWriter, r *http.Request) {
 	since, sinceArg := daysFilter(r)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"agent": name,
-		"rows":  a.loadDimDetail("agent", "provider", name, since, sinceArg),
+		"rows":  a.loadDimDetail("agent", "provider", a.resolveAgentName(name), since, sinceArg),
 	})
+}
+
+// resolveAgentName 把（可能的）显示名别名反映射回 token_events 里的原始 agent 名。
+// 无别名配置或未命中时原样返回。
+func (a *API) resolveAgentName(name string) string {
+	for original, display := range a.getAgentAliases() {
+		if display == name && original != "" {
+			return original
+		}
+	}
+	return name
 }
 
 // handleProviderDetail /api/providers/<provider>：该供应商下各 Agent×模型的消耗拆解。支持 ?days=N。
@@ -205,9 +289,21 @@ func (a *API) handleProviderDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	since, sinceArg := daysFilter(r)
+	rows := a.loadDimDetail("provider", "agent", name, since, sinceArg)
+	// 交叉维度为 Agent 时应用显示名别名（#问题 4），与 Agent 聚合页口径一致
+	if len(rows) > 0 {
+		aliases := a.getAgentAliases()
+		if len(aliases) > 0 {
+			for i := range rows {
+				if disp, ok := aliases[rows[i].Dim]; ok && disp != "" {
+					rows[i].Dim = disp
+				}
+			}
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"provider": name,
-		"rows":     a.loadDimDetail("provider", "agent", name, since, sinceArg),
+		"rows":     rows,
 	})
 }
 
@@ -251,6 +347,12 @@ func (a *API) handleAlerts(w http.ResponseWriter, r *http.Request) {
 	budgets := a.getBudgets()
 	alerts := []alertState{}
 	for _, b := range budgets {
+		// P2-4：DailyTokens ≤ 0 的预算视为未设置——不参与触发、不在使用区显示
+		//（AlertsTab 使用区直接渲染本列表；设置列表仍可见可删）。
+		// 写侧 /api/settings 已拒绝非正整数，此处兜底历史脏数据。
+		if b.DailyTokens <= 0 {
+			continue
+		}
 		dim := b.Dimension
 		target := b.Target
 		// 兼容旧格式：无 dimension 时按 model 处理；model="*" 视为 global
@@ -318,6 +420,9 @@ var allowedSettingKeys = map[string]bool{
 	"widget_fields": true, // 悬浮卡片显示字段（JSON 字符串数组）
 	"widget_pos":    true, // 悬浮卡片窗口位置（JSON {x,y}）
 	// 注：v0.1.4 的 widget_opacity（悬浮卡片不透明度）已移除，本地残留值直接忽略。
+	// agent_aliases：Agent 显示名别名（JSON map：原始名 → 自定义显示名）。
+	// 用于把「其他」等未识别 Agent 重命名为用户可读的名称（#问题 4）。
+	"agent_aliases": true,
 }
 
 // handleSettings GET 返回全部设置（不含 sync_token 等凭证）；POST 更新单个 key。
@@ -345,6 +450,21 @@ func (a *API) handleSettings(w http.ResponseWriter, r *http.Request) {
 			if !json.Valid([]byte(req.Value)) {
 				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 				return
+			}
+		}
+		// P2-4 写侧校验：budgets 必须是 []BudgetItem 且每条 dailyTokens 为正整数
+		//（≤0 的预算无意义，读侧会恒触发/永不触发；非整数 JSON 数字反序列化失败）。
+		if req.Key == "budgets" {
+			var items []BudgetItem
+			if err := json.Unmarshal([]byte(req.Value), &items); err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid budgets"})
+				return
+			}
+			for _, b := range items {
+				if b.DailyTokens <= 0 {
+					writeJSON(w, http.StatusBadRequest, map[string]string{"error": "dailyTokens must be a positive integer"})
+					return
+				}
 			}
 		}
 		a.setSetting(req.Key, req.Value)
