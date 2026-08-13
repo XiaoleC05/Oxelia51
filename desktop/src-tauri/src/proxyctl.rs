@@ -21,6 +21,19 @@ fn local_addr(port: u16) -> SocketAddr {
     format!("127.0.0.1:{port}").parse().expect("valid local addr")
 }
 
+/// Windows：给子进程加 CREATE_NO_WINDOW，避免 GUI 应用（无控制台）spawn 控制台命令
+/// （reg / powershell / taskkill）时弹出闪一下的终端窗口。非 Windows 无此问题。
+#[cfg(windows)]
+fn no_console(cmd: &mut Command) -> &mut Command {
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    cmd
+}
+#[cfg(not(windows))]
+fn no_console(cmd: &mut Command) -> &mut Command {
+    cmd
+}
+
 /// 前端可读的代理状态（manage_proxy 命令返回）。
 #[derive(Serialize)]
 pub struct ProxyStatus {
@@ -62,7 +75,7 @@ pub fn running_version() -> Option<String> {
 
 /// 某个 proxy 二进制的版本（跑 `-version`），失败回退 "dev"。
 pub fn binary_version(exe: &Path) -> String {
-    let out = Command::new(exe).arg("-version").output().ok();
+    let out = no_console(&mut Command::new(exe)).arg("-version").output().ok();
     out.and_then(|o| String::from_utf8(o.stdout).ok())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
@@ -141,13 +154,13 @@ pub fn kill_listener(port: u16) -> Result<(), String> {
         let ps = format!(
             "(Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction SilentlyContinue).OwningProcess"
         );
-        let out = Command::new("powershell")
+        let out = no_console(&mut Command::new("powershell"))
             .args(["-NoProfile", "-Command", &ps])
             .output()
             .map_err(|e| format!("query listener pid: {e}"))?;
         for pid in String::from_utf8_lossy(&out.stdout).lines().map(str::trim) {
             if !pid.is_empty() && pid.chars().all(|c| c.is_ascii_digit()) {
-                let _ = Command::new("taskkill").args(["/PID", pid, "/F"]).output();
+                let _ = no_console(&mut Command::new("taskkill")).args(["/PID", pid, "/F"]).output();
             }
         }
     }
@@ -172,7 +185,7 @@ pub fn kill_listener(port: u16) -> Result<(), String> {
 pub fn autostart_installed() -> bool {
     #[cfg(windows)]
     {
-        Command::new("reg")
+        no_console(&mut Command::new("reg"))
             .args(["query", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", "/v", "Oxelia51Proxy"])
             .output()
             .map(|o| o.status.success())
@@ -193,7 +206,7 @@ pub fn autostart_install(exe: &Path) -> Result<(), String> {
     #[cfg(windows)]
     {
         let cmd = format!("\"{}\" -local -port {PROXY_PORT}", exe.display());
-        let out = Command::new("reg")
+        let out = no_console(&mut Command::new("reg"))
             .args([
                 "add",
                 r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
@@ -255,7 +268,7 @@ pub fn autostart_install(exe: &Path) -> Result<(), String> {
 pub fn autostart_uninstall() -> Result<(), String> {
     #[cfg(windows)]
     {
-        Command::new("reg")
+        no_console(&mut Command::new("reg"))
             .args(["delete", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", "/v", "Oxelia51Proxy", "/f"])
             .output()
             .map(|_| ())
