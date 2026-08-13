@@ -1,7 +1,7 @@
 # 紧急恢复：在阿里云 self-hosted runner 上修复 Go 后端（exec API 依赖 Go 后端，
 # 后端挂时无法远程运维，此通道绕过 exec 直接操作服务器）。
-# 2026-08-06: 后端崩溃根因是误加入的 015_feedback 迁移（阿里云 DB 无 oxelia51 schema），
-# 本 workflow 删除该迁移文件并重启后端。
+# 2026-08-13 扩展：杀掉误在服务器上触发的 go build 编译进程（2C2G 盒子编译
+# modernc sqlite 会 OOM，连带后端/隧道被 OOM killer 干掉），并拉起全部依赖服务。
 name: Emergency Restart
 on:
   workflow_dispatch:
@@ -14,12 +14,24 @@ jobs:
   restart-backend:
     runs-on: self-hosted
     steps:
-      - name: Remove bad migration and restart Go backend
+      - name: Kill runaway build and restore services
         run: |
-          rm -f /opt/Oxelia51/backend/migrations/015_feedback.up.sql \
-                /opt/Oxelia51/backend/migrations/015_feedback.down.sql
-          systemctl restart oxelia51-backend
-          sleep 4
-          systemctl is-active oxelia51-backend
-          echo "health: $(curl -s --max-time 5 http://127.0.0.1:8080/api/health | head -c 120)"
+          # 清理服务器端误触发的编译（go build / 残留编译子进程 / 上传的源码目录）
+          pkill -9 -f 'go build' || true
+          pkill -9 -f '/tmp/pg' || true
+          pkill -9 -f 'proxy-server.new' || true
+          pkill -9 -f 'go-build' || true
+          pkill -9 -f 'cmd/proxy' || true
+          sleep 5
+          # 内存释放后拉起依赖服务（后端 → 隧道 → 代理）
+          systemctl restart oxelia51-backend || true
+          systemctl restart token-tunnel || true
+          systemctl restart token-proxy || true
+          sleep 8
+          echo "backend: $(systemctl is-active oxelia51-backend)"
+          echo "tunnel:  $(systemctl is-active token-tunnel)"
+          echo "proxy:   $(systemctl is-active token-proxy)"
+          echo "mem:     $(free -m | awk 'NR==2{print $3"MiB used / "$2"MiB"}')"
+          echo "health:  $(curl -s --max-time 8 http://127.0.0.1:8080/api/health | head -c 120)"
+          echo "site:    $(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://oxelia51.com/ || echo 000)"
           echo "RECOVERY-DONE"
