@@ -229,7 +229,8 @@ pub fn autostart_install(exe: &Path) -> Result<(), String> {
             exe.display()
         );
         let p = plist_path();
-        std::fs::create_dir_all(p.parent().ok_or("bad plist path")?)?;
+        std::fs::create_dir_all(p.parent().ok_or("bad plist path")?)
+            .map_err(|e| format!("create plist dir: {e}"))?;
         std::fs::write(&p, plist).map_err(|e| format!("write plist: {e}"))?;
         let _ = Command::new("launchctl")
             .args(["load", "-w", p.to_str().unwrap_or_default()])
@@ -243,7 +244,8 @@ pub fn autostart_install(exe: &Path) -> Result<(), String> {
             exe.display()
         );
         let p = desktop_path();
-        std::fs::create_dir_all(p.parent().ok_or("bad desktop path")?)?;
+        std::fs::create_dir_all(p.parent().ok_or("bad desktop path")?)
+            .map_err(|e| format!("create desktop dir: {e}"))?;
         std::fs::write(&p, desktop).map_err(|e| format!("write desktop: {e}"))?;
         Ok(())
     }
