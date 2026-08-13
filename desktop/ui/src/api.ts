@@ -1,4 +1,5 @@
 // 桌面 UI 与本地 sidecar（LOCAL_MODE 网关，默认 17800）的数据契约。
+import { invoke } from "@tauri-apps/api/core";
 
 export const API_BASE = "http://127.0.0.1:17800";
 
@@ -110,6 +111,23 @@ export const saveSetting = (key: string, value: string) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ key, value }),
   });
+
+// ---------- 独立后台代理（方案 C，走 Tauri 命令 manage_proxy） ----------
+export type ProxyStatus = {
+  enabled: boolean; // 开机自启已注册
+  running: boolean; // 17800 有进程监听
+  version: string; // 运行中代理版本（未运行则空）
+};
+/** 查询/开启/关闭独立后台代理。非 Tauri 环境（浏览器 dev）兜底返回关闭态。 */
+export const proxyCtl = async (
+  action: "status" | "install" | "uninstall",
+): Promise<ProxyStatus> => {
+  try {
+    return await invoke<ProxyStatus>("manage_proxy", { action });
+  } catch {
+    return { enabled: false, running: false, version: "" };
+  }
+};
 
 /** 清空本地账本（token_events 用量/成本统计）；保留 settings 配置。 */
 export const clearData = () =>

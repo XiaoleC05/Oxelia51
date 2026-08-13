@@ -6,8 +6,10 @@ import {
   fetchPricingDefaults,
   fetchSettings,
   postSync,
+  proxyCtl,
   saveSetting,
   type PricedItem,
+  type ProxyStatus,
   type Settings,
 } from "../api";
 import { WIDGET_FIELDS } from "../widget/WidgetApp";
@@ -58,6 +60,9 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
   const [clearing, setClearing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [clearMsg, setClearMsg] = useState("");
+  // 独立后台代理状态
+  const [proxy, setProxy] = useState<ProxyStatus>({ enabled: false, running: false, version: "" });
+  const [proxyBusy, setProxyBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -81,6 +86,23 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
       await saveSetting("theme", t);
     } catch {
       // ignore
+    }
+  };
+
+  // 独立后台代理：查询状态 / 开启 / 关闭
+  const refreshProxy = useCallback(async () => {
+    setProxy(await proxyCtl("status"));
+  }, []);
+  useEffect(() => {
+    void refreshProxy();
+  }, [refreshProxy]);
+
+  const toggleProxy = async () => {
+    setProxyBusy(true);
+    try {
+      setProxy(await proxyCtl(proxy.enabled ? "uninstall" : "install"));
+    } finally {
+      setProxyBusy(false);
     }
   };
 
@@ -199,6 +221,29 @@ export function SettingsTab({ theme, onTheme, appVersion }: { theme: string; onT
         <p className="empty">
           例如使用 DeepSeek：<code>export OPENAI_BASE_URL="http://127.0.0.1:17800/api/proxy/deepseek"</code>。
           你实际使用的客户端（Claude Code / Cursor / CC Switch / Trae 等）即为“Agent”，记录会自动按工具识别。
+        </p>
+        <div className="form-row" style={{ marginTop: 8 }}>
+          <button
+            type="button"
+            className={`btn ${proxy.enabled ? "primary" : ""}`}
+            onClick={() => void toggleProxy()}
+            disabled={proxyBusy}
+          >
+            {proxy.enabled ? "✓ 独立后台代理已开启" : "开启独立后台代理"}
+          </button>
+          <span className="empty" style={{ alignSelf: "center" }}>
+            {proxy.enabled
+              ? proxy.running
+                ? "后台运行中 · 开机自启"
+                : "已开启，等待运行…"
+              : proxy.running
+                ? "随应用运行中"
+                : "未运行"}
+          </span>
+        </div>
+        <p className="empty">
+          开启后代理将<b>开机自启</b>，关闭应用也继续运行（AI 工具无需常开应用）。
+          关闭开关后恢复「随应用运行」，应用退出即停止。
         </p>
       </div>
 

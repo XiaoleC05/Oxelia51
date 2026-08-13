@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -15,12 +17,29 @@ import (
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/proxy"
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/recorder"
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/stats"
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/version"
 )
 
 func main() {
-	port := os.Getenv("PROXY_PORT")
+	// 命令行参数（独立后台代理：开机自启时用 -local -port 17800 免 setenv）。
+	// 优先级：flag > env > 默认。
+	localFlag := flag.Bool("local", false, "强制本地模式（等价 LOCAL_MODE=true）")
+	portFlag := flag.String("port", "", "监听端口（覆盖 PROXY_PORT env）")
+	versionFlag := flag.Bool("version", false, "打印版本号并退出")
+	flag.Parse()
+	if *versionFlag {
+		fmt.Println(version.V)
+		return
+	}
+
+	localMode := *localFlag || os.Getenv("LOCAL_MODE") == "true"
+
+	port := *portFlag
 	if port == "" {
-		if os.Getenv("LOCAL_MODE") == "true" {
+		port = os.Getenv("PROXY_PORT")
+	}
+	if port == "" {
+		if localMode {
 			port = "17800" // 本地优先默认端口（设计 §6.1）
 		} else {
 			port = "9090"
@@ -32,8 +51,6 @@ func main() {
 	startTime := time.Now()
 
 	// 记录器：本地优先用 SQLite（P3 桌面端），云端用 ClickHouse
-	localMode := os.Getenv("LOCAL_MODE") == "true"
-
 	chAddr := os.Getenv("CLICKHOUSE_ADDR")
 	chUser := os.Getenv("CLICKHOUSE_USER")
 	chPassword := os.Getenv("CLICKHOUSE_PASSWORD")

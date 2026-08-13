@@ -12,6 +12,8 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 
+mod proxyctl;
+
 /// Tauri 2 桌面壳（Oxelia51 本地优先桌面应用，P3）。
 ///
 /// 职责：开一个窗口加载桌面 UI（desktop/ui），并在应用生命周期内托管
@@ -104,6 +106,74 @@ fn kill_sidecar(state: &State<'_, Sidecar>) {
     }
 }
 
+// ---------- 独立后台代理（方案 C）----------
+// 所有权不变式：独立模式 ON 时应用持有 None（代理为外部进程，退出不杀）；
+// OFF 时持有自己的 Child（退出即杀）。
+
+/// 应用启动时确保独立代理已安装且运行最新版本。
+/// 在 spawn_sidecar 之前调用：独立代理先占 17800，spawn_sidecar 探测命中即复用。
+fn ensure_independent_proxy(app: &AppHandle) {
+    if !proxyctl::autostart_installed() {
+        return;
+    }
+    let Some(bundled) = find_sidecar(app) else { return };
+    if let Ok(installed) = proxyctl::ensure_installed(&bundled) {
+        let stale = !proxyctl::is_running()
+            || proxyctl::binary_version(&bundled)
+                != proxyctl::running_version().unwrap_or_default();
+        if stale {
+            let _ = proxyctl::kill_listener(proxyctl::PROXY_PORT);
+            let _ = proxyctl::launch_independent(&installed);
+        }
+    }
+}
+
+/// 开启独立后台代理：装二进制 → 注册自启 → 若持有自己的子进程先杀掉（让出 17800）→ 启动独立实例。
+fn proxy_install(app: &AppHandle) -> Result<proxyctl::ProxyStatus, String> {
+    let bundled = find_sidecar(app).ok_or("未找到打包的代理组件")?;
+    let installed = proxyctl::ensure_installed(&bundled)?;
+    proxyctl::autostart_install(&installed)?;
+    // 释放应用自己持有的 sidecar（若开启前是随应用模式）
+    let state = app.state::<Sidecar>();
+    {
+        let mut guard = state.0.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(mut child) = guard.take() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
+    if !proxyctl::is_running() {
+        proxyctl::launch_independent(&installed)?;
+    }
+    Ok(proxyctl::status())
+}
+
+/// 关闭独立后台代理：移除自启 → 杀掉独立实例 → 应用立刻接管自己的子进程（代理不中断）。
+fn proxy_uninstall(app: &AppHandle) -> Result<proxyctl::ProxyStatus, String> {
+    proxyctl::autostart_uninstall()?;
+    let _ = proxyctl::kill_listener(proxyctl::PROXY_PORT);
+    let state = app.state::<Sidecar>();
+    {
+        let mut guard = state.0.lock().unwrap_or_else(PoisonError::into_inner);
+        if guard.is_none() {
+            *guard = spawn_sidecar(app);
+        }
+    }
+    Ok(proxyctl::status())
+}
+
+/// 前端命令：manage_proxy {action: "status"|"install"|"uninstall"}。
+/// async：子进程操作（reg / powershell / launch）不阻塞 UI 主线程。
+#[tauri::command]
+async fn manage_proxy(app: AppHandle, action: String) -> Result<proxyctl::ProxyStatus, String> {
+    match action.as_str() {
+        "status" => Ok(proxyctl::status()),
+        "install" => proxy_install(&app),
+        "uninstall" => proxy_uninstall(&app),
+        other => Err(format!("未知操作：{other}")),
+    }
+}
+
 /// 显示并聚焦主窗口（托盘「打开」/ 左键点击时）。
 fn show_main_window(app: &AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
@@ -133,6 +203,10 @@ pub fn run() {
 
     builder
         .setup(|app| {
+            // 独立后台代理（方案 C）：若曾开启，先确保独立实例运行且版本最新，
+            // 再让 spawn_sidecar 探测 17800 复用（Child=None → 退出不杀）。
+            ensure_independent_proxy(app.handle());
+
             let child = spawn_sidecar(app.handle());
             app.manage(Sidecar(Mutex::new(child)));
 
@@ -188,6 +262,8 @@ pub fn run() {
                 api.prevent_close();
             }
         })
+        // 独立后台代理管理命令（设置页开关调用）
+        .invoke_handler(tauri::generate_handler![manage_proxy])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app_handle: &AppHandle, event| match event {

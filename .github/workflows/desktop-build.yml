@@ -53,27 +53,29 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       # 构建 Go sidecar 到 Tauri externalBin 期望位置（proxy-<target-triple>）
+      # -ldflags：注入构建版本（tag 去 v 前缀）；Windows 加 -H windowsgui（GUI 子系统），
+      #   使 Run-key 独立启动后台代理时不弹控制台窗口。
       - name: Build Go sidecar (Windows)
         if: matrix.platform == 'windows-latest'
         shell: bash
         run: |
           TRIPLE="x86_64-pc-windows-msvc"
           cd ${{ env.GATEWAY }}
-          go build -o ../desktop/src-tauri/proxy-${TRIPLE}.exe ./cmd/proxy
+          go build -ldflags "-H windowsgui -X github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/version.V=${GITHUB_REF_NAME#v}" -o ../desktop/src-tauri/proxy-${TRIPLE}.exe ./cmd/proxy
 
       - name: Build Go sidecar (macOS)
         if: matrix.platform == 'macos-14'
         run: |
           TRIPLE="aarch64-apple-darwin"
           cd ${{ env.GATEWAY }}
-          go build -o ../desktop/src-tauri/proxy-${TRIPLE} ./cmd/proxy
+          go build -ldflags "-X github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/version.V=${GITHUB_REF_NAME#v}" -o ../desktop/src-tauri/proxy-${TRIPLE} ./cmd/proxy
 
       - name: Build Go sidecar (Linux)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           TRIPLE="x86_64-unknown-linux-gnu"
           cd ${{ env.GATEWAY }}
-          go build -o ../desktop/src-tauri/proxy-${TRIPLE} ./cmd/proxy
+          go build -ldflags "-X github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/version.V=${GITHUB_REF_NAME#v}" -o ../desktop/src-tauri/proxy-${TRIPLE} ./cmd/proxy
 
       - name: Install UI deps
         run: npm ci

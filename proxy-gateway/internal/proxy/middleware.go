@@ -11,6 +11,7 @@ import (
 
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/limiter"
 	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/stats"
+	"github.com/XiaoleC05/Oxelia51/proxy-gateway/internal/version"
 )
 
 type contextKey string
@@ -161,6 +162,7 @@ func statusJSONHandler(providers []string, startTime time.Time, st *stats.Stats)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status":    snap.Status,
+			"version":   version.V,
 			"uptime":    time.Since(startTime).String(),
 			"uptimeSec": snap.UptimeSec,
 			"stats":     snap,
