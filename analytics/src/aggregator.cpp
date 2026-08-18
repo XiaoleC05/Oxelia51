@@ -67,9 +67,12 @@ std::vector<DailyEvent> Aggregator::aggregate(ClickHouseClient& ch,
     outMaxTimestamp.clear();
 
     // 确定查询起点
+    // 注意：必须用 parseDateTime64BestEffort(..., 3) 保留毫秒——
+    // parseDateTimeBestEffort 会截断小数秒，导致恰在游标时刻的边界行
+    // 每次运行都被重复聚合（timestamp > 截断值恒真），daily_stats 重复累加
     std::string startTs;
     if (!lastProcessed.empty()) {
-        startTs = "parseDateTimeBestEffort('" + escapeSql(lastProcessed) + "')";
+        startTs = "parseDateTime64BestEffort('" + escapeSql(lastProcessed) + "', 3)";
     } else {
         startTs = "now() - INTERVAL " + std::to_string(intervalMinutes) + " MINUTE";
     }

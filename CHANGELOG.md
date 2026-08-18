@@ -9,6 +9,7 @@
 ### 已修复
 - 网关 ClickHouse recorder 初始化失败/写失败后自动恢复（≤60s 节流重连 + 热切换），不再永久降级 no-op
 - analytics 聚合 catch-up 分块化：积压按 24h 窗口逐块聚合并推进游标，单块失败不丢已推进进度
+- analytics 游标毫秒精度修复：parseDateTimeBestEffort 截断小数秒导致边界事件每次运行重复聚合，改用 parseDateTime64BestEffort(..., 3)
 
 ---
 

@@ -138,6 +138,11 @@ int main(int argc, char* argv[]) {
             std::string chunkMax;
             auto chunk = aggregator.aggregate(ch, cursor, intervalMinutes, chunkMax, kChunkHours);
             if (chunk.empty()) break;
+            if (chunkMax <= cursor && !cursor.empty()) {
+                // 护栏：游标未前进（理论上不可能，防解析精度类回归导致死循环重复计数）
+                log("Step 1 FAILED: chunk cursor did not advance beyond " + cursor + ", aborting catch-up");
+                break;
+            }
             if (chunkMax > maxTimestamp) maxTimestamp = chunkMax;
             log("Step 1: chunk #" + std::to_string(i + 1) + " aggregated " +
                 std::to_string(chunk.size()) + " event group(s) up to " + chunkMax);
