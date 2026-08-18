@@ -1,4 +1,4 @@
-package tool
+package adminuser
 
 import (
 	"context"
@@ -15,16 +15,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type AdminToolHandler struct {
+type Handler struct {
 	db  *pgxpool.Pool
 	cfg *config.Config
 }
 
-func NewAdminToolHandler(db *pgxpool.Pool, cfg *config.Config) *AdminToolHandler {
-	return &AdminToolHandler{db: db, cfg: cfg}
+func NewHandler(db *pgxpool.Pool, cfg *config.Config) *Handler {
+	return &Handler{db: db, cfg: cfg}
 }
 
-func (h *AdminToolHandler) ListUsers(c *gin.Context) {
+func (h *Handler) ListUsers(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
@@ -67,7 +67,7 @@ func (h *AdminToolHandler) ListUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, items)
 }
 
-func (h *AdminToolHandler) PatchUser(c *gin.Context) {
+func (h *Handler) PatchUser(c *gin.Context) {
 	id := c.Param("id")
 
 	var req user.PatchUserRequest
@@ -118,7 +118,7 @@ func (h *AdminToolHandler) PatchUser(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
-func (h *AdminToolHandler) DeleteUser(c *gin.Context) {
+func (h *Handler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 
 	var req user.DeleteUserRequest
@@ -159,10 +159,26 @@ func (h *AdminToolHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	_, _ = h.db.Exec(ctx, `DELETE FROM login_logs WHERE user_id = $1`, id)
-
-	_, err = h.db.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
+	// 同一事务内先删 login_logs 再删 users：login_logs.user_id 外键引用 users，
+	// 分两步静默删除会在第一步失败时留下外键失败的第二步，任一步失败整体回滚。
+	tx, err := h.db.Begin(ctx)
 	if err != nil {
+		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "删除失败")
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, `DELETE FROM login_logs WHERE user_id = $1`, id); err != nil {
+		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "删除失败")
+		return
+	}
+
+	if _, err := tx.Exec(ctx, `DELETE FROM users WHERE id = $1`, id); err != nil {
+		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "删除失败")
+		return
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "删除失败")
 		return
 	}
@@ -178,7 +194,7 @@ type dashboardStatsResponse struct {
 	NewUsersSince int `json:"new_users_since"`
 }
 
-func (h *AdminToolHandler) DashboardStats(c *gin.Context) {
+func (h *Handler) DashboardStats(c *gin.Context) {
 	ctx := c.Request.Context()
 	since := c.Query("since")
 

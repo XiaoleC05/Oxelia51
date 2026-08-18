@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/XiaoleC05/oxelia51-backend/config"
+	"github.com/XiaoleC05/oxelia51-backend/internal/infra"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -74,10 +76,10 @@ func (h *Handler) Proxy(c *gin.Context) {
 	tool, err := h.loadTool(ctx, slug)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apiError(c, http.StatusNotFound, "TOOL_NOT_FOUND", "工具不存在")
+			infra.ApiError(c, http.StatusNotFound, "TOOL_NOT_FOUND", "工具不存在")
 			return
 		}
-		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询工具失败")
+		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "查询工具失败")
 		return
 	}
 
@@ -86,26 +88,26 @@ func (h *Handler) Proxy(c *gin.Context) {
 	if err := CheckAccess(roleStr, tool.UserAccessible, tool.OnlineCapable, tool.Status); err != nil {
 		var ae *AccessError
 		if errors.As(err, &ae) {
-			apiError(c, ae.Status, ae.Code, ae.Msg)
+			infra.ApiError(c, ae.Status, ae.Code, ae.Msg)
 			return
 		}
-		apiError(c, http.StatusForbidden, "FORBIDDEN", err.Error())
+		infra.ApiError(c, http.StatusForbidden, "FORBIDDEN", err.Error())
 		return
 	}
 
 	base := ResolveInternalAPIBase(slug, tool.InternalAPIBase)
 	if base == "" {
-		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "工具上游地址未配置")
+		infra.ApiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "工具上游地址未配置")
 		return
 	}
 	if !isAllowedUpstreamBase(base) {
-		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游地址配置无效")
+		infra.ApiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游地址配置无效")
 		return
 	}
 
 	target, err := url.Parse(base + proxyPath)
 	if err != nil {
-		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游地址无效")
+		infra.ApiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游地址无效")
 		return
 	}
 	if target.RawQuery == "" && c.Request.URL.RawQuery != "" {
@@ -123,7 +125,7 @@ func (h *Handler) Proxy(c *gin.Context) {
 
 	upReq, err := http.NewRequestWithContext(ctx, c.Request.Method, target.String(), body)
 	if err != nil {
-		apiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "构建上游请求失败")
+		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "构建上游请求失败")
 		return
 	}
 
@@ -135,10 +137,10 @@ func (h *Handler) Proxy(c *gin.Context) {
 	resp, err := h.client.Do(upReq)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			apiError(c, http.StatusGatewayTimeout, "UPSTREAM_TIMEOUT", "上游响应超时")
+			infra.ApiError(c, http.StatusGatewayTimeout, "UPSTREAM_TIMEOUT", "上游响应超时")
 			return
 		}
-		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游不可达")
+		infra.ApiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游不可达")
 		return
 	}
 	defer resp.Body.Close()
@@ -150,17 +152,17 @@ func (h *Handler) Proxy(c *gin.Context) {
 	respBody, err := readLimitedBody(resp.Body, maxResp)
 	if err != nil {
 		if errors.Is(err, errResponseTooLarge) {
-			apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游响应体过大")
+			infra.ApiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "上游响应体过大")
 			return
 		}
-		apiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "读取上游响应失败")
+		infra.ApiError(c, http.StatusBadGateway, "UPSTREAM_UNAVAILABLE", "读取上游响应失败")
 		return
 	}
 
 	copyResponseHeaders(c.Writer.Header(), resp.Header)
 	c.Status(resp.StatusCode)
 	if _, err := c.Writer.Write(respBody); err != nil {
-		fmt.Printf("gateway write response: %v\n", err)
+		slog.Warn("gateway write response failed", "error", err)
 	}
 }
 
@@ -306,8 +308,4 @@ func isHopByHop(h string) bool {
 	default:
 		return false
 	}
-}
-
-func apiError(c *gin.Context, status int, code, message string) {
-	c.JSON(status, gin.H{"error": message, "code": code})
 }

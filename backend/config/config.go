@@ -34,6 +34,14 @@ type Config struct {
 	GatewayMaxBodyBytes    int64
 	GatewayHMACSecret      string
 	ToolAdminTokens        map[string]string
+
+	// CORSOrigin Access-Control-Allow-Origin 唯一允许的跨域来源（生产站点）
+	CORSOrigin string
+	// AdminStatsAllowedIP 远程服务器统计（TENCENT_HEALTH_URL）允许的主机白名单，
+	// 默认生产服务器 IP；loopback（127.0.0.1/localhost）始终允许
+	AdminStatsAllowedIP string
+	// GatewayStatusURL 本机 proxy-gateway 状态接口地址（GatewayStats 的代理目标）
+	GatewayStatusURL string
 }
 
 func Load() *Config {
@@ -60,6 +68,10 @@ func Load() *Config {
 		GatewayMaxBodyBytes:    getEnvInt64("GATEWAY_MAX_BODY_BYTES", 10<<20),
 		GatewayHMACSecret:      getEnv("GATEWAY_HMAC_SECRET", ""),
 		ToolAdminTokens:        parseToolTokens(),
+
+		CORSOrigin:          getEnv("CORS_ORIGIN", "https://oxelia51.com"),
+		AdminStatsAllowedIP: getEnv("ADMIN_STATS_ALLOWED_IP", "118.25.138.177"),
+		GatewayStatusURL:    getEnv("GATEWAY_STATUS_URL", "http://127.0.0.1:9090/api/proxy/status"),
 	}
 }
 
@@ -93,18 +105,6 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
-}
-
-func getEnvBool(key string, fallback bool) bool {
-	v := os.Getenv(key)
-	if v == "" {
-		return fallback
-	}
-	b, err := strconv.ParseBool(v)
-	if err != nil {
-		return fallback
-	}
-	return b
 }
 
 func getEnvDuration(key string, fallback time.Duration) time.Duration {

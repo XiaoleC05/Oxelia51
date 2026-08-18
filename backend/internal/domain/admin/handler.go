@@ -18,6 +18,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
+	"github.com/XiaoleC05/oxelia51-backend/config"
 	"github.com/XiaoleC05/oxelia51-backend/internal/infra"
 	"github.com/gin-gonic/gin"
 )
@@ -26,14 +27,16 @@ type StatsHandler struct {
 	mu      sync.Mutex
 	prevCPU *cpuSample
 	hc      *http.Client
+	cfg     *config.Config
 	// startTime 进程启动时间：/proc/uptime 在容器内是宿主机时长，
 	// 服务运行时长用 time.Since(startTime) 另算（容器重启归零）
 	startTime time.Time
 }
 
-func NewStatsHandler() *StatsHandler {
+func NewStatsHandler(cfg *config.Config) *StatsHandler {
 	return &StatsHandler{
 		hc:        &http.Client{Timeout: 5 * time.Second},
+		cfg:       cfg,
 		startTime: time.Now(),
 	}
 }
@@ -66,7 +69,7 @@ func (h *StatsHandler) ServerStats(c *gin.Context) {
 // GatewayStats 代理网关实时统计（QPS/延迟/成功率/供应商分布）。
 // 服务端代理本机 proxy-server 的 /api/proxy/status，不向公网暴露网关状态。
 func (h *StatsHandler) GatewayStats(c *gin.Context) {
-	req, err := http.NewRequest(http.MethodGet, "http://127.0.0.1:9090/api/proxy/status", nil)
+	req, err := http.NewRequest(http.MethodGet, h.cfg.GatewayStatusURL, nil)
 	if err != nil {
 		infra.ApiError(c, http.StatusInternalServerError, "GATEWAY_UNREACHABLE", "网关请求构造失败")
 		return
@@ -94,8 +97,9 @@ func (h *StatsHandler) fetchRemoteStats(rawURL string) (*serverStats, error) {
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
 		return nil, fmt.Errorf("unsupported scheme: %s", parsed.Scheme)
 	}
-	if parsed.Hostname() != "118.25.138.177" && parsed.Hostname() != "127.0.0.1" && parsed.Hostname() != "localhost" {
-		return nil, fmt.Errorf("untrusted host: %s", parsed.Hostname())
+	host := parsed.Hostname()
+	if host != "127.0.0.1" && host != "localhost" && host != h.cfg.AdminStatsAllowedIP {
+		return nil, fmt.Errorf("untrusted host: %s", host)
 	}
 
 	req, err := http.NewRequest(http.MethodGet, rawURL, nil)
@@ -275,16 +279,16 @@ func NewWhitelistHandler(repo *WhitelistRepository) *WhitelistHandler {
 	return &WhitelistHandler{repo: repo}
 }
 
-// forwardedClientIP 返回可信客户端 IP，与 middleware.clientIP 同口径：
-// X-Real-IP（nginx 可信对端）→ X-Oxelia51-Client-IP（nginx 已覆盖）→ 连接地址。
-func forwardedClientIP(c *gin.Context) string {
-	if ip := strings.TrimSpace(c.GetHeader("X-Real-IP")); ip != "" {
-		return ip
+// whitelistOp 解析 :id 路径参数并派生 5s 超时上下文；
+// ID 非法时已直接响应 400，ok=false。调用方负责 defer cancel()。
+func whitelistOp(c *gin.Context) (id int, ctx context.Context, cancel context.CancelFunc, ok bool) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		infra.ApiError(c, http.StatusBadRequest, "INVALID_ID", "ID 无效")
+		return 0, nil, nil, false
 	}
-	if ip := strings.TrimSpace(c.GetHeader("X-Oxelia51-Client-IP")); ip != "" {
-		return ip
-	}
-	return c.ClientIP()
+	ctx, cancel = context.WithTimeout(c.Request.Context(), 5*time.Second)
+	return id, ctx, cancel, true
 }
 
 // ListWhitelist GET /api/admin/ip-whitelist
@@ -300,7 +304,7 @@ func (h *WhitelistHandler) ListWhitelist(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"items":    items,
-		"clientIP": forwardedClientIP(c),
+		"clientIP": infra.ClientIP(c),
 	})
 }
 
@@ -328,14 +332,10 @@ func (h *WhitelistHandler) CreateWhitelist(c *gin.Context) {
 
 // DeleteWhitelist DELETE /api/admin/ip-whitelist/:id
 func (h *WhitelistHandler) DeleteWhitelist(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		infra.ApiError(c, http.StatusBadRequest, "INVALID_ID", "ID 无效")
+	id, ctx, cancel, ok := whitelistOp(c)
+	if !ok {
 		return
 	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
 	if err := h.repo.Delete(ctx, id); err != nil {
@@ -348,12 +348,11 @@ func (h *WhitelistHandler) DeleteWhitelist(c *gin.Context) {
 
 // UpdateWhitelist PATCH /api/admin/ip-whitelist/:id
 func (h *WhitelistHandler) UpdateWhitelist(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		infra.ApiError(c, http.StatusBadRequest, "INVALID_ID", "ID 无效")
+	id, ctx, cancel, ok := whitelistOp(c)
+	if !ok {
 		return
 	}
+	defer cancel()
 
 	var req struct {
 		IP    string `json:"ip" binding:"required"`
@@ -363,9 +362,6 @@ func (h *WhitelistHandler) UpdateWhitelist(c *gin.Context) {
 		infra.ApiError(c, http.StatusBadRequest, "INVALID_REQUEST", err.Error())
 		return
 	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
 
 	if err := h.repo.Update(ctx, id, req.IP, sanitizeLabel(req.Label)); err != nil {
 		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "更新失败")

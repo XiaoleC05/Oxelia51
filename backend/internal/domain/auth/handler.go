@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -60,9 +60,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	rlKey := "rl:login:ip:" + c.ClientIP()
 	count, err := h.rl.Count(ctx, rlKey)
 	if err != nil {
-		log.Printf("rate limit count error: login ip=%s err=%v", c.ClientIP(), err)
+		slog.Warn("rate limit count error", "ip", c.ClientIP(), "error", err)
 	} else if count >= 10 {
-		log.Printf("rate limit hit: login ip=%s count=%d", c.ClientIP(), count)
+		slog.Warn("rate limit hit", "ip", c.ClientIP(), "count", count)
 		infra.ApiError(c, http.StatusTooManyRequests, "RATE_LIMITED", "登录尝试过多，请稍后再试")
 		return
 	}
@@ -132,12 +132,16 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	if jtiStr != "" && expUnix > 0 {
 		ttl := time.Until(time.Unix(int64(expUnix), 0))
 		if ttl > 0 {
-			_ = h.blacklist.Add(ctx, jtiStr, ttl)
+			if err := h.blacklist.Add(ctx, jtiStr, ttl); err != nil {
+				slog.Warn("logout blacklist add failed", "error", err)
+			}
 		}
 	}
 
 	if req.RefreshToken != "" {
-		_ = h.refresh.Delete(ctx, req.RefreshToken)
+		if err := h.refresh.Delete(ctx, req.RefreshToken); err != nil {
+			slog.Warn("logout refresh token delete failed", "error", err)
+		}
 	}
 
 	c.Status(http.StatusNoContent)
@@ -165,7 +169,9 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	_ = h.refresh.Delete(ctx, req.RefreshToken)
+	if err := h.refresh.Delete(ctx, req.RefreshToken); err != nil {
+		slog.Warn("refresh token delete failed", "error", err)
+	}
 	pair, err := h.issueTokenPair(ctx, u)
 	if err != nil {
 		infra.ApiError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "令牌生成失败")

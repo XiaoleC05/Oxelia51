@@ -9,12 +9,12 @@ import (
 
 	"github.com/XiaoleC05/oxelia51-backend/config"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/admin"
+	"github.com/XiaoleC05/oxelia51-backend/internal/domain/adminuser"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/auth"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/health"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/hero"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/proxykey"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/sync"
-	"github.com/XiaoleC05/oxelia51-backend/internal/domain/tool"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/user"
 	"github.com/XiaoleC05/oxelia51-backend/internal/gateway"
 	"github.com/XiaoleC05/oxelia51-backend/internal/infra"
@@ -58,9 +58,9 @@ func New(cfg *config.Config) *gin.Engine {
 
 	r := gin.Default()
 
-	// CORS: allow browser requests from oxelia51.com
+	// CORS: allow browser requests from the configured origin
 	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "https://oxelia51.com")
+		c.Header("Access-Control-Allow-Origin", cfg.CORSOrigin)
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Oxelia51-Access-Token")
 		if c.Request.Method == "OPTIONS" {
@@ -122,7 +122,7 @@ func New(cfg *config.Config) *gin.Engine {
 	// Admin routes — JWT + role check（IP whitelist NOT applied to CRUD endpoints）
 	whitelistRepo := admin.NewWhitelistRepository(pool)
 	whitelistH := admin.NewWhitelistHandler(whitelistRepo)
-	adminTool := tool.NewAdminToolHandler(pool, cfg)
+	adminTool := adminuser.NewHandler(pool, cfg)
 	adminGroup := r.Group("/api/admin")
 	adminGroup.Use(authMW.Handle(), middleware.RequireAdmin())
 	{
@@ -131,7 +131,7 @@ func New(cfg *config.Config) *gin.Engine {
 		adminGroup.DELETE("/users/:id", adminTool.DeleteUser)
 		adminGroup.POST("/hero-images/upload", heroH.Upload)
 
-		statsH := admin.NewStatsHandler()
+		statsH := admin.NewStatsHandler(cfg)
 		adminGroup.GET("/server-stats", statsH.ServerStats)
 		adminGroup.GET("/dashboard-stats", adminTool.DashboardStats)
 		// 代理网关状态（QPS/延迟/成功率/供应商分布），仅管理员

@@ -60,7 +60,8 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
-// EnsureTable 建表（幂等）
+// EnsureTable 建表（幂等）。旧部署兜底：新部署由迁移 016_sync_events.up.sql 负责，
+// 此处保留以防未跑迁移的旧环境启动后缺表。
 func (r *Repository) EnsureTable(ctx context.Context) error {
 	if _, err := r.pool.Exec(ctx, createTableSQL); err != nil {
 		return err

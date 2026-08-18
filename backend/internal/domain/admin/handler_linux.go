@@ -4,7 +4,6 @@ package admin
 
 import (
 	"syscall"
-	"unsafe"
 )
 
 type statfs_t struct {
@@ -27,5 +26,3 @@ const statfsSyscall = 137
 func rawSyscallStatfs(path, stat uintptr) (uintptr, uintptr, syscall.Errno) {
 	return syscall.Syscall(statfsSyscall, path, stat, 0)
 }
-
-var _ = unsafe.Pointer(nil)

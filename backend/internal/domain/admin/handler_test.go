@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/XiaoleC05/oxelia51-backend/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +15,7 @@ func init() {
 }
 
 func TestServerStats_ReturnsOK(t *testing.T) {
-	h := NewStatsHandler()
+	h := NewStatsHandler(&config.Config{})
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest("GET", "/api/stats/server", nil)
@@ -35,7 +36,7 @@ func TestServerStats_ReturnsOK(t *testing.T) {
 }
 
 func TestFetchRemoteStats_InvalidURL(t *testing.T) {
-	h := NewStatsHandler()
+	h := NewStatsHandler(&config.Config{})
 	_, err := h.fetchRemoteStats("ftp://localhost/stats")
 	if err == nil {
 		t.Error("expected error for ftp scheme")
@@ -55,7 +56,7 @@ func TestFetchRemoteStats_Success(t *testing.T) {
 		})
 	}))
 	defer ts.Close()
-	h := NewStatsHandler()
+	h := NewStatsHandler(&config.Config{})
 	stats, err := h.fetchRemoteStats(ts.URL)
 	if err != nil {
 		t.Fatalf("fetchRemoteStats: %v", err)
@@ -73,7 +74,7 @@ func TestFetchRemoteStats_Non200(t *testing.T) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
 	defer ts.Close()
-	h := NewStatsHandler()
+	h := NewStatsHandler(&config.Config{})
 	stats, err := h.fetchRemoteStats(ts.URL)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
