@@ -34,9 +34,8 @@
 | 路径模式 | 归属 | 我的行为 |
 |----------|:--:|------|
 | `**/desktop/ui/src/**/*.{ts,tsx,css}` | 前端任务 | 只读，产出提示词 |
-| `**/backend/internal/handler/*.go` | 后端任务 | 只读，产出提示词 |
-| `**/backend/internal/model/*.go` | 后端任务 | 只读，产出提示词 |
-| `**/backend/internal/service/*.go` | 后端任务 | 只读，产出提示词 |
+| `**/backend/internal/**/*.go`（domain/gateway/middleware/infra/app） | 后端任务 | 只读，产出提示词 |
+| `**/backend/config/*.go` | 后端任务 | 只读，产出提示词 |
 | `**/proxy-gateway/internal/**/*.go` | 后端任务 | 只读，产出提示词 |
 | `**/analytics/src/**/*.{cpp,h}` | 后端任务 | 只读，产出提示词 |
 | `**/internal/handler/*.go`（工具仓库） | 后端任务 | 只读，产出提示词 |
