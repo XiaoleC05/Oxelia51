@@ -133,22 +133,21 @@ std::vector<Alert> PostgresClient::getUnsentAlerts() {
     const char* sql =
         "SELECT id, project_id, alert_type, severity, message, status, created_at "
         "FROM oxelia51.alert_logs WHERE status = 'pending' ORDER BY id";
-    PGresult* res = exec(sql);
+    PgResultGuard res(exec(sql));
     std::vector<Alert> alerts;
-    int n = PQntuples(res);
+    int n = PQntuples(res.r);
     alerts.reserve(n);
     for (int i = 0; i < n; ++i) {
         Alert a;
-        a.id = std::stoll(PQgetvalue(res, i, 0));
-        a.project_id = PQgetvalue(res, i, 1);
-        a.alert_type = PQgetvalue(res, i, 2);
-        a.severity = PQgetvalue(res, i, 3);
-        a.message = PQgetvalue(res, i, 4) ? PQgetvalue(res, i, 4) : "";
-        a.status = PQgetvalue(res, i, 5);
-        a.created_at = PQgetvalue(res, i, 6);
+        a.id = std::stoll(PQgetvalue(res.r, i, 0));
+        a.project_id = PQgetvalue(res.r, i, 1);
+        a.alert_type = PQgetvalue(res.r, i, 2);
+        a.severity = PQgetvalue(res.r, i, 3);
+        a.message = PQgetvalue(res.r, i, 4) ? PQgetvalue(res.r, i, 4) : "";
+        a.status = PQgetvalue(res.r, i, 5);
+        a.created_at = PQgetvalue(res.r, i, 6);
         alerts.push_back(std::move(a));
     }
-    PQclear(res);
     return alerts;
 }
 
@@ -156,20 +155,19 @@ std::vector<AlertChannel> PostgresClient::getAlertChannels(const std::string& pr
     const char* sql =
         "SELECT id, project_id, type, address, verified "
         "FROM oxelia51.alert_channels WHERE project_id = $1";
-    PGresult* res = execParams(sql, {projectId});
+    PgResultGuard res(execParams(sql, {projectId}));
     std::vector<AlertChannel> channels;
-    int n = PQntuples(res);
+    int n = PQntuples(res.r);
     channels.reserve(n);
     for (int i = 0; i < n; ++i) {
         AlertChannel ch;
-        ch.id = std::stoll(PQgetvalue(res, i, 0));
-        ch.project_id = PQgetvalue(res, i, 1);
-        ch.type = PQgetvalue(res, i, 2);
-        ch.address = PQgetvalue(res, i, 3);
-        ch.verified = (PQgetvalue(res, i, 4)[0] == 't');
+        ch.id = std::stoll(PQgetvalue(res.r, i, 0));
+        ch.project_id = PQgetvalue(res.r, i, 1);
+        ch.type = PQgetvalue(res.r, i, 2);
+        ch.address = PQgetvalue(res.r, i, 3);
+        ch.verified = (PQgetvalue(res.r, i, 4)[0] == 't');
         channels.push_back(std::move(ch));
     }
-    PQclear(res);
     return channels;
 }
 
@@ -183,19 +181,18 @@ std::vector<BudgetConfig> PostgresClient::getBudgetConfigs() {
     const char* sql =
         "SELECT project_id, budget_usd, threshold, enabled "
         "FROM oxelia51.budget_configs WHERE enabled = true";
-    PGresult* res = exec(sql);
+    PgResultGuard res(exec(sql));
     std::vector<BudgetConfig> configs;
-    int n = PQntuples(res);
+    int n = PQntuples(res.r);
     configs.reserve(n);
     for (int i = 0; i < n; ++i) {
         BudgetConfig c;
-        c.project_id = PQgetvalue(res, i, 0);
-        c.budget_usd = std::stod(PQgetvalue(res, i, 1));
-        c.threshold = std::stod(PQgetvalue(res, i, 2));
-        c.enabled = (PQgetvalue(res, i, 3)[0] == 't');
+        c.project_id = PQgetvalue(res.r, i, 0);
+        c.budget_usd = std::stod(PQgetvalue(res.r, i, 1));
+        c.threshold = std::stod(PQgetvalue(res.r, i, 2));
+        c.enabled = (PQgetvalue(res.r, i, 3)[0] == 't');
         configs.push_back(std::move(c));
     }
-    PQclear(res);
     return configs;
 }
 
@@ -219,18 +216,18 @@ std::vector<std::pair<std::string, AnomalyConfig>> PostgresClient::getAnomalyCon
         "       p.metadata->'oxelia51'->'anomaly'->>'spike_ratio' AS spike_ratio "
         "FROM projects p "
         "WHERE p.metadata->'oxelia51'->'anomaly' IS NOT NULL";
-    PGresult* res = exec(sql);
+    PgResultGuard res(exec(sql));
     std::vector<std::pair<std::string, AnomalyConfig>> configs;
-    int n = PQntuples(res);
+    int n = PQntuples(res.r);
     configs.reserve(n);
     for (int i = 0; i < n; ++i) {
-        std::string projectId = PQgetvalue(res, i, 0);
+        std::string projectId = PQgetvalue(res.r, i, 0);
         AnomalyConfig cfg;  // 默认 enabled=true, spike_ratio=3.0
-        const char* enabledStr = PQgetvalue(res, i, 1);
+        const char* enabledStr = PQgetvalue(res.r, i, 1);
         if (enabledStr && *enabledStr) {
             cfg.enabled = (std::string(enabledStr) == "true");
         }
-        const char* ratioStr = PQgetvalue(res, i, 2);
+        const char* ratioStr = PQgetvalue(res.r, i, 2);
         if (ratioStr && *ratioStr) {
             try {
                 cfg.spike_ratio = std::stod(ratioStr);
@@ -240,7 +237,6 @@ std::vector<std::pair<std::string, AnomalyConfig>> PostgresClient::getAnomalyCon
         }
         configs.emplace_back(std::move(projectId), cfg);
     }
-    PQclear(res);
     return configs;
 }
 
@@ -266,6 +262,8 @@ void PostgresClient::setEngineState(const std::string& key, const std::string& v
 }
 
 void PostgresClient::ensureTodayExchangeRate() {
+    // 7.20 是有意硬编码的兜底默认值（CNY/USD）：仅在当天无汇率记录时写入，
+    // 正式汇率入库后由 ON CONFLICT DO NOTHING 自动跳过，不会覆盖
     const char* sql =
         "INSERT INTO oxelia51.exchange_rates (date, rate_cny_per_usd) "
         "VALUES (CURRENT_DATE, 7.20) ON CONFLICT DO NOTHING";

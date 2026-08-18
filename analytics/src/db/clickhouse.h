@@ -5,6 +5,10 @@
 
 namespace oxelia51 {
 
+// SQL 字符串转义：单引号 → ''，反斜杠 → 双反斜杠
+// 用于 ClickHouse HTTP 接口的内联 SQL（不支持参数化绑定）
+std::string escapeSql(const std::string& s);
+
 // ClickHouse HTTP 客户端（libcurl，端口 8123）
 // 不使用 clickhouse-cpp 原生协议，避免依赖复杂性
 class ClickHouseClient {

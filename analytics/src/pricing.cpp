@@ -29,17 +29,16 @@ void Pricing::loadFromDB(PostgresClient& pg) {
     const char* sql =
         "SELECT model, provider, prompt_price_usd, completion_price_usd "
         "FROM oxelia51.model_pricing";
-    PGresult* res = pg.exec(sql);
-    int n = PQntuples(res);
+    PgResultGuard res(pg.exec(sql));
+    int n = PQntuples(res.r);
     for (int i = 0; i < n; ++i) {
         PricingInfo info;
-        info.model = PQgetvalue(res, i, 0);
-        info.provider = PQgetvalue(res, i, 1) ? PQgetvalue(res, i, 1) : "";
-        info.prompt_price_usd = std::stod(PQgetvalue(res, i, 2));
-        info.completion_price_usd = std::stod(PQgetvalue(res, i, 3));
+        info.model = PQgetvalue(res.r, i, 0);
+        info.provider = PQgetvalue(res.r, i, 1) ? PQgetvalue(res.r, i, 1) : "";
+        info.prompt_price_usd = std::stod(PQgetvalue(res.r, i, 2));
+        info.completion_price_usd = std::stod(PQgetvalue(res.r, i, 3));
         pricing_[info.model] = std::move(info);
     }
-    PQclear(res);
 }
 
 double Pricing::calculate(const std::string& model,

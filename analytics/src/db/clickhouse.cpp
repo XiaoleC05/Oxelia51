@@ -40,7 +40,8 @@ static std::string base64Encode(const std::string& input) {
 
 // SQL 字符串转义：单引号 → ''，反斜杠 → 双反斜杠
 // 用于 ClickHouse HTTP 接口的内联 SQL（不支持参数化绑定）
-static std::string escapeSql(const std::string& s) {
+// 声明见 clickhouse.h，供 aggregator 等模块复用
+std::string escapeSql(const std::string& s) {
     std::string out;
     out.reserve(s.size());
     for (char c : s) {

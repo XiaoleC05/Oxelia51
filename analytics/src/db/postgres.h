@@ -12,6 +12,16 @@
 
 namespace oxelia51 {
 
+// PGresult 的 RAII 包装：作用域结束自动 PQclear，
+// 防止 std::stoll/std::stod 等解析抛异常时泄漏 PGresult
+struct PgResultGuard {
+    explicit PgResultGuard(PGresult* res) : r(res) {}
+    ~PgResultGuard() { if (r) PQclear(r); }
+    PgResultGuard(const PgResultGuard&) = delete;
+    PgResultGuard& operator=(const PgResultGuard&) = delete;
+    PGresult* r;
+};
+
 // 告警类型
 enum class AlertType { ANOMALY, BUDGET };
 

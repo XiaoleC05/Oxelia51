@@ -2,25 +2,32 @@
 
 #include "db/clickhouse.h"
 
+#include <chrono>
+#include <cstdio>
+#include <ctime>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 
 namespace oxelia51 {
 
-// SQL 字符串转义：单引号 → ''，反斜杠 → 双反斜杠
-static std::string escapeSql(const std::string& s) {
-    std::string out;
-    out.reserve(s.size());
-    for (char c : s) {
-        switch (c) {
-            case '\'': out += "''";   break;
-            case '\\': out += "\\\\"; break;
-            default:   out.push_back(c);
-        }
-    }
-    return out;
+// ---- 日志工具（与 alerter.cpp 格式一致） ----
+
+static std::string timestamp() {
+    auto now = std::chrono::system_clock::now();
+    auto t = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{};
+    gmtime_r(&t, &tm);
+    char buf[32];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+    return buf;
 }
+
+static void logMsg(const std::string& msg) {
+    std::fprintf(stderr, "[%s] %s\n", timestamp().c_str(), msg.c_str());
+}
+
+// escapeSql 已合并至 db/clickhouse.h（见 clickhouse.cpp）
 
 // 按 \n 分割，返回非空行
 static std::vector<std::string> splitLines(const std::string& text) {
@@ -108,11 +115,17 @@ std::vector<DailyEvent> Aggregator::aggregate(ClickHouseClient& ch,
         e.project_id = fields[0];
         e.model = fields[1];
         e.date = fields[2];
-        e.prompt_tokens = std::stoull(fields[3]);
-        e.completion_tokens = std::stoull(fields[4]);
-        e.total_tokens = std::stoull(fields[5]);
-        e.duration_ms = std::stoull(fields[6]);
-        e.request_count = std::stoull(fields[7]);
+        try {
+            e.prompt_tokens = std::stoull(fields[3]);
+            e.completion_tokens = std::stoull(fields[4]);
+            e.total_tokens = std::stoull(fields[5]);
+            e.duration_ms = std::stoull(fields[6]);
+            e.request_count = std::stoull(fields[7]);
+        } catch (const std::exception&) {
+            // 单行脏数据不阻断整批：跳过该行并记录行号（含表头，从 1 计）
+            logMsg("[WARN] 跳过无法解析的行 " + std::to_string(i + 1));
+            continue;
+        }
         events.push_back(std::move(e));
     }
 

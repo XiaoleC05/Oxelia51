@@ -29,6 +29,37 @@ static void logMsg(const std::string& msg) {
     std::fprintf(stderr, "[%s] %s\n", timestamp().c_str(), msg.c_str());
 }
 
+// 邮件头字段净化：剔除 \r \n，防止 CRLF 头注入
+static std::string sanitizeHeader(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    for (char c : s) {
+        if (c != '\r' && c != '\n') out.push_back(c);
+    }
+    return out;
+}
+
+// 从 URL 中提取 host:port（不含 user:pass 凭据），用于日志脱敏
+static std::string extractHostPort(const std::string& url) {
+    std::string u = url;
+    // 去 scheme
+    size_t schemeEnd = u.find("://");
+    if (schemeEnd != std::string::npos) {
+        u = u.substr(schemeEnd + 3);
+    }
+    // 去路径与查询参数
+    size_t end = u.find_first_of("/?");
+    if (end != std::string::npos) {
+        u = u.substr(0, end);
+    }
+    // 去 userinfo：取最后一个 @ 之后，兼容凭据本身含 @ 的情况
+    size_t atPos = u.rfind('@');
+    if (atPos != std::string::npos) {
+        u = u.substr(atPos + 1);
+    }
+    return u;
+}
+
 // SMTP 配置（从 Nodemailer 格式 URL 解析）
 struct SmtpConfig {
     std::string scheme;    // "smtp" | "smtps"
@@ -252,7 +283,13 @@ bool Alerter::sendEmail(const std::string& to,
 
     SmtpConfig cfg = parseSmtpUrl(smtpUrl_);
     if (!cfg.valid) {
-        logMsg("[WARN] SMTP URL invalid, skipping email: " + smtpUrl_);
+        // 日志脱敏：只记录 host:port，不写入含凭据的完整 URL
+        std::string hostPort = extractHostPort(smtpUrl_);
+        if (!hostPort.empty()) {
+            logMsg("[WARN] SMTP URL invalid, skipping email (host: " + hostPort + ")");
+        } else {
+            logMsg("[WARN] SMTP URL invalid, skipping email");
+        }
         return false;
     }
 
@@ -260,9 +297,9 @@ bool Alerter::sendEmail(const std::string& to,
     // 当前用 CURLOPT_UPLOAD 上传整封报文（非 libcurl MIME API），直接拼 boundary 即可。
     const std::string boundary = "oxelia51-alert-alt";
     std::string emailBody;
-    emailBody += "From: " + emailFrom_ + "\r\n";
-    emailBody += "To: " + to + "\r\n";
-    emailBody += "Subject: " + subject + "\r\n";
+    emailBody += "From: " + sanitizeHeader(emailFrom_) + "\r\n";
+    emailBody += "To: " + sanitizeHeader(to) + "\r\n";
+    emailBody += "Subject: " + sanitizeHeader(subject) + "\r\n";
     emailBody += "MIME-Version: 1.0\r\n";
     emailBody += "Content-Type: multipart/alternative; boundary=\"" + boundary + "\"\r\n";
     emailBody += "\r\n";
@@ -366,23 +403,18 @@ void Alerter::sendPendingAlerts() {
         std::string htmlBody = buildAlertHtml(alert);
 
         auto channels = pg_.getAlertChannels(alert.project_id);
-        bool delivered = false;
 
         for (const auto& ch : channels) {
             if (ch.type == "email" && ch.verified) {
-                if (sendEmail(ch.address, subject, textBody, htmlBody)) {
-                    delivered = true;
-                }
+                sendEmail(ch.address, subject, textBody, htmlBody);
             } else if (ch.type == "webhook") {
                 std::string json = buildAlertJson(alert);
-                if (sendWebhook(ch.address, json)) {
-                    delivered = true;
-                }
+                sendWebhook(ch.address, json);
             }
         }
 
         // 无论是否外发成功都标记为 sent（站内通知已写入）
-        // 避免重复处理；外发失败仅记录日志
+        // 避免重复处理；外发失败仅在 sendEmail/sendWebhook 内记录日志
         pg_.markAlertSent(alert.id);
         ++sent;
     }
