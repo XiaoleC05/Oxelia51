@@ -76,7 +76,9 @@ curl -s http://127.0.0.1:9090/api/proxy/status   # 验证返回完整 providers
 
 ### 3.4 analytics（C++ alerter，腾讯云）
 - 二进制从 release tarball `analytics/token-analytics` 经 ssh 管道传腾讯云 → install → `systemctl restart token-analytics`
-- **验证**：`journalctl -u token-analytics -n 8` 应显示 6 步完整执行 + `Deactivated successfully`（oneshot 正常终态是 inactive）。
+- **GitHub 资产限速绕行**（三地都可能卡 S3）：本地 Docker 构建（`analytics/Dockerfile`）→ `docker create` + `docker cp` 提取二进制 → `gzip -c | base64 -w0` → 按 ≤3600 字符 `fold -w 3600` 分块，每块 `printf %s '<chunk>' >> /tmp/x.b64.gz` 走 exec 上传 → 解码后比对字节数 → cat | ssh 传腾讯云 install
+- **CH 系统日志表膨胀**：trace_log/text_log/part_log 无 TTL 会吃掉十几 GB。清理顺序：**先 TRUNCATE 再 MODIFY TTL**（大表直接 ALTER 会 MEMORY_LIMIT_EXCEEDED，且产生未完成 mutation 需 KILL MUTATION）
+- **验证**：`journalctl -u token-analytics -n 8` 应显示分块聚合（chunk #N）或 No new events + `Deactivated successfully`（oneshot 正常终态是 inactive）。
 
 ### 3.5 桌面 release（v* tag）
 1. 统一版本号后再打 tag：`desktop/src-tauri/tauri.conf.json`、`desktop/ui/package.json`、`desktop/ui/src/version.ts` 三处一致，否则安装包显示旧版本号。
@@ -93,6 +95,10 @@ curl -s http://127.0.0.1:9090/api/proxy/status   # 验证返回完整 providers
 | 远端命令错乱 | `command not found`、`{{.Names}}: command not found` | ssh 远端命令单引号包裹，避免特殊字符 |
 | GitHub 日志 403 | `Must have admin rights` | 匿名无法下载 workflow logs；请有权限者贴日志或提供 PAT |
 | Python 崩 | `UnicodeDecodeError: 'gbk'` | subprocess 加 `encoding="utf-8", errors="replace"` |
+| exec JSON 转义崩 | `invalid character ... in string escape` / `unexpected EOF` | 多层引号（bash→JSON→ssh→远端）别手拼：Write 工具写 JSON 文件 + `curl -d @file`；SQL 一律 `echo <b64> \| base64 -d \| docker exec -i <容器> clickhouse-client/psql --multiquery` |
+| exec 超时误判 | `signal: killed` | 30s 超时杀进程树，但 stdout 常已完整返回——先看输出再判断；真长任务 setsid + done 标记 |
+| CH 游标毫秒截断 | 边界事件每次运行重复聚合、daily_stats 重复累加 | analytics 游标必须 `parseDateTime64BestEffort(..., 3)`，勿用 parseDateTimeBestEffort（截断小数秒） |
+| CH 系统日志吃满盘 | 腾讯云磁盘 84% | 见 §3.4：TRUNCATE system.trace_log/text_log/part_log + MODIFY TTL（7d） |
 
 ## 5. 部署后验证清单
 

@@ -10,6 +10,15 @@
 - 网关 ClickHouse recorder 初始化失败/写失败后自动恢复（≤60s 节流重连 + 热切换），不再永久降级 no-op
 - analytics 聚合 catch-up 分块化：积压按 24h 窗口逐块聚合并推进游标，单块失败不丢已推进进度
 - analytics 游标毫秒精度修复：parseDateTimeBestEffort 截断小数秒导致边界事件每次运行重复聚合，改用 parseDateTime64BestEffort(..., 3)
+- DormGuard 健康检查移除已下线的 NoneBot 探测（v2.4 起纯后端），告警消除
+
+### 运维
+- 腾讯云 ClickHouse 系统日志表（trace_log 8.2G / text_log 5.7G / part_log 1.1G）清理 + 7 天 TTL，磁盘 84% → 42%
+- ClickHouse 容器内存 1G → 2G（analytics 聚合积压需 ~1.5G）
+
+### 内部
+- analytics 日志收口：三份重复 timestamp/logMsg（main/aggregator/alerter）合并为 util/log.h
+- 移除死代码 ClickHouseClient::execute()
 
 ---
 
