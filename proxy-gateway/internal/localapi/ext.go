@@ -470,7 +470,10 @@ func (a *API) handleSettings(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		a.setSetting(req.Key, req.Value)
+		if err := a.setSetting(req.Key, req.Value); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 		return
 	}

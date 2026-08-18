@@ -248,7 +248,9 @@ func (a *API) getSetting(key string) string {
 	return v
 }
 
-func (a *API) setSetting(key, value string) {
+// setSetting 写入 settings 表；写库失败返回 error（调用方必须处理，
+// HTTP 层映射 500），不再静默吞掉（否则设置页显示保存成功实则未落库）。
+func (a *API) setSetting(key, value string) error {
 	// #26：定价变更时主动失效缓存，成本立即按新价算（不等 TTL 到期）
 	if key == "pricing" {
 		a.pmu.Lock()
@@ -259,10 +261,11 @@ func (a *API) setSetting(key, value string) {
 	if key == customProvidersKey {
 		a.invalidateCustomProviders()
 	}
-	_, _ = a.db.Exec(
+	_, err := a.db.Exec(
 		"INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
 		key, value,
 	)
+	return err
 }
 
 // pricingCacheTTL 定价缓存有效期（#26）。UI 轮询 5s，此值保证保存定价后

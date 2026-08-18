@@ -92,7 +92,9 @@ func newTestAPI(t *testing.T) *API {
 // TestPricingMapCache 锁住 #26：缓存命中（TTL 内不重查）+ 保存后立即失效。
 func TestPricingMapCache(t *testing.T) {
 	a := newTestAPI(t)
-	a.setSetting("pricing", `[{"model":"gpt-5","prompt":"1.25","completion":"10"}]`)
+	if err := a.setSetting("pricing", `[{"model":"gpt-5","prompt":"1.25","completion":"10"}]`); err != nil {
+		t.Fatal(err)
+	}
 
 	first := a.getPricingMap()
 	if v, ok := first["gpt-5"]; !ok || v.Prompt != 1.25 {
@@ -107,13 +109,17 @@ func TestPricingMapCache(t *testing.T) {
 		t.Fatal("cached value changed unexpectedly")
 	}
 	// 保存定价后缓存应失效（新值立即可见）
-	a.setSetting("pricing", `[{"model":"gpt-5","prompt":"2.50","completion":"20"}]`)
+	if err := a.setSetting("pricing", `[{"model":"gpt-5","prompt":"2.50","completion":"20"}]`); err != nil {
+		t.Fatal(err)
+	}
 	afterSave := a.getPricingMap()
 	if v, ok := afterSave["gpt-5"]; !ok || v.Prompt != 2.50 {
 		t.Fatalf("after save: expected prompt 2.50, got %v", afterSave["gpt-5"])
 	}
 	// 空 pricing 也应缓存（清空后返回空表且缓存命中）
-	a.setSetting("pricing", "")
+	if err := a.setSetting("pricing", ""); err != nil {
+		t.Fatal(err)
+	}
 	if m := a.getPricingMap(); len(m) != 0 {
 		t.Fatalf("after clear: expected empty, got %v", m)
 	}
@@ -122,7 +128,9 @@ func TestPricingMapCache(t *testing.T) {
 // TestPricingMapCacheTTL 锁住 TTL 生效：改 DB 后 TTL 未到仍命中旧缓存。
 func TestPricingMapCacheTTL(t *testing.T) {
 	a := newTestAPI(t)
-	a.setSetting("pricing", `[{"model":"gpt-5","prompt":"1.25","completion":"10"}]`)
+	if err := a.setSetting("pricing", `[{"model":"gpt-5","prompt":"1.25","completion":"10"}]`); err != nil {
+		t.Fatal(err)
+	}
 	a.getPricingMap() // 填充缓存
 
 	// 绕过 setSetting 直接改 DB（模拟外部写入，不触发失效）

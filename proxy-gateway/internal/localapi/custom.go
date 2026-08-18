@@ -80,8 +80,7 @@ func (a *API) upsertCustomProvider(p adapter.CustomProvider) error {
 	if err != nil {
 		return err
 	}
-	a.setSetting(customProvidersKey, string(data)) // setSetting 内主动失效缓存
-	return nil
+	return a.setSetting(customProvidersKey, string(data)) // setSetting 内主动失效缓存
 }
 
 // deleteCustomProvider 删除自定义供应商；内置 slug 拒绝（只能删自定义）。
@@ -103,13 +102,13 @@ func (a *API) deleteCustomProvider(slug string) error {
 	if err != nil {
 		return err
 	}
-	a.setSetting(customProvidersKey, string(data))
-	return nil
+	return a.setSetting(customProvidersKey, string(data))
 }
 
 // handleCustomProviders GET 列表 / POST 新增或更新（upsert）。
 // 合约：GET → {"items":[{slug,name,baseUrl,protocol}]}；
-// POST body {slug,name,baseUrl,protocol} → {"ok":true}；校验失败 400 {"error"}、slug 冲突 409 {"error"}。
+// POST body {slug,name,baseUrl,protocol} → {"ok":true}；校验失败 400 {"error"}、slug 冲突 409 {"error"}、
+// 写库失败 500 {"error"}。
 func (a *API) handleCustomProviders(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -120,12 +119,17 @@ func (a *API) handleCustomProviders(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
 			return
 		}
-		if err := a.upsertCustomProvider(p); err != nil {
+		// 先在 handler 层校验，把参数错误（400/409）与 upsert 的写库失败（500）区分开
+		if err := adapter.ValidateCustomProvider(p); err != nil {
 			if errors.Is(err, adapter.ErrSlugConflict) {
 				writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 				return
 			}
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		if err := a.upsertCustomProvider(p); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
@@ -134,7 +138,7 @@ func (a *API) handleCustomProviders(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleCustomProvidersDelete POST body {slug} → {"ok":true}；内置 slug 拒绝（400）。
+// handleCustomProvidersDelete POST body {slug} → {"ok":true}；内置 slug 拒绝（400），写库失败 500。
 func (a *API) handleCustomProvidersDelete(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
@@ -147,8 +151,13 @@ func (a *API) handleCustomProvidersDelete(w http.ResponseWriter, r *http.Request
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad request"})
 		return
 	}
+	// 内置 slug 是参数错误（400）；deleteCustomProvider 内仍保留同样的防御性校验
+	if adapter.IsBuiltinSlug(req.Slug) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "cannot delete builtin provider"})
+		return
+	}
 	if err := a.deleteCustomProvider(req.Slug); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})

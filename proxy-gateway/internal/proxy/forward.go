@@ -122,8 +122,16 @@ func (f *Forwarder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 3) 读取请求体提取 model + stream 标志
 	var requestBody []byte
 	if r.Body != nil {
-		requestBody, _ = io.ReadAll(r.Body)
+		var err error
+		requestBody, err = io.ReadAll(r.Body)
 		r.Body.Close()
+		if err != nil {
+			// 读体失败不能按空体继续转发：丢体上行会得到上游莫名其妙的结果，
+			// 且 model/stream 提取全空。按客户端错误口径返回 400（同 MISSING_PROJECT_ID）。
+			log.Printf("read request body failed: %v", err)
+			http.Error(w, `{"error":"failed to read request body","code":"BAD_REQUEST_BODY"}`, http.StatusBadRequest)
+			return
+		}
 		r.Body = io.NopCloser(bytes.NewReader(requestBody))
 	}
 	model := extractModel(requestBody)

@@ -424,11 +424,13 @@ func TestAlertsSkipsNonPositiveBudgets(t *testing.T) {
 	a := newTestAPI(t)
 	createTokenEvents(t, a)
 	// 直写 DB 模拟历史脏数据（绕开写侧校验）
-	a.setSetting("budgets", `[
+	if err := a.setSetting("budgets", `[
 		{"dimension":"global","dailyTokens":0},
 		{"dimension":"provider","target":"deepseek","dailyTokens":-5},
 		{"dimension":"model","target":"deepseek-chat","dailyTokens":100}
-	]`)
+	]`); err != nil {
+		t.Fatal(err)
+	}
 
 	req := httptest.NewRequest(http.MethodGet, "/api/alerts", nil)
 	rec := httptest.NewRecorder()

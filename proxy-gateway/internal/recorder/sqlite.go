@@ -2,9 +2,7 @@ package recorder
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -155,14 +153,7 @@ func (w *SQLiteWriter) WriteBatch(records []adapter.TokenRecord) error {
 		if eventID == "" {
 			eventID = uuid.NewString()
 		}
-		apiKeyHash := r.APIKeyHash
-		if apiKeyHash == "" {
-			h := sha256.Sum256([]byte(r.ProjectID))
-			apiKeyHash = hex.EncodeToString(h[:])
-		}
-		if len(apiKeyHash) > 64 {
-			apiKeyHash = apiKeyHash[:64]
-		}
+		apiKeyHash := resolveAPIKeyHash(r)
 		ts := r.Timestamp
 		if ts.IsZero() {
 			ts = time.Now()

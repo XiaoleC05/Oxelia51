@@ -35,12 +35,17 @@ func newSyncTestAPI(t *testing.T) *API {
 // sync_up_ts 已有值时不迁移；两者皆空返回空（全量上传）。
 func TestSyncUploadTSMigration(t *testing.T) {
 	a := newTestAPI(t)
-	if v := a.syncUploadTS(); v != "" {
-		t.Fatalf("empty settings: expected \"\", got %q", v)
+	if v, err := a.syncUploadTS(); err != nil || v != "" {
+		t.Fatalf("empty settings: expected \"\", got %q (err=%v)", v, err)
 	}
 
-	a.setSetting("sync_last", "2026-08-01T04:00:00Z")
-	got := a.syncUploadTS()
+	if err := a.setSetting("sync_last", "2026-08-01T04:00:00Z"); err != nil {
+		t.Fatal(err)
+	}
+	got, err := a.syncUploadTS()
+	if err != nil {
+		t.Fatal(err)
+	}
 	want := time.Date(2026, 8, 1, 4, 0, 0, 0, time.UTC).Local().Format(localTimeLayout)
 	if got != want {
 		t.Fatalf("migrated cursor: expected %q, got %q", want, got)
@@ -50,10 +55,14 @@ func TestSyncUploadTSMigration(t *testing.T) {
 	}
 
 	// 已有 sync_up_ts 时以它为准，不再看 sync_last
-	a.setSetting("sync_up_ts", "2026-08-02 00:00:00.000")
-	a.setSetting("sync_last", "2026-08-03T00:00:00Z")
-	if v := a.syncUploadTS(); v != "2026-08-02 00:00:00.000" {
-		t.Fatalf("existing cursor overridden: %q", v)
+	if err := a.setSetting("sync_up_ts", "2026-08-02 00:00:00.000"); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.setSetting("sync_last", "2026-08-03T00:00:00Z"); err != nil {
+		t.Fatal(err)
+	}
+	if v, err := a.syncUploadTS(); err != nil || v != "2026-08-02 00:00:00.000" {
+		t.Fatalf("existing cursor overridden: %q (err=%v)", v, err)
 	}
 }
 
@@ -63,11 +72,15 @@ func TestSyncDownloadSeqDefault(t *testing.T) {
 	if v := a.syncDownloadSeq(); v != 0 {
 		t.Fatalf("default: expected 0, got %d", v)
 	}
-	a.setSetting("sync_dl_seq", "42")
+	if err := a.setSetting("sync_dl_seq", "42"); err != nil {
+		t.Fatal(err)
+	}
 	if v := a.syncDownloadSeq(); v != 42 {
 		t.Fatalf("expected 42, got %d", v)
 	}
-	a.setSetting("sync_dl_seq", "not-a-number")
+	if err := a.setSetting("sync_dl_seq", "not-a-number"); err != nil {
+		t.Fatal(err)
+	}
 	if v := a.syncDownloadSeq(); v != 0 {
 		t.Fatalf("invalid: expected 0, got %d", v)
 	}

@@ -208,8 +208,10 @@ func TestCustomProvidersCacheInvalidation(t *testing.T) {
 	a := newTestAPI(t)
 	reg := newRegistryWithCustom(a)
 
-	a.setSetting(customProvidersKey,
-		`[{"slug":"direct-write","name":"直写","baseUrl":"https://a.example.com","protocol":"openai"}]`)
+	if err := a.setSetting(customProvidersKey,
+		`[{"slug":"direct-write","name":"直写","baseUrl":"https://a.example.com","protocol":"openai"}]`); err != nil {
+		t.Fatal(err)
+	}
 	if route, _ := reg.Match("/api/proxy/direct-write/v1/chat"); route == nil {
 		t.Fatal("after setSetting: custom provider not visible (cache not invalidated)")
 	}

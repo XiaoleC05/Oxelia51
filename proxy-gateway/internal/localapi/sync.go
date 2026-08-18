@@ -50,15 +50,21 @@ type cloudSyncEvent struct {
 	TS                  string `json:"ts"`
 }
 
-func (a *API) syncDeviceID() string {
+// syncDeviceID 返回本机设备 ID（首次生成时随机 8 字节 hex 并持久化）。
+// crypto/rand 失败必须报错：静默继续会拿到全零 ID，多设备退化成同一「设备」互相覆盖。
+func (a *API) syncDeviceID() (string, error) {
 	id := a.getSetting("sync_device")
 	if id == "" {
 		b := make([]byte, 8)
-		_, _ = rand.Read(b)
+		if _, err := rand.Read(b); err != nil {
+			return "", fmt.Errorf("generate device id: %w", err)
+		}
 		id = "dev-" + hex.EncodeToString(b)
-		a.setSetting("sync_device", id)
+		if err := a.setSetting("sync_device", id); err != nil {
+			return "", err
+		}
 	}
-	return id
+	return id, nil
 }
 
 func (a *API) syncToken() string { return a.getSetting("sync_token") }
@@ -71,18 +77,20 @@ func (a *API) syncToken() string { return a.getSetting("sync_token") }
 
 // syncUploadTS 返回上传游标（空 = 全量上传）。
 // 迁移：sync_up_ts 为空且旧 sync_last 有值时，用 sync_last 初始化（RFC3339 → 本地时间）。
-func (a *API) syncUploadTS() string {
+func (a *API) syncUploadTS() (string, error) {
 	if v := a.getSetting("sync_up_ts"); v != "" {
-		return v
+		return v, nil
 	}
 	if s := a.getSetting("sync_last"); s != "" {
 		if t, err := time.Parse(time.RFC3339, s); err == nil {
 			v := t.Local().Format(localTimeLayout)
-			a.setSetting("sync_up_ts", v)
-			return v
+			if err := a.setSetting("sync_up_ts", v); err != nil {
+				return "", err
+			}
+			return v, nil
 		}
 	}
-	return ""
+	return "", nil
 }
 
 // syncDownloadSeq 返回下载游标（缺省 0 = 首次全量下载，event_id 去重保证幂等）。
@@ -93,9 +101,11 @@ func (a *API) syncDownloadSeq() int64 {
 
 // markSyncSuccess 每次成功同步后记录：sync_enabled 置位，
 // sync_last 写当前时间（RFC3339，仅「上次同步成功时间」展示，不再参与游标）。
-func (a *API) markSyncSuccess() {
-	a.setSetting("sync_enabled", "true")
-	a.setSetting("sync_last", time.Now().UTC().Format(time.RFC3339))
+func (a *API) markSyncSuccess() error {
+	if err := a.setSetting("sync_enabled", "true"); err != nil {
+		return err
+	}
+	return a.setSetting("sync_last", time.Now().UTC().Format(time.RFC3339))
 }
 
 // handleSync POST /api/sync：上传或下载，与云账户同步本地 token 事件。
@@ -120,7 +130,11 @@ func (a *API) handleSync(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "未登录同步账户"})
 		return
 	}
-	deviceID := a.syncDeviceID()
+	deviceID, err := a.syncDeviceID()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
 
 	switch req.Action {
 	case "upload":
@@ -129,7 +143,10 @@ func (a *API) handleSync(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 			return
 		}
-		a.markSyncSuccess()
+		if err := a.markSyncSuccess(); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "action": "upload", "uploaded": n, "conflicts": conflicts})
 	case "download":
 		n, conflicts, err := a.syncDownload(token, deviceID)
@@ -137,7 +154,10 @@ func (a *API) handleSync(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 			return
 		}
-		a.markSyncSuccess()
+		if err := a.markSyncSuccess(); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "action": "download", "downloaded": n, "conflicts": conflicts})
 	default:
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "未知 action"})
@@ -147,7 +167,10 @@ func (a *API) handleSync(w http.ResponseWriter, r *http.Request) {
 // syncUpload 把上传游标（sync_up_ts）之后的本地事件上行到云。
 // 返回云端实际插入条数与冲突数（云端按 event_id 去重，冲突正常恒 0，原样透传给 UI）。
 func (a *API) syncUpload(token, deviceID string) (int, int, error) {
-	cutoff := a.syncUploadTS()
+	cutoff, err := a.syncUploadTS()
+	if err != nil {
+		return 0, 0, err
+	}
 
 	// 读取游标之后的事件（本地时间戳为字符串格式）
 	type localRow struct {
@@ -220,7 +243,9 @@ func (a *API) syncUpload(token, deviceID string) (int, int, error) {
 	}
 	// 成功后推进上传游标到本批最大事件 ts（localTimeLayout，与 token_events.timestamp 同格式）
 	if !maxT.IsZero() {
-		a.setSetting("sync_up_ts", maxT.Format(localTimeLayout))
+		if err := a.setSetting("sync_up_ts", maxT.Format(localTimeLayout)); err != nil {
+			return 0, 0, err
+		}
 	}
 	return up.Inserted, up.Conflicts, nil
 }
@@ -269,7 +294,9 @@ func (a *API) syncDownload(token, deviceID string) (int, int, error) {
 			break
 		}
 	}
-	a.setSetting("sync_dl_seq", strconv.FormatInt(after, 10))
+	if err := a.setSetting("sync_dl_seq", strconv.FormatInt(after, 10)); err != nil {
+		return total, conflicts, err
+	}
 	return total, conflicts, nil
 }
 

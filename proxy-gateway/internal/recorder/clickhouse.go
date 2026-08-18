@@ -2,8 +2,6 @@ package recorder
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"time"
@@ -101,15 +99,7 @@ func (w *ClickHouseWriter) WriteBatch(records []adapter.TokenRecord) error {
 		if eventID == "" {
 			eventID = uuid.NewString()
 		}
-		apiKeyHash := r.APIKeyHash
-		if apiKeyHash == "" {
-			h := sha256.Sum256([]byte(r.ProjectID))
-			apiKeyHash = hex.EncodeToString(h[:])
-		}
-		// API key hash 需要 64 字节的 hex，截断为 FixedString(64)
-		if len(apiKeyHash) > 64 {
-			apiKeyHash = apiKeyHash[:64]
-		}
+		apiKeyHash := resolveAPIKeyHash(r)
 
 		err := batch.Append(
 			eventID,

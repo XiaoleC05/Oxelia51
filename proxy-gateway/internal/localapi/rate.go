@@ -2,6 +2,7 @@ package localapi
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 )
@@ -40,7 +41,10 @@ func (a *API) loadRateFromSettings() {
 
 func (a *API) persistRate(r usdCnyRate) {
 	b, _ := json.Marshal(r)
-	a.setSetting("usd_cny_rate", string(b))
+	// 后台任务无 HTTP 层可报错，持久化失败记日志（内存中汇率仍生效，下次拉取会重试写入）
+	if err := a.setSetting("usd_cny_rate", string(b)); err != nil {
+		log.Printf("settings usd_cny_rate persist failed: %v", err)
+	}
 }
 
 // fetchRate 从权威源拉取当日 USD→CNY 汇率。
