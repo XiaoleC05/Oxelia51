@@ -28,10 +28,13 @@ public:
     // 聚合 lastProcessed 之后的新事件
     // lastProcessed: ISO8601 时间戳，空字符串则默认取最近 intervalMinutes 分钟
     // outMaxTimestamp: 接收本批次最大 timestamp（无事件时为空）
+    // chunkHours: 单次聚合窗口上限（小时），>0 时 SQL 附加 timestamp <= start+chunkHours
+    //             上界，由调用方按块循环推进游标；0 = 无上界（兼容旧行为）
     std::vector<DailyEvent> aggregate(ClickHouseClient& ch,
                                      const std::string& lastProcessed,
                                      int intervalMinutes,
-                                     std::string& outMaxTimestamp);
+                                     std::string& outMaxTimestamp,
+                                     int chunkHours = 0);
 };
 
 } // namespace oxelia51

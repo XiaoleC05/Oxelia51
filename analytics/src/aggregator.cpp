@@ -62,7 +62,8 @@ static std::vector<std::string> splitTabs(const std::string& line) {
 std::vector<DailyEvent> Aggregator::aggregate(ClickHouseClient& ch,
                                                const std::string& lastProcessed,
                                                int intervalMinutes,
-                                               std::string& outMaxTimestamp) {
+                                               std::string& outMaxTimestamp,
+                                               int chunkHours) {
     outMaxTimestamp.clear();
 
     // 确定查询起点
@@ -73,11 +74,19 @@ std::vector<DailyEvent> Aggregator::aggregate(ClickHouseClient& ch,
         startTs = "now() - INTERVAL " + std::to_string(intervalMinutes) + " MINUTE";
     }
 
+    // 分块上界：积压过长时把单次聚合限制在 chunkHours 窗口内，
+    // 由调用方按块循环推进游标，避免单次查询内存随积压线性增长
+    std::string endCond;
+    if (chunkHours > 0) {
+        endCond = "AND timestamp <= (" + startTs + " + INTERVAL " +
+                  std::to_string(chunkHours) + " HOUR) ";
+    }
+
     // 1. 查询本批次最大 timestamp（用于更新 engine_state）
     std::string maxSql =
         "SELECT toString(max(timestamp)) "
         "FROM oxelia51.token_events "
-        "WHERE timestamp > " + startTs + " "
+        "WHERE timestamp > " + startTs + " " + endCond +
         "FORMAT TabSeparated";
     std::string maxResp = ch.query(maxSql);
     auto maxLines = splitLines(maxResp);
@@ -94,7 +103,7 @@ std::vector<DailyEvent> Aggregator::aggregate(ClickHouseClient& ch,
         "       sum(duration_ms) AS dur, "
         "       count() AS requests "
         "FROM oxelia51.token_events "
-        "WHERE timestamp > " + startTs + " "
+        "WHERE timestamp > " + startTs + " " + endCond +
         "GROUP BY project_id, model, date "
         "FORMAT TabSeparatedWithNames";
 

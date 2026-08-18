@@ -119,17 +119,47 @@ int main(int argc, char* argv[]) {
     }
     log("PostgreSQL: connected");
 
-    // ---- Step 1: 聚合（从 ClickHouse 拉取新事件） ----
+    // ---- Step 1+3: 聚合（24h 分块追平积压，逐块 UPSERT + 推进游标） ----
+    // 单块失败只损失该块进度（游标停在上一成功块），下个 timer 周期自动重试，
+    // 避免「积压越长单次查询越重 → 失败 → 游标不动 → 积压滚雪球」
     std::vector<oxelia51::DailyEvent> events;
     std::string maxTimestamp;
+    bool upsertOk = true;
+    const int kChunkHours = 24;
+    const int kMaxChunksPerRun = 40;  // 单次运行最多追 40 天积压，剩余留给下个周期
     try {
         std::string lastProcessed = pg.getEngineState("last_processed");
         if (!lastProcessed.empty()) {
             log("Last processed: " + lastProcessed);
         }
         oxelia51::Aggregator aggregator;
-        events = aggregator.aggregate(ch, lastProcessed, intervalMinutes, maxTimestamp);
-        log("Step 1: Aggregated " + std::to_string(events.size()) + " event group(s)");
+        std::string cursor = lastProcessed;
+        for (int i = 0; i < kMaxChunksPerRun; ++i) {
+            std::string chunkMax;
+            auto chunk = aggregator.aggregate(ch, cursor, intervalMinutes, chunkMax, kChunkHours);
+            if (chunk.empty()) break;
+            if (chunkMax > maxTimestamp) maxTimestamp = chunkMax;
+            log("Step 1: chunk #" + std::to_string(i + 1) + " aggregated " +
+                std::to_string(chunk.size()) + " event group(s) up to " + chunkMax);
+            events.insert(events.end(), chunk.begin(), chunk.end());
+            if (!dryRun) {
+                try {
+                    pg.upsertDailyStats(chunk);
+                    pg.setEngineState("last_processed", chunkMax);
+                    cursor = chunkMax;
+                    log("Step 3: chunk #" + std::to_string(i + 1) +
+                        " upserted, cursor advanced to " + chunkMax);
+                } catch (const std::exception& e) {
+                    log("Step 3 FAILED (upsert): " + std::string(e.what()) +
+                        " — cursor NOT advanced, retry next run");
+                    upsertOk = false;
+                    break;
+                }
+            } else {
+                cursor = chunkMax;  // dry-run：内存推进，不写库
+            }
+        }
+        log("Step 1: Aggregated " + std::to_string(events.size()) + " event group(s) in total");
     } catch (const std::exception& e) {
         log("Step 1 FAILED (aggregate): " + std::string(e.what()));
         return 1;  // 无事件数据，无法继续
@@ -149,19 +179,7 @@ int main(int argc, char* argv[]) {
         // 继续执行，cost_usd 保持 0
     }
 
-    // ---- Step 3: 写入日统计（UPSERT） ----
-    bool upsertOk = true;
-    if (!dryRun && !events.empty()) {
-        try {
-            pg.upsertDailyStats(events);
-            log("Step 3: UPSERT " + std::to_string(events.size()) + " row(s) into daily_stats");
-        } catch (const std::exception& e) {
-            log("Step 3 FAILED (upsert): " + std::string(e.what()));
-            upsertOk = false;
-        }
-    } else if (dryRun) {
-        log("Step 3: Skipped (dry-run)");
-    }
+    // （Step 3 已并入 Step 1 分块循环：逐块 UPSERT + 游标推进）
 
     // ---- Step 4: 异常检测（按 project 读取配置） ----
     int anomalyCount = 0;
@@ -236,18 +254,13 @@ int main(int argc, char* argv[]) {
         log("Step 5 FAILED (budget): " + std::string(e.what()));
     }
 
-    // ---- Step 6: 更新引擎状态（last_processed） ----
-    if (!dryRun && upsertOk && !maxTimestamp.empty()) {
-        try {
-            pg.setEngineState("last_processed", maxTimestamp);
-            log("Step 6: last_processed updated to " + maxTimestamp);
-        } catch (const std::exception& e) {
-            log("Step 6 FAILED (engine_state): " + std::string(e.what()));
-        }
+    // ---- Step 6: 游标状态汇总（逐块已推进，此处仅汇总日志） ----
+    if (!dryRun && !maxTimestamp.empty() && upsertOk) {
+        log("Step 6: last_processed = " + maxTimestamp + " (advanced per chunk)");
     } else if (dryRun) {
         log("Step 6: Skipped (dry-run)");
     } else if (!upsertOk) {
-        log("Step 6: Skipped (UPSERT failed, not advancing last_processed)");
+        log("Step 6: some chunk failed, last_processed advanced only up to last successful chunk");
     } else {
         log("Step 6: No new events, last_processed unchanged");
     }
