@@ -1,5 +1,9 @@
-// 应用版本与更新检查。与 src-tauri/tauri.conf.json 的 version 保持一致。
-export const APP_VERSION = "0.1.9";
+// 应用版本与更新检查。版本号在以下四处保持同步，发布时逐一核对：
+// 1. desktop/src-tauri/Cargo.toml      —— [package] version
+// 2. desktop/src-tauri/tauri.conf.json —— 顶层 version
+// 3. desktop/ui/package.json           —— version
+// 4. desktop/ui/src/version.ts         —— 本文件 APP_VERSION
+export const APP_VERSION = "0.1.10";
 
 export type UpdateInfo = {
   available: boolean;

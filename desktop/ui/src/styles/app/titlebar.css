@@ -1,0 +1,225 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* 顶栏：品牌 + 标签导航 + 状态/主题（§1.1：56px，品牌/导航间距 24px） */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 56px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--ox-border);
+  background-color: var(--ox-bg);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--ox-accent) 4%, transparent),
+    transparent 60%
+  );
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ox-accent) 12%, transparent);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.brand-glyph {
+  display: block;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+/* 官方字标（wordart SVG 转曲，Manrope 300 小写 oxelia51）——字缩小 */
+.brand-wordmark {
+  display: block;
+  height: 15px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+/* macOS Overlay 标题栏：左侧交通灯占位，品牌区右移避让 */
+.app[data-platform="mac"] .topbar {
+  padding-left: 78px;
+}
+
+/* 标签导航（§1.2：激活态 = accent 文字 + 底部 2px 指示条） */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  position: relative;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--ox-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.tab:hover {
+  color: var(--ox-text-h);
+  background-color: var(--ox-bg-alt);
+}
+
+.tab.active {
+  color: var(--ox-accent);
+  font-weight: 600;
+  background: transparent;
+}
+
+.tab.active::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ox-accent);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ox-text-muted);
+}
+
+.status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status.ok .dot {
+  background-color: var(--ox-ok);
+  box-shadow: 0 0 6px var(--ox-ok);
+}
+
+.status.down .dot {
+  background-color: var(--ox-danger);
+  box-shadow: 0 0 6px var(--ox-danger);
+}
+
+/* 离线状态可点击排查 → 跳设置页代理小节 */
+.status.clickable {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 8px;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.status.clickable:hover {
+  color: var(--ox-text-h);
+  background: var(--ox-bg-alt);
+}
+
+.theme-toggle {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ox-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ox-text);
+  cursor: pointer;
+  transition: color var(--ox-speed);
+}
+
+.theme-toggle:hover {
+  color: var(--ox-accent);
+}
+
+/* 悬浮统计卡片开关（顶栏） */
+.widget-toggle {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ox-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ox-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--ox-speed), border-color var(--ox-speed);
+}
+
+.widget-toggle:hover {
+  color: var(--ox-accent);
+  border-color: var(--ox-accent-border);
+}
+
+.widget-toggle.active {
+  color: var(--ox-accent);
+  border-color: var(--ox-accent);
+  background: color-mix(in srgb, var(--ox-accent) 10%, transparent);
+}
+
+/* 自绘窗口控制（无边框标题栏，Windows/Linux） */
+.topbar {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.win-controls {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  margin-right: -20px; /* 抵消顶栏右内边距，贴齐窗口右缘 */
+}
+
+.win-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ox-text-muted);
+  width: 46px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: background-color 100ms ease, color 100ms ease;
+}
+
+.win-btn:hover {
+  background: var(--ox-bg-alt);
+  color: var(--ox-text-h);
+}
+
+.win-btn.win-close:hover {
+  background: #e81123;
+  color: #fff;
+}
+

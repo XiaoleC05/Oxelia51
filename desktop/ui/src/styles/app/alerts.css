@@ -1,0 +1,62 @@
+/* 预算 */
+.budget-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.budget-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.budget-row.over .budget-model {
+  color: var(--ox-danger);
+}
+
+.budget-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.budget-row {
+  flex-wrap: wrap;
+}
+
+.budget-model {
+  font-weight: 600;
+  color: var(--ox-text-h);
+  min-width: 100px;
+}
+
+/* 告警维度徽章：全局 / 供应商 / Agent / 模型 */
+.budget-dim {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--ox-border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ox-text-muted);
+}
+
+.budget-val {
+  color: var(--ox-text-muted);
+  font-size: 13px;
+  margin-left: auto;
+}
+
+.budget-tag {
+  color: var(--ox-danger);
+  margin-left: 8px;
+  font-size: 13px; /* §3.4：最小字号锁 12px */
+}
+
+.rank-fill.over {
+  background: linear-gradient(90deg, var(--ox-danger), color-mix(in srgb, var(--ox-danger) 60%, transparent));
+}
+

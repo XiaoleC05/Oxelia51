@@ -1,0 +1,26 @@
+/* 定价表 */
+.pricing-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.pricing-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pricing-row .input {
+  min-width: 0;
+  width: 90px;
+}
+
+.pricing-row .input.grow {
+  flex: 1;
+  min-width: 120px;
+}
+

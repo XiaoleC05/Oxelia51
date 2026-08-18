@@ -1,0 +1,265 @@
+/* 首页快速接入（供应商预设目录，可折叠） */
+.quick-connect {
+  margin-top: 16px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.quick-connect-head {
+  appearance: none;
+  border: none;
+  background: transparent;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  color: var(--ox-text-h);
+}
+
+.quick-connect-head:hover {
+  color: var(--ox-accent);
+}
+
+.quick-connect-title {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.quick-connect-toggle {
+  font-size: 13px;
+  color: var(--ox-text-muted);
+}
+
+.quick-connect-body {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--ox-border);
+}
+
+/* 供应商搜索框 */
+.provider-search {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+/* 设置页供应商路径列表 */
+.proxy-group {
+  margin-bottom: 10px;
+}
+
+/* 分类标题：左侧品牌红竖条 + 稍大加粗，与下方供应商卡片明显区分 */
+.proxy-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ox-text-h);
+}
+
+.proxy-group-title::before {
+  content: "";
+  flex-shrink: 0;
+  width: 3px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--ox-accent);
+}
+
+/* CC Switch 风格预设供应商网格 */
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.provider-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--ox-border);
+  border-radius: 12px;
+  background: var(--ox-bg-alt);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--ox-speed), transform var(--ox-speed), box-shadow var(--ox-speed);
+}
+
+.provider-cell:hover,
+.provider-cell:focus-visible {
+  border-color: var(--ox-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+  outline: none;
+}
+
+.provider-cell-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ox-text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.provider-cell-slug {
+  font-size: 12px;
+  color: var(--ox-text-muted);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+
+/* 卡片底部操作：复制地址（主操作，明显优先）+ 官网（次操作） */
+.provider-cell-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.provider-cell-copy {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid var(--ox-accent);
+  background: var(--ox-accent);
+  color: #fff;
+  border-radius: 8px;
+  padding: 2px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--ox-speed), color var(--ox-speed), border-color var(--ox-speed);
+}
+
+.provider-cell-copy:hover {
+  background: var(--ox-accent-hover);
+  border-color: var(--ox-accent-hover);
+}
+
+/* Anthropic 协议变体按钮：次级描边样式，与主「复制地址」区分 */
+.provider-cell-copy.alt {
+  background: transparent;
+  color: var(--ox-accent);
+  border-color: var(--ox-accent-border);
+}
+
+.provider-cell-copy.alt:hover {
+  background: color-mix(in srgb, var(--ox-accent) 6%, transparent);
+  color: var(--ox-accent);
+  border-color: var(--ox-accent-border);
+}
+
+.provider-cell-site {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid var(--ox-border);
+  background: var(--ox-bg);
+  color: var(--ox-text-muted);
+  border-radius: 8px;
+  padding: 2px 7px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--ox-speed), border-color var(--ox-speed), background-color var(--ox-speed);
+}
+
+.provider-cell-site:hover {
+  color: var(--ox-accent);
+  border-color: var(--ox-accent-border);
+  background: color-mix(in srgb, var(--ox-accent) 6%, transparent);
+}
+
+/* 交叉核验查无路由的预设项：置灰 + 禁用复制（杜绝静默 404） */
+.provider-cell.off {
+  opacity: 0.55;
+}
+
+/* 自定义供应商卡片：无官网可跳，不做链接 hover 态 */
+.provider-cell.static {
+  cursor: default;
+}
+
+.provider-cell.static:hover,
+.provider-cell.static:focus-visible {
+  border-color: var(--ox-border);
+  transform: none;
+  box-shadow: none;
+}
+
+.provider-cell-copy:disabled,
+.provider-cell-copy:disabled:hover {
+  border-color: var(--ox-border);
+  background: var(--ox-bg);
+  color: var(--ox-text-muted);
+  cursor: not-allowed;
+}
+
+.proxy-provider-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13.5px;
+  color: var(--ox-text);
+}
+
+.proxy-provider-list code {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  color: var(--ox-accent);
+}
+
+/* 首次接入空态：供应商选择 + 复制命令 */
+.setup-card {
+  width: 100%;
+  max-width: 460px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--ox-border);
+  border-radius: 12px;
+  background: var(--ox-bg-alt);
+}
+
+.setup-card .form-row {
+  margin-bottom: 10px;
+}
+
+.setup-card .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.setup-cmd-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.setup-cmd-row .setup-cmd {
+  flex: 1;
+  margin: 0;
+}
+
+.setup-cmd {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ox-border);
+  border-radius: 8px;
+  background: var(--ox-bg);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--ox-text);
+}
+

@@ -71,7 +71,7 @@ fn spawn_sidecar(app: &AppHandle) -> Option<Child> {
     // 使用 500ms 连接超时避免 OS 默认 TCP SYN 超时（Win ~20-60s / Linux ~127s）
     // 导致启动时主线程长时间阻塞。
     if std::net::TcpStream::connect_timeout(
-        &"127.0.0.1:17800".parse().ok()?,
+        &proxyctl::PROXY_ADDR.parse().ok()?,
         Duration::from_millis(500),
     )
     .is_ok()

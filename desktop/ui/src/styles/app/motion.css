@@ -1,0 +1,106 @@
+/* ===== 动态交互：过渡 / 入场动画 ===== */
+.card {
+  transition: border-color var(--ox-speed), box-shadow var(--ox-speed), transform var(--ox-speed);
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+}
+
+.list-row {
+  transition: background-color var(--ox-speed), transform var(--ox-speed), border-color var(--ox-speed);
+}
+
+.list-row:hover {
+  background: color-mix(in srgb, var(--ox-accent) 6%, transparent);
+}
+
+.list-row.clickable:hover {
+  transform: translateX(2px);
+}
+
+/* 数值变化过渡 */
+.stat-value,
+.rank-val,
+.budget-val {
+  transition: color var(--ox-speed);
+}
+
+/* 快速接入展开动画 */
+.quick-connect-body {
+  animation: quickIn 0.22s ease-out;
+}
+
+@keyframes quickIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 供应商网格卡片入场（错峰） */
+.provider-cell {
+  transition: border-color var(--ox-speed), transform var(--ox-speed), box-shadow var(--ox-speed);
+}
+
+.provider-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+}
+
+.provider-cell:active {
+  transform: translateY(0);
+}
+
+/* 列表项入场（错峰淡入） */
+.card-list .list-row {
+  animation: rowIn 0.24s ease-out both;
+}
+
+.card-list .list-row:nth-child(2) { animation-delay: 0.03s; }
+.card-list .list-row:nth-child(3) { animation-delay: 0.06s; }
+.card-list .list-row:nth-child(4) { animation-delay: 0.09s; }
+.card-list .list-row:nth-child(5) { animation-delay: 0.12s; }
+.card-list .list-row:nth-child(6) { animation-delay: 0.15s; }
+
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-connect-body,
+  .card-list .list-row,
+  .provider-cell {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* ===== 交互过渡延迟：统一更舒缓的节奏 ===== */
+.tab,
+.theme-toggle,
+.btn,
+.range-chip,
+.provider-cell,
+.list-row.clickable,
+.quick-connect-head,
+.link-btn {
+  transition-duration: 0.32s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 状态圆点呼吸：代理在线/离线更直观 */
+.status.ok .dot {
+  animation: dotPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ox-ok) 40%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--ox-ok) 0%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status.ok .dot {
+    animation: none;
+  }
+}
+

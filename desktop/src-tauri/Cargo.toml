@@ -1,6 +1,6 @@
 [package]
 name = "oxelia51-desktop"
-version = "0.1.0"
+version = "0.1.10"
 description = "Oxelia51 本地优先的个人 Token 记账本"
 edition = "2021"
 license = "MIT"

@@ -1,0 +1,112 @@
+/* ===== 模型价格表 ===== */
+.price-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.price-head .card-title {
+  margin: 0;
+}
+
+.price-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.price-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ox-border);
+  border-radius: var(--ox-radius);
+  overflow: hidden;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.price-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 0.7fr 0.7fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 12px;
+  font-size: 13.5px;
+  color: var(--ox-text);
+  border-top: 1px solid var(--ox-border-light);
+}
+
+.price-row:first-child {
+  border-top: none;
+}
+
+/* 可编辑的普通行：点击进入编辑 */
+.price-row-clickable {
+  cursor: pointer;
+}
+
+.price-row-clickable:hover {
+  background: var(--ox-bg-alt);
+}
+
+/* 编辑态行内的价格输入框 */
+.price-row-edit .num input {
+  width: 100%;
+  padding: 3px 6px;
+  font-size: 13px;
+}
+
+/* 第 5 列：已定价提示 + 编辑操作按钮 */
+.price-edit-hint {
+  font-size: 12px;
+  color: var(--ox-accent);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.price-edit-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.price-head-row {
+  font-weight: 600;
+  color: var(--ox-text-muted);
+  background: var(--ox-bg-alt);
+  position: sticky;
+  top: 0;
+}
+
+.price-model {
+  font-weight: 600;
+  color: var(--ox-text-h);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.price-provider {
+  color: var(--ox-text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.price-row .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ox-text);
+}
+
+.price-note {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--ox-text-muted);
+}

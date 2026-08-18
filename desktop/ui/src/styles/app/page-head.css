@@ -1,0 +1,65 @@
+/* 页头 + 日期范围切换 */
+.tab-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.tab-head .page-title,
+.tab-head .page-sub {
+  margin-bottom: 2px;
+}
+
+.date-range-picker {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--ox-border);
+  border-radius: 12px;
+  background: var(--ox-bg-alt);
+}
+
+/* 总览显示模式：与日期范围选择器同款分组容器（边框 + 圆角 + 底色胶囊） */
+.rank-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--ox-border);
+  border-radius: 12px;
+  background: var(--ox-bg-alt);
+}
+
+.range-chip {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ox-text-muted);
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color var(--ox-speed), color var(--ox-speed);
+}
+
+.range-chip:hover {
+  color: var(--ox-text-h);
+}
+
+.range-chip.active {
+  background: var(--ox-accent);
+  color: #fff;
+}
+
+.range-chip.dir {
+  font-variant-numeric: tabular-nums;
+  color: var(--ox-text-muted);
+}
+
+.range-chip.dir:hover {
+  color: var(--ox-accent);
+}
+

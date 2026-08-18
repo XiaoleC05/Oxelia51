@@ -1,0 +1,220 @@
+/* 表单 */
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.input {
+  appearance: none;
+  border: 1px solid var(--ox-border);
+  border-radius: 10px;
+  background: var(--ox-bg);
+  color: var(--ox-text);
+  padding: 6px 10px;
+  font-size: 14px;
+  min-width: 120px;
+  /* 原生 input/select 不继承 body 字体（默认 Arial），这里显式继承应用字体栈 */
+  font-family: inherit;
+}
+
+.input.grow {
+  flex: 1;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--ox-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ox-accent) 15%, transparent);
+}
+
+/* 下拉选择框：自定义箭头 + 更圆润 */
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  padding: 6px 34px 6px 14px;
+  /* 30px 高的控件用 14px 圆角 = 接近胶囊，收掉棱角；边框保持最浅号，视觉柔和 */
+  border-radius: 14px;
+  /* 边框用更浅的 border-light，避免与卡片边框同色形成的「盒中盒」生硬观感；
+     悬停/聚焦再过渡到品牌色 */
+  border-color: var(--ox-border-light);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236f6459' d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 12px;
+  transition: border-color var(--ox-speed), box-shadow var(--ox-speed);
+}
+
+[data-theme="cosmos"] select.input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238f8f8f' d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+}
+
+select.input:hover {
+  border-color: var(--ox-accent-border);
+}
+
+select.input:focus {
+  outline: none;
+  border-color: var(--ox-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ox-accent) 15%, transparent);
+}
+
+select.input option {
+  background: var(--ox-bg);
+  color: var(--ox-text);
+  font-family: inherit;
+}
+
+/* ===== 自定义下拉框（Dropdown 组件）：触发器 + 自绘圆角浮层 ===== */
+.dropdown {
+  position: relative;
+  min-width: 120px;
+  font-family: inherit;
+}
+
+.dropdown.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.dropdown-trigger {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--ox-border-light);
+  border-radius: 14px;
+  background: var(--ox-bg);
+  color: var(--ox-text);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--ox-speed), box-shadow var(--ox-speed);
+}
+
+/* 主题化 chevron：用 currentColor 同源的 muted 色，浅深色都协调 */
+.dropdown-trigger::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid var(--ox-text-muted);
+  border-bottom: 1.5px solid var(--ox-text-muted);
+  transform: rotate(45deg) translateY(-2px);
+  flex-shrink: 0;
+  transition: transform var(--ox-speed);
+}
+
+.dropdown.open .dropdown-trigger::after {
+  transform: rotate(225deg) translateY(2px);
+}
+
+.dropdown-trigger:hover {
+  border-color: var(--ox-accent-border);
+}
+
+.dropdown-trigger:focus-visible {
+  outline: none;
+  border-color: var(--ox-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ox-accent) 15%, transparent);
+}
+
+.dropdown-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 占位态（未选中）颜色；类名必须独立，不能叫 placeholder——会撞上整页占位的
+   .placeholder（带 min-height:50vh），把下拉撑到半屏高。 */
+.dropdown-value-placeholder {
+  color: var(--ox-text-muted);
+}
+
+/* 展开浮层：圆角 + 边框 + 阴影，不再是被系统渲染的直角矩形 */
+.dropdown-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--ox-border);
+  border-radius: 14px;
+  background: var(--ox-bg-alt);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  padding: 6px;
+  font-family: inherit;
+}
+
+.dropdown-group-label {
+  padding: 5px 10px 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ox-text-muted);
+}
+
+.dropdown-item {
+  appearance: none;
+  width: 100%;
+  display: block;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--ox-text);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color var(--ox-speed), color var(--ox-speed);
+}
+
+.dropdown-item:hover {
+  background: color-mix(in srgb, var(--ox-accent) 10%, transparent);
+}
+
+.dropdown-item.active {
+  color: var(--ox-accent);
+  font-weight: 600;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--ox-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ox-text);
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color var(--ox-speed), color var(--ox-speed);
+}
+
+.btn:hover {
+  border-color: var(--ox-accent);
+  color: var(--ox-accent);
+}
+
+.btn.primary {
+  background: var(--ox-accent);
+  border-color: var(--ox-accent);
+  color: #fff;
+}
+
+.btn.primary:hover {
+  background: var(--ox-accent-hover);
+  color: #fff;
+}
+

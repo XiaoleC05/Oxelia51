@@ -1,0 +1,17 @@
+/* 更新横幅 */
+.update-banner {
+  display: block;
+  border: 1px solid var(--ox-accent-border);
+  background: color-mix(in srgb, var(--ox-accent) 10%, transparent);
+  color: var(--ox-text-h);
+  border-radius: var(--ox-radius);
+  padding: 10px 14px;
+  font-size: 14px;
+  text-decoration: none;
+  transition: border-color var(--ox-speed);
+}
+
+.update-banner:hover {
+  border-color: var(--ox-accent);
+}
+

@@ -1,7 +1,7 @@
 {
   "name": "oxelia51-desktop-ui",
   "private": true,
-  "version": "0.1.9",
+  "version": "0.1.10",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -21,8 +21,8 @@
     "@tauri-apps/cli": "^2.11.4",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.3.0",
+    "@vitejs/plugin-react": "^5.0.0",
     "typescript": "^5.8.0",
-    "vite": "^6.3.0"
+    "vite": "^7.0.0"
   }
 }

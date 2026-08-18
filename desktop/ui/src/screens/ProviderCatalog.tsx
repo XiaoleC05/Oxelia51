@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { PROVIDER_GROUPS, proxyUrl, anthropicVariantUrl, type ProviderDef } from "../clipboard";
-import { copyText } from "../clipboard";
+import { PROVIDER_GROUPS, proxyUrl, anthropicVariantUrl, copyText, type ProviderDef } from "../clipboard";
 import type { CustomProvider } from "../api";
 import { openExternal } from "../openExternal";
 

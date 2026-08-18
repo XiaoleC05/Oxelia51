@@ -16,6 +16,9 @@ use serde::Serialize;
 /// 本地代理监听端口（与 lib.rs spawn_sidecar 的 PROXY_PORT 一致）。
 pub const PROXY_PORT: u16 = 17800;
 
+/// 回环监听地址字符串（"127.0.0.1:PORT"，供 lib.rs 端口探测复用）。
+pub const PROXY_ADDR: &str = "127.0.0.1:17800";
+
 /// 回环监听地址（127.0.0.1:PORT）。
 fn local_addr(port: u16) -> SocketAddr {
     format!("127.0.0.1:{port}").parse().expect("valid local addr")
