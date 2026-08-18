@@ -115,6 +115,10 @@ func New(cfg *config.Config) *gin.Engine {
 		protected.POST("/sync/upload", syncH.Upload)
 		protected.GET("/sync/download", syncH.Download)
 
+		// 工具代理路由：注册在裸 r 上、匿名可达，是设计如此——
+		// 未登录请求由网关内部以 anonymous 身份转发、工具自行决定权限
+		// （见 gateway/proxy.go 的 identity 注入），不转发客户端 Authorization。
+		// 写在 protected 块内仅为逻辑分组，实际不经 authMW 中间件，勿误读为已鉴权。
 		gw := gateway.NewHandler(pool, cfg)
 		r.Any("/api/tools/:slug/proxy/*path", gw.Proxy)
 	}
