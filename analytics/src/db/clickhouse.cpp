@@ -111,11 +111,6 @@ std::string ClickHouseClient::query(const std::string& sql) {
     return response;
 }
 
-void ClickHouseClient::execute(const std::string& sql) {
-    // execute 忽略返回值，但仍需检查 HTTP 状态码
-    (void)query(sql);
-}
-
 uint64_t ClickHouseClient::getYesterdayUsage(const std::string& projectId,
                                              const std::string& model,
                                              const std::string& date) {

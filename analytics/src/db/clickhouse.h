@@ -27,9 +27,6 @@ public:
     // 失败时抛出 std::runtime_error
     std::string query(const std::string& sql);
 
-    // 执行 DDL/DML，忽略响应体
-    void execute(const std::string& sql);
-
     // 获取昨日某 project+model 的 total_tokens 总量（用于异常检测基线）
     // date 格式 "YYYY-MM-DD"；返回 0 表示无数据
     uint64_t getYesterdayUsage(const std::string& projectId,

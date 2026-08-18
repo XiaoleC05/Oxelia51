@@ -8,28 +8,17 @@
 #include "db/postgres.h"
 #include "detector.h"
 #include "pricing.h"
+#include "util/log.h"
 
-#include <chrono>
 #include <cstdio>
 #include <cstdlib>
-#include <ctime>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-namespace {
+using oxelia51::logMsg;
 
-// 带时间戳的日志输出（写入 stderr，供 systemd journal 捕获）
-void log(const std::string& msg) {
-    auto now = std::chrono::system_clock::now();
-    auto t = std::chrono::system_clock::to_time_t(now);
-    std::tm tm{};
-    gmtime_r(&t, &tm);
-    char ts[32];
-    std::strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", &tm);
-    std::fprintf(stderr, "[%s] %s\n", ts, msg.c_str());
-    std::fflush(stderr);
-}
+namespace {
 
 // getenv 带回退：primary 优先，否则用 fallback
 std::string envOr(const char* primary, const char* fallback) {
@@ -66,19 +55,19 @@ int main(int argc, char* argv[]) {
             try {
                 intervalMinutes = std::stoi(argv[++i]);
             } catch (...) {
-                log("Error: invalid --interval value");
+                logMsg("Error: invalid --interval value");
                 return 1;
             }
         } else if (arg == "--help" || arg == "-h") {
             std::fprintf(stderr, "Usage: token-analytics [--dry-run] [--interval N]\n");
             return 0;
         } else {
-            log("Error: unknown argument: " + arg);
+            logMsg("Error: unknown argument: " + arg);
             return 1;
         }
     }
 
-    log(std::string("Token Analytics Engine starting") +
+    logMsg(std::string("Token Analytics Engine starting") +
         (dryRun ? " (DRY-RUN)" : "") +
         " interval=" + std::to_string(intervalMinutes) + "min");
 
@@ -106,18 +95,18 @@ int main(int argc, char* argv[]) {
     oxelia51::ClickHouseClient ch(chAddr, chUser, chPass);
     try {
         ch.query("SELECT 1 FORMAT TabSeparated");
-        log("ClickHouse: connected (" + chAddr + ")");
+        logMsg("ClickHouse: connected (" + chAddr + ")");
     } catch (const std::exception& e) {
-        log("ClickHouse connection failed: " + std::string(e.what()));
+        logMsg("ClickHouse connection failed: " + std::string(e.what()));
         return 1;
     }
 
     oxelia51::PostgresClient pg(pgConnstr);
     if (!pg.ok()) {
-        log("PostgreSQL connection failed: " + pg.lastError());
+        logMsg("PostgreSQL connection failed: " + pg.lastError());
         return 1;
     }
-    log("PostgreSQL: connected");
+    logMsg("PostgreSQL: connected");
 
     // ---- Step 1+3: 聚合（24h 分块追平积压，逐块 UPSERT + 推进游标） ----
     // 单块失败只损失该块进度（游标停在上一成功块），下个 timer 周期自动重试，
@@ -130,7 +119,7 @@ int main(int argc, char* argv[]) {
     try {
         std::string lastProcessed = pg.getEngineState("last_processed");
         if (!lastProcessed.empty()) {
-            log("Last processed: " + lastProcessed);
+            logMsg("Last processed: " + lastProcessed);
         }
         oxelia51::Aggregator aggregator;
         std::string cursor = lastProcessed;
@@ -140,11 +129,11 @@ int main(int argc, char* argv[]) {
             if (chunk.empty()) break;
             if (chunkMax <= cursor && !cursor.empty()) {
                 // 护栏：游标未前进（理论上不可能，防解析精度类回归导致死循环重复计数）
-                log("Step 1 FAILED: chunk cursor did not advance beyond " + cursor + ", aborting catch-up");
+                logMsg("Step 1 FAILED: chunk cursor did not advance beyond " + cursor + ", aborting catch-up");
                 break;
             }
             if (chunkMax > maxTimestamp) maxTimestamp = chunkMax;
-            log("Step 1: chunk #" + std::to_string(i + 1) + " aggregated " +
+            logMsg("Step 1: chunk #" + std::to_string(i + 1) + " aggregated " +
                 std::to_string(chunk.size()) + " event group(s) up to " + chunkMax);
             events.insert(events.end(), chunk.begin(), chunk.end());
             if (!dryRun) {
@@ -152,10 +141,10 @@ int main(int argc, char* argv[]) {
                     pg.upsertDailyStats(chunk);
                     pg.setEngineState("last_processed", chunkMax);
                     cursor = chunkMax;
-                    log("Step 3: chunk #" + std::to_string(i + 1) +
+                    logMsg("Step 3: chunk #" + std::to_string(i + 1) +
                         " upserted, cursor advanced to " + chunkMax);
                 } catch (const std::exception& e) {
-                    log("Step 3 FAILED (upsert): " + std::string(e.what()) +
+                    logMsg("Step 3 FAILED (upsert): " + std::string(e.what()) +
                         " — cursor NOT advanced, retry next run");
                     upsertOk = false;
                     break;
@@ -164,9 +153,9 @@ int main(int argc, char* argv[]) {
                 cursor = chunkMax;  // dry-run：内存推进，不写库
             }
         }
-        log("Step 1: Aggregated " + std::to_string(events.size()) + " event group(s) in total");
+        logMsg("Step 1: Aggregated " + std::to_string(events.size()) + " event group(s) in total");
     } catch (const std::exception& e) {
-        log("Step 1 FAILED (aggregate): " + std::string(e.what()));
+        logMsg("Step 1 FAILED (aggregate): " + std::string(e.what()));
         return 1;  // 无事件数据，无法继续
     }
 
@@ -178,9 +167,9 @@ int main(int argc, char* argv[]) {
             e.cost_usd = pricing.calculate(e.model, e.prompt_tokens, e.completion_tokens);
             totalCost += e.cost_usd;
         }
-        log("Step 2: Cost calculated, total $" + fmtDouble(totalCost, 4));
+        logMsg("Step 2: Cost calculated, total $" + fmtDouble(totalCost, 4));
     } catch (const std::exception& e) {
-        log("Step 2 FAILED (pricing): " + std::string(e.what()) + " — costs set to 0");
+        logMsg("Step 2 FAILED (pricing): " + std::string(e.what()) + " — costs set to 0");
         // 继续执行，cost_usd 保持 0
     }
 
@@ -195,7 +184,7 @@ int main(int argc, char* argv[]) {
         for (auto& [pid, cfg] : anomalyConfigs) {
             configMap[pid] = cfg;
         }
-        log("Step 4: Loaded " + std::to_string(configMap.size()) + " anomaly config(s)");
+        logMsg("Step 4: Loaded " + std::to_string(configMap.size()) + " anomaly config(s)");
 
         oxelia51::Detector detector;
         const oxelia51::AnomalyConfig DEFAULT_CONFIG;  // enabled=true, spike_ratio=3.0
@@ -217,7 +206,7 @@ int main(int argc, char* argv[]) {
                                   "x vs yesterday (current=" + std::to_string(e.total_tokens) +
                                   ", baseline=" + std::to_string(baseline) +
                                   ", threshold=" + fmtDouble(cfg.spike_ratio, 1) + "x)";
-                log("Step 4: Anomaly [" + e.project_id + "] " + msg);
+                logMsg("Step 4: Anomaly [" + e.project_id + "] " + msg);
                 if (!dryRun) {
                     pg.insertAlert(e.project_id, oxelia51::AlertType::ANOMALY,
                                    "warning", msg);
@@ -225,9 +214,9 @@ int main(int argc, char* argv[]) {
                 ++anomalyCount;
             }
         }
-        log("Step 4: Anomaly detection done, " + std::to_string(anomalyCount) + " alert(s)");
+        logMsg("Step 4: Anomaly detection done, " + std::to_string(anomalyCount) + " alert(s)");
     } catch (const std::exception& e) {
-        log("Step 4 FAILED (anomaly): " + std::string(e.what()));
+        logMsg("Step 4 FAILED (anomaly): " + std::string(e.what()));
     }
 
     // ---- Step 5: 预算检查 ----
@@ -244,30 +233,30 @@ int main(int argc, char* argv[]) {
                     std::string msg = "Budget " + fmtDouble(pct, 0) +
                                       "% reached ($" + fmtDouble(monthCost, 2) +
                                       "/$" + fmtDouble(cfg.budget_usd, 2) + ")";
-                    log("Step 5: Budget alert [" + cfg.project_id + "] " + msg);
+                    logMsg("Step 5: Budget alert [" + cfg.project_id + "] " + msg);
                     pg.insertAlert(cfg.project_id, oxelia51::AlertType::BUDGET,
                                    "warning", msg);
                     ++budgetAlerts;
                 }
             }
-            log("Step 5: Budget check done, " + std::to_string(budgetAlerts) +
+            logMsg("Step 5: Budget check done, " + std::to_string(budgetAlerts) +
                 " alert(s) across " + std::to_string(configs.size()) + " config(s)");
         } else {
-            log("Step 5: Skipped (dry-run)");
+            logMsg("Step 5: Skipped (dry-run)");
         }
     } catch (const std::exception& e) {
-        log("Step 5 FAILED (budget): " + std::string(e.what()));
+        logMsg("Step 5 FAILED (budget): " + std::string(e.what()));
     }
 
     // ---- Step 6: 游标状态汇总（逐块已推进，此处仅汇总日志） ----
     if (!dryRun && !maxTimestamp.empty() && upsertOk) {
-        log("Step 6: last_processed = " + maxTimestamp + " (advanced per chunk)");
+        logMsg("Step 6: last_processed = " + maxTimestamp + " (advanced per chunk)");
     } else if (dryRun) {
-        log("Step 6: Skipped (dry-run)");
+        logMsg("Step 6: Skipped (dry-run)");
     } else if (!upsertOk) {
-        log("Step 6: some chunk failed, last_processed advanced only up to last successful chunk");
+        logMsg("Step 6: some chunk failed, last_processed advanced only up to last successful chunk");
     } else {
-        log("Step 6: No new events, last_processed unchanged");
+        logMsg("Step 6: No new events, last_processed unchanged");
     }
 
     // ---- Step 7: 确保今日汇率 ----
@@ -275,7 +264,7 @@ int main(int argc, char* argv[]) {
         try {
             pg.ensureTodayExchangeRate();
         } catch (const std::exception& e) {
-            log("Step 7 FAILED (exchange_rate): " + std::string(e.what()));
+            logMsg("Step 7 FAILED (exchange_rate): " + std::string(e.what()));
         }
     }
 
@@ -285,14 +274,14 @@ int main(int argc, char* argv[]) {
             oxelia51::Alerter alerter(pg, smtpUrl, emailFrom);
             alerter.sendPendingAlerts();
         } catch (const std::exception& e) {
-            log("Step 8 FAILED (alerter): " + std::string(e.what()));
+            logMsg("Step 8 FAILED (alerter): " + std::string(e.what()));
         }
     } else {
-        log("Step 8: Skipped (dry-run)");
+        logMsg("Step 8: Skipped (dry-run)");
     }
 
     // ---- 总结 ----
-    log("Done: " + std::to_string(events.size()) + " events, " +
+    logMsg("Done: " + std::to_string(events.size()) + " events, " +
         std::to_string(anomalyCount) + " anomalies" +
         (dryRun ? " (dry-run, no writes)" : ""));
 

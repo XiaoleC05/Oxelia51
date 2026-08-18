@@ -1,31 +1,13 @@
 #include "aggregator.h"
 
 #include "db/clickhouse.h"
+#include "util/log.h"
 
-#include <chrono>
-#include <cstdio>
-#include <ctime>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 
 namespace oxelia51 {
-
-// ---- 日志工具（与 alerter.cpp 格式一致） ----
-
-static std::string timestamp() {
-    auto now = std::chrono::system_clock::now();
-    auto t = std::chrono::system_clock::to_time_t(now);
-    std::tm tm{};
-    gmtime_r(&t, &tm);
-    char buf[32];
-    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
-    return buf;
-}
-
-static void logMsg(const std::string& msg) {
-    std::fprintf(stderr, "[%s] %s\n", timestamp().c_str(), msg.c_str());
-}
 
 // escapeSql 已合并至 db/clickhouse.h（见 clickhouse.cpp）
 

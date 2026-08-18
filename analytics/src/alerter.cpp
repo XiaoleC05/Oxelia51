@@ -1,33 +1,16 @@
 #include "alerter.h"
 
+#include "util/log.h"
+
 #include <cerrno>
-#include <chrono>
 #include <cctype>
-#include <cstdio>
 #include <cstring>
 #include <curl/curl.h>
-#include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <string>
 
 namespace oxelia51 {
-
-// ---- 工具函数 ----
-
-static std::string timestamp() {
-    auto now = std::chrono::system_clock::now();
-    auto t = std::chrono::system_clock::to_time_t(now);
-    std::tm tm{};
-    gmtime_r(&t, &tm);
-    char buf[32];
-    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
-    return buf;
-}
-
-static void logMsg(const std::string& msg) {
-    std::fprintf(stderr, "[%s] %s\n", timestamp().c_str(), msg.c_str());
-}
 
 // 邮件头字段净化：剔除 \r \n，防止 CRLF 头注入
 static std::string sanitizeHeader(const std::string& s) {
