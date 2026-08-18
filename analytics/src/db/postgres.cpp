@@ -68,12 +68,10 @@ void PostgresClient::upsertDailyStats(const std::vector<DailyEvent>& events) {
     if (events.empty()) return;
 
     // 使用事务批量写入
-    PGresult* begin = PQexec(conn_, "BEGIN");
-    if (PQresultStatus(begin) != PGRES_COMMAND_OK) {
-        PQclear(begin);
+    PgResultGuard begin(PQexec(conn_, "BEGIN"));
+    if (PQresultStatus(begin.r) != PGRES_COMMAND_OK) {
         throw std::runtime_error("BEGIN failed: " + std::string(PQerrorMessage(conn_)));
     }
-    PQclear(begin);
 
     const char* sql =
         "INSERT INTO oxelia51.daily_stats "
@@ -98,23 +96,18 @@ void PostgresClient::upsertDailyStats(const std::vector<DailyEvent>& events) {
                 std::to_string(e.cost_usd),
                 std::to_string(e.request_count)
             };
-            PGresult* res = execParams(sql, params);
-            PQclear(res);
+            PgResultGuard res(execParams(sql, params));
         }
     } catch (...) {
-        PGresult* rollback = PQexec(conn_, "ROLLBACK");
-        PQclear(rollback);
+        PgResultGuard rollback(PQexec(conn_, "ROLLBACK"));
         throw;
     }
 
-    PGresult* commit = PQexec(conn_, "COMMIT");
-    if (PQresultStatus(commit) != PGRES_COMMAND_OK) {
-        PQclear(commit);
-        PGresult* rollback = PQexec(conn_, "ROLLBACK");
-        PQclear(rollback);
+    PgResultGuard commit(PQexec(conn_, "COMMIT"));
+    if (PQresultStatus(commit.r) != PGRES_COMMAND_OK) {
+        PgResultGuard rollback(PQexec(conn_, "ROLLBACK"));
         throw std::runtime_error("COMMIT failed: " + std::string(PQerrorMessage(conn_)));
     }
-    PQclear(commit);
 }
 
 void PostgresClient::insertAlert(const std::string& projectId, AlertType type,
@@ -125,8 +118,7 @@ void PostgresClient::insertAlert(const std::string& projectId, AlertType type,
     std::vector<std::string> params = {
         projectId, alertTypeStr(type), severity, message
     };
-    PGresult* res = execParams(sql, params);
-    PQclear(res);
+    PgResultGuard res(execParams(sql, params));
 }
 
 std::vector<Alert> PostgresClient::getUnsentAlerts() {
@@ -173,8 +165,7 @@ std::vector<AlertChannel> PostgresClient::getAlertChannels(const std::string& pr
 
 void PostgresClient::markAlertSent(int64_t alertId) {
     const char* sql = "UPDATE oxelia51.alert_logs SET status = 'sent' WHERE id = $1";
-    PGresult* res = execParams(sql, {std::to_string(alertId)});
-    PQclear(res);
+    PgResultGuard res(execParams(sql, {std::to_string(alertId)}));
 }
 
 std::vector<BudgetConfig> PostgresClient::getBudgetConfigs() {
@@ -200,12 +191,11 @@ double PostgresClient::getMonthCost(const std::string& projectId) {
     const char* sql =
         "SELECT COALESCE(sum(cost_usd), 0.0) FROM oxelia51.daily_stats "
         "WHERE project_id = $1 AND date >= date_trunc('month', now())::date";
-    PGresult* res = execParams(sql, {projectId});
+    PgResultGuard res(execParams(sql, {projectId}));
     double cost = 0.0;
-    if (PQntuples(res) > 0 && PQgetvalue(res, 0, 0)) {
-        cost = std::stod(PQgetvalue(res, 0, 0));
+    if (PQntuples(res.r) > 0 && PQgetvalue(res.r, 0, 0)) {
+        cost = std::stod(PQgetvalue(res.r, 0, 0));
     }
-    PQclear(res);
     return cost;
 }
 
@@ -242,13 +232,12 @@ std::vector<std::pair<std::string, AnomalyConfig>> PostgresClient::getAnomalyCon
 
 std::string PostgresClient::getEngineState(const std::string& key) {
     const char* sql = "SELECT value FROM oxelia51.engine_state WHERE key = $1";
-    PGresult* res = execParams(sql, {key});
+    PgResultGuard res(execParams(sql, {key}));
     std::string value;
-    if (PQntuples(res) > 0) {
-        const char* v = PQgetvalue(res, 0, 0);
+    if (PQntuples(res.r) > 0) {
+        const char* v = PQgetvalue(res.r, 0, 0);
         if (v) value = v;
     }
-    PQclear(res);
     return value;
 }
 
@@ -257,8 +246,7 @@ void PostgresClient::setEngineState(const std::string& key, const std::string& v
         "INSERT INTO oxelia51.engine_state (key, value, updated_at) "
         "VALUES ($1, $2, now()) "
         "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()";
-    PGresult* res = execParams(sql, {key, value});
-    PQclear(res);
+    PgResultGuard res(execParams(sql, {key, value}));
 }
 
 void PostgresClient::ensureTodayExchangeRate() {
@@ -267,8 +255,7 @@ void PostgresClient::ensureTodayExchangeRate() {
     const char* sql =
         "INSERT INTO oxelia51.exchange_rates (date, rate_cny_per_usd) "
         "VALUES (CURRENT_DATE, 7.20) ON CONFLICT DO NOTHING";
-    PGresult* res = exec(sql);
-    PQclear(res);
+    PgResultGuard res(exec(sql));
 }
 
 } // namespace oxelia51

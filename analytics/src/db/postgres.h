@@ -75,7 +75,7 @@ public:
     bool ok() const;
     std::string lastError() const;
 
-    // 低层接口：执行 SQL，返回 PGresult*（调用方负责 PQclear）
+    // 低层接口：执行 SQL，返回 PGresult*（调用方负责释放，推荐 PgResultGuard 接管）
     PGresult* exec(const std::string& sql);
     PGresult* execParams(const std::string& sql,
                          const std::vector<std::string>& params);
