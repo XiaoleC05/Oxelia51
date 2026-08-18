@@ -78,7 +78,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          # 2026-08-18 由 1G 升 2G：analytics 聚合积压时 1G 下 max_memory_usage(0.9G) 不够，
+          # Step 1 聚合被 MEMORY_LIMIT_EXCEEDED 打断（需 ~1.5G）；2G 上限下 CH 自动 max_memory≈1.8G
+          memory: 2G
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
