@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
@@ -138,4 +139,51 @@ func NewClickHouseRecorder(addr, user, password string) (*ChannelRecorder, *Clic
 		return nil, nil, err
 	}
 	return NewChannelRecorder(writer), writer, nil
+}
+
+// RecoveringWriter 在 ClickHouse 短暂不可用（如容器重启窗口）时自动恢复写入：
+// 初始 inner 为 nil 或写失败后，以 ≤60s 一次的频率尝试重建连接，成功后热切换。
+// 恢复前的批次按 no-op 处理（不阻塞请求链路）；WriteBatch 运行在 ChannelRecorder
+// 的消费 goroutine 中，重建期间的阻塞不占用请求路径。
+type RecoveringWriter struct {
+	mu                   sync.Mutex
+	inner                *ClickHouseWriter
+	addr, user, password string
+	lastAttempt          time.Time
+}
+
+// NewRecoveringWriter 创建可自愈写入器；inner 可为 nil（初始化失败场景）
+func NewRecoveringWriter(addr, user, password string, inner *ClickHouseWriter) *RecoveringWriter {
+	return &RecoveringWriter{addr: addr, user: user, password: password, inner: inner}
+}
+
+// WriteBatch 实现 BatchWriter：inner 可用则直接写；失败或为 nil 时按节流频率尝试重建
+func (w *RecoveringWriter) WriteBatch(records []adapter.TokenRecord) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.inner != nil {
+		if err := w.inner.WriteBatch(records); err == nil {
+			return nil
+		} else {
+			_ = w.inner.Close()
+			w.inner = nil
+			log.Printf("clickhouse write failed, entering recovery: %v", err)
+		}
+	}
+
+	// 节流：最多每 60s 尝试一次重建，避免 CH 长时间不可用时反复拨号刷日志
+	if time.Since(w.lastAttempt) < time.Minute {
+		return nil
+	}
+	w.lastAttempt = time.Now()
+
+	writer, err := NewClickHouseWriter(w.addr, w.user, w.password)
+	if err != nil {
+		log.Printf("clickhouse recovery attempt failed: %v", err)
+		return nil
+	}
+	w.inner = writer
+	log.Printf("clickhouse recorder recovered, hot-swapped")
+	return w.inner.WriteBatch(records) // 重放当前批次
 }

@@ -68,8 +68,10 @@ func main() {
 	} else if chAddr != "" {
 		chRec, chWriter, err := recorder.NewClickHouseRecorder(chAddr, chUser, chPassword)
 		if err != nil {
-			log.Printf("clickhouse init failed, using no-op recorder: %v", err)
-			rec = recorder.NewChannelRecorder(&noopWriter{})
+			// 初始化失败不再永久降级 no-op：用 RecoveringWriter 自愈，
+			// 首个批次写入时（≤60s 节流）自动重建并热切换
+			log.Printf("clickhouse init failed, using recovering recorder: %v", err)
+			rec = recorder.NewChannelRecorder(recorder.NewRecoveringWriter(chAddr, chUser, chPassword, nil))
 		} else {
 			rec = chRec
 			defer chWriter.Close()
