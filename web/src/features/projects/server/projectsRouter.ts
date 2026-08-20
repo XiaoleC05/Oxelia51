@@ -12,12 +12,11 @@ import { auditLog } from "@/src/features/audit-logs/auditLog";
 import { throwIfNoOrganizationAccess } from "@/src/features/rbac/utils/checkOrganizationAccess";
 import { ApiAuthService } from "@/src/features/public-api/server/apiAuth";
 import {
-  QueueJobs,
   redis,
-  ProjectDeleteQueue,
+  commandClickhouse,
   getEnvironmentsForProject,
+  logger,
 } from "@oxelia51/shared/src/server";
-import { randomUUID } from "crypto";
 import { StringNoHTMLNonEmpty } from "@oxelia51/shared";
 import { buildAdminOrgContext } from "@/src/features/organizations/server/adminOrgContext";
 
@@ -184,22 +183,42 @@ export const projectsRouter = createTRPCRouter({
         redis,
       ).invalidateCachedProjectApiKeys(input.projectId);
 
-      // Delete API keys from DB
-      await ctx.prisma.apiKey.deleteMany({
-        where: {
-          projectId: input.projectId,
-          scope: "PROJECT",
-        },
-      });
+      // 同步删除（原设计：软删 + ProjectDeleteQueue 由 worker 异步清数，但 worker
+      // 包已随上游剥离从仓库删除、队列无消费者，任务入队即永久堆积，故改为请求内
+      // 直接删干净）。原 worker 的 ClickHouse 步骤针对 traces/observations/scores
+      // 等已删功能的表，Oxelia51 不使用，跳过；oxelia51 归属 project 的数据
+      // （PG oxelia51.* 与 CH oxelia51.token_events）在此显式清除。
+      const project = await ctx.prisma.$transaction(async (tx) => {
+        // oxelia51 schema：项目级告警/预算配置与用量统计（无外键约束，需显式清）
+        await tx.$executeRaw`
+          DELETE FROM oxelia51.alert_channels WHERE project_id = ${input.projectId}
+        `;
+        await tx.$executeRaw`
+          DELETE FROM oxelia51.budget_configs WHERE project_id = ${input.projectId}
+        `;
+        await tx.$executeRaw`
+          DELETE FROM oxelia51.alert_logs WHERE project_id = ${input.projectId}
+        `;
+        await tx.$executeRaw`
+          DELETE FROM oxelia51.daily_stats WHERE project_id = ${input.projectId}
+        `;
 
-      const project = await ctx.prisma.project.update({
-        where: {
-          id: input.projectId,
-          orgId: ctx.session.orgId,
-        },
-        data: {
-          deletedAt: new Date(),
-        },
+        // Delete API keys from DB
+        await tx.apiKey.deleteMany({
+          where: {
+            projectId: input.projectId,
+            scope: "PROJECT",
+          },
+        });
+
+        // 硬删项目行：project_memberships / datasets / invitations /
+        // trace_sessions 等经 schema onDelete: Cascade 一并清除
+        return await tx.project.delete({
+          where: {
+            id: input.projectId,
+            orgId: ctx.session.orgId,
+          },
+        });
       });
 
       await auditLog({
@@ -210,24 +229,25 @@ export const projectsRouter = createTRPCRouter({
         action: "delete",
       });
 
-      const projectDeleteQueue = ProjectDeleteQueue.getInstance();
-      if (!projectDeleteQueue) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message:
-            "ProjectDeleteQueue is not available. Please try again later.",
+      // ClickHouse oxelia51.token_events：ALTER ... DELETE 是异步 mutation，
+      // 入队即返回；CH 不可达不阻塞删除结果，仅告警（残留随表 TTL 过期，
+      // 与 userDeletion 级联路径语义一致）
+      try {
+        await commandClickhouse({
+          query: `ALTER TABLE oxelia51.token_events DELETE WHERE project_id = {projectId: String}`,
+          params: { projectId: input.projectId },
+          tags: {
+            surface: "oxelia51",
+            route: "project-delete",
+            projectId: input.projectId,
+          },
         });
+      } catch (error) {
+        logger.warn(
+          `Failed to purge ClickHouse token_events for deleted project ${input.projectId}`,
+          error,
+        );
       }
-
-      await projectDeleteQueue.add(QueueJobs.ProjectDelete, {
-        timestamp: new Date(),
-        id: randomUUID(),
-        payload: {
-          projectId: input.projectId,
-          orgId: ctx.session.orgId,
-        },
-        name: QueueJobs.ProjectDelete,
-      });
 
       return true;
     }),

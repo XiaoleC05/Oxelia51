@@ -14,7 +14,6 @@ import (
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/health"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/hero"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/proxykey"
-	"github.com/XiaoleC05/oxelia51-backend/internal/domain/sync"
 	"github.com/XiaoleC05/oxelia51-backend/internal/domain/user"
 	"github.com/XiaoleC05/oxelia51-backend/internal/gateway"
 	"github.com/XiaoleC05/oxelia51-backend/internal/infra"
@@ -109,11 +108,6 @@ func New(cfg *config.Config) *gin.Engine {
 		protected.POST("/auth/logout", authH.Logout)
 		protected.GET("/users/me", userH.Me)
 		protected.PATCH("/auth/profile", userH.PatchProfile)
-
-		// P4 多设备同步
-		syncH := sync.NewHandler(pool)
-		protected.POST("/sync/upload", syncH.Upload)
-		protected.GET("/sync/download", syncH.Download)
 
 		// 工具代理路由：注册在裸 r 上、匿名可达，是设计如此——
 		// 未登录请求由网关内部以 anonymous 身份转发、工具自行决定权限
