@@ -9,10 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      # web/ 已迁入本仓（Oxelia51），直接构建当前仓库
       - uses: actions/checkout@v4
-        with:
-          repository: XiaoleC05/langfuse-token
-          ref: main
 
       - name: Build Docker image
         run: |

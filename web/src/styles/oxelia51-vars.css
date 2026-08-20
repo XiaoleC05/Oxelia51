@@ -1,0 +1,116 @@
+/**
+ * Oxelia51 CSS 变量覆盖 — 将 Cozy/Cosmos 主题映射到 Langfuse 原生组件。
+ *
+ * Langfuse 的 shadcn 变量定义在 globals.css 的 @layer base 中（HSL 三元组），
+ * 本文件不使用 @layer，因此按层叠规则优先于 globals.css 生效。
+ * 主题由 document.documentElement 的 data-theme 属性驱动（见 theming/ThemeProvider.tsx）。
+ */
+
+/* Cozy 暖色（默认） */
+:root,
+[data-theme="cozy"] {
+  --background: 30 38% 97%; /* --ox-bg #faf7f4 */
+  --foreground: 28 9% 20%; /* --ox-text #3a332d */
+  --card: 40 100% 98%;
+  --card-foreground: 28 9% 20%;
+  --popover: 40 100% 98%;
+  --popover-foreground: 28 9% 20%;
+  --primary: 358 75% 59%; /* --ox-accent #e5484d */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 36 29% 93%; /* --ox-bg-alt #f3efe9 */
+  --secondary-foreground: 27 14% 12%; /* --ox-text-h #241f1b */
+  --muted: 36 29% 93%;
+  --muted-foreground: 31 9% 48%; /* --ox-text-muted #857a6e */
+  --accent: 36 29% 93%;
+  --accent-foreground: 27 14% 12%;
+  --destructive: 10 56% 51%; /* --ox-danger #c8553d */
+  --destructive-foreground: 0 0% 100%;
+  --border: 35 25% 86%; /* --ox-border #e5ded4 */
+  --input: 37 29% 91%; /* --ox-border-light #efeae2 */
+  --ring: 358 75% 59%;
+  --radius: 10px; /* shadcn 控制件圆角（桌面端 --ox-radius 语义的映射） */
+}
+
+/* Cosmos 深色（ThemeProvider 会同步附加 .dark class） */
+[data-theme="cosmos"] {
+  --background: 0 0% 4%; /* --ox-bg #0a0a0a */
+  --foreground: 0 0% 79%; /* --ox-text #c9c9c9 */
+  --card: 0 0% 8%; /* --ox-bg-alt #141414 */
+  --card-foreground: 0 0% 79%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 79%;
+  --primary: 358 75% 59%; /* --ox-accent #e5484d */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 12%; /* --ox-border #1f1f1f */
+  --secondary-foreground: 0 0% 90%; /* --ox-text-h #e6e6e6 */
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 45%; /* --ox-text-muted #737373 */
+  --accent: 0 0% 12%;
+  --accent-foreground: 0 0% 90%;
+  --destructive: 3 93% 63%; /* --ox-danger #f85149 */
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 12%; /* --ox-border #1f1f1f */
+  --input: 0 0% 15%; /* --ox-border-light #262626 */
+  --ring: 358 75% 59%;
+  --radius: 10px; /* 与桌面端 cosmos --ox-radius 10px 对齐；原 6px 偏尖 */
+}
+
+/* Langfuse 的 auth 页布局不给 body 设背景（浏览器默认白），
+   在此兜底，保证 Cozy/Cosmos 在登录等页面整页生效。 */
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* ============================================================
+   PR2 视觉层：侧栏 / 卡片 / 表格
+   ============================================================ */
+
+/* 侧栏变量（shadcn sidebar 独立变量组） */
+:root,
+[data-theme="cozy"] {
+  --sidebar-background: 40 100% 98%;
+  --sidebar-foreground: 28 9% 20%;
+  --sidebar-accent: 36 29% 90%;
+  --sidebar-accent-foreground: 358 75% 41%;
+  --sidebar-border: 35 25% 88%;
+  --sidebar-ring: 358 75% 59%;
+}
+
+[data-theme="cosmos"] {
+  --sidebar-background: 0 0% 6%;
+  --sidebar-foreground: 0 0% 79%;
+  --sidebar-accent: 0 0% 14%;
+  --sidebar-accent-foreground: 358 86% 64%;
+  --sidebar-border: 0 0% 12%;
+  --sidebar-ring: 358 75% 59%;
+}
+
+/* 侧栏激活项：左侧 3px accent 指示条 */
+[data-sidebar="menu-button"][data-active="true"] {
+  box-shadow: inset 3px 0 0 0 var(--ox-accent);
+}
+
+/* 卡片：细边框 + 主题阴影 + hover 微浮起 */
+[data-theme="cozy"] [data-slot="card"],
+[data-theme="cozy"] .card {
+  box-shadow: 0 1px 3px rgba(58, 51, 45, 0.06);
+}
+
+[data-theme="cosmos"] [data-slot="card"],
+[data-theme="cosmos"] .card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* 表格：表头底色 + 行 hover + 等宽数字（数字密集列对齐不抖动） */
+[data-slot="table"] {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-slot="table"] thead tr {
+  background-color: var(--ox-bg-alt);
+}
+
+[data-slot="table"] tbody tr {
+  transition: background-color var(--ox-speed) ease;
+}

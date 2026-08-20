@@ -1,0 +1,128 @@
+{
+  "name": "@oxelia51/shared",
+  "version": "1.0.0",
+  "license": "MIT",
+  "private": true,
+  "files": [
+    "dist/**",
+    "prisma/**",
+    "clickhouse/**",
+    "scripts/cleanup.sql"
+  ],
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "engines": {
+    "node": "24"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "require": "./dist/src/index.js"
+    },
+    "./src/db": {
+      "import": "./dist/src/db.js",
+      "require": "./dist/src/db.js"
+    },
+    "./src/env": {
+      "import": "./dist/src/env.js",
+      "require": "./dist/src/env.js"
+    },
+    "./src/server": {
+      "import": "./dist/src/server/index.js",
+      "require": "./dist/src/server/index.js"
+    },
+    "./src/server/auth/apiKeys": {
+      "import": "./dist/src/server/auth/apiKeys.js",
+      "require": "./dist/src/server/auth/apiKeys.js"
+    },
+    "./src/utils/chatml": {
+      "import": "./dist/src/utils/chatml/index.js",
+      "require": "./dist/src/utils/chatml/index.js"
+    },
+    "./encryption": {
+      "import": "./dist/src/encryption/index.js",
+      "require": "./dist/src/encryption/index.js"
+    },
+    "./query": {
+      "import": "./dist/src/features/query/index.js",
+      "require": "./dist/src/features/query/index.js"
+    },
+    "./query/server": {
+      "import": "./dist/src/features/query/server/index.js",
+      "require": "./dist/src/features/query/server/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:check": "tsc",
+    "typecheck": "dotenv -e ../../.env -- tsc --noEmit --incremental --tsBuildInfoFile .tsbuildinfo",
+    "dev": "tsc --watch",
+    "lint": "eslint . --cache --cache-location dist/.eslintcache --max-warnings 0 --concurrency 2",
+    "lint:fix": "eslint . --cache --cache-location dist/.eslintcache --fix --concurrency 2",
+    "test": "dotenv -e ../../.env -- vitest run",
+    "db:migrate": "DISABLE_ERD=false dotenv -e ../../.env -- npx prisma migrate dev",
+    "db:push": "DISABLE_ERD=false dotenv -e ../../.env -- npx prisma db push",
+    "db:reset": "dotenv -e ../../.env npx -- prisma migrate reset",
+    "db:reset:test": "if [ -f ../../.env.test ]; then dotenv -e ../../.env.test -e ../../.env -- npx prisma migrate reset --force; fi",
+    "db:deploy": "dotenv -e ../../.env npx -- prisma migrate deploy",
+    "db:generate": "dotenv -e ../../.env -- npx prisma generate --no-hints",
+    "ch:up": "bash clickhouse/scripts/up.sh",
+    "ch:down": "bash clickhouse/scripts/down.sh",
+    "ch:drop": "bash clickhouse/scripts/drop.sh",
+    "ch:dev-tables": "bash clickhouse/scripts/dev-tables.sh",
+    "ch:reset": "pnpm run ch:down && pnpm run ch:up && pnpm run ch:dev-tables"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "catalog:",
+    "@aws-sdk/client-s3": "catalog:",
+    "@aws-sdk/client-sesv2": "catalog:",
+    "@aws-sdk/lib-storage": "catalog:",
+    "@aws-sdk/s3-request-presigner": "catalog:",
+    "@azure/storage-blob": "^12.26.0",
+    "@clickhouse/client": "1.23.1",
+    "@google-cloud/storage": "^7.19.0",
+    "@opentelemetry/api": ">=1.0.0 <1.10.0",
+    "@prisma/client": "^6.19.3",
+    "@react-email/components": "^0.5.1",
+    "@react-email/render": "^1.2.1",
+    "@smithy/node-http-handler": "4.5.1",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^2.4.3",
+    "bullmq": "^5.76.3",
+    "date-fns": "^3.6.0",
+    "dd-trace": "5.109.0",
+    "decimal.js": "^10.4.3",
+    "exponential-backoff": "^3.1.2",
+    "ioredis": "^5.10.1",
+    "ipaddr.js": "^2.2.0",
+    "jsonpath-plus": "10.3.0",
+    "lodash": "^4.18.1",
+    "lossless-json": "^4.1.1",
+    "next-auth": "^4.24.14",
+    "nodemailer": "^9.0.3",
+    "oci-common": "^2.125.0",
+    "oci-objectstorage": "^2.125.0",
+    "undici": "^7.28.0",
+    "uuid": "^14.0.0",
+    "winston": "^3.15.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@opentelemetry/context-async-hooks": "^2.9.0",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/lodash": "^4.17.24",
+    "@types/node": "^24.3.0",
+    "@types/nodemailer": "^8.0.1",
+    "@types/react": "19.2.14",
+    "dotenv-cli": "^7.4.4",
+    "eslint": "^9.39.2",
+    "prisma": "^6.19.3",
+    "typescript": "catalog:",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@types/react": "~19.2.14",
+    "react": "~19.2.4"
+  }
+}

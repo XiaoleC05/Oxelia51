@@ -45,3 +45,23 @@ backend/server.exe
 *.tmp
 backend/coverage*
 desktop/scripts/.build/
+
+# ---- web / pnpm monorepo（自 langfuse-token 迁入）----
+# 本地 env 一律忽略，仅保留 example 模板
+.env*
+!**/.env.example
+!**/.env.dev.example
+# next.js / turbo / pnpm
+**/.next/
+**/.next-check/
+**/.turbo/
+/.pnpm-store
+next-env.d.ts
+.vercel
+# 测试与缓存
+**/coverage/
+.eslintcache
+web/test-results/
+.playwright-mcp/
+# 构建期生成的 openapi spec
+web/public/openapi*.yml

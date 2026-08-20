@@ -1,0 +1,33 @@
+{
+  "name": "oxelia51-platform",
+  "version": "0.1.9",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": "24"
+  },
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
+    "build": "turbo run build",
+    "build:check": "turbo run build:check",
+    "typecheck": "turbo run typecheck",
+    "tc": "turbo run typecheck",
+    "start": "turbo run start",
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=web",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,css}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,css}\"",
+    "playwright:install": "pnpm --filter web exec playwright install chromium",
+    "storybook": "pnpm --filter web run storybook",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "knip": "^6.22.0",
+    "prettier": "^3.8.3",
+    "turbo": "2.10.5"
+  },
+  "packageManager": "pnpm@11.10.0"
+}

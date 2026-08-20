@@ -1,0 +1,254 @@
+/**
+ * Oxelia51 双主题变量 — Cozy 暖色 / Cosmos 深色
+ * 来源：docs/4-detailed-design.md §5.1-5.2
+ *
+ * 说明：变量统一加 `--ox-` 前缀，避免与 Langfuse 自身的
+ * --accent / --border / --radius 等 shadcn 变量冲突。
+ * Langfuse 原生组件的适配映射见 web/src/styles/oxelia51-vars.css。
+ */
+
+/* Oxelia51 品牌字体：Manrope 变量字重，自托管（web/public/fonts）。
+   全局字体栈见 globals.css 的 --font-sans。 */
+@font-face {
+  font-family: "Manrope";
+  src: url("/fonts/Manrope.ttf") format("truetype-variations");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root,
+[data-theme="cozy"] {
+  --ox-bg: #faf7f4;
+  --ox-bg-alt: #f3efe9;
+  --ox-text: #3a332d;
+  --ox-text-h: #241f1b;
+  --ox-text-muted: #857a6e;
+  --ox-accent: #e5484d;
+  --ox-accent-hover: #dc3e42;
+  --ox-accent-border: rgba(229, 72, 77, 0.35);
+  --ox-border: #e5ded4;
+  --ox-border-light: #efeae2;
+  --ox-speed: 0.3s;
+  --ox-ok: #4a7c59;
+  --ox-danger: #c8553d;
+  --ox-warn: #c4943d;
+
+  /* 图表暖色系：第一系列为品牌心跳红 */
+  --ox-chart-1: #e5484d;
+  --ox-chart-2: #e8956c;
+  --ox-chart-3: #6b8e5a;
+  --ox-chart-4: #c4943d;
+  --ox-chart-5: #8b7355;
+}
+
+[data-theme="cosmos"] {
+  --ox-bg: #0a0a0a;
+  --ox-bg-alt: #141414;
+  --ox-text: #c9c9c9;
+  --ox-text-h: #e6e6e6;
+  --ox-text-muted: #737373;
+  --ox-accent: #e5484d;
+  --ox-accent-hover: #f2555a;
+  --ox-accent-border: rgba(229, 72, 77, 0.4);
+  --ox-border: #1f1f1f;
+  --ox-border-light: #262626;
+  --ox-speed: 0.2s;
+  --ox-ok: #3fb950;
+  --ox-danger: #f85149;
+  --ox-warn: #d29922;
+
+  /* 图表色系：第一系列为品牌心跳红，其余与中性夜黑协调 */
+  --ox-chart-1: #e5484d;
+  --ox-chart-2: #3b82f6;
+  --ox-chart-3: #3fb950;
+  --ox-chart-4: #d29922;
+  --ox-chart-5: #6e7681;
+}
+
+/* ============================================================
+   颜色自定义：背景色 / 字体色预设（data-bg-preset / data-text-preset）
+   与双主题正交。默认（default）不覆盖任何变量，保持主题原色。
+   ============================================================ */
+
+/* —— 背景色预设：Cozy（浅色）—— */
+[data-theme="cozy"][data-bg-preset="white"] {
+  --ox-bg: #ffffff;
+  --ox-bg-alt: #f6f6f6;
+  --ox-border: #e2e2e2;
+  --ox-border-light: #eeeeee;
+}
+[data-theme="cozy"][data-bg-preset="mist"] {
+  --ox-bg: #eef2f7;
+  --ox-bg-alt: #e3e9f1;
+  --ox-border: #d5dde7;
+  --ox-border-light: #e4eaf2;
+}
+[data-theme="cozy"][data-bg-preset="cream"] {
+  --ox-bg: #f6f0e3;
+  --ox-bg-alt: #eee6d5;
+  --ox-border: #e0d5bd;
+  --ox-border-light: #ece3cd;
+}
+
+/* —— 背景色预设：Cosmos（深色）—— */
+[data-theme="cosmos"][data-bg-preset="black"] {
+  --ox-bg: #050505;
+  --ox-bg-alt: #0d0d0d;
+  --ox-border: #171717;
+  --ox-border-light: #1f1f1f;
+}
+[data-theme="cosmos"][data-bg-preset="navy"] {
+  --ox-bg: #10151f;
+  --ox-bg-alt: #161c28;
+  --ox-border: #1f2733;
+  --ox-border-light: #26313f;
+}
+
+/* —— 字体色预设（仅浅色背景生效；深色背景自动保持浅色文字）—— */
+[data-theme="cozy"][data-text-preset="brown"] {
+  --ox-text: #3a332d;
+  --ox-text-h: #241f1b;
+  --ox-text-muted: #857a6e;
+}
+[data-theme="cozy"][data-text-preset="ink"] {
+  --ox-text: #374151;
+  --ox-text-h: #111827;
+  --ox-text-muted: #6b7280;
+}
+[data-theme="cozy"][data-text-preset="forest"] {
+  --ox-text: #33502f;
+  --ox-text-h: #1f3a1c;
+  --ox-text-muted: #6b8e5a;
+}
+[data-theme="cozy"][data-text-preset="navy"] {
+  --ox-text: #33507a;
+  --ox-text-h: #1e3a5f;
+  --ox-text-muted: #5a6b85;
+}
+
+/* Oxelia51 公开站点（落地页 / 文档站，skipAppLayout）：
+   覆盖 globals.css 的 `div#__next > div { height: 100% }`——
+   否则根容器被钉在 100vh，页面内容溢出且顶栏 sticky 范围被截断。
+   仅当根节点带 .ox-site-page 时生效，不影响应用侧栏布局。 */
+#__next > .ox-site-page {
+  height: auto !important;
+  min-height: 100dvh !important;
+}
+
+/* 站点字体放大一点点 + 圆角更圆润（仅作用于落地页 / 文档站，不影响工作台）。
+   Tailwind 的小号 text-*（xs~3xl）在构建期被内联为 rem 字面量，改 CSS 变量不生效，
+   故用高特异性规则覆盖字号。无前缀规则按升序排列；带断点前缀的（本页仅 sm: 三种）
+   包进对应媒体查询并置于其后，保证「text-base sm:text-lg」这类组合的响应式语义不变。
+   字号各 +1px 左右，圆角 +2~4px。 */
+#__next > .ox-site-page .text-xs {
+  font-size: 0.775rem;
+} /* 12.4px */
+#__next > .ox-site-page .text-sm {
+  font-size: 0.9rem;
+} /* 14.4px */
+#__next > .ox-site-page .text-base {
+  font-size: 0.98rem;
+} /* 15.7px */
+#__next > .ox-site-page .text-2xl {
+  font-size: 1.425rem;
+} /* 22.8px */
+#__next > .ox-site-page .text-3xl {
+  font-size: 1.625rem;
+} /* 26px */
+
+@media (min-width: 640px) {
+  #__next > .ox-site-page .sm\:text-lg {
+    font-size: 1.2rem;
+  } /* 19.2px */
+  #__next > .ox-site-page .sm\:text-3xl {
+    font-size: 1.625rem;
+  } /* 26px */
+  #__next > .ox-site-page .sm\:text-5xl {
+    font-size: 3.2rem;
+  } /* 51.2px */
+}
+
+#__next > .ox-site-page {
+  --radius-lg: 0.875rem; /* 14px */
+  --radius-xl: 1.25rem; /* 20px */
+  --radius-2xl: 1.5rem; /* 24px */
+  --radius-3xl: 2rem; /* 32px */
+}
+
+/* ============================================================
+   过渡与动效（docs/design-system.md §4.17）
+   统一缓动 cubic-bezier(0.4, 0, 0.2, 1)，时长 ~0.3s（--ox-speed）。
+   全部动效在 prefers-reduced-motion: reduce 时禁用。
+   ============================================================ */
+
+/* 页面内容区进入：淡入 + 上移 6px（0.28s）。
+   路由切换重放由 React 侧 key={pathname} 触发（WorkspaceLayout / AdminShell）。 */
+.ox-page-in {
+  animation: ox-page-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes ox-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 列表/卡片网格错峰淡入：最多 6 行，0.03s 递增；第 6 行起共用末档延迟。
+   直接挂在列表容器（grid / tbody）上，作用于其直接子元素。 */
+.ox-stagger > * {
+  animation: ox-page-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.ox-stagger > :nth-child(2) {
+  animation-delay: 0.03s;
+}
+.ox-stagger > :nth-child(3) {
+  animation-delay: 0.06s;
+}
+.ox-stagger > :nth-child(4) {
+  animation-delay: 0.09s;
+}
+.ox-stagger > :nth-child(5) {
+  animation-delay: 0.12s;
+}
+.ox-stagger > :nth-child(n + 6) {
+  animation-delay: 0.15s;
+}
+
+/* 可点卡片 hover 浮起（§4.2）：translateY(-2px) + 微阴影。
+   仅加在可点/可交互卡片上，纯展示卡不用。 */
+.ox-card-hover {
+  transition:
+    transform var(--ox-speed) cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow var(--ox-speed) cubic-bezier(0.4, 0, 0.2, 1),
+    border-color var(--ox-speed) cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ox-card-hover:hover {
+  transform: translateY(-2px);
+}
+:root .ox-card-hover:hover,
+[data-theme="cozy"] .ox-card-hover:hover {
+  box-shadow: 0 4px 16px rgba(58, 51, 45, 0.1);
+}
+[data-theme="cosmos"] .ox-card-hover:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ox-page-in,
+  .ox-stagger > * {
+    animation: none !important;
+  }
+  .ox-card-hover {
+    transition: none !important;
+  }
+  .ox-card-hover:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}

@@ -1,0 +1,100 @@
+/**
+ * 供应商 slug → 可读显示名（/app/providers、/app/agents 共用）。
+ *
+ * 口径与桌面端一致：Oxelia51/desktop/ui/src/clipboard.ts 的 PROVIDER_GROUPS label，
+ * 覆盖 proxy-gateway/internal/adapter/registry.go 静态路由表全部 slug。
+ * 映射不到的（自定义供应商等）按原样显示 slug。
+ */
+const PROVIDER_LABELS: Record<string, string> = {
+  // ---- 国外主流 ----
+  anthropic: "Claude (Anthropic)",
+  openai: "OpenAI / ChatGPT",
+  gemini: "Google Gemini",
+  mistral: "Mistral",
+  xai: "xAI (Grok)",
+  groq: "Groq",
+  cerebras: "Cerebras",
+  cohere: "Cohere",
+  perplexity: "Perplexity",
+  sambanova: "SambaNova",
+  nebius: "Nebius",
+  ai21: "AI21",
+  hyperbolic: "Hyperbolic",
+  friendli: "FriendliAI",
+  nvidia: "NVIDIA",
+  "github-models": "GitHub Models",
+  "minimax-io": "MiniMax 国际版",
+  zai: "Z.ai (GLM 国际)",
+  "stepfun-ai": "StepFun 国际版",
+
+  // ---- 国内主流 ----
+  deepseek: "DeepSeek",
+  zhipu: "智谱 GLM",
+  qwen: "通义千问 (Qwen)",
+  moonshot: "Moonshot (Kimi)",
+  "kimi-for-coding": "Kimi For Coding",
+  doubao: "豆包 / 火山方舟 (Doubao)",
+  hunyuan: "腾讯混元 (Hunyuan)",
+  spark: "讯飞星火 (Spark)",
+  minimax: "MiniMax 国内版",
+  baichuan: "百川 (Baichuan)",
+  yi: "零一万物 (Yi)",
+  sensenova: "商汤日日新 (SenseNova)",
+  stepfun: "阶跃星辰 (StepFun)",
+  siliconflow: "硅基流动 (SiliconFlow)",
+  gitee: "码云 AI (Gitee)",
+  modelscope: "魔搭 (ModelScope)",
+  "baidu-qianfan": "百度千帆",
+
+  // ---- 第三方平台（中转/聚合站）----
+  openrouter: "OpenRouter",
+  together: "Together AI",
+  fireworks: "Fireworks AI",
+  deepinfra: "DeepInfra",
+  novita: "Novita",
+  featherless: "Featherless",
+  ppio: "PPIO (算力平台)",
+  packyapi: "PackyAPI",
+  zetaapi: "ZetaAPI",
+  apinebula: "APINebula",
+  aicodemirror: "AICodeMirror",
+  pateway: "Pateway",
+  fenno: "Fenno",
+  runapi: "RunAPI",
+  shengsuanyun: "胜算云",
+  aigocode: "AIGO Code",
+  aicoding: "AICoding",
+  subrouter: "SubRouter",
+  apikeyfun: "APIKey.fun",
+  apito: "Apito",
+  code0: "Code0",
+  teamorouter: "TeamoRouter",
+  claudecn: "ClaudeCN",
+  a6api: "A6 API",
+  atlascloud: "AtlasCloud",
+  compshare: "Compshare",
+  ccsub: "CCSub",
+  sssaicodeapi: "SSSAI Code API",
+  micuapi: "MicuAPI",
+  rightapi: "RightAPI",
+  etok: "ETOK",
+  cubence: "Cubence",
+  crazyrouter: "CrazyRouter",
+  dmxapi: "DMX API",
+  sudocode: "SudoCode",
+  aihubmix: "AIHubMix",
+  amux: "Amux",
+  cherryin: "CherryIn",
+  eflowcode: "E-FlowCode",
+  streamlake: "StreamLake",
+  longcat: "LongCat",
+  opencode: "OpenCode",
+  pipellm: "PipeLLM",
+  relaxycode: "RelaxyCode",
+  therouter: "TheRouter",
+};
+
+/** 供应商显示名：命中映射返回可读名，否则原样返回 slug。 */
+export function providerDisplayName(slug: string): string {
+  return PROVIDER_LABELS[slug] ?? slug;
+}
