@@ -1,3 +1,9 @@
+import {
+  createEvent,
+  createEventsCh,
+  createTraceScore,
+  createScoresCh,
+} from "@oxelia51/shared/src/server/test-utils";
 /**
  * Events-only write-mode routing for getEnvironmentsForProject.
  *
@@ -20,8 +26,11 @@ import { vi } from "vitest";
 // the reads below would error. Capture the ORIGINAL opt-in flag BEFORE the
 // override forces it on.
 const eventsTableAvailable = vi.hoisted(() => {
+  // 与 packages/shared clickhouse client 的默认值口径一致：未显式设置时视为 true
+  //（env.mjs 的 zod default 即 "true"）。
   const enabled =
-    process.env.LANGFUSE_MIGRATION_V4_ALLOW_PREVIEW_OPT_IN === "true";
+    (process.env.LANGFUSE_MIGRATION_V4_ALLOW_PREVIEW_OPT_IN ?? "true") ===
+    "true";
   process.env.LANGFUSE_MIGRATION_V4_WRITE_MODE = "events_only";
   // events_only requires the preview opt-in (web read paths gate on it, and
   // worker/web env validation enforces the pairing).
@@ -29,13 +38,7 @@ const eventsTableAvailable = vi.hoisted(() => {
   return enabled;
 });
 
-import {
-  createEvent,
-  createEventsCh,
-  createTraceScore,
-  createScoresCh,
-  getEnvironmentsForProject,
-} from "@oxelia51/shared/src/server";
+import { getEnvironmentsForProject } from "@oxelia51/shared/src/server";
 import { env } from "@oxelia51/shared/src/env";
 import { randomUUID } from "crypto";
 

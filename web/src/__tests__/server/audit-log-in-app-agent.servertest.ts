@@ -1,8 +1,8 @@
+import { createOrgProjectAndApiKey } from "@oxelia51/shared/src/server/test-utils";
 import { randomUUID } from "crypto";
 import { auditLog } from "@/src/features/audit-logs/auditLog";
 import { prisma, AuditLogRecordType } from "@oxelia51/shared/src/db";
 import { createAndAddApiKeysToDb } from "@oxelia51/shared/src/server/auth/apiKeys";
-import { createOrgProjectAndApiKey } from "@oxelia51/shared/src/server";
 
 describe("in-app agent audit logging", () => {
   it("stores the creator on in-app-agent MCP keys", async () => {

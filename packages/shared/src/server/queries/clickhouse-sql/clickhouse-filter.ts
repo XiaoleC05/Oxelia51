@@ -583,10 +583,10 @@ export class NumberObjectFilter implements Filter {
 
 /**
  * Encodes one boolean-score entry the way the `score_booleans` ClickHouse
- * aggregation stores it (`scoreBooleansAggregation` in query-fragments.ts:
- * `concat(name, ':', lowerUTF8(string_value))`). BooleanObjectFilter and
- * InMemoryFilterService must build lookup targets through this helper so the
- * two filter paths and the SQL producer cannot drift apart.
+ * aggregation stores it (`concat(name, ':', lowerUTF8(string_value))`).
+ * BooleanObjectFilter and InMemoryFilterService must build lookup targets
+ * through this helper so the two filter paths and the SQL producer cannot
+ * drift apart.
  */
 export const encodeBooleanScoreEntry = (key: string, value: boolean): string =>
   `${key}:${value ? "true" : "false"}`;

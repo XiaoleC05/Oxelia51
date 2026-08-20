@@ -57,7 +57,9 @@ GitHub release tarball 在服务器上下载（~17MB）秒级；ACR 镜像（~1.
 ## 3. 五条部署管线
 
 ### 3.1 web（本仓 web/，腾讯云）
-1. `git push` main → CI build-docker → 推 ACR `.../oxelia51/langfuse-token:latest`
+1. 构建镜像：`push-to-acr.yml` 用本仓 `web/Dockerfile` 构建并推 ACR `.../oxelia51/langfuse-token:latest`
+   - 自动触发：`push master` 且改动命中 `web/**`、`packages/**`、`pnpm-lock.yaml`、`pnpm-workspace.yaml`
+   - 手动触发：Actions → Build and Push to ACR → `workflow_dispatch`（改动不涉及上述路径但需要重建时用）
 2. 腾讯云（经 ssh 隧道）：`cd /opt/langfuse && docker compose -f docker-compose.langfuse.yml pull langfuse-web && docker compose -f docker-compose.langfuse.yml up -d langfuse-web`
 3. **验证**：`curl -sI https://oxelia51.com/favicon.ico` 大小应匹配仓库新文件。
 

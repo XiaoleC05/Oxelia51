@@ -43,7 +43,6 @@ export * from "./features/scores";
 // prompts
 export * from "./features/prompts/parsePromptDependencyTags";
 export * from "./features/prompts/constants";
-export { compileChatMessages } from "./server/llm/compileChatMessages";
 
 // export db types only
 export * from "@prisma/client";
@@ -60,5 +59,3 @@ export * from "./domain";
 
 // io representation
 export * from "./utils/IORepresentation";
-
-// query (dashboard / monitor data model)

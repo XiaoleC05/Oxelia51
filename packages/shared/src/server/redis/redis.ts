@@ -1,5 +1,4 @@
 import Redis, { RedisOptions, Cluster, ClusterOptions } from "ioredis";
-import type { QueueBaseOptions } from "bullmq";
 import fs from "fs";
 import { env } from "../../env";
 import { logger } from "../logger";
@@ -19,33 +18,6 @@ const defaultRedisOptions: Partial<RedisOptions> = {
 };
 
 const REDIS_SCAN_COUNT = 1000;
-
-export const redisQueueRetryOptions: Partial<RedisOptions> = {
-  retryStrategy: (times: number) => {
-    if (times >= 5) {
-      // A few retries are expected and no cause for action.
-      logger.warn(`Connection to redis lost. Retry attempt: ${times}`);
-    }
-    // Retries forever. Waits at least 1s and at most 20s between retries.
-    return Math.max(Math.min(Math.exp(times), 20000), 1000);
-  },
-  reconnectOnError: (err) => {
-    // MOVED/ASK are normal cluster redirections handled by ioredis — not real errors.
-    if (err.message.includes("MOVED")) {
-      logger.debug(`Redis cluster redirect: ${err.message}`);
-      return false;
-    }
-
-    // Reconnects on READONLY errors and auto-retries the command.
-    logger.warn(`Redis connection error: ${err.message}`);
-    return err.message.includes("READONLY") ? 2 : false;
-  },
-};
-
-type BullMQOptionsWithRedis = Pick<
-  QueueBaseOptions,
-  "connection" | "prefix" | "skipVersionCheck"
->;
 
 /**
  * Parse Redis node definitions from environment variable
@@ -252,69 +224,6 @@ export const createNewRedisInstance = (
   });
 
   return instance;
-};
-
-/**
- * Get the queue prefix for BullMQ cluster compatibility
- * In cluster mode, uses hash tags to ensure queue keys are on the same node
- * In single-node mode, returns the configured prefix or undefined
- */
-export const getQueuePrefix = (queueName: string): string | undefined => {
-  const redisKeyPrefix = env.REDIS_KEY_PREFIX;
-
-  if (env.REDIS_CLUSTER_ENABLED === "true") {
-    // Use hash tags for Redis cluster compatibility
-    // This ensures all keys for a queue are placed on the same hash slot
-    // Format: {prefix:queueName} ensures all keys land on same slot
-    return redisKeyPrefix
-      ? `{${redisKeyPrefix}:${queueName}}`
-      : `{${queueName}}`;
-  }
-
-  // Non-cluster mode: Return prefix or undefined
-  return redisKeyPrefix ?? undefined;
-};
-
-const getBullMQOptionsForRedisConnection = (
-  queueName: string,
-  connection: BullMQOptionsWithRedis["connection"],
-): BullMQOptionsWithRedis => ({
-  connection,
-  prefix: getQueuePrefix(queueName),
-  ...(env.LANGFUSE_BULLMQ_SKIP_REDIS_VERSION_CHECK === "true"
-    ? { skipVersionCheck: true }
-    : {}),
-});
-
-/**
- * Creates a new Redis connection and returns the BullMQ queue options that use it.
- * Returns null only when the Redis connection cannot be created.
- */
-export const createBullMQQueueOptionsWithRedis = (
-  queueName: string,
-): BullMQOptionsWithRedis | null => {
-  const connection = createNewRedisInstance({
-    enableOfflineQueue: false,
-    ...redisQueueRetryOptions,
-  });
-
-  return connection
-    ? getBullMQOptionsForRedisConnection(queueName, connection)
-    : null;
-};
-
-/**
- * Creates a new Redis connection and returns the BullMQ worker options that use it.
- * Returns null only when the Redis connection cannot be created.
- */
-export const createBullMQWorkerOptionsWithRedis = (
-  queueName: string,
-): BullMQOptionsWithRedis | null => {
-  const connection = createNewRedisInstance(redisQueueRetryOptions);
-
-  return connection
-    ? getBullMQOptionsForRedisConnection(queueName, connection)
-    : null;
 };
 
 /**

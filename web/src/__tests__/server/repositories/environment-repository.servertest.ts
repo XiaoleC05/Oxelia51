@@ -1,3 +1,7 @@
+import {
+  createTracesCh,
+  createTrace,
+} from "@oxelia51/shared/src/server/test-utils";
 /**
  * Legacy write-mode coverage for getEnvironmentsForProject: reads come from
  * the legacy traces/observations tables. The write mode is read from the
@@ -12,11 +16,7 @@ vi.hoisted(() => {
   process.env.LANGFUSE_MIGRATION_V4_WRITE_MODE = "legacy";
 });
 
-import {
-  createTracesCh,
-  createTrace,
-  getEnvironmentsForProject,
-} from "@oxelia51/shared/src/server";
+import { getEnvironmentsForProject } from "@oxelia51/shared/src/server";
 import { env } from "@oxelia51/shared/src/env";
 import { randomUUID } from "crypto";
 

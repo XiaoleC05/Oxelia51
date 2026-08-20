@@ -10,41 +10,23 @@ import { env } from "./src/env.mjs";
  * CSP headers
  * img-src https to allow loading images from SSO providers
  */
-// Dataset attachments PUT media directly to presigned storage URLs, so
-// connect-src must allow AWS S3, Azure Blob Storage, GCS, and the configured
-// S3-compatible endpoint. The endpoint env var is only present at runtime in
-// official Docker images, so static wildcards cover the common providers too.
-const mediaUploadConnectSrc = (() => {
-  const endpoint = env.LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT;
-  if (!endpoint) return "";
-  try {
-    const url = new URL(endpoint);
-    const port = url.port ? `:${url.port}` : "";
-    return `${url.origin} ${url.protocol}//*.${url.hostname}${port} `;
-  } catch {
-    return "";
-  }
-})();
 const cspHeader = `
-  default-src 'self' https://*.langfuse.com https://*.langfuse.dev https://*.posthog.com https://*.sentry.io;
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.langfuse.com https://*.langfuse.dev https://challenges.cloudflare.com https://*.sentry.io  https://static.cloudflareinsights.com https://*.stripe.com https://login.microsoftonline.com https://login.microsoft.com https://*.microsoftonline.com;
+  default-src 'self' https://*.posthog.com https://*.sentry.io;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://*.sentry.io  https://static.cloudflareinsights.com https://login.microsoftonline.com https://login.microsoft.com https://*.microsoftonline.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://login.microsoftonline.com https://login.microsoft.com https://*.microsoftonline.com;
-  img-src 'self' https: blob: data: http://localhost:* https://prod-uk-services-workspac-workspacefilespublicbuck-vs4gjqpqjkh6.s3.amazonaws.com https://prod-uk-services-attachm-attachmentsbucket28b3ccf-uwfssb4vt2us.s3.eu-west-2.amazonaws.com https://i0.wp.com;
+  img-src 'self' https: blob: data: http://localhost:*;
   font-src 'self';
-  frame-src 'self' https://challenges.cloudflare.com https://*.stripe.com https://login.microsoftonline.com https://login.microsoft.com https://*.microsoftonline.com;
+  frame-src 'self' https://challenges.cloudflare.com https://login.microsoftonline.com https://login.microsoft.com https://*.microsoftonline.com;
   worker-src 'self' blob:;
   object-src 'none';
   base-uri 'self';
   form-action 'self' https://login.microsoftonline.com https://login.microsoft.com https://*.microsoftonline.com;
   frame-ancestors 'none';
-  connect-src 'self' ${mediaUploadConnectSrc}https://api.github.com https://*.langfuse.com https://*.langfuse.dev https://*.ingest.us.sentry.io https://*.sentry.io https://chat.uk.plain.com https://*.amazonaws.com https://*.blob.core.windows.net https://storage.googleapis.com https://prod-uk-services-attachm-attachmentsuploadbucket2-1l2e4906o2asm.s3.eu-west-2.amazonaws.com https://login.microsoftonline.com https://login.microsoft.com https://*.microsoftonline.com https://graph.microsoft.com;
+  connect-src 'self' https://api.github.com https://*.ingest.us.sentry.io https://*.sentry.io https://login.microsoftonline.com https://login.microsoft.com https://*.microsoftonline.com https://graph.microsoft.com;
   media-src 'self' https: http://localhost:*;
   ${env.LANGFUSE_CSP_ENFORCE_HTTPS === "true" ? "upgrade-insecure-requests; block-all-mixed-content;" : ""}
   ${env.SENTRY_CSP_REPORT_URI ? `report-uri ${env.SENTRY_CSP_REPORT_URI}; report-to csp-endpoint;` : ""}
 `;
-
-// Match rules for Hugging Face
-const huggingFaceHosts = ["huggingface.co", ".*\\.hf\\.space$"];
 
 const reportToHeader = {
   key: "Report-To",
@@ -62,8 +44,7 @@ const reportToHeader = {
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  // Emit and serve browser source maps in production. Langfuse is open source,
-  // so there is nothing to hide by shipping maps, and browser devtools then
+  // Emit and serve browser source maps in production so browser devtools
   // de-minify client stacks automatically. NOTE: this alone does NOT make Sentry
   // legible — the Sentry SDK rewrites frames to the `app:///` scheme, which is
   // not a fetchable URL, so Sentry cannot pull these public maps. Sentry
@@ -99,9 +80,6 @@ const nextConfig = {
     },
   },
   turbopack: {
-    resolveAlias: {
-      "@oxelia51/shared": "./packages/shared/src",
-    },
     rules: {
       "*.md": {
         loaders: ["raw-loader"],
@@ -122,15 +100,6 @@ const nextConfig = {
    * 注意：删除后 /en 将返回 404，所有页面走无前缀路径。
    */
   output: "standalone",
-
-  async rewrites() {
-    return [
-      {
-        source: "/.well-known/mcp.json",
-        destination: "/api/well-known/mcp.json",
-      },
-    ];
-  },
 
   async headers() {
     return [
@@ -174,11 +143,6 @@ const nextConfig = {
             value: "SAMEORIGIN",
           },
         ],
-        // Disable x-frame-options on Hugging Face to allow for embedded use of Langfuse
-        missing: huggingFaceHosts.map((host) => ({
-          type: "host",
-          value: host,
-        })),
       },
       // CSP header
       {
@@ -187,45 +151,6 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value: cspHeader.replace(/\n/g, ""),
-          },
-        ],
-        // Disable CSP on Hugging Face to allow for embedded use of Langfuse
-        missing: huggingFaceHosts.map((host) => ({
-          type: "host",
-          value: host,
-        })),
-      },
-      // Required to check authentication status from langfuse.com
-      ...(env.NEXT_PUBLIC_LANGFUSE_CLOUD_REGION !== undefined
-        ? [
-            {
-              source: "/api/auth/session",
-              headers: [
-                {
-                  key: "Access-Control-Allow-Origin",
-                  value: "https://langfuse.com",
-                },
-                { key: "Access-Control-Allow-Credentials", value: "true" },
-                { key: "Access-Control-Allow-Methods", value: "GET,POST" },
-                {
-                  key: "Access-Control-Allow-Headers",
-                  value: "Content-Type, Authorization",
-                },
-              ],
-            },
-          ]
-        : []),
-      // all files in /public/generated are public and can be accessed from any origin, e.g. to render an API reference based on our openapi schema
-      {
-        source: "/generated/:path*",
-        headers: [
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "*",
-          },
-          {
-            key: "Access-Control-Allow-Methods",
-            value: "GET",
           },
         ],
       },

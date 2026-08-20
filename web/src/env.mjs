@@ -101,8 +101,6 @@ export const env = createEnv({
         "NEXTAUTH_COOKIE_NAME_SUFFIX may only contain letters, numbers, hyphens, and underscores",
       )
       .optional(),
-    LANGFUSE_TEAM_SLACK_WEBHOOK: z.url().optional(),
-    LANGFUSE_FEEDBACK_INTAKE_SLACK_WEBHOOK: z.url().optional(),
     LANGFUSE_NEW_USER_SIGNUP_WEBHOOK: z.url().optional(),
     LANGFUSE_ADMIN_ACCESS_WEBHOOK: z.url().optional(),
     // Add `.min(1) on ID and SECRET if you want to make sure they're not empty
@@ -362,28 +360,6 @@ export const env = createEnv({
     LANGFUSE_CACHE_API_KEY_ENABLED: z.enum(["true", "false"]).default("true"),
     LANGFUSE_CACHE_API_KEY_TTL_SECONDS: z.coerce.number().default(300),
 
-    // Multimodal media upload to S3
-    LANGFUSE_S3_MEDIA_MAX_CONTENT_LENGTH: z.coerce
-      .number()
-      .positive()
-      .int()
-      .default(1_000_000_000),
-    LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: z.string().optional(),
-    LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: z.string().default(""),
-    LANGFUSE_S3_MEDIA_UPLOAD_REGION: z.string().optional(),
-    LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: z.string().optional(),
-    LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: z.string().optional(),
-    LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: z.string().optional(),
-    LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: z
-      .enum(["true", "false"])
-      .default("false"),
-    LANGFUSE_S3_MEDIA_DOWNLOAD_URL_EXPIRY_SECONDS: z.coerce
-      .number()
-      .nonnegative()
-      .default(3600),
-    LANGFUSE_S3_MEDIA_UPLOAD_SSE: z.enum(["AES256", "aws:kms"]).optional(),
-    LANGFUSE_S3_MEDIA_UPLOAD_SSE_KMS_KEY_ID: z.string().optional(),
-
     LANGFUSE_ALLOWED_ORGANIZATION_CREATORS: z
       .string()
       .optional()
@@ -396,8 +372,6 @@ export const env = createEnv({
         );
       }, "LANGFUSE_ALLOWED_ORGANIZATION_CREATORS must be a comma separated list of valid email addresses"),
 
-    STRIPE_SECRET_KEY: z.string().optional(),
-    STRIPE_WEBHOOK_SIGNING_SECRET: z.string().optional(),
     SENTRY_AUTH_TOKEN: z.string().optional(),
     SENTRY_CSP_REPORT_URI: z.string().optional(),
     LANGFUSE_RATE_LIMITS_ENABLED: z.enum(["true", "false"]).default("true"),
@@ -419,18 +393,11 @@ export const env = createEnv({
       .number()
       .positive()
       .default(50_000),
-    PLAIN_AUTHENTICATION_SECRET: z.string().optional(),
-    PLAIN_CARDS_API_TOKEN: z.string().optional(),
-    PYLON_API_KEY: z.string().optional(),
 
     // UI customization - comma-separated list of visible product modules
     LANGFUSE_UI_VISIBLE_PRODUCT_MODULES: z.string().optional(),
     // UI customization - comma-separated list of hidden product modules
     LANGFUSE_UI_HIDDEN_PRODUCT_MODULES: z.string().optional(),
-
-    SLACK_CLIENT_ID: z.string().optional(),
-    SLACK_CLIENT_SECRET: z.string().optional(),
-    SLACK_STATE_SECRET: z.string().optional(),
 
     // AWS Bedrock for langfuse native AI feature such as natural language filters
     LANGFUSE_AWS_BEDROCK_MODEL: z.string().optional(),
@@ -551,7 +518,6 @@ export const env = createEnv({
     NEXT_PUBLIC_SIGN_UP_DISABLED: z.enum(["true", "false"]).default("false"),
     NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
-    NEXT_PUBLIC_PLAIN_APP_ID: z.string().optional(),
     // Oxelia51：Umami 自托管统计（stats.oxelia51.com）。两者齐备才注入脚本，未配置不加载
     NEXT_PUBLIC_UMAMI_WEBSITE_ID: z.string().optional(),
     NEXT_PUBLIC_UMAMI_SRC: z.string().optional(),
@@ -620,9 +586,6 @@ export const env = createEnv({
         .LANGFUSE_IN_APP_AGENT_SANDBOX_AWS_LAMBDA_MICROVM_EGRESS_NETWORK_CONNECTOR_ARN,
     LANGFUSE_IN_APP_AGENT_SANDBOX_AWS_LAMBDA_MICROVM_REGION:
       process.env.LANGFUSE_IN_APP_AGENT_SANDBOX_AWS_LAMBDA_MICROVM_REGION,
-    LANGFUSE_TEAM_SLACK_WEBHOOK: process.env.LANGFUSE_TEAM_SLACK_WEBHOOK,
-    LANGFUSE_FEEDBACK_INTAKE_SLACK_WEBHOOK:
-      process.env.LANGFUSE_FEEDBACK_INTAKE_SLACK_WEBHOOK,
     LANGFUSE_NEW_USER_SIGNUP_WEBHOOK:
       process.env.LANGFUSE_NEW_USER_SIGNUP_WEBHOOK,
     LANGFUSE_ADMIN_ACCESS_WEBHOOK: process.env.LANGFUSE_ADMIN_ACCESS_WEBHOOK,
@@ -828,38 +791,12 @@ export const env = createEnv({
     LANGFUSE_INGESTION_MASKING_PROPAGATED_HEADERS:
       process.env.LANGFUSE_INGESTION_MASKING_PROPAGATED_HEADERS,
 
-    // S3 media upload
-    LANGFUSE_S3_MEDIA_MAX_CONTENT_LENGTH:
-      process.env.LANGFUSE_S3_MEDIA_MAX_CONTENT_LENGTH,
-    LANGFUSE_S3_MEDIA_UPLOAD_BUCKET:
-      process.env.LANGFUSE_S3_MEDIA_UPLOAD_BUCKET,
-    LANGFUSE_S3_MEDIA_UPLOAD_PREFIX:
-      process.env.LANGFUSE_S3_MEDIA_UPLOAD_PREFIX,
-    LANGFUSE_S3_MEDIA_UPLOAD_REGION:
-      process.env.LANGFUSE_S3_MEDIA_UPLOAD_REGION,
-    LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT:
-      process.env.LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT,
-    LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID:
-      process.env.LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID,
-    LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY:
-      process.env.LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY,
-    LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE:
-      process.env.LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE,
-    LANGFUSE_S3_MEDIA_DOWNLOAD_URL_EXPIRY_SECONDS:
-      process.env.LANGFUSE_S3_MEDIA_DOWNLOAD_URL_EXPIRY_SECONDS,
-    LANGFUSE_S3_MEDIA_UPLOAD_SSE: process.env.LANGFUSE_S3_MEDIA_UPLOAD_SSE,
-    LANGFUSE_S3_MEDIA_UPLOAD_SSE_KMS_KEY_ID:
-      process.env.LANGFUSE_S3_MEDIA_UPLOAD_SSE_KMS_KEY_ID,
     // Worker
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     // Other
-    NEXT_PUBLIC_PLAIN_APP_ID: process.env.NEXT_PUBLIC_PLAIN_APP_ID,
     NEXT_PUBLIC_UMAMI_WEBSITE_ID: process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID,
     NEXT_PUBLIC_UMAMI_SRC: process.env.NEXT_PUBLIC_UMAMI_SRC,
-    PLAIN_AUTHENTICATION_SECRET: process.env.PLAIN_AUTHENTICATION_SECRET,
-    PLAIN_CARDS_API_TOKEN: process.env.PLAIN_CARDS_API_TOKEN,
-    PYLON_API_KEY: process.env.PYLON_API_KEY,
     // clickhouse
     CLICKHOUSE_URL: process.env.CLICKHOUSE_URL,
     CLICKHOUSE_CLUSTER_NAME: process.env.CLICKHOUSE_CLUSTER_NAME,
@@ -901,8 +838,6 @@ export const env = createEnv({
       process.env.LANGFUSE_CACHE_API_KEY_TTL_SECONDS,
     LANGFUSE_ALLOWED_ORGANIZATION_CREATORS:
       process.env.LANGFUSE_ALLOWED_ORGANIZATION_CREATORS,
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-    STRIPE_WEBHOOK_SIGNING_SECRET: process.env.STRIPE_WEBHOOK_SIGNING_SECRET,
     SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
     SENTRY_CSP_REPORT_URI: process.env.SENTRY_CSP_REPORT_URI,
     LANGFUSE_RATE_LIMITS_ENABLED: process.env.LANGFUSE_RATE_LIMITS_ENABLED,
@@ -924,9 +859,6 @@ export const env = createEnv({
     NEXT_PUBLIC_BASE_PATH: process.env.NEXT_PUBLIC_BASE_PATH,
     LANGFUSE_MAX_HISTORIC_EVAL_CREATION_LIMIT:
       process.env.LANGFUSE_MAX_HISTORIC_EVAL_CREATION_LIMIT,
-    SLACK_CLIENT_ID: process.env.SLACK_CLIENT_ID,
-    SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET,
-    SLACK_STATE_SECRET: process.env.SLACK_STATE_SECRET,
 
     // AWS Bedrock for langfuse native AI feature such as natural language filters
     LANGFUSE_AWS_BEDROCK_MODEL: process.env.LANGFUSE_AWS_BEDROCK_MODEL,

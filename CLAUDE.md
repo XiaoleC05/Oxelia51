@@ -96,17 +96,15 @@ Oxelia51/                    ← 平台主仓库（v3.0）
 
 ## 5. 部署约束
 
-- 阿里云 47.108.202.199，Workbench 操作，22 端口不对外
-- 腾讯云 118.25.138.177，Workbench 操作，22 端口不对外
-- 阿里云可通过 `/api/admin/exec`（JWT + IP 白名单）执行命令
-- 阿里云可通过 `~/.ssh/tencent_cloud` SSH 到腾讯云
+- 阿里云 47.108.202.199；腾讯云 118.25.138.177
+- 22 端口受安全组限制（本机 SSH 直连被拦截）：日常运维走 `/api/admin/exec`（JWT + IP 白名单），或白名单内 IP 的 SSH
+- 阿里云可通过 `~/.ssh/tencent_cloud` SSH 到腾讯云（腾讯云 22 仅对阿里云 IP 放行）
 - **运维操作先查 `deploy/RUNBOOK.md`**——exec API 引号陷阱、setsid 后台、五条部署管线、常见坑
 - 已配环境变量不得重复询问：`CRAWLER_*` `QQ_BOT_*`
 - 工具部署路径：`/opt/<tool>/<tool>-server`，systemd 管理
 - 腾讯云 Langfuse：Docker Compose，部署在 `/opt/langfuse/`，管理脚本 `langfuse-deploy.sh`
 - 阿里云 Go 代理：`/opt/oxelia51/proxy/proxy-server`，systemd `token-proxy.service`
-- 部署流：`push master → Actions → release tarball → webhook → 服务器`
-- `deploy.sh` 有自愈循环，`receiver.py` 按 repo 路由到 `tool-deploy.sh`
+- 部署流：`push master → deploy.yml 构建 → GitHub Release → webhook（release 事件）→ deploy.sh → apply-release.sh`；`receiver.py` 按 repo 路由到 `tool-deploy.sh`
 - **所有编译在本地完成**，禁止在服务器上运行 `go build`/`npm run build`/`make`/`cmake` 等编译命令
 - 服务器上只做：下载二进制、重启服务、执行 SQL、查看日志
 

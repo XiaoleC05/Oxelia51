@@ -35,7 +35,6 @@ const serverTestFiles = globSync("src/**/server/**/*.servertest.{ts,tsx}", {
   cwd: import.meta.dirname,
   exclude: [
     "**/node_modules/**",
-    "src/__e2e__/**",
     "src/__tests__/server/unit/**",
   ],
   // node:fs globSync returns platform separators (backslashes on Windows);
@@ -91,7 +90,6 @@ export default defineConfig({
             "src/**/*.clienttest.{ts,tsx}",
             "src/**/*.servertest.{ts,tsx}",
             "src/**/__tests__/**",
-            "src/**/__e2e__/**",
           ],
           environment: "node",
         },

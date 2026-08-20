@@ -7,8 +7,6 @@ import { propagation, context } from "@opentelemetry/api";
 import { ClickHouseLogger, mapLogLevel } from "./clickhouse-logger";
 import { getClickHouseCompatibilitySettings } from "./compatibility";
 
-export { EXCEPTION_TAG_HEADER_NAME } from "@clickhouse/client";
-
 export type ClickhouseClientType = ReturnType<typeof createClient>;
 
 export type PreferredClickhouseService =

@@ -56,12 +56,6 @@ R3=$(curl -sS --max-time 15 -o /tmp/dg3.json -w "%{http_code}" \
   http://127.0.0.1/api/tools/dormguard/proxy/api/admin/settings)
 echo "HTTP $R3  body: $(head -c 120 /tmp/dg3.json)"
 
-echo "--- 前端 bundle（nginx 静态）---"
-grep -o 'assets/index-[^"]*\.js' /opt/Oxelia51/frontend/dist/index.html 2>/dev/null \
-  | sed 's/^/磁盘: /' || echo "磁盘: <未找到 dist>"
-curl -sS --max-time 5 -H 'Host: oxelia51.com' http://127.0.0.1/index.html 2>/dev/null \
-  | grep -o 'assets/index-[^"]*\.js' | sed 's/^/nginx: /' || echo "nginx: <未返回>"
-
 if [ "$R1" = "200" ] && [ "$R2" != "200" ] && [ "$R3" = "200" ]; then
   echo ">>> 结论: 后端正常；Nginx 丢弃 Authorization，但 X-Oxelia51-Access-Token 可用"
 elif [ "$R1" = "200" ] && [ "$R2" != "200" ] && [ "$R3" != "200" ]; then

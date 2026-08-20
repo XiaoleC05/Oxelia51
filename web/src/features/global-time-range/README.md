@@ -20,8 +20,8 @@ editor that reads/writes this state.
   XOR resolution, in `@/src/utils/date-range-utils.ts` (co-located with the
   other range utilities); covered by `date-range-utils.clienttest.ts`.
 
-Consumers don't use these directly: `useDashboardDateRange` and
-`useTableDateRange` (in `@/src/hooks/`) are thin per-view delegators that pass
+Consumers don't use these directly: `useDashboardDateRange`
+(in `@/src/hooks/`) is a thin per-view delegator that passes
 the view's allowed presets + fallback.
 
 ## Data flow (one-way)

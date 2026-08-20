@@ -30,7 +30,6 @@ import { CloudPrivacyNotice } from "@/src/features/auth/components/AuthCloudPriv
 import { CloudRegionSwitch } from "@/src/features/auth/components/AuthCloudRegionSwitch";
 import {
   SSOButtons,
-  useHuggingFaceRedirect,
   AuthBrandLogo,
   type PageProps,
 } from "@/src/pages/auth/sign-in";
@@ -62,11 +61,8 @@ type SignupPhase = "form" | "otp";
 
 export default function SignUp({
   authProviders,
-  runningOnHuggingFaceSpaces,
   emailVerificationRequired,
 }: PageProps) {
-  useHuggingFaceRedirect(runningOnHuggingFaceSpaces);
-
   if (emailVerificationRequired) {
     return (
       <VerifiedSignupFlow

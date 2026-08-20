@@ -43,13 +43,9 @@
       "import": "./dist/src/encryption/index.js",
       "require": "./dist/src/encryption/index.js"
     },
-    "./query": {
-      "import": "./dist/src/features/query/index.js",
-      "require": "./dist/src/features/query/index.js"
-    },
-    "./query/server": {
-      "import": "./dist/src/features/query/server/index.js",
-      "require": "./dist/src/features/query/server/index.js"
+    "./src/server/test-utils": {
+      "import": "./dist/src/server/test-utils/index.js",
+      "require": "./dist/src/server/test-utils/index.js"
     }
   },
   "scripts": {
@@ -74,35 +70,22 @@
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "catalog:",
-    "@aws-sdk/client-s3": "catalog:",
     "@aws-sdk/client-sesv2": "catalog:",
-    "@aws-sdk/lib-storage": "catalog:",
-    "@aws-sdk/s3-request-presigner": "catalog:",
-    "@azure/storage-blob": "^12.26.0",
     "@clickhouse/client": "1.23.1",
-    "@google-cloud/storage": "^7.19.0",
     "@opentelemetry/api": ">=1.0.0 <1.10.0",
     "@prisma/client": "^6.19.3",
     "@react-email/components": "^0.5.1",
     "@react-email/render": "^1.2.1",
-    "@smithy/node-http-handler": "4.5.1",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^2.4.3",
-    "bullmq": "^5.76.3",
-    "date-fns": "^3.6.0",
     "dd-trace": "5.109.0",
-    "decimal.js": "^10.4.3",
     "exponential-backoff": "^3.1.2",
     "ioredis": "^5.10.1",
-    "ipaddr.js": "^2.2.0",
     "jsonpath-plus": "10.3.0",
     "lodash": "^4.18.1",
     "lossless-json": "^4.1.1",
     "next-auth": "^4.24.14",
     "nodemailer": "^9.0.3",
-    "oci-common": "^2.125.0",
-    "oci-objectstorage": "^2.125.0",
-    "undici": "^7.28.0",
     "uuid": "^14.0.0",
     "winston": "^3.15.0",
     "zod": "^4.3.6"

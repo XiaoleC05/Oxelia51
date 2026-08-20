@@ -19,7 +19,6 @@ export const PATH_CONSTANTS = {
     "/auth/sso-initiate",
     "/auth/enterprise-sso-required",
     "/auth/error",
-    "/auth/hf-spaces",
   ] as const,
   publishable: [
     "/project/[projectId]/sessions/[sessionId]",

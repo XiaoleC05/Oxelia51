@@ -16,12 +16,9 @@ import {
 const RedirectToFirstProject = () => null;
 export default RedirectToFirstProject;
 
-/** getServerSideProps resolves the project sentinel: cross-region bounce, sign-in gate, then project redirect. */
+/** getServerSideProps resolves the project sentinel: sign-in gate, then project redirect. */
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const sCtx = parseSentinelRequest(ctx);
-
-  const crossRegion = crossRegionRedirect(sCtx);
-  if (crossRegion) return crossRegion;
 
   const signIn = await signInRedirect(sCtx);
   if (signIn) return signIn;
@@ -41,19 +38,6 @@ const parseSentinelRequest = (
     getSession: () =>
       (session ??= getServerAuthSession({ req: ctx.req, res: ctx.res })),
   };
-};
-
-/** crossRegionRedirect bounces to the cookie's origin when it is a sibling region the session lives on. */
-const crossRegionRedirect = (req: SentinelContext) => {
-  const { cookie, origin, resolvedUrl } = req;
-  if (
-    cookie &&
-    origin &&
-    cookie.origin !== origin &&
-    sameRegistrableDomain(cookie.origin, origin)
-  ) {
-    return redirect(`${cookie.origin}${resolvedUrl}`);
-  }
 };
 
 /** signInRedirect sends the user to sign-in, returning to the sentinel URL afterward. */
@@ -93,20 +77,6 @@ const projectRedirect = async ({
 const redirect = (destination: string): GetServerSidePropsResult<never> => ({
   redirect: { destination, permanent: false },
 });
-
-/** sameRegistrableDomain returns true when two origins share the last-two-label registrable domain. */
-const sameRegistrableDomain = (originA: string, originB: string): boolean => {
-  const registrableDomain = (origin: string): string | null => {
-    try {
-      return new URL(origin).hostname.split(".").slice(-2).join(".");
-    } catch {
-      return null;
-    }
-  };
-  const domainA = registrableDomain(originA);
-  const domainB = registrableDomain(originB);
-  return domainA !== null && domainA === domainB;
-};
 
 /** sentinelPathPrefix is the route prefix stripped to recover the trailing path and query. */
 const sentinelPathPrefix = "/project/~";

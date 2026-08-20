@@ -56,11 +56,6 @@ do_deploy() {
     cp /opt/Oxelia51/deploy/systemd/token-proxy.service /etc/systemd/system/
     systemctl daemon-reload
 
-    # 更新 Nginx 配置
-    if [ -f /opt/Oxelia51/deploy/nginx/proxy-gateway.conf ]; then
-        cp /opt/Oxelia51/deploy/nginx/proxy-gateway.conf /opt/Oxelia51/deploy/nginx/proxy-gateway.conf.bak 2>/dev/null || true
-    fi
-
     # 重启服务
     if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
         systemctl restart "$SERVICE_NAME"

@@ -2,6 +2,13 @@ name: Build and Push to ACR
 
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - "web/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
 
 jobs:
   push-to-acr:
@@ -12,9 +19,14 @@ jobs:
       # web/ 已迁入本仓（Oxelia51），直接构建当前仓库
       - uses: actions/checkout@v4
 
+      # NEXT_PUBLIC_* 是构建期内联变量，umami 统计脚本必须随镜像构建注入；
+      # UMAMI_WEBSITE_ID 存于 repo secrets（stats.oxelia51.com → Website → Tracking code）
       - name: Build Docker image
         run: |
-          docker build -f web/Dockerfile -t langfuse-token-web:latest .
+          docker build -f web/Dockerfile -t langfuse-token-web:latest \
+            --build-arg NEXT_PUBLIC_UMAMI_SRC=https://stats.oxelia51.com/script.js \
+            --build-arg NEXT_PUBLIC_UMAMI_WEBSITE_ID="${{ secrets.UMAMI_WEBSITE_ID }}" \
+            .
 
       - name: Push to ACR
         env:

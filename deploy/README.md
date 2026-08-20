@@ -46,27 +46,44 @@
 ```
 deploy/
 ├── README.md                    ← 本文件
+├── RUNBOOK.md                   ← 运维操作手册（exec API 技巧、五条部署管线）
 ├── apply-release.sh             ← 从 tarball 安装全新发布包
 ├── deploy-proxy.sh              ← Go 代理网关部署（阿里云）    v3.0
+├── diagnose-all.sh              ← Oxelia51 ↔ DormGuard 全链路诊断
+├── env.production.example       ← 后端生产环境变量模板
+├── seed-tools.sql               ← 工具注册种子数据
 ├── docker/
 │   └── compose.prod.yml         ← 阿里云 PostgreSQL + Redis
 ├── nginx/
-│   ├── oxelia51.com.conf        ← 主站 Nginx（含 /api/ 路由）
-│   └── proxy-gateway.conf       ← 代理网关 Nginx 片段           v3.0
+│   ├── oxelia51.com.conf        ← 主站 Nginx（含 /api/ 与 /api/proxy/ 路由）
+│   ├── default-ip.conf          ← IP 直连（/webhook、/uploads/、/api/ 反代）
+│   └── snippets/
+│       └── security-headers.conf ← 统一安全响应头片段
 ├── systemd/
 │   ├── oxelia51-backend.service ← 管理后台
 │   ├── oxelia51-data.service    ← 数据处理
-│   └── token-proxy.service      ← Go 代理网关                   v3.0
+│   ├── token-proxy.service      ← Go 代理网关                   v3.0
+│   └── token-tunnel.service     ← SSH 隧道（阿里云 127.0.0.1:3000 → 腾讯云 web:3000）
 ├── tencent-cloud/
 │   ├── init-server.sh           ← 腾讯云完整初始化
 │   ├── docker-compose.langfuse.yml ← Langfuse 6 容器编排        v3.0
 │   ├── .env.langfuse.example    ← Langfuse 环境变量模板          v3.0
-│   └── langfuse-deploy.sh       ← Langfuse 部署管理脚本          v3.0
+│   ├── langfuse-deploy.sh       ← Langfuse 部署管理脚本          v3.0
+│   ├── health-server.go         ← 健康检查服务源码（Go）
+│   ├── health-server            ← 健康检查服务预编译二进制
+│   └── systemd/
+│       └── health-server.service ← 健康检查 systemd 单元
+├── umami/
+│   ├── README.md                ← Umami 自托管部署步骤（stats.oxelia51.com）
+│   ├── docker-compose.umami.yml ← Umami + 独立 PostgreSQL
+│   └── nginx-stats.conf         ← stats.oxelia51.com Nginx
 ├── webhook/
-│   ├── receiver.py              ← Webhook HTTP 接收器
+│   ├── receiver.py              ← Webhook HTTP 接收器（127.0.0.1:9000）
 │   ├── deploy.sh                ← 主平台部署
 │   ├── tool-deploy.sh           ← 工具自动部署
-│   └── oxelia51-webhook.service ← Webhook systemd 服务
+│   ├── oxelia51-webhook.service ← Webhook systemd 服务
+│   ├── oxelia51-webhook.logrotate ← 部署日志轮转
+│   └── .env.example             ← receiver 环境变量模板
 └── monitor/
     └── oxelia51-healthcheck.sh  ← 定时健康检查
 ```
@@ -104,23 +121,25 @@ bash /opt/Oxelia51/deploy/deploy-proxy.sh deploy
 
 ### 3. 阿里云 — Nginx 更新
 
+`/api/proxy/` 与 `/token/` 路由已内联在主 conf `deploy/nginx/oxelia51.com.conf` 中，
+由 `apply-release.sh` 一并安装（不再有独立的 proxy-gateway.conf 片段）：
+
 ```bash
-# 在 oxelia51.com.conf 的 server 块中添加：
-#   include /opt/Oxelia51/deploy/nginx/proxy-gateway.conf;
-#   location /token/ { proxy_pass http://118.25.138.177:3000; ... }
+cp /opt/Oxelia51/deploy/nginx/oxelia51.com.conf /etc/nginx/sites-available/oxelia51.com
 nginx -t && systemctl reload nginx
 ```
 
 ## 部署流程（自动）
 
 ```
-git push master → GitHub Actions 构建 → push tarball 到 release 分支
-                                             ↓
-                                        GitHub webhook
-                                             ↓
-                                        receiver.py (验证签名 + 路由)
-                                        ├── Oxelia51 → deploy.sh
-                                        └── 工具 repo → tool-deploy.sh <name>
+git push master → deploy.yml 构建 release tarball → 创建 GitHub Release
+                                                      ↓
+                                      GitHub webhook（release published 事件）
+                                                      ↓
+                                      receiver.py（验证签名 + 按 repo 路由）
+                                      ├── Oxelia51  → deploy.sh <tarball_url>
+                                      │                 └─ 解压后调 apply-release.sh
+                                      └── 工具 repo → tool-deploy.sh <name>
 ```
 
 ## 工具自动部署（各仓库独立 CI/CD）

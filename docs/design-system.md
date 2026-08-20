@@ -410,7 +410,7 @@
 | 自绘下拉组件 | `desktop/ui/src/components/Dropdown.tsx` |
 | 悬浮卡片 | `desktop/ui/src/widget/*` + `desktop/src-tauri/tauri.conf.json`(`app.windows`) + `desktop/src-tauri/capabilities/widget.json` |
 | 各 Tab | `desktop/ui/src/screens/*.tsx` |
-| 设计文档 | `docs/4-detailed-design.md`、`docs/ui-optimization-desktop.md`、本文 |
+| 设计文档 | `docs/archive/4-detailed-design.md`、`docs/archive/ui-optimization-desktop.md`、本文 |
 
 ### 网站端 `web/`
 

@@ -1,3 +1,7 @@
+import {
+  createEvent,
+  createEventsCh,
+} from "@oxelia51/shared/src/server/test-utils";
 import type { Session } from "next-auth";
 
 // Session fixture sub-object types; casts keep the runtime fixtures unchanged
@@ -9,7 +13,6 @@ import { prisma } from "@oxelia51/shared/src/db";
 import { appRouter } from "@/src/server/api/root";
 import { createInnerTRPCContext } from "@/src/server/api/trpc";
 import { randomUUID } from "crypto";
-import { createEvent, createEventsCh } from "@oxelia51/shared/src/server";
 
 const orgId = `org-${randomUUID()}`;
 const projectId = `project-${randomUUID()}`;

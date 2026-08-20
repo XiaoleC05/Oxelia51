@@ -21,6 +21,8 @@
 - web 测试全绿：客户端 557 通过、服务端 887 通过（本地 docker 起 PG/CH/Redis 实跑）
 
 ### 已修复
+- **项目删除功能**：原实现把删除任务推入 BullMQ 队列但 worker 已下线，任务永久堆积、项目实际删不掉——改为同步删除（PG 事务内级联清理 + CH token_events 异步 mutation + 审计日志保留）
+- **Go 后端 sync 死链路上下线**：nginx 把 `/api/sync/*` 全部路由给 web，backend 的 `internal/domain/sync` 线上不可达——代码与路由注册删除（迁移文件 016 保留无害）
 - 网关 ClickHouse recorder 初始化失败/写失败后自动恢复（≤60s 节流重连 + 热切换），不再永久降级 no-op
 - analytics 聚合 catch-up 分块化：积压按 24h 窗口逐块聚合并推进游标，单块失败不丢已推进进度
 - analytics 游标毫秒精度修复：parseDateTimeBestEffort 截断小数秒导致边界事件每次运行重复聚合，改用 parseDateTime64BestEffort(..., 3)
@@ -33,6 +35,10 @@
 ### 内部
 - analytics 日志收口：三份重复 timestamp/logMsg（main/aggregator/alerter）合并为 util/log.h
 - 移除死代码 ClickHouseClient::execute()
+- 死代码大扫除（第二波）：shared 删除 otel/query/StorageService/死队列等仅测试引用模块约 1.6 万行；web 删除 58 个零引用文件（12 hooks + 死组件 + 死 utils）；修正在 nginx 双份冲突的 proxy-gateway.conf、失效 deploy 脚本（dl-image-tencent/test-gateway-e2e/ci-deploy）与废弃 tools 脚本
+- 文档归档：docs/1-6 设计快照与 ops 流水账移至 docs/archive/；RUNBOOK/deploy README 与现行管线对齐；push-to-acr 增加 push 自动触发（paths: web/**、packages/**）
+- 配置清理：next.config 死 rewrite/CSP 死域名/HuggingFace 遗留；env schema 删除 STRIPE/SLACK/S3 媒体等死变量；补充 token-tunnel.service unit
+- umami 统计修复：push-to-acr 补 NEXT_PUBLIC_UMAMI_* build-arg（需在仓库 secrets 配置 UMAMI_WEBSITE_ID 后生效）
 
 ---
 

@@ -246,7 +246,8 @@ const EnvSchema = z.object({
     .min(1)
     .max(10)
     .default(3),
-  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: z.string(), // Langfuse requires a bucket name for S3 Event Uploads.
+  // 可选：事件上传消费路径已删；生产环境仍设置该变量，保持 optional 向后兼容。
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: z.string().optional(),
   LANGFUSE_S3_EVENT_UPLOAD_PREFIX: z.string().default(""),
   LANGFUSE_S3_EVENT_UPLOAD_REGION: z.string().optional(),
   LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: z.string().optional(),
@@ -259,17 +260,6 @@ const EnvSchema = z.object({
   LANGFUSE_S3_EVENT_UPLOAD_SSE_KMS_KEY_ID: z.string().optional(),
   LANGFUSE_S3_EVENT_KEY_MAX_SEGMENT_BYTES:
     langfuseS3EventKeyMaxSegmentBytesSchema,
-  LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: z.string().optional(),
-  LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: z.string().default(""),
-  LANGFUSE_S3_MEDIA_UPLOAD_REGION: z.string().optional(),
-  LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: z.string().optional(),
-  LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: z.string().optional(),
-  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: z.string().optional(),
-  LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: z
-    .enum(["true", "false"])
-    .default("false"),
-  LANGFUSE_S3_MEDIA_UPLOAD_SSE: z.enum(["AES256", "aws:kms"]).optional(),
-  LANGFUSE_S3_MEDIA_UPLOAD_SSE_KMS_KEY_ID: z.string().optional(),
   LANGFUSE_USE_AZURE_BLOB: z.enum(["true", "false"]).default("false"),
   LANGFUSE_AZURE_SKIP_CONTAINER_CHECK: z
     .enum(["true", "false"])
@@ -292,7 +282,6 @@ const EnvSchema = z.object({
   LANGFUSE_OCI_CONFIG_FILE: z.string().optional(),
   LANGFUSE_OCI_CONFIG_PROFILE: z.string().optional(),
   NODE_EXTRA_CA_CERTS: z.string().optional(),
-  STRIPE_SECRET_KEY: z.string().optional(),
 
   LANGFUSE_ENABLE_BLOB_STORAGE_FILE_LOG: z
     .enum(["true", "false"])
@@ -441,17 +430,6 @@ const EnvSchema = z.object({
     .transform((s) =>
       s ? s.split(",").map((s) => s.toLowerCase().trim()) : [],
     ),
-  SLACK_CLIENT_ID: z.string().optional(),
-  SLACK_CLIENT_SECRET: z.string().optional(),
-  SLACK_STATE_SECRET: z.string().optional(),
-  SLACK_PAGE_SIZE: z.coerce
-    .number()
-    .positive()
-    .int()
-    .max(1000)
-    .optional()
-    .default(1000) // Use high default to minimize number of API calls and hence avoid rate limits
-    .describe("Number of channels to fetch per Slack API page"),
   HTTPS_PROXY: z.string().optional(),
 
   LANGFUSE_SERVER_SIDE_IO_CHAR_LIMIT: z.coerce

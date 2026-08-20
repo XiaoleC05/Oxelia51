@@ -29,15 +29,28 @@ Oxelia51 最小集，包名 `@oxelia51/shared`。
 
 `src/server/` 下保留并维护的服务：
 
-- `repositories/` + `../db.ts`：Prisma 数据访问
+- `repositories/` + `../db.ts`：Prisma 数据访问与 ClickHouse 读路径
+  （`traces.ts` 只保留 3 个存活读函数，写路径/upsert 已删）
 - `auth/`：API key 等认证辅助
-- `redis/`：Redis 连接与队列辅助（bullmq）
+- `redis/`：仅 `redis.ts`（Redis 连接、safeMultiDel、scanKeys）；
+  所有 bullmq 队列类与 `queues.ts`/`getQueue.ts` 已随队列功能删除
 - `clickhouse/`：ClickHouse client 与迁移
+- `queries/clickhouse-sql/`：仅存活的 filter/CTE 查询构建器
+  （`clickhouse-filter`、`event-query-builder` 的 CTEQueryBuilder +
+  EventsAggregationQueryBuilder、`fts`、`query-fragments` 的
+  eventsTracesAggregation）
 - `services/email/`：邮件发送（SES/SMTP 传输层 + 存活模板：
   passwordReset、organizationInvitation、feedback、oxelia51 等；
   batchExport/cloudSpendAlert 等遗留模板对应的队列功能已删，视为死代码，
   不要再接入）
+- `test-utils/`：测试工厂，不进生产 barrel，经
+  `@oxelia51/shared/src/server/test-utils` 子路径仅供测试导入
 - `logger.ts`、`../env.ts`：日志与环境变量 schema
+
+已删除模块（勿再引入）：`otel/`、`features/query/`、`llm/` 的
+compileChatMessages/internalTraceEvents、`StorageService`/`s3/`、
+`outbound-url/`、`webhooks/`、`sessions-ui-table-*`、`orderByToPrisma`、
+`billingCycleHelpers`、`tableMappings/`。
 
 ## 构建方式
 
@@ -53,7 +66,7 @@ Oxelia51 最小集，包名 `@oxelia51/shared`。
 - `@oxelia51/shared/src/db`：Prisma client（不得进客户端 bundle）
 - `@oxelia51/shared/src/env`：环境变量 schema
 - `@oxelia51/shared/encryption`：加密/签名辅助
-- `@oxelia51/shared/query`、`/query/server`：dashboard 查询特性
+- `@oxelia51/shared/src/server/test-utils`：测试工厂（仅测试使用）
 - 窄口子路径：`/src/server/auth/apiKeys`、`/src/utils/chatml`
 
 改动导出面时，保持 `package.json#exports`、对应 barrel 文件与本文件同步。

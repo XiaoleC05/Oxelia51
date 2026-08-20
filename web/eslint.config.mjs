@@ -107,25 +107,6 @@ export default [
     },
   },
 
-  // We're using the in-app-agent directory as a testing ground for some new eslint-rules.
-  {
-    ...reactYouMightNotNeedAnEffect.configs.recommended,
-    name: "langfuse/web/in-app-agent",
-    files: ["src/ee/features/in-app-agent/**/*.{ts,tsx}"],
-    rules: {
-      ...reactYouMightNotNeedAnEffect.configs.recommended.rules,
-      "@typescript-eslint/consistent-type-definitions": ["warn", "type"],
-      "@typescript-eslint/no-confusing-void-expression": "warn",
-      "@typescript-eslint/no-non-null-assertion": "warn",
-      "@typescript-eslint/no-meaningless-void-operator": "warn",
-      "@typescript-eslint/no-invalid-void-type": "warn",
-      "@typescript-eslint/no-unsafe-assignment": "warn",
-      "@typescript-eslint/return-await": ["warn", "in-try-catch"],
-      curly: ["error", "all"],
-      "@repo/no-switch-statements": "error",
-    },
-  },
-
   // Design-token lint wall. The type system has exactly two weights
   // (`font-bold` for the bold role; text-* size tokens carry the regular
   // weight), and colors must come from design tokens — palette utilities or
@@ -186,7 +167,7 @@ export default [
   // such as getTraceById/getObservationById, so allow them in test code.
   {
     name: "langfuse/web/tests-allow-deprecated",
-    files: ["src/__tests__/**", "src/__e2e__/**", "**/*.servertest.ts"],
+    files: ["src/__tests__/**", "**/*.servertest.ts"],
     rules: {
       "@typescript-eslint/no-deprecated": "off",
     },
@@ -223,7 +204,7 @@ export default [
               // of a shared module to observe env mutations (vitest loads the
               // CJS dist through Node's require cache as a second instance —
               // see blob-storage-integration-trpc.servertest.ts).
-              regex: "^(\\.\\./)+(packages|ee|worker)/",
+              regex: "^(\\.\\./)+packages/",
               message:
                 "Do not import other workspace packages via relative paths. Use the package entrypoints instead (e.g. @oxelia51/shared/src/db, @oxelia51/shared/src/server).",
             },

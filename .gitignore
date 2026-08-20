@@ -63,5 +63,6 @@ next-env.d.ts
 .eslintcache
 web/test-results/
 .playwright-mcp/
+.token-savior-cache.json
 # 构建期生成的 openapi spec
 web/public/openapi*.yml

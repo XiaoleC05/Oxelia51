@@ -5,12 +5,93 @@ import {
   VertexAIConfigSchema,
 } from "../../interfaces/customLLMProviderConfigSchemas";
 import { JSONObjectSchema } from "../../utils/zod";
-import type {
-  InternalTraceEventInput,
-  InternalTraceExperimentContext,
-} from "./internalTraceEvents";
 
 // disable lint as this is exported and used in web/worker
+
+export type InternalTraceExperimentContext = {
+  id: string;
+  name: string;
+  metadata?: Record<string, unknown>;
+  description?: string | null;
+  datasetId: string;
+  itemId: string;
+  itemVersion: string;
+  itemExpectedOutput?: unknown;
+  itemMetadata?: Record<string, unknown> | null;
+};
+
+/**
+ * Flexible input type for writing events to the events table.
+ * This is intentionally loose to allow for iteration as the events
+ * table schema evolves. Only required fields are enforced.
+ */
+export type InternalTraceEventInput = {
+  projectId: string;
+  traceId: string;
+  spanId: string;
+  startTimeISO: string;
+  orgId?: string;
+  parentSpanId?: string;
+  name?: string;
+  type?: string;
+  environment?: string;
+  version?: string;
+  release?: string;
+  endTimeISO: string;
+  completionStartTime?: string;
+  traceName?: string;
+  tags?: string[];
+  bookmarked?: boolean;
+  public?: boolean;
+  isAppRoot?: boolean | null;
+  userId?: string;
+  sessionId?: string;
+  level?: string;
+  statusMessage?: string;
+  promptId?: string;
+  promptName?: string;
+  promptVersion?: string;
+  modelId?: string;
+  modelName?: string;
+  modelParameters?: string | Record<string, unknown>;
+  providedUsageDetails?: Record<string, number>;
+  usageDetails?: Record<string, number>;
+  providedCostDetails?: Record<string, number>;
+  costDetails?: Record<string, number>;
+  toolDefinitions?: Record<string, string>;
+  toolCalls?: string[];
+  toolCallNames?: string[];
+  input?: string;
+  output?: string;
+  metadata: Record<string, unknown>;
+  source: string;
+  ingestionApiKey?: string;
+  ingestionSdkName?: string;
+  ingestionSdkVersion?: string;
+  serviceName?: string;
+  serviceVersion?: string;
+  scopeName?: string;
+  scopeVersion?: string;
+  telemetrySdkLanguage?: string;
+  telemetrySdkName?: string;
+  telemetrySdkVersion?: string;
+  blobStorageFilePath?: string;
+  eventRaw?: string;
+  eventBytes?: number;
+  experimentId?: string;
+  experimentName?: string;
+  experimentMetadataNames?: string[];
+  experimentMetadataValues?: Array<string | null | undefined>;
+  experimentDescription?: string;
+  experimentDatasetId?: string;
+  experimentItemId?: string;
+  experimentItemVersion?: string;
+  experimentItemRootSpanId?: string;
+  experimentItemExpectedOutput?: string;
+  experimentItemMetadataNames?: string[];
+  experimentItemMetadataValues?: Array<string | null | undefined>;
+  [key: string]: any;
+};
 
 export const LLMJSONSchema = z.record(z.string(), z.any());
 export type LLMJSONSchema = z.infer<typeof LLMJSONSchema>;

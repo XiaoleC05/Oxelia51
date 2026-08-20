@@ -1,11 +1,9 @@
+import { createOrgProjectAndApiKey } from "@oxelia51/shared/src/server/test-utils";
 import type { Session } from "next-auth";
 import { prisma } from "@oxelia51/shared/src/db";
 import { appRouter } from "@/src/server/api/root";
 import { createInnerTRPCContext } from "@/src/server/api/trpc";
-import {
-  createAndAddApiKeysToDb,
-  createOrgProjectAndApiKey,
-} from "@oxelia51/shared/src/server";
+import { createAndAddApiKeysToDb } from "@oxelia51/shared/src/server";
 
 describe("project API keys trpc", () => {
   // The session user is persisted as the API key creator, so it must exist

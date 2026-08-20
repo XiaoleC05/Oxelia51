@@ -210,49 +210,6 @@ describe("sentinel redirect /project/~/", () => {
     });
   });
 
-  it("cross-region cookie, same parent domain: bounces to cookie origin sentinel", async () => {
-    getServerAuthSessionMock.mockResolvedValue(makeSession(["proj-first"]));
-
-    const result = await getServerSideProps(
-      makeCtx({ path: ["traces"] }, "/project/~/traces", {
-        host: "us.cloud.langfuse.com",
-        cookie: {
-          origin: "https://eu.cloud.langfuse.com",
-          projectId: "proj-eu",
-        },
-      }),
-    );
-
-    expect(result).toEqual({
-      redirect: {
-        destination: "https://eu.cloud.langfuse.com/project/~/traces",
-        permanent: false,
-      },
-    });
-  });
-
-  it("unauthenticated cross-region cookie: bounces to cookie origin before sign-in", async () => {
-    getServerAuthSessionMock.mockResolvedValue(null);
-
-    const result = await getServerSideProps(
-      makeCtx({ path: ["traces"] }, "/project/~/traces", {
-        host: "us.cloud.langfuse.com",
-        cookie: {
-          origin: "https://eu.cloud.langfuse.com",
-          projectId: "proj-eu",
-        },
-      }),
-    );
-
-    expect(result).toEqual({
-      redirect: {
-        destination: "https://eu.cloud.langfuse.com/project/~/traces",
-        permanent: false,
-      },
-    });
-    expect(getServerAuthSessionMock).not.toHaveBeenCalled();
-  });
-
   it("cross-origin cookie, different parent domain: falls back to first project", async () => {
     getServerAuthSessionMock.mockResolvedValue(makeSession(["proj-first"]));
 
@@ -287,27 +244,6 @@ describe("sentinel redirect /project/~/", () => {
     expect(result).toEqual({
       redirect: {
         destination: "/project/proj-last/traces?foo=bar&baz=1",
-        permanent: false,
-      },
-    });
-  });
-
-  it("cross-region bounce: preserves query string on cross-host redirect", async () => {
-    getServerAuthSessionMock.mockResolvedValue(makeSession(["proj-first"]));
-
-    const result = await getServerSideProps(
-      makeCtx({ path: ["traces"] }, "/project/~/traces?foo=bar", {
-        host: "us.cloud.langfuse.com",
-        cookie: {
-          origin: "https://eu.cloud.langfuse.com",
-          projectId: "proj-eu",
-        },
-      }),
-    );
-
-    expect(result).toEqual({
-      redirect: {
-        destination: "https://eu.cloud.langfuse.com/project/~/traces?foo=bar",
         permanent: false,
       },
     });
