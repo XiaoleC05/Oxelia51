@@ -11,5 +11,5 @@ document.documentElement.dataset.theme = "cosmos";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <WidgetApp />
-  </StrictMode>
+  </StrictMode>,
 );

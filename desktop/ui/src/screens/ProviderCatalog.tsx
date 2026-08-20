@@ -1,11 +1,22 @@
 import { useMemo, useState } from "react";
-import { PROVIDER_GROUPS, proxyUrl, anthropicVariantUrl, copyText, type ProviderDef } from "../clipboard";
+import {
+  PROVIDER_GROUPS,
+  proxyUrl,
+  anthropicVariantUrl,
+  copyText,
+  type ProviderDef,
+} from "../clipboard";
 import type { CustomProvider } from "../api";
 import { openExternal } from "../openExternal";
 
 /** 自定义供应商 → 目录卡片模型（复用 provider-cell 渲染与复制逻辑）。 */
 function customToDef(p: CustomProvider): ProviderDef {
-  return { slug: p.slug, label: p.name, anthropic: p.protocol === "anthropic", url: p.baseUrl };
+  return {
+    slug: p.slug,
+    label: p.name,
+    anthropic: p.protocol === "anthropic",
+    url: p.baseUrl,
+  };
 }
 
 /**
@@ -76,14 +87,17 @@ export function ProviderCatalog({
               {g.providers.map((p) => {
                 const isCustom = g.group === "自定义";
                 // 仅核验预设项；自定义项由后端注册，必然有路由
-                const off = !isCustom && routeSlugs !== null && !routeSlugs.has(p.slug);
+                const off =
+                  !isCustom && routeSlugs !== null && !routeSlugs.has(p.slug);
                 return (
                   <div
                     key={p.slug}
                     className={`provider-cell${off ? " off" : ""}${isCustom ? " static" : ""}`}
                     role={isCustom ? undefined : "link"}
                     tabIndex={isCustom ? undefined : 0}
-                    onClick={isCustom ? undefined : () => void openExternal(p.url)}
+                    onClick={
+                      isCustom ? undefined : () => void openExternal(p.url)
+                    }
                     onKeyDown={
                       isCustom
                         ? undefined
@@ -97,7 +111,9 @@ export function ProviderCatalog({
                       {p.label}
                       {off && <span className="dim-tag">未接入</span>}
                       {isCustom && (
-                        <span className="dim-tag">{p.anthropic ? "Anthropic" : "OpenAI"}</span>
+                        <span className="dim-tag">
+                          {p.anthropic ? "Anthropic" : "OpenAI"}
+                        </span>
                       )}
                     </span>
                     <span className="provider-cell-slug">{p.slug}</span>
@@ -125,11 +141,17 @@ export function ProviderCatalog({
                           disabled={off}
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (!off) void copy(anthropicVariantUrl(p.slug), `${p.slug}-anthropic`);
+                            if (!off)
+                              void copy(
+                                anthropicVariantUrl(p.slug),
+                                `${p.slug}-anthropic`,
+                              );
                           }}
                           title={`复制 Anthropic Messages 协议地址（Claude Code 用）：${anthropicVariantUrl(p.slug)}`}
                         >
-                          {copied === `${p.slug}-anthropic` ? "已复制 ✓" : "Anthropic"}
+                          {copied === `${p.slug}-anthropic`
+                            ? "已复制 ✓"
+                            : "Anthropic"}
                         </button>
                       )}
                       {!isCustom && (
@@ -143,7 +165,12 @@ export function ProviderCatalog({
                           title={`在浏览器打开 ${p.label} 官网`}
                         >
                           官网
-                          <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
+                          <svg
+                            viewBox="0 0 12 12"
+                            width="10"
+                            height="10"
+                            aria-hidden="true"
+                          >
                             <path
                               d="M2 10 10 2M4 2h6v6"
                               fill="none"

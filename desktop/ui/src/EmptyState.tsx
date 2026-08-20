@@ -17,18 +17,34 @@ export function EmptyState({
   return (
     <div className={`empty-state${compact ? " compact" : ""}`}>
       <svg className="empty-icon" viewBox="0 0 512 512" aria-hidden="true">
-        <circle cx="228" cy="228" r="140" fill="none" stroke="currentColor" strokeWidth="52" />
+        <circle
+          cx="228"
+          cy="228"
+          r="140"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="52"
+        />
         <circle cx="412" cy="412" r="34" fill="#E5484D" />
       </svg>
       <p className="empty-title">{title}</p>
       {desc && <p className="empty-desc">{desc}</p>}
       {action &&
         (action.href ? (
-          <a className="btn primary empty-action" href={action.href} target="_blank" rel="noreferrer">
+          <a
+            className="btn primary empty-action"
+            href={action.href}
+            target="_blank"
+            rel="noreferrer"
+          >
             {action.label}
           </a>
         ) : (
-          <button type="button" className="btn primary empty-action" onClick={action.onClick}>
+          <button
+            type="button"
+            className="btn primary empty-action"
+            onClick={action.onClick}
+          >
             {action.label}
           </button>
         ))}

@@ -167,7 +167,10 @@
   font-size: 13px;
   text-decoration: none;
   cursor: pointer;
-  transition: border-color var(--ox-speed), color var(--ox-speed), background-color var(--ox-speed);
+  transition:
+    border-color var(--ox-speed),
+    color var(--ox-speed),
+    background-color var(--ox-speed);
 }
 
 .about-link:hover {
@@ -194,4 +197,3 @@
 .link-btn.danger {
   color: var(--ox-danger);
 }
-

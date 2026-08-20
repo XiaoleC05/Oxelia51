@@ -1,6 +1,15 @@
 import { useState } from "react";
-import { deleteCustomProvider, upsertCustomProvider, type CustomProvider } from "../api";
-import { copyText, PROVIDER_COMMANDS, providerCmd, proxyUrl } from "../clipboard";
+import {
+  deleteCustomProvider,
+  upsertCustomProvider,
+  type CustomProvider,
+} from "../api";
+import {
+  copyText,
+  PROVIDER_COMMANDS,
+  providerCmd,
+  proxyUrl,
+} from "../clipboard";
 import { EmptyState } from "../EmptyState";
 import { Dropdown } from "../components/Dropdown";
 
@@ -8,13 +17,20 @@ const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const BASE_URL_RE = /^https:\/\/.+/;
 
 /** 与后端同口径的基础校验；返回错误文案，null 表示通过。 */
-function validate(form: { name: string; slug: string; baseUrl: string }, existing: CustomProvider[]): string | null {
+function validate(
+  form: { name: string; slug: string; baseUrl: string },
+  existing: CustomProvider[],
+): string | null {
   if (!form.name.trim()) return "请填写供应商名称";
   if (!form.slug) return "请填写 slug";
-  if (!SLUG_RE.test(form.slug)) return "slug 只能用小写字母、数字和连字符（如 my-api）";
-  if (PROVIDER_COMMANDS.some((p) => p.slug === form.slug)) return "slug 与内置供应商冲突，请换一个";
-  if (existing.some((p) => p.slug === form.slug)) return "slug 与已有自定义供应商重复";
-  if (!BASE_URL_RE.test(form.baseUrl.trim())) return "API 地址无效（填域名即可，如 api.example.com；自动补全 https://）";
+  if (!SLUG_RE.test(form.slug))
+    return "slug 只能用小写字母、数字和连字符（如 my-api）";
+  if (PROVIDER_COMMANDS.some((p) => p.slug === form.slug))
+    return "slug 与内置供应商冲突，请换一个";
+  if (existing.some((p) => p.slug === form.slug))
+    return "slug 与已有自定义供应商重复";
+  if (!BASE_URL_RE.test(form.baseUrl.trim()))
+    return "API 地址无效（填域名即可，如 api.example.com；自动补全 https://）";
   return null;
 }
 
@@ -23,7 +39,13 @@ function validate(form: { name: string; slug: string; baseUrl: string }, existin
  * 添加后由本地代理挂载到 /api/proxy/<slug>，复制地址 / 接入命令与预设一致。
  * items 为空（含旧二进制接口不可用降级）时显示空态。
  */
-export function CustomProviders({ items, onChanged }: { items: CustomProvider[]; onChanged: () => void }) {
+export function CustomProviders({
+  items,
+  onChanged,
+}: {
+  items: CustomProvider[];
+  onChanged: () => void;
+}) {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -109,7 +131,10 @@ export function CustomProviders({ items, onChanged }: { items: CustomProvider[];
           compact
           title="还没有自定义供应商"
           desc="预设目录里没有的平台，可以按官方 API 文档自行添加"
-          action={{ label: "添加自定义供应商", onClick: () => setShowForm(true) }}
+          action={{
+            label: "添加自定义供应商",
+            onClick: () => setShowForm(true),
+          }}
         />
       ) : (
         <div className="card-list">
@@ -118,13 +143,16 @@ export function CustomProviders({ items, onChanged }: { items: CustomProvider[];
               <div className="list-main">
                 <span className="list-title">
                   {p.name}
-                  <span className="dim-tag">{p.protocol === "anthropic" ? "Anthropic" : "OpenAI 兼容"}</span>
+                  <span className="dim-tag">
+                    {p.protocol === "anthropic" ? "Anthropic" : "OpenAI 兼容"}
+                  </span>
                 </span>
                 <span className="list-sub">
                   <code>{p.slug}</code> · {p.baseUrl}
                 </span>
                 <span className="list-sub">
-                  接入命令：<code>{providerCmd(p.slug, p.protocol === "anthropic")}</code>
+                  接入命令：
+                  <code>{providerCmd(p.slug, p.protocol === "anthropic")}</code>
                 </span>
               </div>
               <div className="form-row">
@@ -140,7 +168,11 @@ export function CustomProviders({ items, onChanged }: { items: CustomProvider[];
                   type="button"
                   className={`link-btn danger`}
                   onClick={() => void remove(p)}
-                  title={confirmSlug === p.slug ? "再次点击确认删除" : "删除该自定义供应商"}
+                  title={
+                    confirmSlug === p.slug
+                      ? "再次点击确认删除"
+                      : "删除该自定义供应商"
+                  }
                 >
                   {confirmSlug === p.slug ? "确认删除？" : "删除"}
                 </button>
@@ -187,7 +219,12 @@ export function CustomProviders({ items, onChanged }: { items: CustomProvider[];
             />
           </div>
           <div className="form-row">
-            <button type="button" className="btn primary" onClick={() => void submit()} disabled={saving}>
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => void submit()}
+              disabled={saving}
+            >
               {saving ? "保存中…" : "保存"}
             </button>
             <button
@@ -205,7 +242,11 @@ export function CustomProviders({ items, onChanged }: { items: CustomProvider[];
       ) : (
         items.length > 0 && (
           <div className="form-row">
-            <button type="button" className="btn" onClick={() => setShowForm(true)}>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setShowForm(true)}
+            >
               + 添加自定义供应商
             </button>
           </div>

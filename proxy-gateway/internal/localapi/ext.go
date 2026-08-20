@@ -380,11 +380,11 @@ func (a *API) handleAlerts(w http.ResponseWriter, r *http.Request) {
 
 	// 附加可设告警的维度列表（供应商/Agent/模型，供前端选择）
 	writeJSON(w, http.StatusOK, map[string]any{
-		"alerts":       alerts,
-		"globalToday":  globalUsed,
-		"providers":    sortedKeys(dimUsed["provider"]),
-		"agents":       sortedKeys(dimUsed["agent"]),
-		"models":       sortedKeys(dimUsed["model"]),
+		"alerts":      alerts,
+		"globalToday": globalUsed,
+		"providers":   sortedKeys(dimUsed["provider"]),
+		"agents":      sortedKeys(dimUsed["agent"]),
+		"models":      sortedKeys(dimUsed["model"]),
 	})
 }
 

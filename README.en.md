@@ -108,12 +108,12 @@ Your AI tool (Claude Code / Cursor / …)
 └─────────────────────────────────────┘
 ```
 
-The product spans two repositories:
+The product formerly spanned two repositories; langfuse-token has been merged into this repo as `web/`:
 
-| Repo | Contents | Why separate |
+| Location | Contents | Notes |
 | --- | --- | --- |
 | **Oxelia51** (this repo) | Go proxy gateway `proxy-gateway/`, Go backend `backend/`, desktop app `desktop/`, analytics engine `analytics/` | All first-party code, evolves independently |
-| **langfuse-token** | web frontend: landing page / docs / dashboard | Langfuse (MIT) fork + deep customization; tracks upstream separately |
+| **web/** (this repo) | web frontend: landing page / docs / dashboard | Former langfuse-token repo (Langfuse MIT fork + deep customization); detached and merged into this repo, langfuse-native features (tracing/prompts/evals) removed, evolves independently |
 
 ## Project Structure
 
@@ -125,16 +125,35 @@ Oxelia51/
 │   ├── ui/               #   UI (main window + floating glass widget)
 │   └── src-tauri/        #   Tauri shell + sidecar hosting
 ├── analytics/            # C++ analytics engine
+├── web/                  # web frontend (former langfuse-token repo, detached & merged into this repo)
+├── packages/shared/      # @oxelia51/shared: shared package for web (Prisma/ClickHouse/domain constants)
 ├── deploy/               # Docker Compose · Nginx · release scripts
 ├── docs/                 # Full documentation (design / deploy / ops)
 └── scripts/              # Utility scripts
 ```
 
+## Local Development (web)
+
+```bash
+pnpm install           # install deps (pnpm 11; node 22 works, engines warning is safe to ignore)
+pnpm run db:generate   # generate Prisma client (scripts read root .env; see .env.dev.example)
+pnpm run build         # build packages/shared and web via turbo
+```
+
+Windows note: web's `build`/`dev` scripts rely on dotenv and a Unix shell — run them in Git Bash,
+or directly (green = route table printed):
+
+```bash
+cd web && DOCKER_BUILD=1 INLINE_RUNTIME_CHUNK=false NEXT_TELEMETRY_DISABLED=1 pnpm exec next build
+```
+
+See [web/AGENTS.md](web/AGENTS.md) and [packages/shared/AGENTS.md](packages/shared/AGENTS.md) for details.
+
 ## Documentation
 
 - Online docs: [oxelia51.com/docs](https://oxelia51.com/docs)
 - Local design docs: [docs/README.md](docs/README.md)
-- v4 product design: [2026-08-08-oxelia51-v4-design.md](https://github.com/XiaoleC05/langfuse-token/blob/main/docs/superpowers/specs/2026-08-08-oxelia51-v4-design.md)
+- v4 product design: [2026-08-08-oxelia51-v4-design.md](https://github.com/XiaoleC05/langfuse-token/blob/main/docs/superpowers/specs/2026-08-08-oxelia51-v4-design.md) (archived former langfuse-token repo; doc not migrated into this repo)
 
 ## Contributing
 

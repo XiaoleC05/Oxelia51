@@ -46,7 +46,9 @@ select.input {
   background-repeat: no-repeat;
   background-position: right 11px center;
   background-size: 12px;
-  transition: border-color var(--ox-speed), box-shadow var(--ox-speed);
+  transition:
+    border-color var(--ox-speed),
+    box-shadow var(--ox-speed);
 }
 
 [data-theme="cosmos"] select.input {
@@ -97,7 +99,9 @@ select.input option {
   padding: 6px 12px;
   cursor: pointer;
   text-align: left;
-  transition: border-color var(--ox-speed), box-shadow var(--ox-speed);
+  transition:
+    border-color var(--ox-speed),
+    box-shadow var(--ox-speed);
 }
 
 /* 主题化 chevron：用 currentColor 同源的 muted 色，浅深色都协调 */
@@ -178,7 +182,9 @@ select.input option {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: background-color var(--ox-speed), color var(--ox-speed);
+  transition:
+    background-color var(--ox-speed),
+    color var(--ox-speed);
 }
 
 .dropdown-item:hover {
@@ -199,7 +205,9 @@ select.input option {
   padding: 6px 14px;
   font-size: 14px;
   cursor: pointer;
-  transition: border-color var(--ox-speed), color var(--ox-speed);
+  transition:
+    border-color var(--ox-speed),
+    color var(--ox-speed);
 }
 
 .btn:hover {
@@ -217,4 +225,3 @@ select.input option {
   background: var(--ox-accent-hover);
   color: #fff;
 }
-

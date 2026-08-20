@@ -1,19 +1,52 @@
 import { useCallback, useEffect, useState } from "react";
-import { CNY_PER_USD, fetchAgents, fetchModels, fetchPricingRate, fetchProviders, fmtCost, fmtCostByCurrency, fmtTokens, type Currency, type DimStat, type Overview, type TrendPoint } from "../api";
+import {
+  CNY_PER_USD,
+  fetchAgents,
+  fetchModels,
+  fetchPricingRate,
+  fetchProviders,
+  fmtCost,
+  fmtCostByCurrency,
+  fmtTokens,
+  type Currency,
+  type DimStat,
+  type Overview,
+  type TrendPoint,
+} from "../api";
 import { EmptyState } from "../EmptyState";
 import { Dropdown } from "../components/Dropdown";
 import { DateRangePicker } from "./DateRangePicker";
-import { copyText, PROVIDER_COMMANDS, PROVIDER_GROUPS, providerCmd, proxyUrl } from "../clipboard";
+import {
+  copyText,
+  PROVIDER_COMMANDS,
+  PROVIDER_GROUPS,
+  providerCmd,
+  proxyUrl,
+} from "../clipboard";
 
 /** 排行显示模式：#总览——全部（token+成本）/ 仅 Token / 仅成本（美元·人民币切换）。 */
 type RankMode = "all" | "tokens" | "cost";
 
-function StatCard({ label, tokens, requests, cost, rate }: { label: string; tokens: number; requests: number; cost: number; rate: number }) {
+function StatCard({
+  label,
+  tokens,
+  requests,
+  cost,
+  rate,
+}: {
+  label: string;
+  tokens: number;
+  requests: number;
+  cost: number;
+  rate: number;
+}) {
   return (
     <div className="card stat-card">
       <span className="stat-label">{label}</span>
       <span className="stat-value tabular">{fmtTokens(tokens)}</span>
-      <span className="stat-sub tabular">请求 {requests} · {fmtCost(cost, rate)}</span>
+      <span className="stat-sub tabular">
+        请求 {requests} · {fmtCost(cost, rate)}
+      </span>
     </div>
   );
 }
@@ -24,12 +57,23 @@ function TrendChart({ trend }: { trend: TrendPoint[] }) {
     <div className="card">
       <h2 className="card-title">近 14 天用量趋势</h2>
       {trend.length === 0 ? (
-        <EmptyState compact title="趋势待有数据后展示" desc="代理落账后按天自动聚合。" />
+        <EmptyState
+          compact
+          title="趋势待有数据后展示"
+          desc="代理落账后按天自动聚合。"
+        />
       ) : (
         <div className="trend">
           {trend.map((t) => (
-            <div key={t.date} className="trend-col" title={`${t.date} · ${fmtTokens(t.tokens)}`}>
-              <div className="trend-bar" style={{ height: `${Math.max(3, (t.tokens / max) * 100)}%` }} />
+            <div
+              key={t.date}
+              className="trend-col"
+              title={`${t.date} · ${fmtTokens(t.tokens)}`}
+            >
+              <div
+                className="trend-bar"
+                style={{ height: `${Math.max(3, (t.tokens / max) * 100)}%` }}
+              />
               <span className="trend-label">{t.date.slice(5)}</span>
             </div>
           ))}
@@ -65,15 +109,24 @@ function Ranking({
     <div className="card">
       <h2 className="card-title">{title}</h2>
       {used.length === 0 ? (
-        <EmptyState compact title="暂无排行数据" desc="落账后按维度自动聚合。" />
+        <EmptyState
+          compact
+          title="暂无排行数据"
+          desc="落账后按维度自动聚合。"
+        />
       ) : (
         <div className="rank">
           {used.slice(0, 8).map((r, i) => (
             <div key={r.name} className="rank-row">
-              <span className={`rank-index ${i < 3 ? `top top-${i + 1}` : ""}`}>{i + 1}</span>
+              <span className={`rank-index ${i < 3 ? `top top-${i + 1}` : ""}`}>
+                {i + 1}
+              </span>
               <span className="rank-name">{r.name}</span>
               <div className="rank-track">
-                <div className={`rank-fill ${i < 3 ? `fill-top fill-top-${i + 1}` : ""}`} style={{ width: `${Math.max(2, (r.tokens / max) * 100)}%` }} />
+                <div
+                  className={`rank-fill ${i < 3 ? `fill-top fill-top-${i + 1}` : ""}`}
+                  style={{ width: `${Math.max(2, (r.tokens / max) * 100)}%` }}
+                />
               </div>
               <span className="rank-val tabular">{fmtVal(r)}</span>
             </div>
@@ -88,10 +141,14 @@ function Ranking({
 function SetupEmptyState({ online }: { online: boolean }) {
   const [slug, setSlug] = useState(PROVIDER_COMMANDS[0].slug);
   const [copied, setCopied] = useState<"url" | "cmd" | null>(null);
-  const sel = PROVIDER_COMMANDS.find((p) => p.slug === slug) ?? PROVIDER_COMMANDS[0];
+  const sel =
+    PROVIDER_COMMANDS.find((p) => p.slug === slug) ?? PROVIDER_COMMANDS[0];
 
   const copy = async (kind: "url" | "cmd") => {
-    const text = kind === "url" ? proxyUrl(sel.slug) : providerCmd(sel.slug, sel.anthropic);
+    const text =
+      kind === "url"
+        ? proxyUrl(sel.slug)
+        : providerCmd(sel.slug, sel.anthropic);
     if (await copyText(text)) {
       setCopied(kind);
       setTimeout(() => setCopied(null), 2000);
@@ -101,12 +158,20 @@ function SetupEmptyState({ online }: { online: boolean }) {
   return (
     <div className="empty-state">
       <svg className="empty-icon" viewBox="0 0 512 512" aria-hidden="true">
-        <circle cx="228" cy="228" r="140" fill="none" stroke="currentColor" strokeWidth="52" />
+        <circle
+          cx="228"
+          cy="228"
+          r="140"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="52"
+        />
         <circle cx="412" cy="412" r="34" fill="#E5484D" />
       </svg>
       <p className="empty-title">还没有 Token 记录</p>
       <p className="empty-desc">
-        选择你使用的 LLM 供应商，把模型工具的 Base URL 指向本地代理即可开始记账。
+        选择你使用的 LLM 供应商，把模型工具的 Base URL
+        指向本地代理即可开始记账。
       </p>
       <div className="setup-card">
         <div className="form-row">
@@ -114,7 +179,10 @@ function SetupEmptyState({ online }: { online: boolean }) {
             grow
             groups={PROVIDER_GROUPS.map((g) => ({
               group: g.group,
-              options: g.providers.map((p) => ({ value: p.slug, label: p.label })),
+              options: g.providers.map((p) => ({
+                value: p.slug,
+                label: p.label,
+              })),
             }))}
             value={slug}
             onChange={setSlug}
@@ -160,7 +228,13 @@ function SetupEmptyState({ online }: { online: boolean }) {
   );
 }
 
-export function OverviewTab({ data, online }: { data: Overview | null; online: boolean }) {
+export function OverviewTab({
+  data,
+  online,
+}: {
+  data: Overview | null;
+  online: boolean;
+}) {
   const [days, setDays] = useState<number | undefined>(undefined);
   const [mode, setMode] = useState<RankMode>("all");
   const [currency, setCurrency] = useState<Currency>("usd");
@@ -173,7 +247,8 @@ export function OverviewTab({ data, online }: { data: Overview | null; online: b
   useEffect(() => {
     fetchPricingRate()
       .then((r) => {
-        if (Number.isFinite(r.usd_to_cny) && r.usd_to_cny > 0) setRate(r.usd_to_cny);
+        if (Number.isFinite(r.usd_to_cny) && r.usd_to_cny > 0)
+          setRate(r.usd_to_cny);
       })
       .catch(() => {
         // 静默：回退兜底参考值，排行仍可读
@@ -183,7 +258,11 @@ export function OverviewTab({ data, online }: { data: Overview | null; online: b
   // 日期范围变化时刷新供应商 / Agent / 模型排行（联动下方统计，三个卡片同一日期口径）
   const loadDims = useCallback(async () => {
     try {
-      const [pv, ag, md] = await Promise.all([fetchProviders(days), fetchAgents(days), fetchModels(days)]);
+      const [pv, ag, md] = await Promise.all([
+        fetchProviders(days),
+        fetchAgents(days),
+        fetchModels(days),
+      ]);
       setByProvider(pv.providers);
       setByAgent(ag.agents);
       setByModel(md.models);
@@ -207,21 +286,49 @@ export function OverviewTab({ data, online }: { data: Overview | null; online: b
     <>
       {!online && (
         <div className="offline-banner">
-          sidecar 未运行。请先把模型工具的 Base URL 指向本地代理（见设置页），再启动代理。
+          sidecar 未运行。请先把模型工具的 Base URL
+          指向本地代理（见设置页），再启动代理。
         </div>
       )}
       {/* 页头：仅标题；日期选择器移到趋势图下方（联动其下三个排行卡片） */}
       <div className="tab-head">
         <div>
           <h1 className="page-title">总览</h1>
-          <p className="page-sub">按供应商 / Agent / 模型聚合的 Token 用量与成本，日期范围联动下方统计。</p>
+          <p className="page-sub">
+            按供应商 / Agent / 模型聚合的 Token
+            用量与成本，日期范围联动下方统计。
+          </p>
         </div>
       </div>
       <section className="stats">
-        <StatCard label="今日" tokens={data?.today.tokens ?? 0} requests={data?.today.requests ?? 0} cost={data?.today.cost ?? 0} rate={rate} />
-        <StatCard label="近 7 日" tokens={data?.week.tokens ?? 0} requests={data?.week.requests ?? 0} cost={data?.week.cost ?? 0} rate={rate} />
-        <StatCard label="近 30 日" tokens={data?.month.tokens ?? 0} requests={data?.month.requests ?? 0} cost={data?.month.cost ?? 0} rate={rate} />
-        <StatCard label="累计" tokens={data?.total.tokens ?? 0} requests={data?.total.requests ?? 0} cost={data?.total.cost ?? 0} rate={rate} />
+        <StatCard
+          label="今日"
+          tokens={data?.today.tokens ?? 0}
+          requests={data?.today.requests ?? 0}
+          cost={data?.today.cost ?? 0}
+          rate={rate}
+        />
+        <StatCard
+          label="近 7 日"
+          tokens={data?.week.tokens ?? 0}
+          requests={data?.week.requests ?? 0}
+          cost={data?.week.cost ?? 0}
+          rate={rate}
+        />
+        <StatCard
+          label="近 30 日"
+          tokens={data?.month.tokens ?? 0}
+          requests={data?.month.requests ?? 0}
+          cost={data?.month.cost ?? 0}
+          rate={rate}
+        />
+        <StatCard
+          label="累计"
+          tokens={data?.total.tokens ?? 0}
+          requests={data?.total.requests ?? 0}
+          cost={data?.total.cost ?? 0}
+          rate={rate}
+        />
       </section>
       <TrendChart trend={data?.trend ?? []} />
       {/* 日期范围选择 + 显示模式：同一行，位于趋势图下方，共同控制其下三个排行卡片 */}
@@ -253,23 +360,41 @@ export function OverviewTab({ data, online }: { data: Overview | null; online: b
                 setMode("cost");
               }
             }}
-            title={mode === "cost" ? `切换币种（当前 ${currency === "usd" ? "美元" : "人民币"}）` : "仅显示成本"}
+            title={
+              mode === "cost"
+                ? `切换币种（当前 ${currency === "usd" ? "美元" : "人民币"}）`
+                : "仅显示成本"
+            }
           >
-            {mode === "cost" ? (currency === "usd" ? "$ 美元" : "¥ 人民币") : "成本"}
+            {mode === "cost"
+              ? currency === "usd"
+                ? "$ 美元"
+                : "¥ 人民币"
+              : "成本"}
           </button>
         </div>
       </div>
       <section className="grid-2">
         <Ranking
           title="按供应商"
-          rows={byProvider.map((d: DimStat) => ({ name: d.name, tokens: d.tokens, requests: d.requests, cost: d.cost }))}
+          rows={byProvider.map((d: DimStat) => ({
+            name: d.name,
+            tokens: d.tokens,
+            requests: d.requests,
+            cost: d.cost,
+          }))}
           mode={mode}
           currency={currency}
           rate={rate}
         />
         <Ranking
           title="按 Agent"
-          rows={byAgent.map((d: DimStat) => ({ name: d.name, tokens: d.tokens, requests: d.requests, cost: d.cost }))}
+          rows={byAgent.map((d: DimStat) => ({
+            name: d.name,
+            tokens: d.tokens,
+            requests: d.requests,
+            cost: d.cost,
+          }))}
           mode={mode}
           currency={currency}
           rate={rate}
@@ -278,7 +403,12 @@ export function OverviewTab({ data, online }: { data: Overview | null; online: b
       <section>
         <Ranking
           title="按模型"
-          rows={byModel.map((d: DimStat) => ({ name: d.name, tokens: d.tokens, requests: d.requests, cost: d.cost }))}
+          rows={byModel.map((d: DimStat) => ({
+            name: d.name,
+            tokens: d.tokens,
+            requests: d.requests,
+            cost: d.cost,
+          }))}
           mode={mode}
           currency={currency}
           rate={rate}

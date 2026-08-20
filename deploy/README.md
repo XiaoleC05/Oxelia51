@@ -10,11 +10,11 @@
   │
   ▼
 阿里云 Nginx (oxelia51.com, 47.108.202.199)
-  ├─ /              → /opt/Oxelia51/frontend/dist
+  ├─ /              → 127.0.0.1:3000 (Langfuse Web，SSH 隧道→腾讯云)
   ├─ /api/          → 127.0.0.1:8080 (管理后台 Go)
   │                    └─ /api/tools/:slug/proxy/* → 各工具内网端口
   ├─ /api/proxy/    → 127.0.0.1:9090 (Go 代理网关)  ← v3.0 新增
-  ├─ /token/        → 腾讯云 118.25.138.177:3000 (Langfuse Web)  ← v3.0 新增
+  ├─ /token/        → 127.0.0.1:3000 (Langfuse Web legacy 路径，同上隧道)  ← v3.0 新增
   └─ /webhook       → 127.0.0.1:9000 (receiver.py)
                          │
                ┌─────────┼──────────┐
@@ -27,7 +27,7 @@
   ├─ Langfuse (Docker Compose, 6 容器)
   │   ├─ langfuse-web      :3000
   │   ├─ langfuse-worker   :3030
-  │   ├─ langfuse-postgres :5433 (SmartKB 用 5432)
+  │   ├─ langfuse-postgres :5434 (SmartKB 占 5433)
   │   ├─ langfuse-clickhouse :8123/9000
   │   ├─ langfuse-redis    :6379
   │   └─ langfuse-minio    :9090/9091

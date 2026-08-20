@@ -1,7 +1,7 @@
 # Oxelia51 前端 UI/UX 统一规范（Design System）
 
 - 日期：2026-08-10
-- 范围：**桌面应用**（`desktop/`，Tauri 2 + React）+ **网站**（`langfuse-token/web/`，Next.js）两套前端
+- 范围：**桌面应用**（`desktop/`，Tauri 2 + React）+ **网站**（`web/`，Next.js；原 langfuse-token 仓库，已并入本仓）两套前端
 - 参考：结构借鉴 **Claude Design System**（tokens → 视觉基础 → 组件 → 跨组件规则 → 文件地图）。配色与功能完全保留 Oxelia51 自身。
 - 性质：本文是**唯一标准**。实现与本文冲突时，以本文为准；本文缺失时，以两端现有实现中最一致的一种为准。
 
@@ -412,7 +412,7 @@
 | 各 Tab | `desktop/ui/src/screens/*.tsx` |
 | 设计文档 | `docs/4-detailed-design.md`、`docs/ui-optimization-desktop.md`、本文 |
 
-### 网站端 `langfuse-token/web/`
+### 网站端 `web/`
 
 | 用途 | 位置 |
 | --- | --- |

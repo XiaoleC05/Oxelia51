@@ -26,7 +26,8 @@ body {
   overflow: hidden;
 
   /* 玻璃拟态：半透明渐变底 + 背景模糊 + 内描边 + 外阴影 */
-  background: linear-gradient(
+  background:
+    linear-gradient(
       165deg,
       color-mix(in srgb, var(--ox-accent) 10%, transparent),
       transparent 55%
@@ -41,7 +42,8 @@ body {
     0 2px 8px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   color: var(--ox-text);
-  font-family: "Manrope", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-family:
+    "Manrope", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
 
 /* 顶部：品牌 + 关闭 */
@@ -93,7 +95,9 @@ body {
   font-size: 12px;
   line-height: 1;
   flex-shrink: 0;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .widget-close:hover {

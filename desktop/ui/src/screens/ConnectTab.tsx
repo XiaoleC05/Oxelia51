@@ -20,7 +20,8 @@ import { CustomProviders } from "./CustomProviders";
 export function ConnectTab() {
   const [custom, setCustom] = useState<CustomProvider[]>([]);
   const [routeSlugs, setRouteSlugs] = useState<Set<string> | null>(null);
-  const [anthropicVariants, setAnthropicVariants] = useState<Set<string> | null>(null);
+  const [anthropicVariants, setAnthropicVariants] =
+    useState<Set<string> | null>(null);
   const [detected, setDetected] = useState<DetectedTool[]>([]);
 
   const load = useCallback(async () => {
@@ -61,21 +62,32 @@ export function ConnectTab() {
     <>
       <h1 className="page-title">接入</h1>
       <p className="page-sub">
-        选择你使用的 LLM 供应商，复制代理地址；把模型工具的 Base URL 指向它即可开始记账。点击卡片打开官网。
+        选择你使用的 LLM 供应商，复制代理地址；把模型工具的 Base URL
+        指向它即可开始记账。点击卡片打开官网。
       </p>
       {detected.length > 0 && (
         <div className="card">
           <h2 className="card-title">已检测到的工具</h2>
           <div className="form-row" style={{ flexWrap: "wrap" }}>
             {detected.map((t) => (
-              <span key={t.id} className="dim-tag">{t.label}{t.version ? ` v${t.version}` : ""}</span>
+              <span key={t.id} className="dim-tag">
+                {t.label}
+                {t.version ? ` v${t.version}` : ""}
+              </span>
             ))}
           </div>
-          <p className="empty">在本机检测到以上 AI Agent 工具。选择一个供应商，复制代理地址配置到对应工具即可开始记账。</p>
+          <p className="empty">
+            在本机检测到以上 AI Agent
+            工具。选择一个供应商，复制代理地址配置到对应工具即可开始记账。
+          </p>
         </div>
       )}
       <div className="card">
-        <ProviderCatalog custom={custom} routeSlugs={routeSlugs} anthropicVariants={anthropicVariants} />
+        <ProviderCatalog
+          custom={custom}
+          routeSlugs={routeSlugs}
+          anthropicVariants={anthropicVariants}
+        />
       </div>
       <CustomProviders items={custom} onChanged={() => void load()} />
     </>

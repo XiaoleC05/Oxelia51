@@ -6,6 +6,20 @@
 
 ## 未发布（master）
 
+### 架构
+- web 前端从前置 fork（langfuse-token 仓库）脱钩并入主仓 `web/`，共享包改名 `@oxelia51/shared`（`packages/shared/`），构建管线（pnpm + turbo）改由本仓承载
+- 依赖大幅精简：删除 langfuse 原生功能代码（追踪/OTel ingestion/提示词/评估/playground/billing 等）及其独占依赖
+- 品牌门面组件改名 `Oxelia51Logo`/`Oxelia51Icon`（渲染输出不变）；env 模板收口为根目录 `.env.dev.example`
+
+### 规范
+- web/shared 代码规范清零：eslint 0 警告（字体字重按设计系统收敛、truncate 元素补 title 等）、prettier 全仓格式化、knip 依赖瘦身（-52 个直接依赖）、死代码/死测试清理
+- Go `gofmt` 漂移修正；Rust `cargo fmt` + clippy 警告清零
+- 修复 eslint 链 typescript-eslint 与 TypeScript 7 的不兼容（peer 范围约束 <7）
+- 修复 vitest server 测试在 Windows 下匹配 0 文件（globSync 反斜杠路径）
+- 修复 `isEventsTableReadPathEnabled()` 读裸 env 导致 zod 默认值失效（FTS 查询缺 enable_full_text_index）
+- facet 筛选摘要文案补全中文化（All/selected/excluded 等漏网英文）
+- web 测试全绿：客户端 557 通过、服务端 887 通过（本地 docker 起 PG/CH/Redis 实跑）
+
 ### 已修复
 - 网关 ClickHouse recorder 初始化失败/写失败后自动恢复（≤60s 节流重连 + 热切换），不再永久降级 no-op
 - analytics 聚合 catch-up 分块化：积压按 24h 窗口逐块聚合并推进游标，单块失败不丢已推进进度

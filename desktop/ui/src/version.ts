@@ -19,7 +19,9 @@ export type UpdateInfo = {
 // 注：浏览器会对非 2xx 资源请求自动生成网络日志条目，JS 侧无法抑制，属预期噪音。
 export async function checkForUpdate(): Promise<UpdateInfo> {
   try {
-    const res = await fetch("https://api.github.com/repos/XiaoleC05/Oxelia51/releases?per_page=20");
+    const res = await fetch(
+      "https://api.github.com/repos/XiaoleC05/Oxelia51/releases?per_page=20",
+    );
     if (!res.ok) return { available: false, error: true };
     const releases = (await res.json()) as {
       tag_name: string;
@@ -45,8 +47,11 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
 }
 
 // 按当前平台选对应安装包：Windows → .exe，macOS → .dmg，Linux → .AppImage（回退 .deb）。
-function pickAsset(assets: { name: string; browser_download_url: string }[]): string | undefined {
-  const ua = typeof navigator !== "undefined" ? navigator.userAgent.toLowerCase() : "";
+function pickAsset(
+  assets: { name: string; browser_download_url: string }[],
+): string | undefined {
+  const ua =
+    typeof navigator !== "undefined" ? navigator.userAgent.toLowerCase() : "";
   const isMac = /mac|darwin/.test(ua);
   const isLinux = /linux/.test(ua);
   const want = isMac ? ".dmg" : isLinux ? ".appimage" : ".exe";

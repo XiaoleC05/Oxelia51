@@ -57,6 +57,9 @@
 }
 
 .rank-fill.over {
-  background: linear-gradient(90deg, var(--ox-danger), color-mix(in srgb, var(--ox-danger) 60%, transparent));
+  background: linear-gradient(
+    90deg,
+    var(--ox-danger),
+    color-mix(in srgb, var(--ox-danger) 60%, transparent)
+  );
 }
-

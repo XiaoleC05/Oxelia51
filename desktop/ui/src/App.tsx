@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { fetchHealth, fetchOverview, fetchSettings, saveSetting, type Overview } from "./api";
+import {
+  fetchHealth,
+  fetchOverview,
+  fetchSettings,
+  saveSetting,
+  type Overview,
+} from "./api";
 import { openExternal } from "./openExternal";
 import { APP_VERSION, checkForUpdate, type UpdateInfo } from "./version";
 import { OverviewTab } from "./screens/OverviewTab";
@@ -20,7 +26,9 @@ import "./app.css";
 const isTauri =
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 /** macOS 保留原生红黄绿交通灯，不自绘窗口按钮。 */
-const isMac = typeof navigator !== "undefined" && /mac|iphone|ipad/i.test(navigator.userAgent);
+const isMac =
+  typeof navigator !== "undefined" &&
+  /mac|iphone|ipad/i.test(navigator.userAgent);
 
 /**
  * 自绘窗口控制（Windows/Linux，无边框标题栏）：最小化 / 最大化还原 / 关闭。
@@ -96,7 +104,11 @@ function WindowControls() {
         aria-label="关闭"
       >
         <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true">
-          <path d="M0 0l10 10M10 0L0 10" stroke="currentColor" strokeWidth="1" />
+          <path
+            d="M0 0l10 10M10 0L0 10"
+            stroke="currentColor"
+            strokeWidth="1"
+          />
         </svg>
       </button>
     </div>
@@ -109,7 +121,14 @@ function WindowControls() {
  * 数据源：本地 sidecar 只读统计接口；总览由 App 轮询，其余屏各自轮询。
  */
 
-type TabKey = "overview" | "connect" | "providers" | "agents" | "alerts" | "prices" | "settings";
+type TabKey =
+  | "overview"
+  | "connect"
+  | "providers"
+  | "agents"
+  | "alerts"
+  | "prices"
+  | "settings";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "总览" },
@@ -158,7 +177,11 @@ export default function App() {
   //（真实「置顶/无边框/玻璃」仅在 Tauri 应用内生效）。
   const toggleWidget = () => {
     if (!isTauri) {
-      window.open("/widget.html", "oxelia51-widget", "width=340,height=192,menubar=no,resizable=no");
+      window.open(
+        "/widget.html",
+        "oxelia51-widget",
+        "width=340,height=192,menubar=no,resizable=no",
+      );
       return;
     }
     void (async () => {
@@ -275,10 +298,40 @@ export default function App() {
             aria-label="悬浮统计卡片"
           >
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-              <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" />
-              <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.55" />
-              <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.55" />
-              <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" />
+              <rect
+                x="1"
+                y="1"
+                width="6"
+                height="6"
+                rx="1.5"
+                fill="currentColor"
+              />
+              <rect
+                x="9"
+                y="1"
+                width="6"
+                height="6"
+                rx="1.5"
+                fill="currentColor"
+                opacity="0.55"
+              />
+              <rect
+                x="1"
+                y="9"
+                width="6"
+                height="6"
+                rx="1.5"
+                fill="currentColor"
+                opacity="0.55"
+              />
+              <rect
+                x="9"
+                y="9"
+                width="6"
+                height="6"
+                rx="1.5"
+                fill="currentColor"
+              />
             </svg>
           </button>
           <button
@@ -294,23 +347,26 @@ export default function App() {
       </header>
 
       <main className="content" key={tab}>
-        {update.available && update.url && (() => {
-          // 闭包内 TS 不窄化 update.url，取局部变量保证类型非空
-          const url = update.url;
-          return (
-            <a
-              className="update-banner"
-              href={url}
-              onClick={(e) => {
-                // #29：外链交给系统浏览器（webview 内 window.open 不可靠）
-                e.preventDefault();
-                void openExternal(url);
-              }}
-            >
-              ⬆ 发现新版本 {update.latest}（当前 {APP_VERSION}）——点击下载安装包
-            </a>
-          );
-        })()}
+        {update.available &&
+          update.url &&
+          (() => {
+            // 闭包内 TS 不窄化 update.url，取局部变量保证类型非空
+            const url = update.url;
+            return (
+              <a
+                className="update-banner"
+                href={url}
+                onClick={(e) => {
+                  // #29：外链交给系统浏览器（webview 内 window.open 不可靠）
+                  e.preventDefault();
+                  void openExternal(url);
+                }}
+              >
+                ⬆ 发现新版本 {update.latest}（当前 {APP_VERSION}
+                ）——点击下载安装包
+              </a>
+            );
+          })()}
         {tab === "overview" && <OverviewTab data={data} online={online} />}
         {tab === "connect" && <ConnectTab />}
         {tab === "providers" && <ProvidersTab />}
@@ -318,7 +374,11 @@ export default function App() {
         {tab === "alerts" && <AlertsTab />}
         {tab === "prices" && <ModelPriceTab />}
         {tab === "settings" && (
-          <SettingsTab theme={theme} onTheme={setTheme} appVersion={APP_VERSION} />
+          <SettingsTab
+            theme={theme}
+            onTheme={setTheme}
+            appVersion={APP_VERSION}
+          />
         )}
       </main>
     </div>

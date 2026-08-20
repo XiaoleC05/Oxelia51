@@ -289,14 +289,14 @@ func (a *API) handleOverview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"today":      today,
-		"week":       week,
-		"month":      month,
-		"total":      total,
+		"today":        today,
+		"week":         week,
+		"month":        month,
+		"total":        total,
 		"byModel":      byModel,
 		"todayByModel": todayByModel,
 		"byProvider":   a.loadDimStats("provider", "", nil),
-		"byAgent":    a.loadDimStats("agent", "", nil),
-		"trend":      trend,
+		"byAgent":      a.loadDimStats("agent", "", nil),
+		"trend":        trend,
 	})
 }

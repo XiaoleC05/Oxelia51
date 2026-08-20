@@ -42,7 +42,9 @@
   padding: 4px 10px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color var(--ox-speed), color var(--ox-speed);
+  transition:
+    background-color var(--ox-speed),
+    color var(--ox-speed);
 }
 
 .range-chip:hover {
@@ -62,4 +64,3 @@
 .range-chip.dir:hover {
   color: var(--ox-accent);
 }
-

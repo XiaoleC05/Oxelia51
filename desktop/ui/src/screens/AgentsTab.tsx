@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchAgentDetail, fetchAgents, fetchSettings, saveSetting } from "../api";
+import {
+  fetchAgentDetail,
+  fetchAgents,
+  fetchSettings,
+  saveSetting,
+} from "../api";
 import { DimTab } from "./DimTab";
 
 /**
@@ -25,16 +30,19 @@ export function AgentsTab() {
     };
   }, []);
 
-  const onRename = useCallback(async (original: string, display: string) => {
-    const next = { ...displayNames };
-    if (display === "" || display === original) {
-      delete next[original];
-    } else {
-      next[original] = display;
-    }
-    setDisplayNames(next);
-    await saveSetting("agent_aliases", JSON.stringify(next));
-  }, [displayNames]);
+  const onRename = useCallback(
+    async (original: string, display: string) => {
+      const next = { ...displayNames };
+      if (display === "" || display === original) {
+        delete next[original];
+      } else {
+        next[original] = display;
+      }
+      setDisplayNames(next);
+      await saveSetting("agent_aliases", JSON.stringify(next));
+    },
+    [displayNames],
+  );
 
   // #问题 5：fetcher/detailFetcher 必须稳定引用。App 每 5s 轮询总览会重渲染本组件，
   // 若在此内联新函数，DimTab 的轮询 effect 依赖其身份会反复拆建 → 异常自动刷新 +
@@ -42,11 +50,12 @@ export function AgentsTab() {
   // days 由 DimTab 作为参数传入（非闭包状态），故依赖数组仍为空、引用保持稳定。
   const fetcher = useCallback(
     (days?: number) => fetchAgents(days).then((r) => r.agents),
-    []
+    [],
   );
   const detailFetcher = useCallback(
-    (name: string, days?: number) => fetchAgentDetail(name, days).then((r) => r.rows),
-    []
+    (name: string, days?: number) =>
+      fetchAgentDetail(name, days).then((r) => r.rows),
+    [],
   );
   return (
     <DimTab

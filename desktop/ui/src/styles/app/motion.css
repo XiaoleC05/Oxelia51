@@ -1,14 +1,20 @@
 /* ===== 动态交互：过渡 / 入场动画 ===== */
 .card {
-  transition: border-color var(--ox-speed), box-shadow var(--ox-speed), transform var(--ox-speed);
+  transition:
+    border-color var(--ox-speed),
+    box-shadow var(--ox-speed),
+    transform var(--ox-speed);
 }
 
 .card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .list-row {
-  transition: background-color var(--ox-speed), transform var(--ox-speed), border-color var(--ox-speed);
+  transition:
+    background-color var(--ox-speed),
+    transform var(--ox-speed),
+    border-color var(--ox-speed);
 }
 
 .list-row:hover {
@@ -32,18 +38,27 @@
 }
 
 @keyframes quickIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 供应商网格卡片入场（错峰） */
 .provider-cell {
-  transition: border-color var(--ox-speed), transform var(--ox-speed), box-shadow var(--ox-speed);
+  transition:
+    border-color var(--ox-speed),
+    transform var(--ox-speed),
+    box-shadow var(--ox-speed);
 }
 
 .provider-cell:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .provider-cell:active {
@@ -55,15 +70,31 @@
   animation: rowIn 0.24s ease-out both;
 }
 
-.card-list .list-row:nth-child(2) { animation-delay: 0.03s; }
-.card-list .list-row:nth-child(3) { animation-delay: 0.06s; }
-.card-list .list-row:nth-child(4) { animation-delay: 0.09s; }
-.card-list .list-row:nth-child(5) { animation-delay: 0.12s; }
-.card-list .list-row:nth-child(6) { animation-delay: 0.15s; }
+.card-list .list-row:nth-child(2) {
+  animation-delay: 0.03s;
+}
+.card-list .list-row:nth-child(3) {
+  animation-delay: 0.06s;
+}
+.card-list .list-row:nth-child(4) {
+  animation-delay: 0.09s;
+}
+.card-list .list-row:nth-child(5) {
+  animation-delay: 0.12s;
+}
+.card-list .list-row:nth-child(6) {
+  animation-delay: 0.15s;
+}
 
 @keyframes rowIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -94,8 +125,13 @@
 }
 
 @keyframes dotPulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ox-ok) 40%, transparent); }
-  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--ox-ok) 0%, transparent); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ox-ok) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--ox-ok) 0%, transparent);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -103,4 +139,3 @@
     animation: none;
   }
 }
-

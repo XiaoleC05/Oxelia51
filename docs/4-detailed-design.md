@@ -549,12 +549,12 @@ GROUP BY session_id ORDER BY started DESC LIMIT 50;
 
 ---
 
-## 4. Langfuse 定制
+## 4. Web 定制（web/）
 
-### 4.1 改动文件清单（已实现，2026-07-29 更新）
+### 4.1 改动文件清单（已实现，2026-07-29 更新；2026-08 随 fork 脱钩并入本仓）
 
 ```
-langfuse-token/web/src/
+web/src/  ← 原 langfuse-token 仓库，已并入本仓
 │
 ├── features/dashboard/components/
 │   ├── TokenWidget.tsx                   新增：Token 统计卡片（概览）
@@ -578,7 +578,7 @@ langfuse-token/web/src/
 │
 ├── components/
 │   ├── FilingInfo.tsx                    新增：ICP/公安备案 + MIT 开源声明页脚
-│   ├── LangfuseLogo.tsx                  修改：Oxelia51 字标（黄/蓝双版）
+│   ├── Oxelia51Logo.tsx                  修改：Oxelia51 字标（黄/蓝双版；原 LangfuseLogo，已改名）
 │   ├── layouts/routes.tsx                修改：导航分组（Token 统计 / 管理外链）
 │   ├── layouts/app-layout/variants/AuthenticatedLayout.tsx
 │   │                                     修改：全局页脚 + title/favicon
@@ -596,12 +596,14 @@ langfuse-token/web/src/
 └── next.config.mjs                       修改：i18n locales [en, zh-CN]
 
 数据层约定：
-  - PostgreSQL oxelia51 schema → prisma.$queryRaw（复用 Langfuse DATABASE_URL）
-  - ClickHouse oxelia51.token_events → queryClickhouse（@langfuse/shared）
+  - PostgreSQL oxelia51 schema → prisma.$queryRaw（复用 web 的 DATABASE_URL）
+  - ClickHouse oxelia51.token_events → queryClickhouse（@oxelia51/shared）
   - 路由注册于 web/src/server/api/root.ts（appRouter.oxelia51）
 ```
 
 ### 4.2 同步上游
+
+> 注：原 langfuse-token fork 仓库已并入本仓 `web/`（仓库归档），以下基于独立 fork 的 rebase 流程不再适用，仅存档；新的上游同步方式需架构裁定。
 
 ```bash
 cd langfuse-token

@@ -34,7 +34,8 @@ export function Dropdown({
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -47,11 +48,14 @@ export function Dropdown({
     };
   }, [open]);
 
-  const list = groups ? groups.flatMap((g) => g.options) : options ?? [];
+  const list = groups ? groups.flatMap((g) => g.options) : (options ?? []);
   const selected = list.find((o) => o.value === value);
 
   return (
-    <div className={`dropdown ${grow ? "grow" : ""} ${open ? "open" : ""}`} ref={ref}>
+    <div
+      className={`dropdown ${grow ? "grow" : ""} ${open ? "open" : ""}`}
+      ref={ref}
+    >
       <button
         type="button"
         className="dropdown-trigger"
@@ -61,7 +65,9 @@ export function Dropdown({
         aria-label={ariaLabel}
         title={selected?.label}
       >
-        <span className={`dropdown-value ${selected ? "" : "dropdown-value-placeholder"}`}>
+        <span
+          className={`dropdown-value ${selected ? "" : "dropdown-value-placeholder"}`}
+        >
           {selected?.label ?? placeholder}
         </span>
       </button>

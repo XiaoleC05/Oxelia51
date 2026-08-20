@@ -46,7 +46,7 @@
 
 **修改范围**：
 - `desktop/ui/src/**/*.{ts,tsx,css}`
-- `langfuse-token/web/src/**/*`
+- `web/src/**/*`
 
 **不得修改**：后端代码、API 定义、数据库、部署配置。
 

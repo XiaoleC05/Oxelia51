@@ -86,14 +86,17 @@
   background: var(--ox-bg-alt);
   text-align: left;
   cursor: pointer;
-  transition: border-color var(--ox-speed), transform var(--ox-speed), box-shadow var(--ox-speed);
+  transition:
+    border-color var(--ox-speed),
+    transform var(--ox-speed),
+    box-shadow var(--ox-speed);
 }
 
 .provider-cell:hover,
 .provider-cell:focus-visible {
   border-color: var(--ox-accent);
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   outline: none;
 }
 
@@ -134,7 +137,10 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color var(--ox-speed), color var(--ox-speed), border-color var(--ox-speed);
+  transition:
+    background-color var(--ox-speed),
+    color var(--ox-speed),
+    border-color var(--ox-speed);
 }
 
 .provider-cell-copy:hover {
@@ -168,7 +174,10 @@
   font-size: 12px;
   cursor: pointer;
   white-space: nowrap;
-  transition: color var(--ox-speed), border-color var(--ox-speed), background-color var(--ox-speed);
+  transition:
+    color var(--ox-speed),
+    border-color var(--ox-speed),
+    background-color var(--ox-speed);
 }
 
 .provider-cell-site:hover {
@@ -262,4 +271,3 @@
   word-break: break-all;
   color: var(--ox-text);
 }
-

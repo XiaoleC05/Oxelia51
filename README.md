@@ -108,12 +108,12 @@ export OPENAI_BASE_URL="http://127.0.0.1:17800/api/proxy/deepseek"
 └─────────────────────────────────────┘
 ```
 
-产品代码分布在两个仓库：
+产品代码分布（web 前端原属 langfuse-token 仓库，已并入本仓 `web/`）：
 
-| 仓库 | 内容 | 为什么单独存在 |
+| 位置 | 内容 | 说明 |
 | --- | --- | --- |
 | **Oxelia51**（本仓） | Go 代理网关 `proxy-gateway/`、Go 管理后端 `backend/`、桌面应用 `desktop/`、分析引擎 `analytics/` | 全部为自研代码，独立演进 |
-| **langfuse-token** | web 前端：落地页 / 文档站 / 仪表盘 | Langfuse (MIT) fork + 深度定制，单独跟踪上游更新 |
+| **web/**（本仓） | web 前端：落地页 / 文档站 / 仪表盘 | 原 langfuse-token 仓库（Langfuse MIT fork + 深度定制）；已脱钩并入本仓，langfuse 原生功能（追踪/提示词/评估等）已删除，独立演进 |
 
 ## 项目结构
 
@@ -125,16 +125,35 @@ Oxelia51/
 │   ├── ui/               #   前端界面（主窗口 + 悬浮玻璃卡片 widget）
 │   └── src-tauri/        #   Tauri 壳 + sidecar 托管
 ├── analytics/            # C++ 分析引擎
+├── web/                  # web 前端（原 langfuse-token 仓库，已脱钩并入本仓）
+├── packages/shared/      # @oxelia51/shared：web 的共享包（Prisma/ClickHouse/领域常量）
 ├── deploy/               # Docker Compose · Nginx · 发布脚本
 ├── docs/                 # 完整文档（设计 / 部署 / 维护）
 └── scripts/              # 辅助脚本
 ```
 
+## 本地开发（web）
+
+```bash
+pnpm install           # 安装依赖（pnpm 11，node 22 可跑，engines warning 可忽略）
+pnpm run db:generate   # 生成 Prisma client（脚本读根目录 .env，模板见 .env.dev.example）
+pnpm run build         # 经 turbo 构建 packages/shared 与 web
+```
+
+Windows 注意：web 的 `build`/`dev` 脚本依赖 dotenv 与 Unix shell，请在 Git Bash 中执行；
+或直接运行（绿灯标准：路由表正常输出）：
+
+```bash
+cd web && DOCKER_BUILD=1 INLINE_RUNTIME_CHUNK=false NEXT_TELEMETRY_DISABLED=1 pnpm exec next build
+```
+
+更多约定见 [web/AGENTS.md](web/AGENTS.md) 与 [packages/shared/AGENTS.md](packages/shared/AGENTS.md)。
+
 ## 文档
 
 - 在线文档：[oxelia51.com/docs](https://oxelia51.com/docs)
 - 本地设计文档：[docs/README.md](docs/README.md)
-- v4 产品设计：[2026-08-08-oxelia51-v4-design.md](https://github.com/XiaoleC05/langfuse-token/blob/main/docs/superpowers/specs/2026-08-08-oxelia51-v4-design.md)
+- v4 产品设计：[2026-08-08-oxelia51-v4-design.md](https://github.com/XiaoleC05/langfuse-token/blob/main/docs/superpowers/specs/2026-08-08-oxelia51-v4-design.md)（原 langfuse-token 仓库，已归档，文档未迁入本仓）
 
 ## 参与贡献
 

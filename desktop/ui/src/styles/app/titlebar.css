@@ -72,7 +72,9 @@
   color: var(--ox-text-muted);
   cursor: pointer;
   white-space: nowrap;
-  transition: color 150ms ease, background-color 150ms ease;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
 }
 
 .tab:hover {
@@ -137,7 +139,9 @@
   padding: 4px 6px;
   margin: -4px -6px;
   border-radius: 8px;
-  transition: color 150ms ease, background-color 150ms ease;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
 }
 
 .status.clickable:hover {
@@ -172,7 +176,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: color var(--ox-speed), border-color var(--ox-speed);
+  transition:
+    color var(--ox-speed),
+    border-color var(--ox-speed);
 }
 
 .widget-toggle:hover {
@@ -210,7 +216,9 @@
   align-items: center;
   justify-content: center;
   cursor: default;
-  transition: background-color 100ms ease, color 100ms ease;
+  transition:
+    background-color 100ms ease,
+    color 100ms ease;
 }
 
 .win-btn:hover {
@@ -222,4 +230,3 @@
   background: #e81123;
   color: #fff;
 }
-

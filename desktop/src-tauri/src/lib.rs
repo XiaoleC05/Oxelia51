@@ -4,10 +4,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, PoisonError};
 use std::time::Duration;
 
-use tauri::{AppHandle, Manager, RunEvent, State, WindowEvent};
 use tauri::menu::{Menu, MenuItem};
 use tauri::path::BaseDirectory;
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{AppHandle, Manager, RunEvent, State, WindowEvent};
 
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
@@ -27,7 +27,6 @@ mod proxyctl;
 ///
 /// 托盘驻留（UI Polish v1）：关闭窗口 = 隐藏到系统托盘，程序后台常驻；
 /// 托盘左键/「打开」重新显示窗口，「退出」才真正结束（并杀掉 sidecar）。
-
 struct Sidecar(Mutex<Option<Child>>);
 
 /// 托盘「退出」已点击（显式退出）；否则窗口关闭一律阻止退出（驻留托盘）。
@@ -57,8 +56,17 @@ fn find_sidecar(app: &AppHandle) -> Option<PathBuf> {
     let candidates = [
         exe_dir.join("proxy.exe"),
         exe_dir.join("..").join("sidecar").join("proxy.exe"),
-        exe_dir.join("..").join("..").join("sidecar").join("proxy.exe"),
-        exe_dir.join("..").join("..").join("..").join("sidecar").join("proxy.exe"),
+        exe_dir
+            .join("..")
+            .join("..")
+            .join("sidecar")
+            .join("proxy.exe"),
+        exe_dir
+            .join("..")
+            .join("..")
+            .join("..")
+            .join("sidecar")
+            .join("proxy.exe"),
     ];
     candidates.into_iter().find(|p| p.exists())
 }
@@ -116,7 +124,9 @@ fn ensure_independent_proxy(app: &AppHandle) {
     if !proxyctl::autostart_installed() {
         return;
     }
-    let Some(bundled) = find_sidecar(app) else { return };
+    let Some(bundled) = find_sidecar(app) else {
+        return;
+    };
     if let Ok(installed) = proxyctl::ensure_installed(&bundled) {
         let stale = !proxyctl::is_running()
             || proxyctl::binary_version(&bundled)
@@ -211,7 +221,7 @@ pub fn run() {
             app.manage(Sidecar(Mutex::new(child)));
 
             // 原生 UI（托盘菜单/系统菜单）统一浅色（白底黑边菜单）；应用图标为黑底白圈（品牌规范）
-            let _ = app.handle().set_theme(Some(tauri::Theme::Light));
+            app.handle().set_theme(Some(tauri::Theme::Light));
 
             // 标题栏（UI Polish §5）：Windows/Linux 无边框自绘（tauri.conf decorations:false）；
             // macOS 恢复原生装饰并切 Overlay 标题栏——保留红黄绿交通灯，隐藏原生标题。

@@ -7,7 +7,7 @@
 **根因**：Langfuse 前端经 tRPC 服务端代理访问 Go 后端时，Go 的 `c.ClientIP()` 返回的是腾讯云服务器 IP（118.25.138.177），该 IP 已在白名单中，导致前端 `disabled` 条件 `items.some(i => i.ip === clientIP)` 永远为 true。
 
 **修复**：
-- langfuse-token `adminRouter.ts`：goFetch 转发浏览器真实出口 IP 到 `X-Oxelia51-Client-IP` 头
+- web/（原 langfuse-token 仓库）`adminRouter.ts`：goFetch 转发浏览器真实出口 IP 到 `X-Oxelia51-Client-IP` 头
 - Oxelia51 `handler.go` + `ipcheck.go`：优先读 `X-Oxelia51-Client-IP` 头，回退 `c.ClientIP()`
 
 **验证**：`curl -H 'X-Oxelia51-Client-IP: 8.8.8.8'` 返回 `clientIP: 8.8.8.8` ✅

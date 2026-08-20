@@ -9,11 +9,12 @@ export function ProvidersTab() {
   // days 由 DimTab 作为参数传入（非闭包状态），故依赖数组仍为空、引用保持稳定。
   const fetcher = useCallback(
     (days?: number) => fetchProviders(days).then((r) => r.providers),
-    []
+    [],
   );
   const detailFetcher = useCallback(
-    (name: string, days?: number) => fetchProviderDetail(name, days).then((r) => r.rows),
-    []
+    (name: string, days?: number) =>
+      fetchProviderDetail(name, days).then((r) => r.rows),
+    [],
   );
   return (
     <DimTab

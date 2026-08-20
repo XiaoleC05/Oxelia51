@@ -45,7 +45,7 @@
 | `**/migrations/*.sql` | 后端任务 | 只读，产出提示词 |
 | `**/*.md` / CHANGELOG / README | 审查任务 | 只读，产出提示词 |
 | `**/*_test.go` | 审查任务 | 只读，产出提示词 |
-| `langfuse-token/web/src/**/*` | 前端任务 | 只读，产出提示词 |
+| `web/src/**/*` | 前端任务 | 只读，产出提示词 |
 
 ### 我的领域——可以写
 
@@ -74,9 +74,7 @@ Oxelia51/                    ← 平台主仓库（v3.0）
   desktop/                   ← Tauri 2 桌面应用（React UI 在 desktop/ui/）
   deploy/                    ← 部署配置
   docs/                      ← 全部文档
-
-Fork：
-  langfuse-token/            ← Fork langfuse/langfuse（前端定制）
+  web/                       ← web 前端（原 langfuse-token 仓库，Fork langfuse/langfuse；已并入本仓）
 
 独立工具仓库（SSH 远端，管理后台引用）：
   DormGuard/ SecretStore/ SmartKB/

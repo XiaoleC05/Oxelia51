@@ -78,7 +78,11 @@
   width: 100%;
   max-width: 24px;
   border-radius: 6px 4px 0 0;
-  background: linear-gradient(180deg, var(--ox-accent), color-mix(in srgb, var(--ox-accent) 55%, transparent));
+  background: linear-gradient(
+    180deg,
+    var(--ox-accent),
+    color-mix(in srgb, var(--ox-accent) 55%, transparent)
+  );
   transition: height var(--ox-speed);
 }
 
@@ -149,15 +153,27 @@
 }
 
 .rank-fill.fill-top-1 {
-  background: linear-gradient(90deg, #c03a3f, color-mix(in srgb, #c03a3f 60%, transparent));
+  background: linear-gradient(
+    90deg,
+    #c03a3f,
+    color-mix(in srgb, #c03a3f 60%, transparent)
+  );
 }
 
 .rank-fill.fill-top-2 {
-  background: linear-gradient(90deg, #d44b50, color-mix(in srgb, #d44b50 55%, transparent));
+  background: linear-gradient(
+    90deg,
+    #d44b50,
+    color-mix(in srgb, #d44b50 55%, transparent)
+  );
 }
 
 .rank-fill.fill-top-3 {
-  background: linear-gradient(90deg, #e5484d, color-mix(in srgb, #e5484d 50%, transparent));
+  background: linear-gradient(
+    90deg,
+    #e5484d,
+    color-mix(in srgb, #e5484d 50%, transparent)
+  );
 }
 
 /* 排行行布局：name 可收缩 + track 保底宽度，避免长模型名 / 大字体把用量条挤没（#总览布局） */
@@ -184,7 +200,11 @@
 .rank-fill {
   height: 100%;
   border-radius: 6px;
-  background: linear-gradient(90deg, var(--ox-accent), color-mix(in srgb, var(--ox-accent) 60%, transparent));
+  background: linear-gradient(
+    90deg,
+    var(--ox-accent),
+    color-mix(in srgb, var(--ox-accent) 60%, transparent)
+  );
   transition: width var(--ox-speed);
 }
 
@@ -228,4 +248,3 @@
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
-

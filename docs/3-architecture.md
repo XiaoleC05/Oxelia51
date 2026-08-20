@@ -8,12 +8,12 @@
 
 | # | 原则 | 说明 |
 |:--:|------|------|
-| 1 | 关注点分离 | Go 代理只做转发+记录，C++ 引擎只做分析，Langfuse 只做展示 |
+| 1 | 关注点分离 | Go 代理只做转发+记录，C++ 引擎只做分析，Web（本仓 `web/`）只做展示 |
 | 2 | 异步解耦 | Token 记录不阻塞 LLM 响应；分析引擎离线批处理 |
 | 3 | 最小依赖 | Go 代理只用标准库（除 ClickHouse 驱动）；C++ 只用 clickhouse-cpp + libpq |
 | 4 | 单二进制部署 | Go 代理和 C++ 引擎各产出一个可执行文件 |
-| 5 | Fork 不改核 | Langfuse 只定制前端表层，核心不动，以便 rebase upstream |
-| 6 | 自建表隔离 | `oxelia51` schema 独立于 Langfuse 表 |
+| 5 | Fork 已脱钩 | `web/` 原为 langfuse fork（langfuse-token 仓库），已并入本仓并删除 langfuse 原生功能（追踪/提示词/评估等），独立演进，不再 rebase 上游 |
+| 6 | 自建表隔离 | `oxelia51` schema 独立于原 Langfuse 表 |
 
 ---
 
@@ -34,8 +34,8 @@ oxelia51.com v3.0
 │   输入: ClickHouse (原始事件)
 │   输出: 聚合结果 → PostgreSQL / 告警通知
 │
-├── 子系统 3: Langfuse 定制前端
-│   职责: 仪表盘、Token 统计面板、成本分析、Trace 查看
+├── 子系统 3: Oxelia51 Web（本仓 web/）
+│   职责: 落地页/文档站、仪表盘、Token 统计面板、成本分析
 │   输入: PostgreSQL + ClickHouse 查询
 │   输出: Web UI
 │
@@ -64,7 +64,7 @@ oxelia51.com v3.0
           │              │                  │
           ▼              ▼                  ▼
    ┌──────────┐   ┌──────────┐   ┌──────────────┐
-   │Go 代理网关│   │Go 管理后台│   │Langfuse Web  │
+   │Go 代理网关│   │Go 管理后台│   │Oxelia51 Web  │
    └────┬─────┘   └────┬─────┘   └──────┬───────┘
         │              │                │
         │ INSERT       │ SELECT         │ SELECT
@@ -81,7 +81,7 @@ oxelia51.com v3.0
    └──────────────────────┘
 ```
 
-**依赖方向**：Go 代理网关 → ClickHouse（写），C++ 引擎 → ClickHouse（读）→ PostgreSQL（写），Langfuse Web → ClickHouse + PostgreSQL（读）。没有循环依赖。
+**依赖方向**：Go 代理网关 → ClickHouse（写），C++ 引擎 → ClickHouse（读）→ PostgreSQL（写），Oxelia51 Web → ClickHouse + PostgreSQL（读）。没有循环依赖。
 
 ---
 
@@ -200,20 +200,21 @@ XiaoleC05/
 │   │   └── deploy/
 │   │
 │   ├── backend/                       # Go module（管理后台）
-│   ├── frontend/                      # React（逐步废弃）
+│   ├── web/                           # Web 应用（原 langfuse-token fork，已脱钩并入本仓）
+│   │   └── src/
+│   │       ├── features/
+│   │       │   ├── oxelia51/          # Oxelia51 自有功能（landing/admin/同步/工作区）
+│   │       │   ├── dashboard/         # Token 统计组件
+│   │       │   └── theming/           # Cozy/Cosmos 变量
+│   │       └── pages/
+│   │           ├── app/               # 应用主界面（overview/analytics/agents/…）
+│   │           ├── admin/             # 管理台页面
+│   │           └── api/sync/          # 桌面端同步端点
+│   ├── packages/
+│   │   └── shared/                    # @oxelia51/shared（Prisma/ClickHouse/领域常量）
 │   ├── deploy/                        # Docker Compose + Nginx + Webhook + systemd
 │   ├── scripts/                       # 构建辅助脚本
 │   └── docs/                          # 6 份核心文档
-│
-└── langfuse-token/                    # Fork langfuse/langfuse
-    └── web/src/
-        ├── features/
-        │   ├── dashboard/             # +Token 统计组件
-        │   ├── theming/               # +Cozy/Cosmos 变量
-        │   └── navigation/            # +管理后台链接
-        └── pages/
-            ├── cost.tsx               # 新增
-            └── alerts.tsx             # 新增
 ```
 
 ### 4.2 设计模式
@@ -285,13 +286,15 @@ XiaoleC05/
 │  └──────────┘  └──────────┘  └──────┘  └───────┘            │
 │                                                              │
 │  ┌──────────────────────────────────────┐                    │
-│  │  Langfuse Web :3000                   │                    │
-│  │  Next.js，仪表盘 + Trace + 定制页面   │                    │
+│  │  Web :3000                            │                    │
+│  │  Next.js（本仓 web/），落地页 + 文档   │                    │
+│  │  + 仪表盘/Token 统计                  │                    │
 │  └──────────────────────────────────────┘                    │
 │                                                              │
 │  ┌──────────────────────────────────────┐                    │
-│  │  Langfuse Worker :3030                │                    │
-│  │  Express，SDK 事件消费 + 队列处理     │                    │
+│  │  ~~Langfuse Worker :3030~~            │                    │
+│  │  已随 fork 脱钩删除（原生 ingestion/  │                    │
+│  │  evals 队列一并移除），新部署不再有    │                    │
 │  └──────────────────────────────────────┘                    │
 │                                                              │
 │  ┌──────────────────────────────────────┐                    │
@@ -329,13 +332,13 @@ XiaoleC05/
 
 | 路径 | 来源 | 说明 |
 |------|------|------|
-| `/` | Langfuse（定制） | 仪表盘首页 |
-| `/dashboard/tokens` | **自制** | Token 统计面板（ECharts） |
-| `/dashboard/cost` | **自制** | 成本分析页（ECharts） |
-| `/project/:id` | Langfuse | 项目详情 + Trace 列表 |
-| `/project/:id/traces/:traceId` | Langfuse | Trace 时间线 |
-| `/settings` | Langfuse | 用户设置 |
-| `/settings/alerts` | **自制** | 告警配置页 |
+| `/` | **自制** | 落地页（主入口下载桌面版） |
+| `/docs` | **自制** | 文档站 |
+| `/app` | **自制** | 应用主界面（overview/analytics/agents/providers/settings） |
+| `/project/:id` | Fork 改造 | 项目首页（原 Trace 列表等 langfuse 原生页面已删除） |
+| `/project/:id/dashboard/tokens` | **自制** | Token 统计面板（ECharts） |
+| `/project/:id/dashboard/cost` | **自制** | 成本分析页（ECharts） |
+| `/project/:id/settings/alerts` | **自制** | 告警配置页 |
 | `/admin` | **现有** | 管理后台（DormGuard 等） |
 
 ### 6.2 设计系统（继承自 v2）

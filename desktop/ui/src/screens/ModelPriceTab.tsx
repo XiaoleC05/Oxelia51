@@ -30,7 +30,9 @@ export function ModelPriceTab() {
   const [provider, setProvider] = useState("");
   const [currency, setCurrency] = useState<Currency>("usd");
   // 用户已保存的自定义定价（model → 输入/输出字符串）
-  const [savedPricing, setSavedPricing] = useState<Map<string, { prompt: string; completion: string }>>(new Map());
+  const [savedPricing, setSavedPricing] = useState<
+    Map<string, { prompt: string; completion: string }>
+  >(new Map());
   // 正在编辑的模型（null = 无）；价格以字符串编辑，保存时校验
   const [editing, setEditing] = useState<string | null>(null);
   const [editPrompt, setEditPrompt] = useState("");
@@ -57,7 +59,8 @@ export function ModelPriceTab() {
       .then((r) => {
         if (cancelled) return;
         const m = new Map<string, { prompt: string; completion: string }>();
-        for (const p of r.pricing ?? []) m.set(p.model, { prompt: p.prompt, completion: p.completion });
+        for (const p of r.pricing ?? [])
+          m.set(p.model, { prompt: p.prompt, completion: p.completion });
         setSavedPricing(m);
       })
       .catch(() => {
@@ -78,25 +81,25 @@ export function ModelPriceTab() {
     const mul = dir === "asc" ? 1 : -1;
     if (sort === "output") {
       list = [...list].sort(
-        (a, b) =>
-          ((a.completion - b.completion) || (a.prompt - b.prompt)) * mul,
+        (a, b) => (a.completion - b.completion || a.prompt - b.prompt) * mul,
       );
     } else {
       list = [...list].sort(
-        (a, b) =>
-          ((a.prompt - b.prompt) || (a.completion - b.completion)) * mul,
+        (a, b) => (a.prompt - b.prompt || a.completion - b.completion) * mul,
       );
     }
     return list;
   }, [items, provider, sort, dir]);
 
   const toggleDir = () => setDir((d) => (d === "asc" ? "desc" : "asc"));
-  const toggleCurrency = () => setCurrency((c) => (c === "usd" ? "cny" : "usd"));
+  const toggleCurrency = () =>
+    setCurrency((c) => (c === "usd" ? "cny" : "usd"));
 
   // 按所选币种格式化价格：人民币 = 美元 × 当日汇率
   const fmtPrice = (usd: number) => {
     if (usd === 0) return "—";
-    if (currency === "cny" && rate) return `≈¥${(usd * rate.usd_to_cny).toFixed(3)}`;
+    if (currency === "cny" && rate)
+      return `≈¥${(usd * rate.usd_to_cny).toFixed(3)}`;
     return `$${usd.toFixed(3)}`;
   };
   const curMark = currency === "cny" ? "¥" : "$";
@@ -113,7 +116,12 @@ export function ModelPriceTab() {
   const saveEdit = async (model: string) => {
     const p = editPrompt.trim();
     const c = editCompletion.trim();
-    if (p === "" || c === "" || Number.isNaN(Number(p)) || Number.isNaN(Number(c))) {
+    if (
+      p === "" ||
+      c === "" ||
+      Number.isNaN(Number(p)) ||
+      Number.isNaN(Number(c))
+    ) {
       setError("价格须为有效数字");
       return;
     }
@@ -168,7 +176,11 @@ export function ModelPriceTab() {
               type="button"
               className="range-chip dir"
               onClick={toggleDir}
-              title={dir === "asc" ? "当前升序，点击切换降序" : "当前降序，点击切换升序"}
+              title={
+                dir === "asc"
+                  ? "当前升序，点击切换降序"
+                  : "当前降序，点击切换升序"
+              }
             >
               {dir === "asc" ? "↑ 升序" : "↓ 降序"}
             </button>
@@ -197,7 +209,10 @@ export function ModelPriceTab() {
           </div>
           {sorted.map((i) =>
             editing === i.model ? (
-              <div key={`${i.provider}-${i.model}`} className="price-row price-row-edit">
+              <div
+                key={`${i.provider}-${i.model}`}
+                className="price-row price-row-edit"
+              >
                 <span className="price-model">{i.model}</span>
                 <span className="price-provider">{i.provider}</span>
                 <span className="num">
@@ -223,10 +238,21 @@ export function ModelPriceTab() {
                   />
                 </span>
                 <span className="price-edit-actions">
-                  <button type="button" className="btn primary" disabled={savingEdit} onClick={() => void saveEdit(i.model)}>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={savingEdit}
+                    onClick={() => void saveEdit(i.model)}
+                  >
                     保存
                   </button>
-                  <button type="button" className="link-btn" onClick={cancelEdit}>取消</button>
+                  <button
+                    type="button"
+                    className="link-btn"
+                    onClick={cancelEdit}
+                  >
+                    取消
+                  </button>
                 </span>
               </div>
             ) : (
@@ -240,14 +266,17 @@ export function ModelPriceTab() {
                 <span className="price-provider">{i.provider}</span>
                 <span className="num">{fmtPrice(i.prompt)}</span>
                 <span className="num">{fmtPrice(i.completion)}</span>
-                <span className="price-edit-hint">{savedPricing.has(i.model) ? "已定价" : ""}</span>
+                <span className="price-edit-hint">
+                  {savedPricing.has(i.model) ? "已定价" : ""}
+                </span>
               </div>
             ),
           )}
         </div>
       )}
       <p className="price-note">
-        参考价 · 离线可用 · 按输入价 / 输出价排序 · 点击模型条目可编辑并保存到「模型定价」
+        参考价 · 离线可用 · 按输入价 / 输出价排序 ·
+        点击模型条目可编辑并保存到「模型定价」
         {currency === "cny" && rate
           ? ` · 汇率 1 USD = ¥${rate.usd_to_cny.toFixed(4)}（${rate.source}${rate.updated_at ? ` · ${rate.updated_at}` : ""}，每日更新）`
           : ""}

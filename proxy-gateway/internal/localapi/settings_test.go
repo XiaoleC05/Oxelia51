@@ -170,7 +170,7 @@ func TestCostOfFallsBackToDefaultPricing(t *testing.T) {
 }
 
 // TestCostOfStripsContextSuffix 锁住：Claude Code 等客户端发的模型名带上下文后缀
-//（如 deepseek-v4-pro[1M]），成本计算剥离 [..] 后缀命中参考价。
+// （如 deepseek-v4-pro[1M]），成本计算剥离 [..] 后缀命中参考价。
 func TestCostOfStripsContextSuffix(t *testing.T) {
 	if c := costOf(map[string]ModelPrice{}, "deepseek-v4-pro[1M]", 1_000_000, 1_000_000); c != 1.25 {
 		t.Fatalf("costOf(v4-pro[1M]) = %v, want 1.25", c)

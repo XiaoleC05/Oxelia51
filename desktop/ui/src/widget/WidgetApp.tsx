@@ -40,14 +40,17 @@ export default function WidgetApp() {
         if (s?.theme === "cosmos" || s?.theme === "cozy") {
           document.documentElement.dataset.theme = s.theme;
         }
-        setFields(s.widgetFields?.length ? s.widgetFields : WIDGET_FIELDS.map((f) => f.key));
+        setFields(
+          s.widgetFields?.length
+            ? s.widgetFields
+            : WIDGET_FIELDS.map((f) => f.key),
+        );
         const wp = s?.widgetPos;
         if (wp) {
           void (async () => {
             try {
-              const { getCurrentWindow, PhysicalPosition } = await import(
-                "@tauri-apps/api/window"
-              );
+              const { getCurrentWindow, PhysicalPosition } =
+                await import("@tauri-apps/api/window");
               await getCurrentWindow().setPosition(
                 new PhysicalPosition(wp.x, wp.y),
               );
@@ -125,7 +128,13 @@ export default function WidgetApp() {
             oxelia51 · 实时统计
           </span>
         </span>
-        <button type="button" className="widget-close" onClick={hide} title="隐藏悬浮卡片" aria-label="隐藏悬浮卡片">
+        <button
+          type="button"
+          className="widget-close"
+          onClick={hide}
+          title="隐藏悬浮卡片"
+          aria-label="隐藏悬浮卡片"
+        >
           ✕
         </button>
       </header>
@@ -141,7 +150,9 @@ export default function WidgetApp() {
           {show("tokens") && (
             <div className="widget-tokens tabular" data-tauri-drag-region>
               {fmtTokens(data?.today.tokens ?? 0)}
-              <span className="widget-tokens-unit" data-tauri-drag-region>tokens</span>
+              <span className="widget-tokens-unit" data-tauri-drag-region>
+                tokens
+              </span>
             </div>
           )}
           {show("cost") && (
@@ -151,29 +162,33 @@ export default function WidgetApp() {
           )}
           {show("requests") && (
             <footer className="widget-foot" data-tauri-drag-region>
-              <span className="tabular">{data?.today.requests ?? 0} 次请求</span>
+              <span className="tabular">
+                {data?.today.requests ?? 0} 次请求
+              </span>
             </footer>
           )}
-          {show("top") && data?.todayByModel && data.todayByModel.length > 0 && (
-            <div className="widget-top" data-tauri-drag-region>
-              <div className="widget-top-title">今日模型 Top5</div>
-              {data.todayByModel.slice(0, 5).map((m, i) => (
-                <div
-                  key={m.model}
-                  className={`widget-top-row${i < 3 ? ` rank-${i + 1}` : ""}`}
-                  data-tauri-drag-region
-                >
-                  <span className="widget-top-rank">{i + 1}</span>
-                  <span className="widget-top-name" title={m.model}>
-                    {m.model}
-                  </span>
-                  <span className="widget-top-tokens tabular">
-                    {fmtTokens(m.tokens)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+          {show("top") &&
+            data?.todayByModel &&
+            data.todayByModel.length > 0 && (
+              <div className="widget-top" data-tauri-drag-region>
+                <div className="widget-top-title">今日模型 Top5</div>
+                {data.todayByModel.slice(0, 5).map((m, i) => (
+                  <div
+                    key={m.model}
+                    className={`widget-top-row${i < 3 ? ` rank-${i + 1}` : ""}`}
+                    data-tauri-drag-region
+                  >
+                    <span className="widget-top-rank">{i + 1}</span>
+                    <span className="widget-top-name" title={m.model}>
+                      {m.model}
+                    </span>
+                    <span className="widget-top-tokens tabular">
+                      {fmtTokens(m.tokens)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
         </>
       )}
     </div>

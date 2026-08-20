@@ -23,58 +23,58 @@ type ModelPrice struct {
 // 共有模型价格有 TestDefaultPricingMatchesSeed 防漂移。
 var defaultPricing = map[string]ModelPrice{
 	// Anthropic（现行五代）
-	"claude-fable-5":     {Prompt: 10.0, Completion: 50.0},
-	"claude-opus-5":      {Prompt: 5.0, Completion: 25.0},
-	"claude-sonnet-5":    {Prompt: 3.0, Completion: 15.0},
+	"claude-fable-5":  {Prompt: 10.0, Completion: 50.0},
+	"claude-opus-5":   {Prompt: 5.0, Completion: 25.0},
+	"claude-sonnet-5": {Prompt: 3.0, Completion: 15.0},
 	// 模型 ID 用连字符（claude-haiku-4-5）而非点号——与 Anthropic 官方 API 模型 ID
 	// 及云端 seed 一致；此前点号写法匹配不上真实请求的模型名，该模型成本恒为「未配置定价」。
-	"claude-haiku-4-5":   {Prompt: 1.0, Completion: 5.0},
+	"claude-haiku-4-5": {Prompt: 1.0, Completion: 5.0},
 	// Claude 4.x（稳定版，官方价同五代对应档位）
-	"claude-opus-4-6":    {Prompt: 5.0, Completion: 25.0},
-	"claude-opus-4-7":    {Prompt: 5.0, Completion: 25.0},
-	"claude-opus-4-8":    {Prompt: 5.0, Completion: 25.0},
-	"claude-sonnet-4-6":  {Prompt: 3.0, Completion: 15.0},
+	"claude-opus-4-6":   {Prompt: 5.0, Completion: 25.0},
+	"claude-opus-4-7":   {Prompt: 5.0, Completion: 25.0},
+	"claude-opus-4-8":   {Prompt: 5.0, Completion: 25.0},
+	"claude-sonnet-4-6": {Prompt: 3.0, Completion: 15.0},
 	// OpenAI（现行 5.6 家族 + 通用档）
-	"gpt-5.6-sol":        {Prompt: 5.0, Completion: 30.0},
-	"gpt-5.6-terra":      {Prompt: 2.0, Completion: 12.0},
-	"gpt-5.6-luna":       {Prompt: 0.2, Completion: 1.2},
-	"gpt-5.5":            {Prompt: 5.0, Completion: 30.0},
-	"gpt-5":              {Prompt: 1.25, Completion: 10.0},
-	"gpt-5-mini":         {Prompt: 0.25, Completion: 2.0},
-	"gpt-4o":             {Prompt: 2.5, Completion: 10.0},
-	"o3":                 {Prompt: 10.0, Completion: 40.0},
-	"o4-mini":            {Prompt: 1.1, Completion: 4.4},
+	"gpt-5.6-sol":   {Prompt: 5.0, Completion: 30.0},
+	"gpt-5.6-terra": {Prompt: 2.0, Completion: 12.0},
+	"gpt-5.6-luna":  {Prompt: 0.2, Completion: 1.2},
+	"gpt-5.5":       {Prompt: 5.0, Completion: 30.0},
+	"gpt-5":         {Prompt: 1.25, Completion: 10.0},
+	"gpt-5-mini":    {Prompt: 0.25, Completion: 2.0},
+	"gpt-4o":        {Prompt: 2.5, Completion: 10.0},
+	"o3":            {Prompt: 10.0, Completion: 40.0},
+	"o4-mini":       {Prompt: 1.1, Completion: 4.4},
 	// DeepSeek（现行 v4 系列；deepseek-chat/reasoner 为 v4-flash 别名）
-	"deepseek-v4-pro":    {Prompt: 0.42, Completion: 0.83},
-	"deepseek-v4-flash":  {Prompt: 0.14, Completion: 0.28},
-	"deepseek-chat":      {Prompt: 0.14, Completion: 0.28},
-	"deepseek-reasoner":  {Prompt: 0.14, Completion: 0.28},
+	"deepseek-v4-pro":   {Prompt: 0.42, Completion: 0.83},
+	"deepseek-v4-flash": {Prompt: 0.14, Completion: 0.28},
+	"deepseek-chat":     {Prompt: 0.14, Completion: 0.28},
+	"deepseek-reasoner": {Prompt: 0.14, Completion: 0.28},
 	// Kimi / Moonshot
-	"kimi-k3":            {Prompt: 2.78, Completion: 13.89},
-	"kimi-k2.6":          {Prompt: 0.95, Completion: 4.0},
-	"kimi-k2":            {Prompt: 0.6, Completion: 2.4},
+	"kimi-k3":   {Prompt: 2.78, Completion: 13.89},
+	"kimi-k2.6": {Prompt: 0.95, Completion: 4.0},
+	"kimi-k2":   {Prompt: 0.6, Completion: 2.4},
 	// moonshot-v1-8k：官方 ¥2.00/¥10.00 每 1M tokens（platform.kimi.com/docs/pricing/chat-v1），÷7.2 折算
-	"moonshot-v1-8k":     {Prompt: 0.28, Completion: 1.39},
+	"moonshot-v1-8k": {Prompt: 0.28, Completion: 1.39},
 	// 智谱
-	"glm-5.2":            {Prompt: 1.11, Completion: 3.89},
-	"glm-4":              {Prompt: 0.2, Completion: 0.6},
+	"glm-5.2": {Prompt: 1.11, Completion: 3.89},
+	"glm-4":   {Prompt: 0.2, Completion: 0.6},
 	// 通义千问
-	"qwen3.8max":         {Prompt: 1.67, Completion: 5.0},
-	"qwen3.5-plus":       {Prompt: 0.11, Completion: 0.67},
-	"qwen-max":           {Prompt: 1.6, Completion: 6.4},
+	"qwen3.8max":   {Prompt: 1.67, Completion: 5.0},
+	"qwen3.5-plus": {Prompt: 0.11, Completion: 0.67},
+	"qwen-max":     {Prompt: 1.6, Completion: 6.4},
 	// 豆包 / 火山方舟
 	"doubao-seed-2.1-pro":   {Prompt: 0.83, Completion: 4.17},
 	"doubao-seed-2.1-turbo": {Prompt: 0.42, Completion: 2.08},
 	"doubao-pro-32k":        {Prompt: 0.11, Completion: 0.28},
 	// 腾讯混元（Hy3 现行旗舰，2026-07 发布；官方 ¥1/¥4 每 1M ÷7.2）
-	"hunyuan-hy3":           {Prompt: 0.14, Completion: 0.56},
+	"hunyuan-hy3": {Prompt: 0.14, Completion: 0.56},
 	// Gemini
-	"gemini-3-pro":       {Prompt: 1.5, Completion: 9.0},
-	"gemini-3-flash":     {Prompt: 1.5, Completion: 7.5},
-	"gemini-2.5-pro":     {Prompt: 1.25, Completion: 10.0},
+	"gemini-3-pro":   {Prompt: 1.5, Completion: 9.0},
+	"gemini-3-flash": {Prompt: 1.5, Completion: 7.5},
+	"gemini-2.5-pro": {Prompt: 1.25, Completion: 10.0},
 	// xAI / Mistral
-	"grok-4.5":           {Prompt: 2.0, Completion: 6.0},
-	"mistral-large-3":    {Prompt: 0.5, Completion: 1.5},
+	"grok-4.5":        {Prompt: 2.0, Completion: 6.0},
+	"mistral-large-3": {Prompt: 0.5, Completion: 1.5},
 }
 
 // CatalogItem 模型价格目录（供价格表展示）。Provider 为供应商标签，价格 USD/1M tokens。
@@ -201,8 +201,8 @@ type Settings struct {
 	Pricing      []PricedItem `json:"pricing"`
 	Budgets      []BudgetItem `json:"budgets"`
 	Sync         SyncConfig   `json:"sync"`
-	WidgetFields  []string   `json:"widgetFields"`        // 悬浮卡片显示字段（空 = 全部）
-	WidgetPos     *WidgetPos `json:"widgetPos,omitempty"` // 悬浮卡片窗口位置（持久化）
+	WidgetFields []string     `json:"widgetFields"`        // 悬浮卡片显示字段（空 = 全部）
+	WidgetPos    *WidgetPos   `json:"widgetPos,omitempty"` // 悬浮卡片窗口位置（持久化）
 	// AgentAliases Agent 显示名别名（原始名 → 自定义名；如把「其他」重命名），#问题 4。
 	// 仅返回，不参与 Settings 写入白名单（写入走 agent_aliases key 单独校验 JSON）。
 	AgentAliases map[string]string `json:"agentAliases,omitempty"`
@@ -224,9 +224,9 @@ type PricedItem struct {
 // BudgetItem 预算阈值。dimension ∈ {global, provider, agent, model}，
 // global 时 target 为空；其余维度 target 为具体名称（如 provider=deepseek、agent=cursor、model=gpt-5）。
 type BudgetItem struct {
-	Dimension   string `json:"dimension"`             // global / provider / agent / model
-	Target      string `json:"target,omitempty"`      // 具体名称（global 为空）
-	Model       string `json:"model,omitempty"`       // 兼容旧格式：dimension=model 时等价于 target
+	Dimension   string `json:"dimension"`        // global / provider / agent / model
+	Target      string `json:"target,omitempty"` // 具体名称（global 为空）
+	Model       string `json:"model,omitempty"`  // 兼容旧格式：dimension=model 时等价于 target
 	DailyTokens int64  `json:"dailyTokens"`
 }
 

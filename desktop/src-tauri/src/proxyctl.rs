@@ -21,7 +21,9 @@ pub const PROXY_ADDR: &str = "127.0.0.1:17800";
 
 /// 回环监听地址（127.0.0.1:PORT）。
 fn local_addr(port: u16) -> SocketAddr {
-    format!("127.0.0.1:{port}").parse().expect("valid local addr")
+    format!("127.0.0.1:{port}")
+        .parse()
+        .expect("valid local addr")
 }
 
 /// Windows：给子进程加 CREATE_NO_WINDOW，避免 GUI 应用（无控制台）spawn 控制台命令
@@ -53,7 +55,11 @@ pub fn status() -> ProxyStatus {
     } else {
         String::new()
     };
-    ProxyStatus { enabled: autostart_installed(), running, version }
+    ProxyStatus {
+        enabled: autostart_installed(),
+        running,
+        version,
+    }
 }
 
 /// 运行中的代理版本（GET /api/proxy/status → version），未运行返回 None。
@@ -61,10 +67,9 @@ pub fn running_version() -> Option<String> {
     if !is_running() {
         return None;
     }
-    let mut stream = TcpStream::connect_timeout(&local_addr(PROXY_PORT), Duration::from_millis(800)).ok()?;
-    let _ = stream.write_all(
-        format!("GET /api/proxy/status HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n").as_bytes(),
-    );
+    let mut stream =
+        TcpStream::connect_timeout(&local_addr(PROXY_PORT), Duration::from_millis(800)).ok()?;
+    let _ = stream.write_all(b"GET /api/proxy/status HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n");
     let mut buf = String::new();
     let _ = stream.read_to_string(&mut buf);
     // 取响应体里 "version":"<v>" 的 <v>
@@ -78,7 +83,10 @@ pub fn running_version() -> Option<String> {
 
 /// 某个 proxy 二进制的版本（跑 `-version`），失败回退 "dev"。
 pub fn binary_version(exe: &Path) -> String {
-    let out = no_console(&mut Command::new(exe)).arg("-version").output().ok();
+    let out = no_console(&mut Command::new(exe))
+        .arg("-version")
+        .output()
+        .ok();
     out.and_then(|o| String::from_utf8(o.stdout).ok())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
@@ -111,11 +119,19 @@ pub fn install_dir() -> PathBuf {
     }
     #[cfg(target_os = "macos")]
     {
-        home().join("Library").join("Application Support").join("Oxelia51").join("proxy")
+        home()
+            .join("Library")
+            .join("Application Support")
+            .join("Oxelia51")
+            .join("proxy")
     }
     #[cfg(target_os = "linux")]
     {
-        home().join(".local").join("share").join("oxelia51").join("proxy")
+        home()
+            .join(".local")
+            .join("share")
+            .join("oxelia51")
+            .join("proxy")
     }
 }
 
@@ -146,7 +162,9 @@ pub fn launch_independent(exe: &Path) -> Result<(), String> {
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
     }
-    cmd.spawn().map(|_| ()).map_err(|e| format!("launch independent proxy: {e}"))
+    cmd.spawn()
+        .map(|_| ())
+        .map_err(|e| format!("launch independent proxy: {e}"))
 }
 
 /// 杀掉监听指定端口的进程（跨平台按端口查 PID）。
@@ -163,7 +181,9 @@ pub fn kill_listener(port: u16) -> Result<(), String> {
             .map_err(|e| format!("query listener pid: {e}"))?;
         for pid in String::from_utf8_lossy(&out.stdout).lines().map(str::trim) {
             if !pid.is_empty() && pid.chars().all(|c| c.is_ascii_digit()) {
-                let _ = no_console(&mut Command::new("taskkill")).args(["/PID", pid, "/F"]).output();
+                let _ = no_console(&mut Command::new("taskkill"))
+                    .args(["/PID", pid, "/F"])
+                    .output();
             }
         }
     }
@@ -189,7 +209,12 @@ pub fn autostart_installed() -> bool {
     #[cfg(windows)]
     {
         no_console(&mut Command::new("reg"))
-            .args(["query", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", "/v", "Oxelia51Proxy"])
+            .args([
+                "query",
+                r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
+                "/v",
+                "Oxelia51Proxy",
+            ])
             .output()
             .map(|o| o.status.success())
             .unwrap_or(false)
@@ -272,7 +297,13 @@ pub fn autostart_uninstall() -> Result<(), String> {
     #[cfg(windows)]
     {
         no_console(&mut Command::new("reg"))
-            .args(["delete", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", "/v", "Oxelia51Proxy", "/f"])
+            .args([
+                "delete",
+                r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
+                "/v",
+                "Oxelia51Proxy",
+                "/f",
+            ])
             .output()
             .map(|_| ())
             .map_err(|e| format!("reg delete: {e}"))
@@ -298,10 +329,16 @@ pub fn autostart_uninstall() -> Result<(), String> {
 
 #[cfg(target_os = "macos")]
 fn plist_path() -> PathBuf {
-    home().join("Library").join("LaunchAgents").join("com.oxelia51.proxy.plist")
+    home()
+        .join("Library")
+        .join("LaunchAgents")
+        .join("com.oxelia51.proxy.plist")
 }
 
 #[cfg(target_os = "linux")]
 fn desktop_path() -> PathBuf {
-    home().join(".config").join("autostart").join("oxelia51-proxy.desktop")
+    home()
+        .join(".config")
+        .join("autostart")
+        .join("oxelia51-proxy.desktop")
 }

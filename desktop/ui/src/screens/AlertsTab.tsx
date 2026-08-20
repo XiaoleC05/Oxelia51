@@ -11,7 +11,11 @@ import {
 import { EmptyState } from "../EmptyState";
 import { Dropdown } from "../components/Dropdown";
 // #27：系统通知走 Tauri 插件（WebView2 的 Web Notification API 不可靠）
-import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
+import {
+  isPermissionGranted,
+  requestPermission,
+  sendNotification,
+} from "@tauri-apps/plugin-notification";
 
 // 已触发集合（跨轮询记忆，用于"首次触发时通知"）
 let prevTriggered = new Set<string>();
@@ -21,7 +25,13 @@ let notifPermission: "granted" | "denied" | "unknown" = "unknown";
 async function notifyBudgetTriggered(a: AlertItem) {
   const name = a.target || (a.dimension === "global" ? "全局" : a.target);
   const dimLabel =
-    a.dimension === "provider" ? "供应商" : a.dimension === "agent" ? "Agent" : a.dimension === "model" ? "模型" : "全局";
+    a.dimension === "provider"
+      ? "供应商"
+      : a.dimension === "agent"
+        ? "Agent"
+        : a.dimension === "model"
+          ? "模型"
+          : "全局";
   try {
     if (notifPermission === "unknown") {
       notifPermission = (await isPermissionGranted()) ? "granted" : "denied";
@@ -47,7 +57,8 @@ const DIMENSIONS = [
   { value: "model", label: "按模型" },
 ];
 
-const dimLabel = (d: string) => DIMENSIONS.find((x) => x.value === d)?.label ?? d;
+const dimLabel = (d: string) =>
+  DIMENSIONS.find((x) => x.value === d)?.label ?? d;
 const targetLabel = (b: AlertItem) => {
   if (b.dimension === "global") return "全局";
   return b.target || "—";
@@ -69,13 +80,25 @@ export function AlertsTab() {
 
   const load = useCallback(async () => {
     try {
-      const [a, s, o] = await Promise.all([fetchAlerts(), fetchSettings(), fetchOverview()]);
+      const [a, s, o] = await Promise.all([
+        fetchAlerts(),
+        fetchSettings(),
+        fetchOverview(),
+      ]);
       setAlerts(a.alerts);
       setBudgets(s.budgets ?? []);
       setProviders(a.providers ?? []);
       setAgents(a.agents ?? []);
       // 模型下拉只来自真实记录（幽灵数据清除：不硬编码任何模型名）
-      setModels([...new Set((o?.byModel ?? []).map((m: { model: string }) => m.model).filter(Boolean))].sort());
+      setModels(
+        [
+          ...new Set(
+            (o?.byModel ?? [])
+              .map((m: { model: string }) => m.model)
+              .filter(Boolean),
+          ),
+        ].sort(),
+      );
       setError("");
       // 新触发 → 系统通知（同一条只通知一次：key=dim:target:dailyTokens，跨轮询记忆）
       const now = new Set<string>();
@@ -102,7 +125,13 @@ export function AlertsTab() {
 
   // 当前维度可选项
   const targetOptions =
-    dimension === "provider" ? providers : dimension === "agent" ? agents : dimension === "model" ? models : [];
+    dimension === "provider"
+      ? providers
+      : dimension === "agent"
+        ? agents
+        : dimension === "model"
+          ? models
+          : [];
 
   const saveBudgets = async (next: BudgetItem[]) => {
     setSaving(true);
@@ -132,7 +161,9 @@ export function AlertsTab() {
     setFormError("");
     // 同维度同目标去重
     const next = [
-      ...budgets.filter((b) => !(b.dimension === dimension && (b.target ?? "") === t)),
+      ...budgets.filter(
+        (b) => !(b.dimension === dimension && (b.target ?? "") === t),
+      ),
       { dimension, target: t, dailyTokens: n },
     ];
     void saveBudgets(next);
@@ -156,13 +187,20 @@ export function AlertsTab() {
             desc="可为全局、某个供应商、某个 Agent 或某个模型分别设置每日预算，超限时本地通知你。"
             action={{
               label: "添加预算",
-              onClick: () => addCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+              onClick: () =>
+                addCardRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                }),
             }}
           />
         ) : (
           <div className="budget-list">
             {alerts.map((b, i) => (
-              <div key={i} className={`budget-row ${b.triggered ? "over" : ""}`}>
+              <div
+                key={i}
+                className={`budget-row ${b.triggered ? "over" : ""}`}
+              >
                 <div className="budget-head">
                   <span className="budget-model">
                     <span className="budget-dim">{dimLabel(b.dimension)}</span>
@@ -189,7 +227,10 @@ export function AlertsTab() {
         <h2 className="card-title">添加预算</h2>
         <div className="form-row">
           <Dropdown
-            options={DIMENSIONS.map((d) => ({ value: d.value, label: d.label }))}
+            options={DIMENSIONS.map((d) => ({
+              value: d.value,
+              label: d.label,
+            }))}
             value={dimension}
             onChange={(v) => {
               setDimension(v);
@@ -221,11 +262,20 @@ export function AlertsTab() {
             }}
             placeholder="每日 token 上限"
           />
-          <button type="button" className="btn primary" onClick={addBudget} disabled={saving}>
+          <button
+            type="button"
+            className="btn primary"
+            onClick={addBudget}
+            disabled={saving}
+          >
             添加
           </button>
         </div>
-        {formError && <p className="empty" style={{ color: "var(--ox-warn)" }}>{formError}</p>}
+        {formError && (
+          <p className="empty" style={{ color: "var(--ox-warn)" }}>
+            {formError}
+          </p>
+        )}
         <p className="empty">
           目标列表来自本地账本的真实记录（供应商 / Agent / 模型）。
           每个供应商、Agent、模型都可以单独设置每日预算，互不影响。
@@ -239,11 +289,23 @@ export function AlertsTab() {
             {budgets.map((b, i) => (
               <div key={i} className="budget-row">
                 <span className="budget-model">
-                  <span className="budget-dim">{dimLabel(b.dimension ?? (b.model === "*" ? "global" : "model"))}</span>
-                  {(b.target || (b.dimension !== "global" ? b.model : "")) || "全局"}
+                  <span className="budget-dim">
+                    {dimLabel(
+                      b.dimension ?? (b.model === "*" ? "global" : "model"),
+                    )}
+                  </span>
+                  {b.target ||
+                    (b.dimension !== "global" ? b.model : "") ||
+                    "全局"}
                 </span>
-                <span className="budget-val tabular">{fmtTokens(b.dailyTokens)} / 日</span>
-                <button type="button" className="link-btn danger" onClick={() => removeBudget(i)}>
+                <span className="budget-val tabular">
+                  {fmtTokens(b.dailyTokens)} / 日
+                </span>
+                <button
+                  type="button"
+                  className="link-btn danger"
+                  onClick={() => removeBudget(i)}
+                >
                   删除
                 </button>
               </div>

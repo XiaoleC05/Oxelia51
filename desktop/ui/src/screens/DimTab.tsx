@@ -1,5 +1,11 @@
 import { memo, useCallback, useEffect, useState } from "react";
-import { fmtCost, fmtTokens, fmtDate, type DimDetailRow, type DimStat } from "../api";
+import {
+  fmtCost,
+  fmtTokens,
+  fmtDate,
+  type DimDetailRow,
+  type DimStat,
+} from "../api";
 import { EmptyState } from "../EmptyState";
 import { DateRangePicker } from "./DateRangePicker";
 
@@ -98,11 +104,15 @@ export const DimTab = memo(function DimTab({
           {dimLabel} · {displayOf(selected.name)}
         </h1>
         <p className="page-sub">
-          {selected.models} 个模型 · 最近 {fmtDate(selected.lastTs)} · 该{dimLabel}接入的{detailLabel}与模型明细：
+          {selected.models} 个模型 · 最近 {fmtDate(selected.lastTs)} · 该
+          {dimLabel}接入的{detailLabel}与模型明细：
         </p>
         {/* 下钻内联重命名（#问题 4）：仅 Agent 维度（onRename 存在时）展示 */}
         {onRename && selected && (
-          <div className="form-row rename-row" style={{ marginBottom: 8, gap: 8 }}>
+          <div
+            className="form-row rename-row"
+            style={{ marginBottom: 8, gap: 8 }}
+          >
             {renaming ? (
               <>
                 <input
@@ -158,7 +168,11 @@ export const DimTab = memo(function DimTab({
         {detail === null ? (
           <p className="empty">加载中…</p>
         ) : detail.length === 0 ? (
-          <EmptyState compact title="暂无明细" desc="该日期范围内无按模型拆解的数据。" />
+          <EmptyState
+            compact
+            title="暂无明细"
+            desc="该日期范围内无按模型拆解的数据。"
+          />
         ) : (
           <div className="card-list">
             {detail.map((d, i) => (
