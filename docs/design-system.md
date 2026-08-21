@@ -15,7 +15,7 @@
 ## 一、如何使用本系统
 
 1. **token 是唯一来源**。颜色/字体/间距/圆角/阴影一律从变量取，不在组件里写死。
-   - 桌面端：`desktop/ui/src/styles/oxelia51-theme.css` + `desktop/ui/src/app.css`
+   - 桌面端：`desktop/ui/src/styles/oxelia51-theme.css` + `desktop/ui/src/styles/app/`（12 个模块）+ `desktop/ui/src/app.css`（聚合入口）
    - 网站端：`web/src/features/theming/oxelia51-theme.css` + `web/src/styles/oxelia51-vars.css`（映射 shadcn）
 2. **查组件**。改组件先读 §4 对应条目（解剖/变体/token 映射/结构规则）。
 3. **两端差异先查 §6**。桌面端与网站有刻意差异（导航形态、密度的合理不同），也有**应对齐的漂移**；改之前先对表。
@@ -54,7 +54,7 @@
 
 ### 3.1 色彩
 
-双主题 **Cozy（暖色）/ Cosmos（深色）**，由 `<html data-theme>` 驱动。tokens 见 `oxelia51-theme.css`（桌面端自包含副本，两仓必须同步）。
+双主题 **Cozy（暖色）/ Cosmos（深色）**，由 `<html data-theme>` 驱动。tokens 见 `oxelia51-theme.css`（桌面端自包含副本，与 web 端保持同步）。
 
 | 语义 | Cozy | Cosmos | 用途 |
 | --- | --- | --- | --- |
@@ -338,7 +338,7 @@
 
 ### 4.15 悬浮统计卡片 FloatingWidget（独有，桌面）
 
-**解剖**：透明玻璃小窗（340×192，`backdrop-filter: blur(22px)`，圆角 20px）
+**解剖**：透明玻璃小窗（340×300，`backdrop-filter: blur(22px)`，圆角 20px）
 
 **结构规则**
 
@@ -406,7 +406,7 @@
 | --- | --- |
 | 主题 tokens | `desktop/ui/src/styles/oxelia51-theme.css` |
 | 全局样式（字体/基类） | `desktop/ui/src/styles/global.css` |
-| 组件样式 | `desktop/ui/src/app.css` |
+| 组件样式 | `desktop/ui/src/styles/app/`（12 个模块）+ `desktop/ui/src/app.css`（聚合入口） |
 | 自绘下拉组件 | `desktop/ui/src/components/Dropdown.tsx` |
 | 悬浮卡片 | `desktop/ui/src/widget/*` + `desktop/src-tauri/tauri.conf.json`(`app.windows`) + `desktop/src-tauri/capabilities/widget.json` |
 | 各 Tab | `desktop/ui/src/screens/*.tsx` |
@@ -424,7 +424,7 @@
 | 落地页/文档/下载 | `web/src/pages/`（LandingPage / docs / download / changelog） |
 | 字体变量 | `web/src/styles/globals.css`（`--font-sans` 等） |
 
-> 主题 tokens 在两仓**各有一份副本**（桌面自包含，避免依赖 web 构建）。改 token 必须两处同步。
+> 主题 tokens 两端**各有一份副本**（桌面端自包含，避免依赖 web 构建，与 web 端保持同步）。改 token 必须两处同步。
 
 ---
 

@@ -14,7 +14,7 @@ export type ChangelogVersion = {
 
 export const CHANGELOG_VERSIONS: ChangelogVersion[] = [
   {
-    tag: "v0.1.9",
+    tag: "v0.1.10",
     date: "2026-08-13",
     status: "released",
     summary: "独立后台代理——关闭应用后代理网关继续运行",
@@ -153,11 +153,11 @@ export const LANDING_FAQ: FaqItem[] = [
   },
   {
     q: "支持哪些模型？",
-    a: "内置 76 条供应商路由，覆盖国内（DeepSeek、智谱、通义、Kimi、豆包、混元、星火、MiniMax、硅基流动…）、国际（Anthropic、OpenAI、Gemini、Mistral、Grok、Groq…）与聚合平台（OpenRouter、Together…）；内置 72 个模型参考价，支持美元/人民币切换。改代理地址里的供应商 slug 即可切换，如 /api/proxy/deepseek、/api/proxy/zhipu。",
+    a: "内置 79 条供应商路由，覆盖国内（DeepSeek、智谱、通义、Kimi、豆包、混元、星火、MiniMax、硅基流动…）、国际（Anthropic、OpenAI、Gemini、Mistral、Grok、Groq…）与聚合平台（OpenRouter、Together…）；内置 77 个模型参考价，支持美元/人民币切换。改代理地址里的供应商 slug 即可切换，如 /api/proxy/deepseek、/api/proxy/zhipu。",
   },
   {
     q: "桌面应用什么时候发布？",
-    a: "已发布 v0.1.9，支持 Windows / macOS / Linux 三平台。在下载页或 GitHub Releases 获取。",
+    a: "已发布 v0.1.10，支持 Windows / macOS / Linux 三平台。在下载页或 GitHub Releases 获取。",
   },
   {
     q: "关闭应用后，代理地址还能用吗？",

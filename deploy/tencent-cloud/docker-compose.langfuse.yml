@@ -134,8 +134,10 @@ services:
       retries: 5
       start_period: 1s
 
-  langfuse-worker:
-    image: docker.io/langfuse/langfuse-worker:3
+  # langfuse-worker 已移除（2026-08-21）：仅服务已删的 tracing 功能，生产容器已停跑
+
+  langfuse-web:
+    image: crpi-6hx0lh969xz92v2y.cn-chengdu.personal.cr.aliyuncs.com/oxelia51/langfuse-token:latest
     restart: unless-stopped
     logging:
       driver: json-file
@@ -143,12 +145,14 @@ services:
         max-size: "50m"
         max-file: "3"
 
-    container_name: langfuse-worker
+    container_name: langfuse-web
     deploy:
       resources:
         limits:
-          memory: 512M
-    depends_on: &langfuse-depends
+          # 2026-08-05: 1.5G 时 Node 自动堆上限≈768M，启动即 OOM 崩溃（129 次重启）。
+          # 2.5G + 显式 NODE_OPTIONS 堆上限 1.5G 后稳定。
+          memory: 2.5G
+    depends_on:
       langfuse-postgres:
         condition: service_healthy
       langfuse-minio:
@@ -158,8 +162,8 @@ services:
       langfuse-clickhouse:
         condition: service_healthy
     ports:
-      - "127.0.0.1:3030:3030"
-    environment: &langfuse-env
+      - "127.0.0.1:3000:3000"
+    environment:
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@langfuse-postgres:5432/${POSTGRES_DB:-postgres}
       SALT: ${SALT:?set SALT in .env}
@@ -205,28 +209,6 @@ services:
       SMTP_CONNECTION_URL: ${SMTP_CONNECTION_URL:-}
       # 开放注册：邮箱验证防滥用（true 启用 OTP 注册流程）
       AUTH_EMAIL_VERIFICATION_REQUIRED: ${AUTH_EMAIL_VERIFICATION_REQUIRED:-false}
-
-  langfuse-web:
-    image: crpi-6hx0lh969xz92v2y.cn-chengdu.personal.cr.aliyuncs.com/oxelia51/langfuse-token:latest
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-    container_name: langfuse-web
-    deploy:
-      resources:
-        limits:
-          # 2026-08-05: 1.5G 时 Node 自动堆上限≈768M，启动即 OOM 崩溃（129 次重启）。
-          # 2.5G + 显式 NODE_OPTIONS 堆上限 1.5G 后稳定。
-          memory: 2.5G
-    depends_on: *langfuse-depends
-    ports:
-      - "127.0.0.1:3000:3000"
-    environment:
-      <<: *langfuse-env
       NODE_OPTIONS: --max-old-space-size=1536
       # 后台管理：服务端持有 Go 运维凭证换 JWT 转发（不下发浏览器）
       OXELIA51_ADMIN_ACCOUNT: ${OXELIA51_ADMIN_ACCOUNT:?set in .env}

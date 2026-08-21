@@ -337,7 +337,7 @@ const FEATURES: { icon: ReactNode; title: string; desc: string }[] = [
   {
     icon: <Terminal className="h-4 w-4" />,
     title: "国内模型适配",
-    desc: "DeepSeek、Moonshot、智谱等开箱即用，内置 72 个模型参考价，支持美元/人民币切换。",
+    desc: "DeepSeek、Moonshot、智谱等开箱即用，内置 77 个模型参考价，支持美元/人民币切换。",
   },
 ];
 

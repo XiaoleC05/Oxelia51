@@ -21,7 +21,8 @@ EE/cloud/billing 代码已在波 1-4 删除，只保留 Oxelia51 自有功能与
 - `src/pages/app/`：应用主界面（overview、analytics、agents、providers、settings）
 - `src/pages/admin/`：管理台页面
 - `src/pages/api/sync/`：桌面端同步 REST 端点（login/upload/download）
-- `src/pages/api/auth/`：NextAuth 与 signup-verify
+- `src/pages/api/auth/`：NextAuth（`[...nextauth]`）、signup / signup-verify、
+  SSO（check-sso / add-sso-config）
 - `src/pages/api/public/health.ts`：生产健康检查（唯一保留的 public REST）
 - `src/pages/api/trpc/[trpc].ts`：tRPC 入口
 - 其余 `src/features/*`：保留的基础能力（auth、rbac、organizations、projects、

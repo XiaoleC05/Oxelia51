@@ -1,12 +1,12 @@
 # oxelia51.com 文档索引
 
-**版本**：v4.0（已发布，2026-08-09） | **更新**：2026-08-08
+**版本**：v4.0（已发布，2026-08-09） | **更新**：2026-08-21
 
 ---
 
 ## 产品方向
 
-v4 转向**本地优先的个人 Token 记账本**（桌面应用 + 弱认证 + 个人会话/项目 + 多维展示），P1–P4 依次推进。
+v4 转向**本地优先的个人 Token 记账本**（桌面应用 + 弱认证 + 个人会话/项目 + 多维展示），P1–P4 已完成。
 
 设计定稿：[v4 产品设计](https://github.com/XiaoleC05/langfuse-token/blob/main/docs/superpowers/specs/2026-08-08-oxelia51-v4-design.md)（覆盖 P1–P4，含未实现项标注；链接指向已归档的原 langfuse-token 仓库，该文档未迁入本仓）
 
@@ -20,6 +20,7 @@ v4 转向**本地优先的个人 Token 记账本**（桌面应用 + 弱认证 + 
 | 4 | [详细设计](archive/4-detailed-design.md) | 实现者 | Go 代理、C++ 引擎、Web 定制、DB、API、UI 主题 |
 | 5 | [自动化部署](archive/5-deployment.md) | 运维 | CI/CD、Webhook、Docker Compose、systemd |
 | 6 | [维护与服务器](archive/6-maintenance.md) | 运维 | 服务器信息、日常命令、故障排查、备份、安全 |
+| — | [桌面端界面优化方案](archive/ui-optimization-desktop.md) | 设计/前端 | 桌面端 UI Polish v1（主界面、空态、字体、图标、标题栏） |
 
 > 注：以上 1–6 号为 v3 历史快照，已归档至 `archive/`，与 v4 现状有出入。
 

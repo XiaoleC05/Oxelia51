@@ -1,6 +1,6 @@
 # Oxelia51 任务分工与协作规则
 
-**版本**：v3.0 | **日期**：2026-07-27
+**版本**：v4.1 | **日期**：2026-08-21
 
 ---
 
@@ -15,7 +15,7 @@
    - 架构决策/任务分解/部署/服务器操作/CI/CD → 架构任务
    - 跨域紧急修复（≤5 行） → 架构任务，事后记录
 
-2. **环境认知**——涉及服务器或部署时，先查 `deploy/README.md`
+2. **环境认知**——涉及服务器或部署时，先查 `deploy/README.md`；web/ 已并入本仓，langfuse-token 已归档
 
 3. **行为边界**——不得：
    - 在非自己领域内实现大型功能
@@ -34,7 +34,7 @@
 - `backend/**/*.go`
 - `proxy-gateway/**/*.go`
 - `analytics/**/*.{cpp,h}`
-- `migrations/*.sql`
+- `backend/migrations/*.sql`
 
 **不得修改**：前端代码、UI、CSS、部署配置（deploy/）、CI/CD。
 
@@ -47,6 +47,7 @@
 **修改范围**：
 - `desktop/ui/src/**/*.{ts,tsx,css}`
 - `web/src/**/*`
+- `packages/shared/**`（web 依赖层，改动需 shared build + web build 验证）
 
 **不得修改**：后端代码、API 定义、数据库、部署配置。
 

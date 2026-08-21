@@ -46,6 +46,8 @@
 | `**/*.md` / CHANGELOG / README | 审查任务 | 只读，产出提示词 |
 | `**/*_test.go` | 审查任务 | 只读，产出提示词 |
 | `web/src/**/*` | 前端任务 | 只读，产出提示词 |
+| `packages/shared/**`（web 依赖层） | 前端任务 | 只读，产出提示词 |
+| `desktop/src-tauri/**`（Rust 壳） | 前端任务 | 只读，产出提示词 |
 
 ### 我的领域——可以写
 
@@ -67,17 +69,19 @@
 ## 3. 项目结构
 
 ```
-Oxelia51/                    ← 平台主仓库（v3.0）
+Oxelia51/                    ← 平台主仓库（v4）
   proxy-gateway/             ← Go 代理网关（自研）
   analytics/                 ← C++ 分析引擎（自研）
   backend/                   ← Go 管理后台
-  desktop/                   ← Tauri 2 桌面应用（React UI 在 desktop/ui/）
+  desktop/                   ← Tauri 2 桌面应用（React UI 在 desktop/ui/，Rust 壳在 desktop/src-tauri/）
+  web/                       ← web 前端（原 langfuse-token 仓库，已脱钩并入本仓；langfuse-token 已归档）
+  packages/                  ← @oxelia51/shared + config-eslint/config-typescript/eslint-plugin
+  patches/                   ← pnpm patch 补丁（next-auth）
   deploy/                    ← 部署配置
   docs/                      ← 全部文档
-  web/                       ← web 前端（原 langfuse-token 仓库，Fork langfuse/langfuse；已并入本仓）
 
-独立工具仓库（SSH 远端，管理后台引用）：
-  DormGuard/ SecretStore/ SmartKB/
+独立工具仓库（SSH 远端，管理后台引用；仅 DormGuard/SecretStore 接 webhook 自动部署）：
+  DormGuard/ SecretStore/
   ↑ 工具后端 → 后端任务领域
   ↑ .github/workflows/deploy.yml → 我的领域
 ```
@@ -100,11 +104,11 @@ Oxelia51/                    ← 平台主仓库（v3.0）
 - 22 端口受安全组限制（本机 SSH 直连被拦截）：日常运维走 `/api/admin/exec`（JWT + IP 白名单），或白名单内 IP 的 SSH
 - 阿里云可通过 `~/.ssh/tencent_cloud` SSH 到腾讯云（腾讯云 22 仅对阿里云 IP 放行）
 - **运维操作先查 `deploy/RUNBOOK.md`**——exec API 引号陷阱、setsid 后台、五条部署管线、常见坑
-- 已配环境变量不得重复询问：`CRAWLER_*` `QQ_BOT_*`
+- 已配环境变量不得重复询问（以服务器实际配置为准）
 - 工具部署路径：`/opt/<tool>/<tool>-server`，systemd 管理
 - 腾讯云 Langfuse：Docker Compose，部署在 `/opt/langfuse/`，管理脚本 `langfuse-deploy.sh`
 - 阿里云 Go 代理：`/opt/oxelia51/proxy/proxy-server`，systemd `token-proxy.service`
-- 部署流：`push master → deploy.yml 构建 → GitHub Release → webhook（release 事件）→ deploy.sh → apply-release.sh`；`receiver.py` 按 repo 路由到 `tool-deploy.sh`
+- 部署流：`push master → deploy.yml 构建 → GitHub Release → webhook（release 事件）→ deploy.sh → apply-release.sh`；`receiver.py` 按 repo 路由到 `tool-deploy.sh`；web 走独立管线 `push-to-acr.yml`（构建镜像推 ACR → 腾讯云 compose pull/up）
 - **所有编译在本地完成**，禁止在服务器上运行 `go build`/`npm run build`/`make`/`cmake` 等编译命令
 - 服务器上只做：下载二进制、重启服务、执行 SQL、查看日志
 

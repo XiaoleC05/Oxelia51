@@ -25,8 +25,8 @@ do_install() {
         cat > "$ENV_FILE" << 'EOF'
 # Go 代理网关配置
 PROXY_PORT=9090
-# ClickHouse 写入目标 — v3.0 时改为腾讯云内网地址
-CLICKHOUSE_ADDR=118.25.138.177:9000
+# ClickHouse 写入目标 — 经 SSH 隧道（token-tunnel.service）：本机 9001 → 腾讯云 127.0.0.1:9000（CH 绑 loopback）
+CLICKHOUSE_ADDR=127.0.0.1:9001
 CLICKHOUSE_USER=clickhouse
 CLICKHOUSE_PASSWORD=CHANGEME
 EOF

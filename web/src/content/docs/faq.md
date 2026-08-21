@@ -27,7 +27,7 @@ A：在模型工具的配置文件里设置 `ANTHROPIC_BASE_URL` 或 `OPENAI_BAS
 A：代理只做转发与落账，不改写请求内容，正常调用不受影响。
 
 **Q：支持哪些模型？**
-A：内置 76 条供应商路由，覆盖国内（DeepSeek、智谱、通义、Kimi、豆包、混元、星火、MiniMax、硅基流动…）、国际（Anthropic、OpenAI、Gemini、Mistral、Grok、Groq…）与聚合平台（OpenRouter、Together…），另有 33 家第三方平台（API 中转站）已接入；内置 72 个模型参考价，支持美元/人民币切换。
+A：内置 79 条供应商路由，覆盖国内（DeepSeek、智谱、通义、Kimi、豆包、混元、星火、MiniMax、硅基流动…）、国际（Anthropic、OpenAI、Gemini、Mistral、Grok、Groq…）与聚合平台（OpenRouter、Together…），另有 33 家第三方平台（API 中转站）已接入；内置 77 个模型参考价，支持美元/人民币切换。
 
 **Q：用 Codex 接第三方中转站，报 404「模型名称不存在，或您所在分组下暂无可用渠道」，是代理的问题吗？**
 A：不是，是上游供应商自己返回的——常见原因是客户端用了 OpenAI 较新的 Responses API，但上游只支持 Chat Completions。把客户端的协议格式切换成 Chat Completions 即可解决。完整排查过程见[常见错误排查](/docs/troubleshooting)。
@@ -38,7 +38,7 @@ A：在桌面端「设置 → 多设备同步」用云平台注册邮箱+密码�
 ## 部署
 
 **Q：可以自己部署吗？**
-A：可以。一条 `docker compose up -d` 即可部署云平台，数据不离开你的服务器。部署说明见 [GitHub 仓库](https://github.com/XiaoleC05/Oxelia51)。
+A：暂不支持一键自托管；源码可自行构建部署（生产运维配置见仓库 deploy/ 目录）。
 
 **Q：桌面应用和自托管有什么区别？**
 A：桌面应用是面向个人、零部署的本地应用；自托管是自己部署云平台。两者数据模型一致，通过账户同步互通。

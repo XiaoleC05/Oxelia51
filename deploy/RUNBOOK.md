@@ -56,11 +56,19 @@ GitHub release tarball 在服务器上下载（~17MB）秒级；ACR 镜像（~1.
 
 ## 3. 五条部署管线
 
+> **前置：token-tunnel（阿里云）**——web 访问（3000）与 CH 写入（9001→腾讯云 9000）都依赖 SSH 隧道。首次安装：
+> ```bash
+> cp deploy/systemd/token-tunnel.service /etc/systemd/system/
+> systemctl daemon-reload && systemctl enable --now token-tunnel
+> ```
+> 该 unit 双转发：本机 3000 → 腾讯云 web:3000、本机 9001 → 腾讯云 127.0.0.1:9000（ClickHouse Native，供 Go proxy 写入）。
+
 ### 3.1 web（本仓 web/，腾讯云）
 1. 构建镜像：`push-to-acr.yml` 用本仓 `web/Dockerfile` 构建并推 ACR `.../oxelia51/langfuse-token:latest`
    - 自动触发：`push master` 且改动命中 `web/**`、`packages/**`、`pnpm-lock.yaml`、`pnpm-workspace.yaml`
    - 手动触发：Actions → Build and Push to ACR → `workflow_dispatch`（改动不涉及上述路径但需要重建时用）
 2. 腾讯云（经 ssh 隧道）：`cd /opt/langfuse && docker compose -f docker-compose.langfuse.yml pull langfuse-web && docker compose -f docker-compose.langfuse.yml up -d langfuse-web`
+   - 注：compose 命令依赖 cwd——`/opt/langfuse/.env` 由 compose 自动加载；换目录执行需统一加 `--env-file /opt/langfuse/.env`。
 3. **验证**：`curl -sI https://oxelia51.com/favicon.ico` 大小应匹配仓库新文件。
 
 ### 3.2 backend（Go，阿里云）

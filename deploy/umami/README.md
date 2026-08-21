@@ -59,17 +59,14 @@ nginx -t && systemctl reload nginx
    - `data-website-id`（website-id）
    - 脚本地址 `https://stats.oxelia51.com/script.js`
 
-### 6. web 侧配置 env
+### 6. web 侧配置
 
-在 web（Langfuse Next.js）部署环境追加两个变量并重启：
+在 GitHub 仓库 secrets 配置 `UMAMI_WEBSITE_ID`（值为上一步的 website-id）；
+`NEXT_PUBLIC_UMAMI_SRC` 已在 `push-to-acr.yml` 中硬编码为 `https://stats.oxelia51.com/script.js`，无需另配。
 
-```bash
-NEXT_PUBLIC_UMAMI_WEBSITE_ID=<上一步的 website-id>
-NEXT_PUBLIC_UMAMI_SRC=https://stats.oxelia51.com/script.js
-```
-
-注意：`NEXT_PUBLIC_*` 是构建期内联变量，改完需要**重新构建** web 镜像/产物，仅重启进程不生效。
-两个变量都配置后，所有页面 `<head>` 才会注入 umami 脚本（`async`+`defer`，不阻塞渲染）；缺任意一个不注入。
+配置后到 Actions 手动 `workflow_dispatch` 触发 push-to-acr 重建镜像并部署后生效
+（`NEXT_PUBLIC_*` 是构建期内联变量，仅重启进程不生效）。
+两个变量都就位后，所有页面 `<head>` 才会注入 umami 脚本（`async`+`defer`，不阻塞渲染）；缺任意一个不注入。
 
 ### 7. 查看报表
 

@@ -32,13 +32,19 @@ Oxelia51 最小集，包名 `@oxelia51/shared`。
 - `repositories/` + `../db.ts`：Prisma 数据访问与 ClickHouse 读路径
   （`traces.ts` 只保留 3 个存活读函数，写路径/upsert 已删）
 - `auth/`：API key 等认证辅助
-- `redis/`：仅 `redis.ts`（Redis 连接、safeMultiDel、scanKeys）；
+- `redis/`：仅 `redis.ts`（+ 其测试；Redis 连接、safeMultiDel、scanKeys）；
   所有 bullmq 队列类与 `queues.ts`/`getQueue.ts` 已随队列功能删除
 - `clickhouse/`：ClickHouse client 与迁移
 - `queries/clickhouse-sql/`：仅存活的 filter/CTE 查询构建器
   （`clickhouse-filter`、`event-query-builder` 的 CTEQueryBuilder +
   EventsAggregationQueryBuilder、`fts`、`query-fragments` 的
   eventsTracesAggregation）
+- `ingestion/`：仅 `ingestionAttribution`（+ 其测试与 types）
+- `instrumentation/`：埋点/观测辅助
+- `llm/`：仅 `types.ts`
+- `utils/`：compareVersions、formatAuthProvider、metadata_conversion、
+  rendering、sqlLike 等通用工具
+- `filterToPrisma.ts`、`headerPropagation.ts`：散置的存活辅助模块
 - `services/email/`：邮件发送（SES/SMTP 传输层 + 存活模板：
   passwordReset、organizationInvitation、feedback、oxelia51 等；
   batchExport/cloudSpendAlert 等遗留模板对应的队列功能已删，视为死代码，
@@ -48,7 +54,8 @@ Oxelia51 最小集，包名 `@oxelia51/shared`。
 - `logger.ts`、`../env.ts`：日志与环境变量 schema
 
 已删除模块（勿再引入）：`otel/`、`features/query/`、`llm/` 的
-compileChatMessages/internalTraceEvents、`StorageService`/`s3/`、
+compileChatMessages/internalTraceEvents（`llm/` 仅余 `types.ts`）、
+`StorageService`/`s3/`、
 `outbound-url/`、`webhooks/`、`sessions-ui-table-*`、`orderByToPrisma`、
 `billingCycleHelpers`、`tableMappings/`。
 

@@ -61,7 +61,7 @@ export OPENAI_BASE_URL="http://localhost:17800/api/proxy/openai"
 export OPENAI_BASE_URL="http://localhost:17800/api/proxy/zhipu"
 ```
 
-> **供应商 = 提供大模型的平台**，路径里的 slug 决定请求转发给谁。内置 **76 条供应商路由**：
+> **供应商 = 提供大模型的平台**，路径里的 slug 决定请求转发给谁。内置 **79 条供应商路由**：
 >
 > - **国内**：DeepSeek、智谱 GLM、通义千问、Moonshot (Kimi)、Kimi For Coding、豆包、腾讯混元、讯飞星火、MiniMax、百川、零一万物、商汤日日新、阶跃星辰、硅基流动、码云 AI、魔搭、百度千帆
 > - **国际**：Claude (Anthropic)、OpenAI、Google Gemini、Mistral、xAI (Grok)、Groq、Cerebras、Cohere、Perplexity、SambaNova、Nebius、AI21、Hyperbolic、FriendliAI、NVIDIA、GitHub Models、MiniMax.io、Z.ai、StepFun AI

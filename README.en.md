@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.x-blue" alt="version">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
-  <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go" alt="go">
+  <img src="https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go" alt="go">
   <img src="https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri" alt="tauri">
 </p>
 
@@ -46,7 +46,7 @@ After:   Claude Code ────→ http://127.0.0.1:17800/api/proxy/anthropic 
 - 🔌 **One-line env var to connect** — zero-invasion proxy; API keys are forwarded, never stored
 - 📊 **Two dimensions** — aggregate tokens, requests & cost by **provider** (Claude / DeepSeek / OpenAI / Zhipu …) and **agent** (Claude Code / Cursor / CC Switch / Trae …), drill down to per-model detail
 - 🪟 **Floating glass widget** — a desktop-pinned, always-on-top card showing today's tokens & cost in real time
-- 🗂️ **80+ preset providers** — grouped as Global / China / Third-party, with search, one-click copy of the proxy address, and direct links to each official site
+- 🗂️ **80+ preset providers (79 built-in routes)** — grouped as Global / China / Third-party, with search, one-click copy of the proxy address, and direct links to each official site
 - 💰 **Model price reference** — sort by input price or blended cost to compare models (reference prices, offline)
 - 🚨 **Four-dimension alerts** — per-global / provider / agent / model budgets with system notifications
 - 🎨 **Dual themes** — Cozy (warm) / Cosmos (dark), toggle anytime
@@ -78,7 +78,7 @@ Every call is recorded from then on. View usage and cost by provider / agent / m
 
 ## Providers
 
-76 provider routes ship with the app (proxy-gateway/internal/adapter/registry.go), in three groups:
+79 provider routes ship with the app (proxy-gateway/internal/adapter/registry.go), in three groups:
 
 - **Global**: Anthropic / OpenAI / Gemini / Mistral / Grok / Groq / Cerebras / Cohere / Perplexity / SambaNova / NVIDIA …
 - **China**: DeepSeek / Zhipu GLM / Qwen / Moonshot (Kimi) / Kimi For Coding / Doubao / Tencent Hunyuan / iFlytek Spark / MiniMax / Baichuan / Yi / SenseNova / StepFun / SiliconFlow / Gitee AI / ModelScope / Baidu Qianfan …
@@ -94,7 +94,7 @@ Your AI tool (Claude Code / Cursor / …)
   ▼
 ┌─────────────────────────────────────┐
 │ Local proxy gateway (Go, :17800)      │ forward + record (LOCAL_MODE)
-│ proxy-gateway/                       │ 76 provider routes
+│ proxy-gateway/                       │ 79 provider routes
 └──────────────┬──────────────────────┘
                │ INSERT
                ▼
@@ -119,14 +119,15 @@ The product formerly spanned two repositories; langfuse-token has been merged in
 
 ```
 Oxelia51/
-├── proxy-gateway/        # Go proxy gateway (cloud + local sidecar), 76 provider routes
+├── proxy-gateway/        # Go proxy gateway (cloud + local sidecar), 79 provider routes
 ├── backend/              # Go backend (auth / admin / cross-device sync)
 ├── desktop/              # Desktop app (Tauri 2 + Vite React + sidecar)
 │   ├── ui/               #   UI (main window + floating glass widget)
 │   └── src-tauri/        #   Tauri shell + sidecar hosting
 ├── analytics/            # C++ analytics engine
 ├── web/                  # web frontend (former langfuse-token repo, detached & merged into this repo)
-├── packages/shared/      # @oxelia51/shared: shared package for web (Prisma/ClickHouse/domain constants)
+├── packages/             # @oxelia51/shared (Prisma/ClickHouse/domain constants) + config-eslint/config-typescript/eslint-plugin
+├── patches/              # pnpm patch patches (next-auth)
 ├── deploy/               # Docker Compose · Nginx · release scripts
 ├── docs/                 # Full documentation (design / deploy / ops)
 └── scripts/              # Utility scripts

@@ -36,7 +36,7 @@ ufw allow 443/tcp comment 'HTTPS'
 
 # 仅允许阿里云访问内部服务端口
 ufw allow from "$ALIYUN_IP" to any port 3000 proto tcp comment 'Langfuse Web (Aliyun proxy)'
-ufw allow from "$ALIYUN_IP" to any port 9000 proto tcp comment 'ClickHouse Native (Aliyun proxy)'
+# ClickHouse Native 绑 127.0.0.1:9000（loopback），阿里云 proxy 经 SSH 隧道 9001 访问，无需公网放行
 
 ufw --force enable
 ufw status verbose
@@ -134,8 +134,8 @@ echo ""
 echo "端口清单:"
 echo "  80      → Nginx → Langfuse Web (:3000)"
 echo "  3000    → Langfuse Web (仅阿里云 IP)"
-echo "  9000    → ClickHouse Native (仅阿里云 IP)"
-echo "  5433    → Langfuse PostgreSQL (loopback)"
+echo "  9000    → ClickHouse Native (loopback，阿里云 proxy 经 SSH 隧道 9001 访问)"
+echo "  5434    → Langfuse PostgreSQL (loopback)"
 echo "  6379    → Langfuse Redis (loopback)"
 echo "  8123    → ClickHouse HTTP (loopback)"
 echo "  9090    → MinIO S3 (loopback)"

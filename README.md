@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.x-blue" alt="version">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
-  <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go" alt="go">
+  <img src="https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go" alt="go">
   <img src="https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri" alt="tauri">
 </p>
 
@@ -46,7 +46,7 @@ Oxelia51 让你**零代码**统计所有 LLM 调用的 Token 消耗：把模型�
 - 🔌 **一行环境变量接入**——代理零侵入；API Key 只转发、不落库
 - 📊 **双维度统计**——按**供应商**（Claude / DeepSeek / OpenAI / 智谱 …）与 **Agent**（Claude Code / Cursor / CC Switch / Trae …）聚合 Token、请求与成本，可下钻到模型明细
 - 🪟 **悬浮玻璃卡片**——固定在桌面的实时统计：今日 Token 与成本一目了然，无需打开主窗口
-- 🗂️ **80+ 预设接入项（76 条内置路由）**——国外主流 / 国内主流 / 第三方平台三分类，搜索即复制代理地址，直达官网
+- 🗂️ **80+ 预设接入项（79 条内置路由）**——国外主流 / 国内主流 / 第三方平台三分类，搜索即复制代理地址，直达官网
 - 💰 **模型价格参考**——按输入价 / 综合成本排序，辅助选型（参考价，离线可用）
 - 🚨 **四维告警**——全局 / 供应商 / Agent / 模型各自独立设预算，超限弹系统通知
 - 🎨 **双主题**——Cozy（暖色）/ Cosmos（深色），一键切换
@@ -78,7 +78,7 @@ export OPENAI_BASE_URL="http://127.0.0.1:17800/api/proxy/deepseek"
 
 ## 供应商
 
-内置 76 条供应商路由（proxy-gateway/internal/adapter/registry.go），三分类：
+内置 79 条供应商路由（proxy-gateway/internal/adapter/registry.go），三分类：
 
 - **国外主流**：Anthropic / OpenAI / Gemini / Mistral / Grok / Groq / Cerebras / Cohere / Perplexity / SambaNova / NVIDIA …
 - **国内主流**：DeepSeek / 智谱 GLM / 通义千问 / Moonshot (Kimi) / Kimi For Coding / 豆包 / 腾讯混元 / 讯飞星火 / MiniMax / 百川 / 零一万物 / 商汤 / 阶跃星辰 / 硅基流动 / 码云 AI / 魔搭 / 百度千帆 …
@@ -94,7 +94,7 @@ export OPENAI_BASE_URL="http://127.0.0.1:17800/api/proxy/deepseek"
   ▼
 ┌─────────────────────────────────────┐
 │ 本地代理网关（Go，:17800）             │ 转发请求 + 记录 Token（LOCAL_MODE）
-│ proxy-gateway/                       │ 76 条供应商路由
+│ proxy-gateway/                       │ 79 条供应商路由
 └──────────────┬──────────────────────┘
                │ INSERT
                ▼
@@ -119,14 +119,15 @@ export OPENAI_BASE_URL="http://127.0.0.1:17800/api/proxy/deepseek"
 
 ```
 Oxelia51/
-├── proxy-gateway/        # Go 代理网关（云端 + 本地 sidecar），76 条供应商路由
+├── proxy-gateway/        # Go 代理网关（云端 + 本地 sidecar），79 条供应商路由
 ├── backend/              # Go 后端（认证 / 管理 / 多设备同步）
 ├── desktop/              # 桌面应用（Tauri 2 + Vite React + sidecar）
 │   ├── ui/               #   前端界面（主窗口 + 悬浮玻璃卡片 widget）
 │   └── src-tauri/        #   Tauri 壳 + sidecar 托管
 ├── analytics/            # C++ 分析引擎
 ├── web/                  # web 前端（原 langfuse-token 仓库，已脱钩并入本仓）
-├── packages/shared/      # @oxelia51/shared：web 的共享包（Prisma/ClickHouse/领域常量）
+├── packages/             # @oxelia51/shared（Prisma/ClickHouse/领域常量）+ config-eslint/config-typescript/eslint-plugin 三包
+├── patches/              # pnpm patch 补丁（next-auth）
 ├── deploy/               # Docker Compose · Nginx · 发布脚本
 ├── docs/                 # 完整文档（设计 / 部署 / 维护）
 └── scripts/              # 辅助脚本

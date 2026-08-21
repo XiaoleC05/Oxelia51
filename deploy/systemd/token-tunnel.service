@@ -1,12 +1,14 @@
 [Unit]
-Description=Oxelia51 SSH Tunnel (Aliyun 127.0.0.1:3000 -> Tencent Cloud web:3000)
+Description=Oxelia51 SSH Tunnel (Aliyun 127.0.0.1:3000 -> Tencent Cloud web:3000, 127.0.0.1:9001 -> clickhouse:9000)
 After=network.target
 
 [Service]
 Type=simple
 User=root
-# 本地 3000 → 腾讯云 127.0.0.1:3000（langfuse-web），密钥见 /root/.ssh/tencent_cloud
+# 本地 3000 → 腾讯云 127.0.0.1:3000（langfuse-web）；本地 9001 → 腾讯云 127.0.0.1:9000（ClickHouse Native，供 Go proxy 写入）
+# 密钥见 /root/.ssh/tencent_cloud
 ExecStart=/usr/bin/ssh -N -L 127.0.0.1:3000:127.0.0.1:3000 \
+    -L 127.0.0.1:9001:127.0.0.1:9000 \
     -i /root/.ssh/tencent_cloud \
     -o StrictHostKeyChecking=no \
     -o ServerAliveInterval=30 \
