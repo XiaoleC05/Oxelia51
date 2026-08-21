@@ -3,7 +3,7 @@
 // 2. desktop/src-tauri/tauri.conf.json —— 顶层 version
 // 3. desktop/ui/package.json           —— version
 // 4. desktop/ui/src/version.ts         —— 本文件 APP_VERSION
-export const APP_VERSION = "0.1.10";
+export const APP_VERSION = "0.1.11";
 
 export type UpdateInfo = {
   available: boolean;

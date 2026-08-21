@@ -111,3 +111,14 @@ jobs:
             --target master \
             --latest
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+      # 防止 release-* 部署版在 Releases 页堆积：仅保留最新 2 个（含本次）
+      - name: Prune old deployment releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release list --limit 100 --json tagName,isLatest \
+            --jq '[.[] | select(.tagName | startswith("release-")) | select(.isLatest | not) | .tagName] | .[1:][]' \
+            | while read -r old; do
+                gh release delete "$old" --yes --cleanup-tag || true
+              done

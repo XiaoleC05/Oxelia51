@@ -4,7 +4,7 @@
 
 ---
 
-## 未发布（master）
+## v0.1.11 — 2026-08-21（已发布）
 
 ### 架构
 - web 前端从前置 fork（langfuse-token 仓库）脱钩并入主仓 `web/`，共享包改名 `@oxelia51/shared`（`packages/shared/`），构建管线（pnpm + turbo）改由本仓承载
