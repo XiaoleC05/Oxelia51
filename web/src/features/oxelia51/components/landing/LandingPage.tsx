@@ -229,7 +229,7 @@ function HowItWorksSection() {
               </p>
               <CopyCodeBlock code={LOCAL_PROXY_CMD_OPENAI} />
               <p className="mt-2 text-xs text-(--ox-text-muted)">
-                内置 76
+                内置 79
                 条供应商路由（国内：DeepSeek、智谱、通义、Kimi、豆包、混元、星火、MiniMax、硅基流动…；国际：OpenAI、Gemini、Mistral、Grok、Groq…；聚合：OpenRouter、SiliconFlow…），slug
                 即供应商。供应商 = 提供大模型的平台；Agent =
                 你使用的软件，记录会自动按工具识别。云代理亦可用：
