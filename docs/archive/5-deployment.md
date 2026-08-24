@@ -2,6 +2,11 @@
 
 **项目**：oxelia51.com | **版本**：3.0.0 | **日期**：2026-07-27
 
+> **归档说明**（2026-08-25）：本文档为 v3/早期阶段历史快照，部分决策已被取代。现行架构见 docs/architecture/。
+>
+> **已知偏差**：
+> - 前端构建流程（`npm ci && npm run build → dist/`）已被本仓 pnpm + turbo 管线取代，现行 CI/CD 见 .github/workflows/ 与 deploy/README.md。
+
 ---
 
 ## 1. 部署架构

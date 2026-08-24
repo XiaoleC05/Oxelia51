@@ -1,6 +1,6 @@
 /**
  * Oxelia51 双主题变量 — Cozy 暖色 / Cosmos 深色
- * 来源：docs/4-detailed-design.md §5.1-5.2
+ * 来源：docs/archive/4-detailed-design.md §5.1-5.2
  *
  * 说明：变量统一加 `--ox-` 前缀，避免与 Langfuse 自身的
  * --accent / --border / --radius 等 shadcn 变量冲突。
@@ -177,7 +177,7 @@
 }
 
 /* ============================================================
-   过渡与动效（docs/design-system.md §4.17）
+   过渡与动效（docs/design/design-system.md §4.17）
    统一缓动 cubic-bezier(0.4, 0, 0.2, 1)，时长 ~0.3s（--ox-speed）。
    全部动效在 prefers-reduced-motion: reduce 时禁用。
    ============================================================ */

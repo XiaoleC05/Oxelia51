@@ -108,20 +108,24 @@ int main(int argc, char* argv[]) {
     }
     logMsg("PostgreSQL: connected");
 
-    // ---- Step 1+3: 聚合（24h 分块追平积压，逐块 UPSERT + 推进游标） ----
+    // ---- Step 1+2+3: 聚合 + 计价 + UPSERT（24h 分块追平积压，逐块落库 + 推进游标） ----
     // 单块失败只损失该块进度（游标停在上一成功块），下个 timer 周期自动重试，
     // 避免「积压越长单次查询越重 → 失败 → 游标不动 → 积压滚雪球」
+    // 注意：计价必须先于 UPSERT——历史上曾在 UPSERT 后才算 cost，导致 daily_stats
+    // 的 cost_usd 永远落库为 0（计价只改了内存、从未写回）。
     std::vector<oxelia51::DailyEvent> events;
     std::string maxTimestamp;
     bool upsertOk = true;
     const int kChunkHours = 24;
     const int kMaxChunksPerRun = 40;  // 单次运行最多追 40 天积压，剩余留给下个周期
+    double totalCost = 0.0;
     try {
         std::string lastProcessed = pg.getEngineState("last_processed");
         if (!lastProcessed.empty()) {
             logMsg("Last processed: " + lastProcessed);
         }
         oxelia51::Aggregator aggregator;
+        oxelia51::Pricing pricing(pg);  // 构造不抛异常：DB 价目读取失败自动用内置兜底
         std::string cursor = lastProcessed;
         for (int i = 0; i < kMaxChunksPerRun; ++i) {
             std::string chunkMax;
@@ -135,6 +139,11 @@ int main(int argc, char* argv[]) {
             if (chunkMax > maxTimestamp) maxTimestamp = chunkMax;
             logMsg("Step 1: chunk #" + std::to_string(i + 1) + " aggregated " +
                 std::to_string(chunk.size()) + " event group(s) up to " + chunkMax);
+            // Step 2 并入循环：逐块计价后再落库
+            for (auto& e : chunk) {
+                e.cost_usd = pricing.calculate(e.model, e.prompt_tokens, e.completion_tokens);
+                totalCost += e.cost_usd;
+            }
             events.insert(events.end(), chunk.begin(), chunk.end());
             if (!dryRun) {
                 try {
@@ -154,26 +163,13 @@ int main(int argc, char* argv[]) {
             }
         }
         logMsg("Step 1: Aggregated " + std::to_string(events.size()) + " event group(s) in total");
+        logMsg("Step 2: Cost calculated, total $" + fmtDouble(totalCost, 4));
     } catch (const std::exception& e) {
         logMsg("Step 1 FAILED (aggregate): " + std::string(e.what()));
         return 1;  // 无事件数据，无法继续
     }
 
-    // ---- Step 2: 计算成本 ----
-    try {
-        oxelia51::Pricing pricing(pg);
-        double totalCost = 0.0;
-        for (auto& e : events) {
-            e.cost_usd = pricing.calculate(e.model, e.prompt_tokens, e.completion_tokens);
-            totalCost += e.cost_usd;
-        }
-        logMsg("Step 2: Cost calculated, total $" + fmtDouble(totalCost, 4));
-    } catch (const std::exception& e) {
-        logMsg("Step 2 FAILED (pricing): " + std::string(e.what()) + " — costs set to 0");
-        // 继续执行，cost_usd 保持 0
-    }
-
-    // （Step 3 已并入 Step 1 分块循环：逐块 UPSERT + 游标推进）
+    // （Step 2 计价与 Step 3 落库均已并入 Step 1 分块循环：逐块计价 → UPSERT → 游标推进）
 
     // ---- Step 4: 异常检测（按 project 读取配置） ----
     int anomalyCount = 0;
