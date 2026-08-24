@@ -32,7 +32,7 @@ Oxelia51 的数据分散在**四库三机**，每库有唯一写入权威：
 
 **腾讯云 CH**：`oxelia51.token_events`（`MergeTree`，`PARTITION BY toYYYYMM(timestamp)`，`ORDER BY (project_id, timestamp)`，15 列含 agent 与缓存细分；建表/补列由 Go `ClickHouseWriter` 启动时幂等执行，`proxy-gateway/internal/recorder/clickhouse.go`）。
 
-**阿里云 PG**（建表权威 `backend/migrations/`，Go 后端自有）：users/运维账号（001/003/009/013）、工具注册（002/004）、hero_images/carousel_settings（005/006）、articles（007/008）、developer_profile（010）、login_logs（011）、site_settings（012）、ip_whitelist（014）、proxy_keys（015，网关鉴权用，仅存 sha256）、synced_events（016，疑似残留，见 §4）。
+**阿里云 PG**（建表权威 `backend/migrations/`，Go 后端自有）：users/运维账号（001/003/009/013）、工具注册（002/004）、hero_images/carousel_settings（005/006）、articles（007/008）、developer_profile（010）、login_logs（011）、site_settings（012）、ip_whitelist（014）、proxy_keys（015，网关鉴权用，仅存 sha256）。
 
 ```
 ┌──────────── 用户本机 ────────────┐
@@ -109,7 +109,7 @@ Oxelia51 的数据分散在**四库三机**，每库有唯一写入权威：
 
 **历史教训**：`packages/shared/prisma/migrations/20260806070003_add_oxelia51_alert_channel_verification` 越界 `ALTER TABLE oxelia51.alert_channels`（该表由 analytics 迁移建管），导致全新数据库 `prisma migrate deploy` 失败；文件已被生产应用不能修改，变通是全新部署先手工建空表。结论：**oxelia51 schema 的迁移只放 `analytics/deploy/migrations/`**。
 
-另有一处待澄清的冗余：`backend/migrations/016_sync_events.up.sql` 在阿里云 PG 建了 `synced_events` 表（`user_id BIGINT`、无 `seq` 列），但当前 backend Go 代码（`backend/internal/`）**没有任何对 `synced_events` 的引用**——现行同步链路用的是腾讯云 PG 的 `oxelia51.synced_events`（`user_id TEXT` 关联 Langfuse users、带 `seq` 游标）。016 表疑为早期设计的残留，删表需架构裁定。
+注：早期曾在阿里云 PG 建有另一张 `synced_events` 表（`user_id BIGINT`、无 `seq`，迁移 016），系早期设计残留，代码零引用；2026-08-25 已删迁移文件并 DROP 生产死表。现行同步链路只有腾讯云 PG 的 `oxelia51.synced_events`。
 
 ## 5. Langfuse 遗留表
 

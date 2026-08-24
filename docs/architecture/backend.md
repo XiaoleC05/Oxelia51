@@ -134,10 +134,10 @@ service（auth 域）放可测纯逻辑；无 ORM。
 - `infra/migrate.go`：启动时按字典序执行 `migrations/` 下所有 `*.up.sql`；
   无迁移台账表，**幂等完全靠 SQL 自身的 `IF NOT EXISTS`**；`.down.sql` 仅供
   人工回滚，从不自动执行。任一文件失败即拒绝启动。
-- 16 个迁移（001–016）建表：`users`、`tools`、`portfolio_items`、
+- 15 个迁移（001–015）建表：`users`、`tools`、`portfolio_items`、
   `hero_images`、`carousel_settings`、`articles`、`pages`、
   `developer_profile`、`login_logs`、`site_settings`、`ip_whitelist`、
-  `proxy_keys`、`synced_events`（见 §8 注意事项）。
+  `proxy_keys`。
 - `deploy/seed-tools.sql`：工具注册种子数据。
 
 ### 5.2 Redis（`domain/auth/service.go` + handler.go）
@@ -243,12 +243,11 @@ push master → build-test job：
 
 - **迁移无台账**：靠 SQL 幂等重跑全部历史迁移；新增迁移必须全量
   `IF NOT EXISTS` 化，否则重复执行即启动失败。
-- **016_sync_events.up.sql 是孤儿迁移**：其注释引用
-  `internal/domain/sync/repository.go`，但该包已不存在（domain 下无 sync），
-  全仓 Go 代码无任何 `synced_events` 引用。该表与 web 侧
+- **016_sync_events.up.sql 已清理**（2026-08-25）：该迁移建的 `synced_events`
+  表全仓零引用（domain/sync 已下线），是早期同步方案的残留；迁移文件已删，
+  生产阿里云 PG 中的死表已 DROP。现行同步链路用腾讯云 PG 的
   `oxelia51.synced_events`（TEXT user_id、由 analytics/deploy/migrations/005
-  建管）同名不同库不同结构（此处 BIGINT user_id），疑似早期同步方案的残留，
-  不要误认为是现行同步链路的一部分。
+  建管），两者同名不同库不同结构，不要混淆。
 - **单管理员种子模型**：`EnsureAdmin` 只保证 account_id='oxelia51' 存在，
   其余运维账户由 admin 通过 `/api/admin/users` 创建。
 - `admin/handler_linux.go` / `handler_other.go`：/proc 与 statfs 采集仅

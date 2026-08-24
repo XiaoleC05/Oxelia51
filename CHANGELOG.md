@@ -7,7 +7,8 @@
 ## 未发布（master）
 
 ### 已修复
-- **analytics 成本不落库**：catch-up 分块化改动把计价（Step 2）排到了逐块 UPSERT（Step 3）之后，导致 daily_stats 的 cost_usd 永远落库为 0——已改为逐块先计价再落库（历史存量行的成本需按价目重算回补，另行处理）
+- **analytics 成本不落库**：catch-up 分块化改动把计价（Step 2）排到了逐块 UPSERT（Step 3）之后，导致 daily_stats 的 cost_usd 永远落库为 0——已改为逐块先计价再落库。历史存量经核实仅 2 行且 total_tokens 均为 0（空聚合行），成本为 0 属正确值，无需回补
+- 删除残留死表 `synced_events`（阿里云 PG，016 迁移产物，代码零引用）及其迁移文件；架构文档同步更新
 
 ### 文档
 - docs/ 体系重构：新增 architecture/ 7 篇（overview/web/backend/proxy-gateway/analytics/desktop/data-flow，全部从现行代码反向核实撰写）；design-system 与 i18n-glossary 移入 design/；archive/ 7 篇历史快照统一加修订注记；总索引按「架构与设计 / 设计规范 / 运维 / 历史归档」分级
