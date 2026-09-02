@@ -122,7 +122,6 @@ function DeleteAccountButton() {
   const { data: session } = useSession();
   const userEmail = session?.user?.email ?? "";
 
-  const { data: canDeleteData } = api.userAccount.checkCanDelete.useQuery();
   const deleteAccount = api.userAccount.delete.useMutation();
 
   const formSchema = z.object({
@@ -138,11 +137,7 @@ function DeleteAccountButton() {
     },
   });
 
-  const canDelete = canDeleteData?.canDelete ?? false;
-  const blockingOrganizations = canDeleteData?.blockingOrganizations ?? [];
-
   const onSubmit = async () => {
-    if (!canDelete) return;
     try {
       await deleteAccount.mutateAsync();
       showSuccessToast({
@@ -169,56 +164,30 @@ function DeleteAccountButton() {
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">删除账户</DialogTitle>
           <DialogDescription>
-            {!canDelete && blockingOrganizations.length > 0 ? (
-              <div>
-                <p className="mb-2">
-                  您无法删除账户，因为您是以下组织中的最后一位所有者：
-                </p>
-                <ul className="list-inside list-disc space-y-1">
-                  {blockingOrganizations.map((org) => (
-                    <li key={org.id}>
-                      <Link
-                        href={`/organization/${org.id}/settings`}
-                        className="text-primary hover:text-primary/80 font-bold underline"
-                      >
-                        {org.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-2">
-                  删除账户前，请先添加其他所有者或删除这些组织。
-                </p>
-              </div>
-            ) : (
-              `如需确认，请在输入框中输入您的邮箱地址“${userEmail}”`
-            )}
+            {`如需确认，请在输入框中输入您的邮箱地址“${userEmail}”`}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {canDelete && (
-              <DialogBody>
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input placeholder={userEmail} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </DialogBody>
-            )}
+            <DialogBody>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder={userEmail} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </DialogBody>
             <DialogFooter>
               <Button
                 type="submit"
                 variant="destructive"
                 loading={deleteAccount.isPending}
-                disabled={!canDelete}
                 className="w-full"
               >
                 删除账户
@@ -287,7 +256,7 @@ const getAccountSettingsPages = (userEmail: string): AccountSettingsPage[] => [
             {
               title: "删除账户",
               description:
-                "如果您不是任何组织的最后一位所有者，即可删除账户。如果是最后一位所有者，请先添加其他所有者或删除组织及其全部项目。",
+                "删除账户将同时清除您的会员关系等关联数据，且不可恢复。",
               button: <DeleteAccountButton />,
             },
           ]}

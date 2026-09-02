@@ -1,9 +1,7 @@
 import { createTRPCRouter } from "@/src/server/api/trpc";
-import { projectsRouter } from "@/src/features/projects/server/projectsRouter";
 import { projectApiKeysRouter } from "@/src/features/public-api/server/projectApiKeyRouter";
 import { membersRouter } from "@/src/features/rbac/server/membersRouter";
 import { userAccountRouter } from "@/src/server/api/routers/userAccount";
-import { organizationsRouter } from "@/src/features/organizations/server/organizationRouter";
 import { organizationApiKeysRouter } from "@/src/features/public-api/server/organizationApiKeyRouter";
 import { credentialsRouter } from "@/src/features/auth-credentials/server/credentialsRouter";
 import { onboardingRouter } from "@/src/features/onboarding/server/onboardingRouter";
@@ -21,9 +19,7 @@ import { siteStatsRouter } from "@/src/features/oxelia51/server/siteStatsRouter"
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  organizations: organizationsRouter,
   organizationApiKeys: organizationApiKeysRouter,
-  projects: projectsRouter,
   userAccount: userAccountRouter,
   projectApiKeys: projectApiKeysRouter,
   members: membersRouter,

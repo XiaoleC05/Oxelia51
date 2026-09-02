@@ -1,18 +1,8 @@
 import { type Flag } from "@/src/features/feature-flags/types";
 import { type ProjectScope } from "@/src/features/rbac/constants/projectAccessRights";
-import {
-  type LucideIcon,
-  Settings,
-  Grid2X2,
-  Search,
-  Home,
-  BarChart3,
-  Coins,
-  Siren,
-} from "lucide-react";
+import { type LucideIcon, Search } from "lucide-react";
 import { type ReactNode } from "react";
 import { type Entitlement } from "@/src/features/entitlements/constants/entitlements";
-import { type Session } from "next-auth";
 import { type OrganizationScope } from "@/src/features/rbac/constants/organizationAccessRights";
 // Oxelia51：「快速预览」(V4SidebarToggle) 与「更新」(V4MigrationNavItem) 入口已随 v4 迁移功能一并删除
 import { SidebarMenuButton } from "@/src/components/ui/sidebar";
@@ -44,9 +34,6 @@ export type Route = {
   newTab?: boolean; // open in new tab
   entitlements?: Entitlement[]; // entitlements required, array treated as OR
   show?: (p: {
-    organization:
-      | NonNullable<Session["user"]>["organizations"][number]
-      | undefined;
     projectId: string | undefined;
     isLangfuseCloud: boolean;
   }) => boolean;
@@ -61,62 +48,8 @@ export const ROUTES: Route[] = [
     menuNode: <CommandMenuTrigger />,
     section: RouteSection.Main,
   },
-  {
-    title: "组织",
-    pathname: "/",
-    icon: Grid2X2,
-    show: ({ organization }) => organization === undefined,
-    section: RouteSection.Main,
-  },
-  {
-    title: "项目",
-    pathname: "/organization/[organizationId]",
-    icon: Grid2X2,
-    section: RouteSection.Main,
-  },
-  {
-    title: "首页",
-    pathname: `/project/[projectId]`,
-    icon: Home,
-    section: RouteSection.Main,
-  },
-  {
-    title: "Token 概览",
-    pathname: `/project/[projectId]/dashboard/tokens`,
-    icon: BarChart3,
-    group: RouteGroup.TokenStats,
-    section: RouteSection.Main,
-  },
-  {
-    title: "成本分析",
-    pathname: `/project/[projectId]/dashboard/cost`,
-    icon: Coins,
-    group: RouteGroup.TokenStats,
-    section: RouteSection.Main,
-  },
-  {
-    // Oxelia51：告警设置是产品核心卖点之一，从 Token 统计组移出，提升为一级独立条目
-    title: "告警设置",
-    pathname: `/project/[projectId]/settings/alerts`,
-    icon: Siren,
-    section: RouteSection.Main,
-  },
-  {
-    title: "设置",
-    pathname: "/project/[projectId]/settings",
-    icon: Settings,
-    section: RouteSection.Secondary,
-    // Oxelia51：项目设置仅在项目上下文显示，避免与组织设置重复
-    show: ({ projectId }) => projectId !== undefined,
-  },
-  {
-    title: "设置",
-    pathname: "/organization/[organizationId]/settings",
-    icon: Settings,
-    section: RouteSection.Secondary,
-    // 组织设置仅在组织上下文显示
-    show: ({ organization }) => organization !== undefined,
-  },
+  // Oxelia51：业务导航由 /app 工作区侧栏承载；原「首页/Token 概览/成本分析/告警设置」
+  // 四个 /project/[projectId] 入口随组织/项目模块一并删除。
 ];
 
 function CommandMenuTrigger() {

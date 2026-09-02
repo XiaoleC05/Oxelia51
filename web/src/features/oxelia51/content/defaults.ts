@@ -14,6 +14,32 @@ export type ChangelogVersion = {
 
 export const CHANGELOG_VERSIONS: ChangelogVersion[] = [
   {
+    tag: "v0.1.12",
+    date: "2026-09-02",
+    status: "released",
+    summary: "组织/项目模块剔除 + 供应商精简至 11 家 + 桌面端四项交互修复",
+    items: [
+      "组织/项目模块整体剔除：管理台清理区块、侧边栏与 ⌘K 入口、组织/项目页面与 CRUD 接口全部删除；注册后自动进入默认空间直跳工作区，用量统计不受影响",
+      "内置供应商精简至 11 家主流厂商（Claude / OpenAI / Gemini / Grok / DeepSeek / 智谱 / 通义 / Kimi / 豆包 / 混元 / MiniMax），路由 79→13 条，其余平台走自定义供应商",
+      "模型参考价按各厂商官方价重构（71 个模型，2026-09-02 核实）；DeepSeek V3、moonshot-v1、Gemini 2.0 等官方已下架模型移除",
+      "修复接入页终端窗口一闪、tab 栏横向滚动条无法拖动、双击启动自动最大化、「官网」按钮溢出点不到四项桌面端问题",
+      "服务器侧：ClickHouse 系统日志表设 7 天 TTL（此前无 TTL 膨胀 20G+ 吃满磁盘），磁盘 100%→37%，多设备同步登录恢复",
+    ],
+  },
+  {
+    tag: "v0.1.11",
+    date: "2026-08-21",
+    status: "released",
+    summary: "web 前端并入主仓 + 规范清零 + 项目删除 / 网关自愈修复",
+    items: [
+      "web 前端从 langfuse-token 仓库脱钩并入主仓 web/，共享包改名 @oxelia51/shared，构建管线（pnpm + turbo）收归主仓",
+      "依赖大幅精简：删除 langfuse 原生功能代码（追踪 / 评估 / playground / billing 等）及独占依赖，knip 瘦身 52 个直接依赖",
+      "规范清零：eslint 0 警告、prettier 全仓格式化、Go gofmt / Rust clippy 警告清零；web 测试全绿（客户端 557 + 服务端 887）",
+      "修复项目删除：删除任务此前推入已下线的 worker 队列永久堆积，改为同步删除（PG 事务级联 + ClickHouse 异步清理）",
+      "修复网关 ClickHouse recorder 写失败后永久降级（现 ≤60s 节流重连自动恢复）；analytics 聚合 catch-up 分块化 + 游标毫秒精度修复",
+    ],
+  },
+  {
     tag: "v0.1.10",
     date: "2026-08-13",
     status: "released",
@@ -153,11 +179,11 @@ export const LANDING_FAQ: FaqItem[] = [
   },
   {
     q: "支持哪些模型？",
-    a: "内置 79 条供应商路由，覆盖国内（DeepSeek、智谱、通义、Kimi、豆包、混元、星火、MiniMax、硅基流动…）、国际（Anthropic、OpenAI、Gemini、Mistral、Grok、Groq…）与聚合平台（OpenRouter、Together…）；内置 77 个模型参考价，支持美元/人民币切换。改代理地址里的供应商 slug 即可切换，如 /api/proxy/deepseek、/api/proxy/zhipu。",
+    a: "内置 13 条供应商路由，覆盖 11 家主流厂商——国内（DeepSeek、智谱、通义、Kimi、Kimi For Coding、豆包、混元、MiniMax）与国外（Anthropic、OpenAI、Gemini、xAI）；预设之外的平台可添加自定义供应商接入。内置 71 个模型参考价，支持美元/人民币切换。改代理地址里的供应商 slug 即可切换，如 /api/proxy/deepseek、/api/proxy/zhipu。",
   },
   {
     q: "桌面应用什么时候发布？",
-    a: "已发布 v0.1.10，支持 Windows / macOS / Linux 三平台。在下载页或 GitHub Releases 获取。",
+    a: "已发布 v0.1.11，支持 Windows / macOS / Linux 三平台。在下载页或 GitHub Releases 获取。",
   },
   {
     q: "关闭应用后，代理地址还能用吗？",

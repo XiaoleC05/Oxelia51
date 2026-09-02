@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { randomBytes } from "node:crypto";
-import { Prisma, prisma } from "@oxelia51/shared/src/db";
-import { redis } from "@oxelia51/shared/src/server";
+import { prisma } from "@oxelia51/shared/src/db";
 import { TRPCError } from "@trpc/server";
 import {
   adminProcedure,
@@ -10,8 +9,6 @@ import {
   isSuperAdminEmail,
 } from "@/src/features/oxelia51/server/adminAuth";
 import { updateUserPassword } from "@/src/features/auth-credentials/lib/credentialsServerUtils";
-import { ApiAuthService } from "@/src/features/public-api/server/apiAuth";
-import { deleteUserWithOrgCascade } from "@/src/features/oxelia51/server/userDeletion";
 
 /**
  * 管理台用户管理：列表/密码重置/删除。
@@ -96,13 +93,9 @@ export const adminUserProcedures = {
     }),
 
   /**
-   * 删除用户：复用账户自删（userAccount.delete）的「组织最后所有者」校验 +
-   * schema 外键级联删除（会员关系/会话/账户等）。——写操作，仅超级管理员
-   * 级联规则（deleteUserWithOrgCascade）：用户是某组织唯一成员（唯一所有者且无其他成员）
-   * 时级联删除该组织（连同其项目，按 schema onDelete: Cascade）；组织内还有其他成员时
-   * 保持报错并说明是哪个组织、还有几名成员。
+   * 删除用户：仅删用户本体，memberships / 会话 / 账户等关联数据由 schema
+   * onDelete: Cascade 处理。组织/项目随单默认组织机制保留，不做级联清理。——写操作，仅超级管理员
    * 保护：不能删除自己、不能删除 OXELIA_SUPER_ADMIN_EMAIL。
-   * 响应返回被级联删除的组织名列表（前端 toast 展示）。
    */
   adminDeleteUser: superAdminProcedure
     .input(z.object({ userId: z.string().min(1) }))
@@ -126,20 +119,10 @@ export const adminUserProcedures = {
           message: "不能删除超级管理员账户",
         });
       }
-      const { deletedOrganizations } = await prisma.$transaction(
-        (tx) => deleteUserWithOrgCascade(target.id, tx),
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-      );
-      if (deletedOrganizations.length > 0) {
-        const apiAuthService = new ApiAuthService(prisma, redis);
-        for (const org of deletedOrganizations) {
-          await apiAuthService.invalidateCachedOrgApiKeys(org.id);
-        }
-      }
+      await prisma.user.delete({ where: { id: target.id } });
       return {
         success: true,
         email: target.email,
-        deletedOrganizations: deletedOrganizations.map((o) => o.name),
       };
     }),
 };

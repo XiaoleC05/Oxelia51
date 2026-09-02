@@ -52,7 +52,7 @@ import "@fontsource/jetbrains-mono/600.css";
 
 import { ThemeProvider } from "@/src/features/theming/ThemeProvider";
 import { MarkdownContextProvider } from "@/src/features/theming/useMarkdownContext";
-import { useLangfuseCloudRegion } from "@/src/features/organizations/hooks";
+import { useLangfuseCloudRegion } from "@/src/hooks/useLangfuseCloudRegion";
 import { env } from "@/src/env.mjs";
 
 // Check that PostHog is client-side (used to handle Next.js SSR) and that env vars are set

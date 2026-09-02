@@ -4,13 +4,24 @@
 
 ---
 
-## 未发布（master）
+## v0.1.12 — 2026-09-02（已发布）
+
+### 架构
+- **组织/项目模块整体剔除**（保留底层单默认组织/项目机制）：删除管理台「废弃组织/空项目清理」、侧边栏与 ⌘K 的组织/项目入口、`/organization/**`、`/project/**`、`/setup`、`/onboarding` 页面、organizations/projects tRPC CRUD router 及两个切换下拉组件；注册/登录后静默加入默认组织并直跳 `/app`；删用户改为仅删用户本身（memberships 走 DB 级联）
+- **内置供应商精简至 11 家**：网关路由表 79→13 条（anthropic/openai/gemini/xai/zhipu/deepseek/qwen/moonshot/kimi-for-coding/doubao/hunyuan/minimax + deepseek-anthropic 兼容行），桌面端目录重排为「国外主流/国内主流」两组，其余 57 个内置 slug 删除（自定义供应商功能保留）
+- **模型价格按官方价重构**：71 个模型、仅 11 家，2026-09-02 经各厂商官方渠道核实（Go 参考价/展示目录、analytics 009 迁移、C++ 兜底三源一致）；DeepSeek chat/reasoner、Kimi k2.5/moonshot-v1、Gemini 2.0 等官方已下架/停售模型全部移除
 
 ### 已修复
+- **桌面端「接入」tab 终端一闪**：sidecar spawn CLI 探测进程时未隐藏控制台，Windows 下弹出终端窗口——加 CREATE_NO_WINDOW 并对探测结果加 60s 缓存
+- **桌面端 tab 栏横向滚动条无法用鼠标拖动**：整条顶栏的 Tauri 拖曳区劫持滚动条拖动——改为独立拖曳条，滚动条恢复可拖并细化样式
+- **桌面端双击启动自动最大化**：顶栏双击加 800ms 启动保护
+- **桌面端「国内主流」模块「官网」按钮溢出无法点击**：操作按钮加 flex-wrap、网格最小列宽 150→200px
+- **腾讯云服务器磁盘/CPU 爆满**：ClickHouse 系统日志表无 TTL 膨胀（trace_log 16G、text_log 4.3G、文本日志 2.6G）——TRUNCATE 后磁盘 100%→37%，全部系统日志表设 7 天 TTL 防复发，业务数据零损失；桌面端「登录多设备同步」连接错误随之恢复
 - **analytics 成本不落库**：catch-up 分块化改动把计价（Step 2）排到了逐块 UPSERT（Step 3）之后，导致 daily_stats 的 cost_usd 永远落库为 0——已改为逐块先计价再落库。历史存量经核实仅 2 行且 total_tokens 均为 0（空聚合行），成本为 0 属正确值，无需回补
 - 删除残留死表 `synced_events`（阿里云 PG，016 迁移产物，代码零引用）及其迁移文件；架构文档同步更新
 
 ### 文档
+- web 落地页/FAQ/docs 供应商口径同步为 13 条路由、11 家、两组分类；模型参考价 77→71 并注明 2026-09-02 官方核实；站点 changelog 补 v0.1.11 条目
 - docs/ 体系重构：新增 architecture/ 7 篇（overview/web/backend/proxy-gateway/analytics/desktop/data-flow，全部从现行代码反向核实撰写）；design-system 与 i18n-glossary 移入 design/；archive/ 7 篇历史快照统一加修订注记；总索引按「架构与设计 / 设计规范 / 运维 / 历史归档」分级
 
 ---

@@ -9,15 +9,10 @@ import {
 } from "@/src/components/ui/command";
 import { useRouter } from "next/router";
 import { useEffect, memo } from "react";
-import { useSession } from "next-auth/react";
-import { env } from "@/src/env.mjs";
 import { usePostHogClientCapture } from "@/src/features/posthog-analytics/usePostHogClientCapture";
 import { useDebounce } from "@/src/hooks/useDebounce";
 import { useCommandMenu } from "@/src/features/command-k-menu/CommandMenuProvider";
-import { useProjectSettingsPages } from "@/src/pages/project/[projectId]/settings";
-import { useOrganizationSettingsPages } from "@/src/pages/organization/[organizationId]/settings";
 import { useAccountSettingsPages } from "@/src/pages/account/settings";
-import { useQueryProjectOrOrganization } from "@/src/features/projects/hooks";
 import { type NavigationItem } from "@/src/components/layouts/utilities/routes";
 
 function MainNavigationGroup({
@@ -51,127 +46,6 @@ function MainNavigationGroup({
         </CommandItem>
       ))}
     </CommandGroup>
-  );
-}
-
-function ProjectsGroup({ onNavigate }: { onNavigate: () => void }) {
-  const router = useRouter();
-  const capture = usePostHogClientCapture();
-  const { allProjectItems } = useNavigationItems();
-
-  if (allProjectItems.length === 0) return null;
-
-  return (
-    <>
-      <CommandSeparator />
-      <CommandGroup heading="项目">
-        {allProjectItems.map((item) => (
-          <CommandItem
-            key={item.url}
-            value={item.title}
-            keywords={item.keywords}
-            disabled={item.active}
-            onSelect={() => {
-              router.push(item.url);
-              capture("cmd_k_menu:navigated", {
-                type: "project",
-                title: item.title,
-                url: item.url,
-              });
-              onNavigate();
-            }}
-          >
-            {item.title}
-          </CommandItem>
-        ))}
-      </CommandGroup>
-    </>
-  );
-}
-
-function ProjectSettingsGroup({ onNavigate }: { onNavigate: () => void }) {
-  const router = useRouter();
-  const capture = usePostHogClientCapture();
-  const settingsPages = useProjectSettingsPages();
-  const { project } = useQueryProjectOrOrganization();
-
-  const projectSettingsItems = settingsPages
-    .filter((page) => page.show !== false && !("href" in page))
-    .map((page) => ({
-      title: `项目设置 > ${page.title}`,
-      url: `/project/${project?.id}/settings${page.slug === "index" ? "" : `/${page.slug}`}`,
-      keywords: page.cmdKKeywords || [],
-    }));
-
-  if (projectSettingsItems.length === 0) return null;
-
-  return (
-    <>
-      <CommandSeparator />
-      <CommandGroup heading="项目设置">
-        {projectSettingsItems.map((item) => (
-          <CommandItem
-            key={item.url}
-            value={item.title}
-            keywords={item.keywords}
-            onSelect={() => {
-              router.push(item.url);
-              capture("cmd_k_menu:navigated", {
-                type: "project_settings",
-                title: item.title,
-                url: item.url,
-              });
-              onNavigate();
-            }}
-          >
-            {item.title}
-          </CommandItem>
-        ))}
-      </CommandGroup>
-    </>
-  );
-}
-
-function OrganizationSettingsGroup({ onNavigate }: { onNavigate: () => void }) {
-  const router = useRouter();
-  const capture = usePostHogClientCapture();
-  const orgSettingsPages = useOrganizationSettingsPages();
-  const { organization } = useQueryProjectOrOrganization();
-
-  const orgSettingsItems = orgSettingsPages
-    .filter((page) => page.show !== false && !("href" in page))
-    .map((page) => ({
-      title: `组织设置 > ${page.title}`,
-      url: `/organization/${organization?.id}/settings${page.slug === "index" ? "" : `/${page.slug}`}`,
-      keywords: page.cmdKKeywords || [],
-    }));
-
-  if (orgSettingsItems.length === 0) return null;
-
-  return (
-    <>
-      <CommandSeparator />
-      <CommandGroup heading="组织设置">
-        {orgSettingsItems.map((item) => (
-          <CommandItem
-            key={item.url}
-            value={item.title}
-            keywords={item.keywords}
-            onSelect={() => {
-              router.push(item.url);
-              capture("cmd_k_menu:navigated", {
-                type: "organization_settings",
-                title: item.title,
-                url: item.url,
-              });
-              onNavigate();
-            }}
-          >
-            {item.title}
-          </CommandItem>
-        ))}
-      </CommandGroup>
-    </>
   );
 }
 
@@ -294,9 +168,6 @@ function CommandMenuComponent({
       <CommandList>
         <CommandEmpty>未找到结果。</CommandEmpty>
         <MainNavigationGroup navItems={navItems} onNavigate={handleNavigate} />
-        <ProjectsGroup onNavigate={handleNavigate} />
-        <ProjectSettingsGroup onNavigate={handleNavigate} />
-        <OrganizationSettingsGroup onNavigate={handleNavigate} />
         <AccountSettingsGroup onNavigate={handleNavigate} />
       </CommandList>
     </CommandDialog>
@@ -344,60 +215,3 @@ export const CommandMenu = memo(
     return isSame;
   },
 );
-
-export const useNavigationItems = () => {
-  const router = useRouter();
-  const session = useSession();
-
-  const organizations = session.data?.user?.organizations;
-
-  const truncatePathBeforeDynamicSegments = (path: string) => {
-    const allowlistedIds = ["[projectId]", "[organizationId]", "[page]"];
-    const segments = router.route.split("/");
-    const idSegments = segments.filter(
-      (segment) => segment.startsWith("[") && segment.endsWith("]"),
-    );
-    const stopSegment = idSegments.filter((id) => !allowlistedIds.includes(id));
-    if (stopSegment.length === 0) return path;
-    const stopIndex = segments.indexOf(stopSegment[0]);
-    const truncatedPath = path.split("/").slice(0, stopIndex).join("/");
-    return truncatedPath;
-  };
-
-  const getProjectPath = (projectId: string) =>
-    router.query.projectId
-      ? truncatePathBeforeDynamicSegments(router.asPath).replace(
-          router.query.projectId as string,
-          projectId,
-        )
-      : `/project/${projectId}`;
-
-  const allProjectItems = organizations
-    ? organizations
-        .sort((a, b) => {
-          // sort demo org to the bottom
-          const isDemoA = env.NEXT_PUBLIC_DEMO_ORG_ID === a.id;
-          const isDemoB = env.NEXT_PUBLIC_DEMO_ORG_ID === b.id;
-          if (isDemoA) return 1;
-          if (isDemoB) return -1;
-          return a.name.localeCompare(b.name);
-        })
-        .flatMap((org) =>
-          org.projects.map((proj) => ({
-            title: `${org.name} > ${proj.name}`,
-            url: getProjectPath(proj.id),
-            active: router.query.projectId === proj.id,
-            keywords: [
-              "project",
-              org.name.toLowerCase(),
-              proj.name.toLowerCase(),
-            ],
-          })),
-        )
-    : [];
-
-  return {
-    allProjectItems,
-    isLoading: !organizations,
-  };
-};

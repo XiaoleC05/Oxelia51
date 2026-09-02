@@ -229,8 +229,10 @@ function HowItWorksSection() {
               </p>
               <CopyCodeBlock code={LOCAL_PROXY_CMD_OPENAI} />
               <p className="mt-2 text-xs text-(--ox-text-muted)">
-                内置 79
-                条供应商路由（国内：DeepSeek、智谱、通义、Kimi、豆包、混元、星火、MiniMax、硅基流动…；国际：OpenAI、Gemini、Mistral、Grok、Groq…；聚合：OpenRouter、SiliconFlow…），slug
+                内置 13
+                条供应商路由，覆盖 11
+                家主流厂商（国外：Anthropic、OpenAI、Gemini、xAI；国内：DeepSeek、智谱、通义、Kimi、豆包、混元、MiniMax
+                等），slug
                 即供应商。供应商 = 提供大模型的平台；Agent =
                 你使用的软件，记录会自动按工具识别。云代理亦可用：
               </p>
@@ -337,7 +339,7 @@ const FEATURES: { icon: ReactNode; title: string; desc: string }[] = [
   {
     icon: <Terminal className="h-4 w-4" />,
     title: "国内模型适配",
-    desc: "DeepSeek、Moonshot、智谱等开箱即用，内置 77 个模型参考价，支持美元/人民币切换。",
+    desc: "DeepSeek、Moonshot、智谱等开箱即用，内置 71 个模型参考价，支持美元/人民币切换。",
   },
 ];
 

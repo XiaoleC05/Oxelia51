@@ -48,17 +48,12 @@
   }
 }
 
-/* 供应商网格卡片入场（错峰） */
+/* 供应商网格卡片入场（错峰）；hover 上浮样式统一在 connect.css，此处不重复 */
 .provider-cell {
   transition:
     border-color var(--ox-speed),
     transform var(--ox-speed),
     box-shadow var(--ox-speed);
-}
-
-.provider-cell:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .provider-cell:active {

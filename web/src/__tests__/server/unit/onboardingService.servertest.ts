@@ -11,15 +11,11 @@ import {
   completeCloudSignupOnboarding,
   getCloudSignupOnboardingStatus,
   provisionStarterOrganizationForNewUser,
-  resolveOnboardingRedirectTarget,
   type RealOrganizationMembership,
 } from "@/src/features/onboarding/server/onboardingService";
 
 type CompletionPrisma = Parameters<
   typeof completeCloudSignupOnboarding
->[0]["prisma"];
-type RedirectPrisma = Parameters<
-  typeof resolveOnboardingRedirectTarget
 >[0]["prisma"];
 type StatusPrisma = Parameters<
   typeof getCloudSignupOnboardingStatus
@@ -52,28 +48,16 @@ const makeMembership = ({
     },
   }) as unknown as RealOrganizationMembership;
 
-const makePrisma = (organizationMemberships: RealOrganizationMembership[]) =>
-  ({
-    organizationMembership: {
-      findMany: vi.fn().mockResolvedValue(organizationMemberships),
-    },
-  }) as unknown as RedirectPrisma;
-
 const makeCompletionPrisma = ({
   existingSurvey = null,
-  memberships = [],
 }: {
   existingSurvey?: { id: string } | null;
-  memberships?: RealOrganizationMembership[];
 } = {}) => {
   const tx = {
     $queryRaw: vi.fn().mockResolvedValue([{ id: "user-1" }]),
     survey: {
       findFirst: vi.fn().mockResolvedValue(existingSurvey),
       create: vi.fn().mockResolvedValue({ id: "survey-1" }),
-    },
-    organizationMembership: {
-      findMany: vi.fn().mockResolvedValue(memberships),
     },
   };
 
@@ -85,53 +69,11 @@ const makeCompletionPrisma = ({
   };
 };
 
-describe("resolveOnboardingRedirectTarget", () => {
-  it("routes the auto-created starter project to tracing", async () => {
-    const result = await resolveOnboardingRedirectTarget({
-      prisma: makePrisma([
-        makeMembership({
-          orgId: "org-1",
-          orgName: "Renamed Organization",
-          orgMetadata: {
-            langfuseOnboarding: {
-              starterOrganization: true,
-            },
-          },
-          projects: [{ id: "project-1", name: "Renamed Project" }],
-        }),
-      ]),
-      userId: "user-1",
-    });
-
-    expect(result).toMatchObject({
-      redirectTo: "/project/project-1/traces",
-      orgId: "org-1",
-    });
-  });
-
-  it("routes existing readable projects through project home", async () => {
-    const result = await resolveOnboardingRedirectTarget({
-      prisma: makePrisma([
-        makeMembership({
-          orgId: "org-1",
-          projects: [{ id: "project-1", name: "Existing Project" }],
-        }),
-      ]),
-      userId: "user-1",
-    });
-
-    expect(result).toMatchObject({
-      redirectTo: "/project/project-1",
-    });
-  });
-});
-
 describe("getCloudSignupOnboardingStatus", () => {
   const getStatus = (prisma: StatusPrisma) =>
     getCloudSignupOnboardingStatus({
       prisma,
       userId: "user-1",
-      canCreateOrganizations: true,
     });
 
   it("uses the onboarding survey as the completion marker", async () => {
@@ -144,49 +86,31 @@ describe("getCloudSignupOnboardingStatus", () => {
 
     const completed = makeCompletionPrisma({
       existingSurvey: { id: "survey-1" },
-      memberships: [
-        makeMembership({
-          orgId: "org-1",
-          projects: [{ id: "project-1" }],
-        }),
-      ],
     });
 
+    // Oxelia51：组织/项目页面已删除，onboarding 完成后恒直跳个人工作台
     await expect(
       getStatus(completed.tx as unknown as StatusPrisma),
     ).resolves.toEqual({
       completed: true,
-      redirectTo: "/project/project-1",
+      redirectTo: "/app",
     });
   });
 });
 
 describe("completeCloudSignupOnboarding", () => {
   it("locks the user row and writes one trimmed onboarding survey once", async () => {
-    const { prisma, tx } = makeCompletionPrisma({
-      memberships: [
-        makeMembership({
-          orgId: "org-1",
-          orgMetadata: {
-            langfuseOnboarding: {
-              starterOrganization: true,
-            },
-          },
-          projects: [{ id: "project-1" }],
-        }),
-      ],
-    });
+    const { prisma, tx } = makeCompletionPrisma();
 
     await expect(
       completeCloudSignupOnboarding({
         prisma,
         userId: "user-1",
         userEmail: "user@example.com",
-        canCreateOrganizations: true,
         referralSource: "  Reddit  ",
       }),
     ).resolves.toEqual({
-      redirectTo: "/project/project-1/traces",
+      redirectTo: "/app",
     });
 
     expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
@@ -210,7 +134,6 @@ describe("completeCloudSignupOnboarding", () => {
         },
         userId: "user-1",
         userEmail: "user@example.com",
-        orgId: "org-1",
       },
     });
 
@@ -220,7 +143,6 @@ describe("completeCloudSignupOnboarding", () => {
       prisma,
       userId: "user-1",
       userEmail: "user@example.com",
-      canCreateOrganizations: true,
       referralSource: "Hacker News",
     });
 

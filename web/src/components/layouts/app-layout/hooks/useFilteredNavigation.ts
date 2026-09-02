@@ -7,7 +7,7 @@ import { useRouter } from "next/router";
 import { useMemo } from "react";
 import type { Session } from "next-auth";
 import { useEntitlements } from "@/src/features/entitlements/hooks";
-import { useLangfuseCloudRegion } from "@/src/features/organizations/hooks";
+import { useLangfuseCloudRegion } from "@/src/hooks/useLangfuseCloudRegion";
 import {
   ROUTES,
   RouteSection,
@@ -18,12 +18,6 @@ import type { NavigationItem } from "@/src/components/layouts/utilities/routes";
 import { applyNavigationFilters } from "../utils/navigationFilters";
 import type { NavigationFilterContext } from "../utils/navigationFilters.types";
 import { isPathActive } from "../utils/pathClassification";
-
-/** Organization type from user session (can be null when not in project/org context) */
-type Organization =
-  | NonNullable<Session["user"]>["organizations"][number]
-  | null
-  | undefined;
 
 /** Grouped navigation structure */
 type GroupedNavigation = {
@@ -60,7 +54,7 @@ function groupNavigationItems(items: NavigationItem[]): GroupedNavigation {
 
 /**
  * Filters and processes navigation items based on:
- * - Project/organization context
+ * - Project context
  * - User permissions (RBAC)
  * - Plan entitlements
  * - Feature flags
@@ -69,13 +63,9 @@ function groupNavigationItems(items: NavigationItem[]): GroupedNavigation {
  * Returns navigation split into main/secondary sections with active states
  *
  * @param session - Current user session
- * @param organization - Current organization object
  * @returns Processed navigation with main, secondary, and flattened arrays
  */
-export function useFilteredNavigation(
-  session: Session | null,
-  organization: Organization,
-) {
+export function useFilteredNavigation(session: Session | null) {
   const router = useRouter();
   const entitlements = useEntitlements();
   const { isLangfuseCloud } = useLangfuseCloudRegion();
@@ -110,8 +100,8 @@ export function useFilteredNavigation(
 
   // Memoize filtered routes
   const filteredRoutes = useMemo(() => {
-    return applyNavigationFilters(ROUTES, filterContext, organization);
-  }, [filterContext, organization]);
+    return applyNavigationFilters(ROUTES, filterContext);
+  }, [filterContext]);
 
   // Map filtered routes to NavigationItems with url and isActive
   // This is O(n) - we map directly over filteredRoutes instead of re-iterating ROUTES

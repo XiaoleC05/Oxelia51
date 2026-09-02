@@ -17,7 +17,6 @@ import {
 } from "@/src/features/oxelia51/server/adminAuth";
 
 import { adminUserProcedures } from "@/src/features/oxelia51/server/adminUserRouter";
-import { adminOrgProcedures } from "@/src/features/oxelia51/server/adminOrgRouter";
 import { adminStatsProcedures } from "@/src/features/oxelia51/server/adminStatsRouter";
 import { adminFeedbackProcedures } from "@/src/features/oxelia51/server/adminFeedbackRouter";
 
@@ -31,7 +30,7 @@ import { adminFeedbackProcedures } from "@/src/features/oxelia51/server/adminFee
  * - 超级管理员（superAdminProcedure）：仅 OXELIA_SUPER_ADMIN_EMAIL，
  *   所有写操作（白名单增删、电费抓取、反馈流转）仅其可执行。
  *
- * 按域拆分子模块：adminUserRouter / adminOrgRouter / adminStatsRouter / adminFeedbackRouter。
+ * 按域拆分子模块：adminUserRouter / adminStatsRouter / adminFeedbackRouter。
  */
 
 const whitelistIdSchema = z.object({
@@ -93,7 +92,6 @@ export const oxelia51AdminRouter = createTRPCRouter({
 
   // ---- 域子模块 ----
   ...adminUserProcedures,
-  ...adminOrgProcedures,
   ...adminStatsProcedures,
   ...adminFeedbackProcedures,
 });

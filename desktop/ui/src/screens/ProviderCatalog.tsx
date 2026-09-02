@@ -20,9 +20,9 @@ function customToDef(p: CustomProvider): ProviderDef {
 }
 
 /**
- * CC Switch 风格预设供应商面板：按 国外主流 / 国内主流 / 第三方平台 分组平铺，
+ * CC Switch 风格预设供应商面板：按 国外主流 / 国内主流 分组平铺，
  * 支持搜索过滤；点击卡片打开官网，悬停出现「复制地址」按钮。
- * 置于首页「快速接入」，便于随手复制与直达官网。
+ * 内置目录只收 11 家，其余平台走「自定义」供应商（分组追加在最后）。
  *
  * 交叉核验：routeSlugs 为后端 /api/providers 返回的真实路由集合；
  * 查无路由的预设项置灰 + 「未接入」标，复制按钮禁用，杜绝静默 404。
@@ -73,7 +73,7 @@ export function ProviderCatalog({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="搜索供应商（如 deepseek、kimi、zai）…"
+          placeholder="搜索供应商（如 deepseek、kimi、qwen）…"
           aria-label="搜索供应商"
         />
       </div>

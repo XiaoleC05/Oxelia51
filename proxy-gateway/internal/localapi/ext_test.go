@@ -108,10 +108,10 @@ func TestProvidersUnionUsageAndCustom(t *testing.T) {
 	if stats[0].Name != "deepseek" {
 		t.Fatalf("usage entry should rank first, got %q", stats[0].Name)
 	}
-	// 新增的内置第三方路由也在列
-	for _, slug := range []string{"packyapi", "apito", "claudecn", "therouter"} {
+	// 其余内置路由（零用量）也在列
+	for _, slug := range []string{"zhipu", "moonshot", "minimax", "gemini"} {
 		if _, ok := byName[slug]; !ok {
-			t.Fatalf("new third-party route %q missing", slug)
+			t.Fatalf("builtin route %q missing", slug)
 		}
 	}
 }

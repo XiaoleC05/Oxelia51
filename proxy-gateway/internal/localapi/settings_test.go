@@ -14,13 +14,16 @@ import (
 )
 
 // TestDefaultPricingMatchesSeed 防漂移（#25）：桌面「一键填入」参考价（defaultPricing）
-// 与云端成本基准（003_model_pricing_seed.sql）的共有模型价格必须一致，
-// 否则用户换设备/对比云端成本时口径不同。
+// 与云端成本基准迁移（最新为 009_pricing_refactor_202609.sql，全量 reconcile 口径）
+// 的共有模型价格必须一致，否则用户换设备/对比云端成本时口径不同。
 //
-// 注意：seed 含而 defaultPricing 缺的模型（如 qwen-plus、kimi-k2）不在此校验——
-// 桌面端参考价是「常见模型子集」，seed 是云端完整表。此测试只校验二者交集。
+// 009 为「先删后全量 upsert」的幂等迁移，其 INSERT 清单即云端最终口径，
+// 故直接以它为基准文件（不再读历史 003 seed）。
+//
+// 注意：基准含而 defaultPricing 缺的模型不在此校验——
+// 桌面端参考价可以是云端完整表的子集。此测试只校验二者交集。
 func TestDefaultPricingMatchesSeed(t *testing.T) {
-	seedPath := filepath.Join("..", "..", "..", "analytics", "deploy", "migrations", "003_model_pricing_seed.sql")
+	seedPath := filepath.Join("..", "..", "..", "analytics", "deploy", "migrations", "009_pricing_refactor_202609.sql")
 	seedAbs, err := filepath.Abs(seedPath)
 	if err != nil {
 		t.Fatalf("resolve seed path: %v", err)
@@ -58,7 +61,7 @@ func TestDefaultPricingMatchesSeed(t *testing.T) {
 		}
 	}
 	if len(mismatches) > 0 {
-		t.Fatalf("defaultPricing 与 seed 共有模型价格不一致（%d 处）：\n%s\n修复：\n  - 若官方价变，先改 seed（003+004 migration），再同步 defaultPricing\n  - 或反之（以云端 seed 为基准）",
+		t.Fatalf("defaultPricing 与 seed 共有模型价格不一致（%d 处）：\n%s\n修复：\n  - 若官方价变，先改云端迁移（analytics/deploy/migrations/ 最新定价迁移），再同步 defaultPricing\n  - 或反之（以云端迁移为基准）",
 			len(mismatches), strings.Join(mismatches, "\n"))
 	}
 }
@@ -154,9 +157,9 @@ func TestPricingMapCacheTTL(t *testing.T) {
 // TestCostOfFallsBackToDefaultPricing 锁住 #问题 3：用户未配置定价时，成本计算
 // 回退到内置参考价 defaultPricing，总览不再显示「未配置定价」。
 func TestCostOfFallsBackToDefaultPricing(t *testing.T) {
-	// 用户定价为空 → 参考价收录的模型按参考价计
-	if c := costOf(map[string]ModelPrice{}, "deepseek-v4-flash", 1_000_000, 500_000); c != 0.28 {
-		t.Fatalf("costOf(flash) = %v, want 0.28", c)
+	// 用户定价为空 → 参考价收录的模型按参考价计（deepseek-v4-flash 官方高峰价 0.44/1.32）
+	if c := costOf(map[string]ModelPrice{}, "deepseek-v4-flash", 1_000_000, 500_000); c != 1.10 {
+		t.Fatalf("costOf(flash) = %v, want 1.10", c)
 	}
 	// 用户已保存定价 → 优先用户值
 	user := map[string]ModelPrice{"deepseek-v4-flash": {Prompt: 0.07, Completion: 0.14}}
@@ -172,10 +175,10 @@ func TestCostOfFallsBackToDefaultPricing(t *testing.T) {
 // TestCostOfStripsContextSuffix 锁住：Claude Code 等客户端发的模型名带上下文后缀
 // （如 deepseek-v4-pro[1M]），成本计算剥离 [..] 后缀命中参考价。
 func TestCostOfStripsContextSuffix(t *testing.T) {
-	if c := costOf(map[string]ModelPrice{}, "deepseek-v4-pro[1M]", 1_000_000, 1_000_000); c != 1.25 {
-		t.Fatalf("costOf(v4-pro[1M]) = %v, want 1.25", c)
+	if c := costOf(map[string]ModelPrice{}, "deepseek-v4-pro[1M]", 1_000_000, 1_000_000); c != 5.28 {
+		t.Fatalf("costOf(v4-pro[1M]) = %v, want 5.28", c)
 	}
-	if c := costOf(map[string]ModelPrice{}, "deepseek-v4-flash[2M]", 1_000_000, 500_000); c != 0.28 {
-		t.Fatalf("costOf(v4-flash[2M]) = %v, want 0.28", c)
+	if c := costOf(map[string]ModelPrice{}, "deepseek-v4-flash[2M]", 1_000_000, 500_000); c != 1.10 {
+		t.Fatalf("costOf(v4-flash[2M]) = %v, want 1.10", c)
 	}
 }

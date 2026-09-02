@@ -34,7 +34,7 @@ import {
   type PageProps,
 } from "@/src/pages/auth/sign-in";
 import { PasswordInput } from "@/src/components/ui/password-input";
-import { useLangfuseCloudRegion } from "@/src/features/organizations/hooks";
+import { useLangfuseCloudRegion } from "@/src/hooks/useLangfuseCloudRegion";
 import { useRouter } from "next/router";
 import { getSafeRedirectPath } from "@/src/utils/redirect";
 import { captureUnknownError } from "@/src/utils/captureUnknownError";
@@ -222,11 +222,8 @@ function StandardSignupFlow({
       await signIn<"credentials">("credentials", {
         email: values.email,
         password: values.password,
-        callbackUrl:
-          targetPath ??
-          (isLangfuseCloud
-            ? `${env.NEXT_PUBLIC_BASE_PATH ?? ""}/onboarding`
-            : `${env.NEXT_PUBLIC_BASE_PATH ?? ""}/`),
+        // Oxelia51：onboarding 页已删除，注册后直跳个人工作台
+        callbackUrl: targetPath ?? `${env.NEXT_PUBLIC_BASE_PATH ?? ""}/app`,
       });
     } catch {
       setFormError("发生错误，请重试。");

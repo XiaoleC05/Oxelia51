@@ -301,7 +301,7 @@
 
 **结构规则**
 
-- 网格 `auto-fill minmax(150px,1fr)`，gap 8px。
+- 网格 `auto-fill minmax(200px,1fr)`，gap 8px；动作区 `flex-wrap` 允许窄卡换行，防「官网」次钮溢出。
 - 卡片 12px 圆角，hover 浮起（`-2px` + 微阴影 + accent 描边）。
 - 动作优先级：**复制地址（红 pill）> 官网（细边次钮）**，必须明显。
 - slug 用等宽字体 12px muted。

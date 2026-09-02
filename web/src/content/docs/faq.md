@@ -27,7 +27,7 @@ A：在模型工具的配置文件里设置 `ANTHROPIC_BASE_URL` 或 `OPENAI_BAS
 A：代理只做转发与落账，不改写请求内容，正常调用不受影响。
 
 **Q：支持哪些模型？**
-A：内置 79 条供应商路由，覆盖国内（DeepSeek、智谱、通义、Kimi、豆包、混元、星火、MiniMax、硅基流动…）、国际（Anthropic、OpenAI、Gemini、Mistral、Grok、Groq…）与聚合平台（OpenRouter、Together…），另有 33 家第三方平台（API 中转站）已接入；内置 77 个模型参考价，支持美元/人民币切换。
+A：内置 13 条供应商路由，覆盖 11 家主流厂商——国内（DeepSeek、智谱、通义、Kimi、Kimi For Coding、豆包、混元、MiniMax）与国外（Anthropic、OpenAI、Gemini、xAI）；预设之外的平台（中转站、自建网关等）可在接入页添加[自定义供应商](/docs/custom-provider)接入。内置 71 个模型参考价（仅收录 11 家厂商官方在售模型，2026-09-02 按官方价核实），支持美元/人民币切换。
 
 **Q：用 Codex 接第三方中转站，报 404「模型名称不存在，或您所在分组下暂无可用渠道」，是代理的问题吗？**
 A：不是，是上游供应商自己返回的——常见原因是客户端用了 OpenAI 较新的 Responses API，但上游只支持 Chat Completions。把客户端的协议格式切换成 Chat Completions 即可解决。完整排查过程见[常见错误排查](/docs/troubleshooting)。

@@ -60,7 +60,7 @@ type Route struct {
 	Custom bool
 	// XAPIKeyAuth 为 true 时上游鉴权头用 x-api-key（Anthropic 协议），
 	// 否则用 Authorization: Bearer（OpenAI 兼容协议）。
-	// 内置表：anthropic 协议行（含第三方平台新行）走 x-api-key，唯一例外是
+	// 内置表：anthropic 协议行走 x-api-key，唯一例外是
 	// kimi-for-coding（上游文档要求 Bearer，保持历史行为）；自定义供应商按 protocol 设置。
 	XAPIKeyAuth bool
 }

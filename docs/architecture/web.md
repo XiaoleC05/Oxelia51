@@ -42,9 +42,10 @@ web/
     │   └── observability/、utils/
     ├── features/
     │   ├── oxelia51/           # Oxelia51 自有功能（本站核心，§2.1）
-    │   ├── auth/、auth-credentials/、rbac/、organizations/、projects/、
-    │   │   entitlements/、onboarding/、public-api/、dashboard/、filters/ …
-    │   │   # 上述为 langfuse 收敛后保留的基础能力
+    │   ├── auth/、auth-credentials/、rbac/、entitlements/、onboarding/、
+    │   │   public-api/、dashboard/、filters/ …
+    │   │   # 上述为 langfuse 收敛后保留的基础能力；组织/项目模块
+    │   │   #（organizations/、projects/、setup/）已整体删除，见 §3
     ├── components/、hooks/、styles/、utils/、constants/、content/
     └── __tests__/
 ```
@@ -66,8 +67,8 @@ features/oxelia51/
 └── server/           # 全部服务端逻辑（tRPC router + 存储 + 外部客户端）
     ├── oxelia51Router.ts     # 主功能 router（项目作用域统计，654 行）
     ├── workspaceRouter.ts    # 个人工作台（跨项目聚合）
-    ├── adminRouter.ts        # 管理台总入口，组合 4 个域子模块
-    ├── adminUserRouter.ts / adminOrgRouter.ts / adminStatsRouter.ts / adminFeedbackRouter.ts
+    ├── adminRouter.ts        # 管理台总入口，组合 3 个域子模块
+    ├── adminUserRouter.ts / adminStatsRouter.ts / adminFeedbackRouter.ts
     ├── proxyKeyRouter.ts     # 代理网关项目密钥管理
     ├── siteContentRouter.ts  # 站点内容编辑（oxelia51.site_content）
     ├── siteStatsRouter.ts    # 公开统计（GitHub 下载量服务端代理 + 1h 缓存）
@@ -77,40 +78,44 @@ features/oxelia51/
     ├── adminAuth.ts          # 邮箱制管理员判定（§5.2）
     ├── goClient.ts           # 调 Go 后台的服务端代理（§5.3）
     ├── feedbackRateLimit.ts  # 反馈提交限流
-    ├── userDeletion.ts       # 用户删除
     └── common.ts             # toNumber 等小工具
 ```
 
-## 3. 页面路由清单（47 条，`src/pages/`，不含 `_app/_document/_error`）
+## 3. 页面路由清单（23 条，`src/pages/`，不含 `_app/_document/_error`）
 
-- **站点公开页**（8）：`index`（landing）、`docs/index`、`docs/[...slug]`、
-  `download`、`changelog`、`community`、`setup`、`onboarding`
+- **站点公开页**（6）：`index`（landing）、`docs/index`、`docs/[...slug]`、
+  `download`、`changelog`、`community`
 - **认证页 `/auth/*`**（8）：sign-in、sign-up、reset-password、setup-password、
   sso-initiate、error、admin、enterprise-sso-required
 - **应用主界面 `/app/*`**（6）：`index`、`overview`、`analytics`、`agents`、
   `providers`、`settings`——个人工作台，数据走 `workspaceRouter`/`oxelia51Router`
 - **管理台 `/admin/*`**（2）：`index`、`settings`
-- **账户/组织/项目**（langfuse 基础面，12）：`account/settings`、
-  `organization/[organizationId]/{index,setup,settings/index,settings/[page]}`、
-  `project/[projectId]/{index,setup,settings/index,settings/[page],dashboard/cost,dashboard/tokens}`、
-  `project/~/[[...path]]`（demo 项目哨兵路由）
-- **API 端点**（11，见 §4.2）
+- **账户**（1）：`account/settings`
+- **API 端点**（10，见 §4.2）
+
+组织/项目 UI 模块已整体删除：`/organization/**`、`/project/**`（含
+dashboard/tokens、dashboard/cost、settings、`~/[[...path]]` 哨兵）、`/setup`、
+`/onboarding` 页面，以及侧边栏/⌘K 的组织与项目入口、组织/项目切换组件、
+organizations/projects 两个 tRPC router 均不复存在。保留的是**底层单默认
+组织/项目机制**：注册时自动加入默认组织/项目并直跳 `/app`，session 仍组装
+组织/项目/RBAC 视图（§5.1），prisma schema 的 Organization/Project 模型与
+entitlements 不动（§6.1）。
 
 ## 4. API 面
 
-### 4.1 tRPC router（15 个，`src/server/api/root.ts`）
+### 4.1 tRPC router（13 个，`src/server/api/root.ts`）
 
 基础能力（langfuse 收敛保留）：
 
 | Router | 职责 |
 |--------|------|
-| `organizations` | 组织 CRUD 与成员资格 |
 | `organizationApiKeys` / `projectApiKeys` | 组织/项目级 API key（`features/public-api/`） |
-| `projects` | 项目 CRUD |
 | `members` | 成员管理（`features/rbac/`） |
 | `userAccount` | 当前用户账户 |
 | `credentials` | 密码凭证（`features/auth-credentials/`） |
 | `onboarding` | 新用户引导 |
+
+（`organizations`/`projects` 两个 CRUD router 已随组织/项目模块删除。）
 
 Oxelia51 定制（均在 `features/oxelia51/server/`）：
 
@@ -119,7 +124,7 @@ Oxelia51 定制（均在 `features/oxelia51/server/`）：
 | `oxelia51` | 项目作用域统计：用量趋势、模型分布、预算、告警（读 PG `oxelia51.*` + ClickHouse `token_events`） |
 | `workspace` | 个人工作台：跨全部组织/项目聚合 token_events/daily_stats；明细成本按 model_pricing 现算 |
 | `sync` | 云同步状态查询、设备列表、同步密钥吊销（只读 + 吊销，写入走 `/api/sync/*`） |
-| `oxelia51Admin` | 管理台总入口：`whoami` + IP 白名单 CRUD + 组合 adminUser/adminOrg/adminStats/adminFeedback 四个子模块，均经 `goClient` 转发 Go 后台 |
+| `oxelia51Admin` | 管理台总入口：`whoami` + IP 白名单 CRUD + 组合 adminUser/adminStats/adminFeedback 三个子模块（adminOrg 的废弃组织/空项目清理已随组织/项目模块删除），均经 `goClient` 转发 Go 后台 |
 | `proxyKey` | 代理网关项目密钥的生成/列表/删除（明文仅创建时返回一次） |
 | `siteContent` | 站点内容读写：`oxelia51.site_content`（key→JSONB）；读公开、写仅超级管理员 |
 | `siteStats` | 公开站点统计：服务端拉 GitHub Releases 下载量，模块级内存缓存 1 小时 |
@@ -128,7 +133,7 @@ procedure 分层（`src/server/api/trpc.ts`）：`publicProcedure` →
 `authenticatedProcedure`（登录）→ `protectedProjectProcedure`（项目成员），
 Oxelia51 管理另有 `adminProcedure`/`superAdminProcedure`（§5.2）。
 
-### 4.2 REST 端点（11 条，`src/pages/api/`）
+### 4.2 REST 端点（10 条，`src/pages/api/`）
 
 | 端点 | 用途 |
 |------|------|
@@ -136,7 +141,6 @@ Oxelia51 管理另有 `adminProcedure`/`superAdminProcedure`（§5.2）。
 | `auth/signup.ts` / `signup-verify.ts` | 邮箱注册 + OTP 验证 |
 | `auth/check-sso.ts` / `add-sso-config.ts` | SSO 域名检查 / 配置 |
 | `sync/login.ts` / `sync/upload.ts` / `sync/download.ts` | 桌面端云同步（§6） |
-| `project/[projectId]/visit.ts` | 项目访问记录 |
 | `public/health.ts` | 生产健康检查（唯一保留的 public REST） |
 | `trpc/[trpc].ts` | tRPC 入口 |
 

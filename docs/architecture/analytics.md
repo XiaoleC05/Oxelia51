@@ -43,7 +43,7 @@ analytics/
 └── deploy/
     ├── token-analytics.service ← systemd oneshot 单元（--interval 5）
     ├── token-analytics.timer   ← 每 5 分钟触发（OnUnitActiveSec=5min）
-    └── migrations/             ← oxelia51 schema 迁移（002-008，见 §7）
+    └── migrations/             ← oxelia51 schema 迁移（002-009，见 §7）
 ```
 
 ## 3. 流水线（main.cpp，Step 1-8）
@@ -136,6 +136,7 @@ ON CONFLICT (project_id, model, date) DO UPDATE SET
 | `006_pricing_sync_202608.sql` | 定价全量 reconcile（收敛新旧库分叉，ON CONFLICT DO UPDATE） |
 | `007_site_content.sql` | 站点内容（web 管理台「内容编辑」） |
 | `008_cache_tokens.sql` | synced_events 补缓存细分列 |
+| `009_pricing_refactor_202609.sql` | 定价重构：收敛至 11 家内置供应商、删除退役/无官方价模型、2026-09-02 官方价全量 upsert |
 
 历史教训：`oxelia51` schema 的表由 C++ 引擎/本目录迁移建管，但 `packages/shared/prisma/migrations` 里存在一条 `20260806070003_add_oxelia51_alert_channel_verification` 直接 `ALTER TABLE oxelia51.alert_channels`——在全新数据库上 `prisma migrate deploy` 会因表不存在而失败，且该文件已被生产应用不能修改（checksum）。全新部署需先手工建空表再跑 migrate deploy（详见 `packages/shared/AGENTS.md`）。结论：**oxelia51 schema 的迁移纪律是本目录为准**，跨工具触碰同一 schema 是已踩过的坑。
 
@@ -144,7 +145,7 @@ ON CONFLICT (project_id, model, date) DO UPDATE SET
 1. **oneshot 批处理而非流式**：token 统计允许 5 分钟级延迟，换来实现与运维的极简（无消费组、无 checkpoint 服务）。
 2. **游标存 PG 而非本地文件**：`engine_state` 与业务表同库同事务语义，重装/迁移不丢进度。
 3. **分块追平 + 逐块推进**：把「长积压」从内存与失败半径两个维度切片，每块都是独立的幂等单位。
-4. **定价双源**：DB 优先、内置兜底（`pricing.cpp loadBuiltinFallback` 仅 4 个模型，与 003 seed 对齐）——DB 挂掉时流水线仍可跑，成本口径降级但不中断。
+4. **定价双源**：DB 优先、内置兜底（`pricing.cpp loadBuiltinFallback` 仅 4 个模型，与最新定价迁移对齐）——DB 挂掉时流水线仍可跑，成本口径降级但不中断。
 5. **告警「宁标 sent 不重发」**：外发失败只记日志，用可能的丢失换绝对不轰炸。
 
 ## 9. 已知限制

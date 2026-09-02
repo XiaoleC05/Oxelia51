@@ -62,7 +62,7 @@ import {
 } from "@/src/features/entitlements/server/getPlan";
 import { projectRoleAccessRights } from "@/src/features/rbac/constants/projectAccessRights";
 import { getSSOBlockedDomains } from "@/src/features/auth-credentials/server/signupApiHandler";
-import { canCreateOrganizations } from "@/src/features/organizations/server/canCreateOrganizations";
+import { canCreateOrganizations } from "@/src/features/auth/lib/canCreateOrganizations";
 
 const staticProviders: Provider[] = [
   CredentialsProvider({
@@ -1019,7 +1019,8 @@ export async function getAuthOptions(): Promise<NextAuthOptions> {
       error: `${env.NEXT_PUBLIC_BASE_PATH ?? ""}/auth/error`,
       ...(env.NEXT_PUBLIC_LANGFUSE_CLOUD_REGION
         ? {
-            newUser: `${env.NEXT_PUBLIC_BASE_PATH ?? ""}/onboarding`,
+            // Oxelia51：onboarding 页已删除，新用户首登直跳个人工作台
+            newUser: `${env.NEXT_PUBLIC_BASE_PATH ?? ""}/app`,
           }
         : {}),
     },

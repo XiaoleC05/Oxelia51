@@ -13,8 +13,6 @@ import { type PropsWithChildren, useEffect } from "react";
 import { useRouter } from "next/router";
 import { signOut } from "next-auth/react";
 import { signOutCleanly } from "@/src/features/auth/lib/signOut";
-import { useQueryProjectOrOrganization } from "@/src/features/projects/hooks";
-import { ErrorPage } from "@/src/components/error-page";
 
 // Layout variants
 import { LoadingLayout } from "./variants/LoadingLayout";
@@ -26,7 +24,6 @@ import { AuthenticatedLayout } from "./variants/AuthenticatedLayout";
 import { useAuthSession } from "./hooks/useAuthSession";
 import { useLayoutConfiguration } from "./hooks/useLayoutConfiguration";
 import { useAuthGuard } from "./hooks/useAuthGuard";
-import { useProjectAccess } from "./hooks/useProjectAccess";
 import { useFilteredNavigation } from "./hooks/useFilteredNavigation";
 import { useLayoutMetadata } from "./hooks/useLayoutMetadata";
 
@@ -35,13 +32,11 @@ import { useLayoutMetadata } from "./hooks/useLayoutMetadata";
  * Determines which layout variant to render based on:
  * - Authentication state
  * - Current route
- * - Project access
  * - User permissions
  */
 export function AppLayout(props: PropsWithChildren) {
   const router = useRouter();
   const session = useAuthSession();
-  const { organization } = useQueryProjectOrOrganization();
 
   // Determine layout configuration
   const { variant, hideNavigation, isPublishable } = useLayoutConfiguration(
@@ -51,12 +46,9 @@ export function AppLayout(props: PropsWithChildren) {
   // Check authentication and redirects
   const authGuard = useAuthGuard(session, hideNavigation);
 
-  // Check project access
-  const projectAccess = useProjectAccess(session.data ?? null);
-
   // IMPORTANT: Call all hooks before any conditional returns
   // Load navigation and metadata (even if not used in all render paths)
-  const navigation = useFilteredNavigation(session.data ?? null, organization);
+  const navigation = useFilteredNavigation(session.data ?? null);
   const activePathName = navigation.navigation.find(
     (item) => item.isActive,
   )?.title;
@@ -78,31 +70,6 @@ export function AppLayout(props: PropsWithChildren) {
     authGuard.action === "sign-out"
   ) {
     return <LoadingLayout message={authGuard.message} />;
-  }
-
-  // Project access denied - handle based on path type
-  if (session.status === "authenticated" && !projectAccess.hasAccess) {
-    // For publishable paths (shared traces/sessions), render minimal layout without sidebar
-    // This allows authenticated users to view shared content without seeing project navigation
-    if (isPublishable) {
-      return <MinimalLayout>{props.children}</MinimalLayout>;
-    }
-
-    // For non-publishable paths, show error page. This is an EXPECTED state (an
-    // authenticated user opened a project they can't access or that no longer
-    // exists) that the UI already renders — so use the non-capturing ErrorPage
-    // rather than ErrorPageWithSentry, which otherwise mints a Sentry issue on
-    // every mount (thousands of events / hundreds of users of pure noise).
-    return (
-      <ErrorPage
-        title="未找到项目"
-        message="你尝试访问的项目不存在,或者你没有访问该项目的权限。"
-        additionalButton={{
-          label: "返回首页",
-          href: "/",
-        }}
-      />
-    );
   }
 
   // Unauthenticated layout (sign-in, sign-up)

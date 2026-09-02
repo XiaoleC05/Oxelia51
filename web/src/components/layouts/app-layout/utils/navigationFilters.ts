@@ -7,13 +7,6 @@ import type { Route } from "@/src/components/layouts/routes";
 import type { NavigationFilterContext } from "./navigationFilters.types";
 import { hasProjectAccess } from "@/src/features/rbac/utils/checkProjectAccess";
 import { hasOrganizationAccess } from "@/src/features/rbac/utils/checkOrganizationAccess";
-import type { Session } from "next-auth";
-
-/** Organization type from user session (can be null when not in project/org context) */
-type Organization =
-  | NonNullable<Session["user"]>["organizations"][number]
-  | null
-  | undefined;
 
 /**
  * Individual filter functions - each handles one concern
@@ -139,15 +132,9 @@ export const filters = {
    * Filter routes based on custom show function
    * Allows routes to implement custom visibility logic
    */
-  customShow: (
-    route: Route,
-    ctx: NavigationFilterContext,
-    organization: Organization,
-  ): Route | null => {
+  customShow: (route: Route, ctx: NavigationFilterContext): Route | null => {
     if (!route.show) return route;
-    // Convert null to undefined for route.show compatibility
     return route.show({
-      organization: organization ?? undefined,
       projectId: ctx.routerProjectId,
       isLangfuseCloud: ctx.isLangfuseCloud,
     })
@@ -164,7 +151,6 @@ export const filters = {
 function applyFiltersToRoute(
   route: Route,
   ctx: NavigationFilterContext,
-  organization: Organization | undefined,
 ): Route | null {
   // Apply filters in sequence - chain short-circuits on first null
   const filterChain = [
@@ -174,7 +160,7 @@ function applyFiltersToRoute(
     filters.entitlements,
     filters.projectRbac,
     filters.organizationRbac,
-    (r: Route) => filters.customShow(r, ctx, organization),
+    filters.customShow,
   ];
 
   let filtered: Route | null = route;
@@ -186,7 +172,7 @@ function applyFiltersToRoute(
   // Process nested items recursively
   if (filtered.items && filtered.items.length > 0) {
     const filteredItems = filtered.items
-      .map((item) => applyFiltersToRoute(item, ctx, organization))
+      .map((item) => applyFiltersToRoute(item, ctx))
       .filter((item): item is Route => item !== null);
 
     // If all children were filtered out, hide parent too
@@ -206,15 +192,13 @@ function applyFiltersToRoute(
  *
  * @param routes - Array of route definitions to filter
  * @param ctx - Filter context with all necessary data
- * @param organization - Current organization object
  * @returns Filtered array of routes visible to current user
  */
 export function applyNavigationFilters(
   routes: Route[],
   ctx: NavigationFilterContext,
-  organization: Organization,
 ): Route[] {
   return routes
-    .map((route) => applyFiltersToRoute(route, ctx, organization))
+    .map((route) => applyFiltersToRoute(route, ctx))
     .filter((route): route is Route => route !== null);
 }

@@ -72,7 +72,7 @@
 /* CC Switch 风格预设供应商网格 */
 .provider-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 8px;
 }
 
@@ -115,10 +115,11 @@
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
 }
 
-/* 卡片底部操作：复制地址（主操作，明显优先）+ 官网（次操作） */
+/* 卡片底部操作：复制地址（主操作，明显优先）+ 官网（次操作），窄卡可换行 */
 .provider-cell-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
   margin-top: 5px;
 }

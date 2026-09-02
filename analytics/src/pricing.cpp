@@ -17,12 +17,12 @@ Pricing::Pricing(PostgresClient& pg) {
 }
 
 void Pricing::loadBuiltinFallback() {
-    // #25：与 analytics/deploy/migrations/003_model_pricing_seed.sql 保持一致
+    // #25：与 analytics/deploy/migrations/009_pricing_refactor_202609.sql 保持一致
     // （DB 正常时走 loadFromDB；此兜底仅在 DB 读取失败时生效）。
-    pricing_["claude-opus-5"]   = {"claude-opus-5",   "anthropic", 15.00, 75.00};
-    pricing_["claude-sonnet-5"] = {"claude-sonnet-5", "anthropic",  3.00, 15.00};
-    pricing_["gpt-4o"]          = {"gpt-4o",          "openai",     2.50, 10.00};
-    pricing_["deepseek-chat"]   = {"deepseek-chat",   "deepseek",   0.27,  1.10};
+    pricing_["claude-opus-5"]     = {"claude-opus-5",     "anthropic", 5.00, 25.00};
+    pricing_["claude-sonnet-5"]   = {"claude-sonnet-5",   "anthropic", 2.00, 10.00};
+    pricing_["gpt-4o"]            = {"gpt-4o",            "openai",    2.50, 10.00};
+    pricing_["deepseek-v4-flash"] = {"deepseek-v4-flash", "deepseek",  0.44,  1.32};
 }
 
 void Pricing::loadFromDB(PostgresClient& pg) {

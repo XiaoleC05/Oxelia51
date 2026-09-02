@@ -1,7 +1,7 @@
 import { env } from "@/src/env.mjs";
 import { CloudRegionPicker } from "@/src/features/auth/components/CloudRegionPicker";
-import { getAvailableCloudRegionOptions } from "@/src/features/organizations/cloudRegions";
-import { useLangfuseCloudRegion } from "@/src/features/organizations/hooks";
+import { getAvailableCloudRegionOptions } from "@/src/utils/cloudRegions";
+import { useLangfuseCloudRegion } from "@/src/hooks/useLangfuseCloudRegion";
 import { usePostHogClientCapture } from "@/src/features/posthog-analytics/usePostHogClientCapture";
 
 export function CloudRegionSwitch({

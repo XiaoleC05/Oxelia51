@@ -14,7 +14,8 @@ type providerSpec struct {
 	anthropic  bool   // true 使用 Anthropic 协议适配器，否则 OpenAI 兼容协议
 }
 
-// providerSpecs 主流 LLM 供应商路由表（OpenAI 兼容协议为主）。
+// providerSpecs 内置 LLM 供应商路由表（OpenAI 兼容协议为主，共 11 家 + 1 条兼容行）。
+// 其他平台用「自定义供应商」接入（见 adapter/custom.go），不再内置。
 // 注意：pathPrefix 是上游 API 的路径前缀，不是代理路径的一部分。
 var providerSpecs = []providerSpec{
 	// ---- 国内可直接访问 ----
@@ -27,85 +28,15 @@ var providerSpecs = []providerSpec{
 	{"qwen", "qwen", "dashscope.aliyuncs.com", "/compatible-mode/v1", false},
 	{"doubao", "doubao", "ark.cn-beijing.volces.com", "/api/v3", false},
 	{"hunyuan", "hunyuan", "api.hunyuan.cloud.tencent.com", "/v1", false},
-	{"spark", "spark", "spark-api-open.xf-yun.com", "/v1", false},
 	{"minimax", "minimax", "api.minimax.chat", "/v1", false},
-	{"baichuan", "baichuan", "api.baichuan-ai.com", "/v1", false},
-	{"yi", "yi", "api.lingyiwanwu.com", "/v1", false},
-	{"sensenova", "sensenova", "api.sensenova.cn", "/v1", false},
-	{"stepfun", "stepfun", "api.stepfun.com", "/v1", false},
-	{"siliconflow", "siliconflow", "api.siliconflow.cn", "/v1", false},
-	{"ppio", "ppio", "api.ppinfra.com", "/v3/openai", false},
-	{"gitee", "gitee", "ai.gitee.com", "/v1", false},
-	{"modelscope", "modelscope", "api-inference.modelscope.cn", "/v1", false},
+	// Kimi For Coding：Kimi 的 Claude Code 兼容端点（Anthropic 协议，上游要求 Bearer）。
 	{"kimi-for-coding", "kimi-for-coding", "api.kimi.com", "/coding/v1", true},
-	{"baidu-qianfan", "baidu-qianfan", "qianfan.baidubce.com", "/v2", false},
-
-	// ---- 聚合网关（一个入口覆盖数百模型）----
-	{"openrouter", "openrouter", "openrouter.ai", "/api/v1", false},
-	{"together", "together", "api.together.xyz", "/v1", false},
-	{"fireworks", "fireworks", "api.fireworks.ai", "/inference/v1", false},
-	{"deepinfra", "deepinfra", "api.deepinfra.com", "/v1/openai", false},
-	{"novita", "novita", "api.novita.ai", "/v3/openai", false},
-	{"featherless", "featherless", "featherless.ai", "/v1", false},
 
 	// ---- 国际直连（部分在中国大陆不可达，视网络环境）----
 	{"openai", "openai", "api.openai.com", "/v1", false},
 	{"anthropic", "anthropic", "api.anthropic.com", "", true},
 	{"gemini", "gemini", "generativelanguage.googleapis.com", "/v1beta/openai", false},
-	{"mistral", "mistral", "api.mistral.ai", "/v1", false},
 	{"xai", "xai", "api.x.ai", "/v1", false},
-	{"groq", "groq", "api.groq.com", "/openai/v1", false},
-	{"cerebras", "cerebras", "api.cerebras.ai", "/v1", false},
-	{"cohere", "cohere", "api.cohere.com", "/compatibility/v1", false},
-	{"perplexity", "perplexity", "api.perplexity.ai", "", false},
-	{"sambanova", "sambanova", "api.sambanova.ai", "/v1", false},
-	{"nebius", "nebius", "api.studio.nebius.com", "/v1", false},
-	{"ai21", "ai21", "api.ai21.com", "/v1", false},
-	{"hyperbolic", "hyperbolic", "api.hyperbolic.xyz", "/v1", false},
-	{"friendli", "friendli", "api.friendli.ai", "/serverless/v1", false},
-	{"nvidia", "nvidia", "integrate.api.nvidia.com", "/v1", false},
-	{"github-models", "github-models", "models.inference.ai.azure.com", "/v1", false},
-	{"minimax-io", "minimax-io", "api.minimax.io", "/v1", false},
-	{"zai", "zai", "api.z.ai", "/api/paas/v4", false},
-	{"stepfun-ai", "stepfun-ai", "api.stepfun.ai", "/v1", false},
-
-	// ---- 第三方平台（中转/聚合站，按各官方文档核实接入）----
-	// 注意前缀差异：胜算云 /api/v1、StreamLake /api/gateway/coding/v1、
-	// OpenCode /zen/v1、LongCat /openai；apito/claudecn 走 Anthropic 协议
-	// 根域（SDK 自补 /v1/messages），a6api 官方 base 即根域（/v1 仍兼容）。
-	{"packyapi", "packyapi", "www.packyapi.ai", "/v1", false},
-	{"zetaapi", "zetaapi", "api.zetaapi.ai", "/v1", false},
-	{"apinebula", "apinebula", "api.apinebula.ai", "/v1", false},
-	{"pateway", "pateway", "api.pateway.ai", "/v1", false},
-	{"fenno", "fenno", "api.fenno.ai", "/v1", false},
-	{"runapi", "runapi", "runapi.ai", "/v1", false},
-	{"shengsuanyun", "shengsuanyun", "router.shengsuanyun.com", "/api/v1", false},
-	{"aigocode", "aigocode", "api.aigocode.app", "/v1", false},
-	{"aicoding", "aicoding", "api.aicoding.inc", "/v1", false},
-	{"subrouter", "subrouter", "subrouter.ai", "/v1", false},
-	{"apikeyfun", "apikeyfun", "api.apikey.fun", "/v1", false},
-	{"apito", "apito", "gw.apito.ai", "", true},
-	{"code0", "code0", "code0.ai", "/v1", false},
-	{"teamorouter", "teamorouter", "api.teamorouter.com", "/v1", false},
-	{"claudecn", "claudecn", "claudecn.ai", "", true},
-	{"a6api", "a6api", "a6api.com", "", false},
-	{"atlascloud", "atlascloud", "api.atlascloud.ai", "/v1", false},
-	{"compshare", "compshare", "api.modelverse.cn", "/v1", false},
-	{"ccsub", "ccsub", "www.ccsub.net", "/v1", false},
-	{"micuapi", "micuapi", "www.micuapi.ai", "/v1", false},
-	{"rightapi", "rightapi", "api.rightapi.ai", "/v1", false},
-	{"cubence", "cubence", "api.cubence.com", "/v1", false},
-	{"crazyrouter", "crazyrouter", "crazyrouter.com", "/v1", false},
-	{"dmxapi", "dmxapi", "www.dmxapi.cn", "/v1", false},
-	{"aihubmix", "aihubmix", "aihubmix.com", "/v1", false},
-	{"cherryin", "cherryin", "open.cherryin.ai", "/v1", false},
-	{"eflowcode", "eflowcode", "e-flowcode.cc", "/v1", false},
-	{"streamlake", "streamlake", "wanqing.streamlakeapi.com", "/api/gateway/coding/v1", false},
-	{"longcat", "longcat", "api.longcat.chat", "/openai", false},
-	{"opencode", "opencode", "opencode.ai", "/zen/v1", false},
-	{"pipellm", "pipellm", "api.pipellm.ai", "/v1", false},
-	{"relaxycode", "relaxycode", "api.relaxycode.com", "/v1", false},
-	{"therouter", "therouter", "api.therouter.ai", "/v1", false},
 }
 
 // CustomSource 返回当前生效的自定义供应商列表（由 localapi 实现，带短 TTL 缓存，
@@ -117,7 +48,7 @@ type CustomSource func() []CustomProvider
 // NewRegistry 会为每个条目自动合成一条 "/api/proxy/<slug>/anthropic/" 路由——
 // Claude Code 只需把 base URL 指到该后缀即可，无需另建独立 slug（原 deepseek-anthropic
 // 独立行保留向后兼容，后续可收敛为通用后缀）。
-// 注意：上游为「Anthropic 协议根域」的供应商（anthropic / apito / claudecn 等）
+// 注意：上游为「Anthropic 协议根域」的供应商（如 anthropic）
 // 已按 anthropic=true 注册，直接走基础 slug，无需此处声明。
 var anthropicEndpoints = map[string]struct {
 	host, pathPrefix string

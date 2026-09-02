@@ -4,7 +4,7 @@ import { logger } from "@oxelia51/shared/src/server";
 import { ServerPosthog } from "@/src/features/posthog-analytics/ServerPosthog";
 import { hasEntitlementBasedOnPlan } from "@/src/features/entitlements/server/hasEntitlement";
 import { getOrganizationPlanServerSide } from "@/src/features/entitlements/server/getPlan";
-import { canCreateOrganizations } from "@/src/features/organizations/server/canCreateOrganizations";
+import { canCreateOrganizations } from "@/src/features/auth/lib/canCreateOrganizations";
 import { provisionStarterOrganizationForNewUser } from "@/src/features/onboarding/server/onboardingService";
 import { projectRoleAccessRights } from "@/src/features/rbac/constants/projectAccessRights";
 

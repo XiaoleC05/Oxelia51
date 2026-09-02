@@ -51,7 +51,8 @@
   padding-left: 78px;
 }
 
-/* 标签导航（§1.2：激活态 = accent 文字 + 底部 2px 指示条） */
+/* 标签导航（§1.2：激活态 = accent 文字 + 底部 2px 指示条）。
+   细滚动条：默认贴近透明，hover 显现，保证横向溢出时可用鼠标拖动。 */
 .tabs {
   display: flex;
   align-items: center;
@@ -59,6 +60,36 @@
   flex: 1;
   min-width: 0;
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.tabs:hover {
+  scrollbar-color: var(--ox-border) transparent;
+}
+
+.tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tabs::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+}
+
+.tabs:hover::-webkit-scrollbar-thumb {
+  background: var(--ox-border);
+}
+
+/* 顶栏拖曳占位条：.tabs 有横向滚动条，整栏拖曳会劫持滚动条拖动，
+   故拖曳区收敛为品牌/标签/右侧控件之间的两条占位（双击仍切换最大化）。 */
+.drag-spacer {
+  flex: 0 0 16px;
+  align-self: stretch;
 }
 
 .tab {

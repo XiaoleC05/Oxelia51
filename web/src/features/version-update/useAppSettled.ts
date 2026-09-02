@@ -16,7 +16,7 @@ export const APP_SETTLE_DELAY_MS = 5000;
  *
  * It is module-scoped (a singleton below), NOT component state, so the settled
  * flag survives banner unmount/remount — e.g. when `AppLayout` switches between
- * `AuthenticatedLayout` and `MinimalLayout` (navigating to `/onboarding`,
+ * `AuthenticatedLayout` and `MinimalLayout` (navigating to `/admin`,
  * `/auth/*`, `/public/*` and back). A component-local timer would restart the
  * grace period on every such remount, re-hiding an already-acknowledged banner
  * for another {@link APP_SETTLE_DELAY_MS}. Once settled it stays settled, so

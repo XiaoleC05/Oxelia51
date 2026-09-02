@@ -61,11 +61,12 @@ export OPENAI_BASE_URL="http://localhost:17800/api/proxy/openai"
 export OPENAI_BASE_URL="http://localhost:17800/api/proxy/zhipu"
 ```
 
-> **供应商 = 提供大模型的平台**，路径里的 slug 决定请求转发给谁。内置 **79 条供应商路由**：
+> **供应商 = 提供大模型的平台**，路径里的 slug 决定请求转发给谁。内置 **13 条供应商路由**，覆盖 11 家主流厂商，按两组分类：
 >
-> - **国内**：DeepSeek、智谱 GLM、通义千问、Moonshot (Kimi)、Kimi For Coding、豆包、腾讯混元、讯飞星火、MiniMax、百川、零一万物、商汤日日新、阶跃星辰、硅基流动、码云 AI、魔搭、百度千帆
-> - **国际**：Claude (Anthropic)、OpenAI、Google Gemini、Mistral、xAI (Grok)、Groq、Cerebras、Cohere、Perplexity、SambaNova、Nebius、AI21、Hyperbolic、FriendliAI、NVIDIA、GitHub Models、MiniMax.io、Z.ai、StepFun AI
-> - **第三方 / 聚合**：OpenRouter、Together AI、Fireworks AI、DeepInfra、Novita、Featherless、PPIO；另有第三方平台（API 中转站）33 家已按各官方文档核实接入，目录中标注「未接入」的暂未核实
+> - **国外主流**：Claude (Anthropic)、OpenAI、Google Gemini、xAI (Grok)
+> - **国内主流**：DeepSeek、智谱 GLM、通义千问、Moonshot (Kimi)、Kimi For Coding、豆包、腾讯混元、MiniMax
+>
+> 预设之外的平台（中转站、自建网关等）可在接入页添加[自定义供应商](/docs/custom-provider)接入。
 >
 > **Agent = 你使用的软件**（Claude Code / Cursor / CC Switch / Trae …），记录会自动按工具识别，并在「Agent 消耗」中统计。
 

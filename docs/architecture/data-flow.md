@@ -123,7 +123,7 @@ Oxelia51 的数据分散在**四库三机**，每库有唯一写入权威：
 ## 6. 口径与一致性要点
 
 - **token 双口径**（全链路通用）：`prompt_tokens` = 计价输入（缓存折算后），`total_tokens` = 原始消耗（含缓存）；详见 [proxy-gateway.md](proxy-gateway.md) §4.3。展示用 total、算钱用 prompt。
-- **定价三处同源**：云端 `model_pricing`（迁移 003/006 seed）、桌面内置参考价（`localapi/settings.go defaultPricing`）、引擎兜底（`pricing.cpp`）——共有模型价格有 Go 测试防漂移（`TestDefaultPricingMatchesSeed`）。
+- **定价三处同源**：云端 `model_pricing`（迁移 003/006/009 seed；009 起收敛为 11 家厂商 71 个模型的官方参考价，2026-09-02 核实）、桌面内置参考价（`localapi/settings.go defaultPricing`）、引擎兜底（`pricing.cpp`）——共有模型价格有 Go 测试防漂移（`TestDefaultPricingMatchesSeed`）。
 - **汇率两端同兜底**：桌面 `rate.go` 与云端 `exchange_rates` 的兜底值都是 7.2，都不做伪精确。
 - **时区**：本地 SQLite 时间戳是本地时区字符串；CH `timestamp DateTime64(3)` 与 PG `TIMESTAMPTZ` 是 UTC 口径；同步上传时本地时间转 RFC3339 UTC（`sync.go`），下载转回本地。聚合边界（analytics 游标、localapi 趋势）各自处理毫秒/时区坑，改动这些代码前先读对应文件头注释。
 

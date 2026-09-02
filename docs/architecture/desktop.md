@@ -92,7 +92,7 @@ run()
 | `main` | 1200×800（min 720×480），`decorations: false` | 无边框自绘标题栏（Windows/Linux）；macOS 由 lib.rs 恢复原生装饰 + Overlay 标题栏 |
 | `widget` | 340×300，`transparent + alwaysOnTop + skipTaskbar + shadow:false`，初始 `visible:false` | 悬浮统计玻璃卡片，加载 `widget.html` |
 
-主窗口顶栏（`App.tsx`）：整条为 `data-tauri-drag-region="deep"` 拖曳区，空白双击切最大化；右上自绘最小化/最大化/关闭三键（macOS 保留交通灯不渲染自绘键，浏览器 dev 模式整组隐藏）。「代理离线」状态徽章可点击 → 跳设置页滚动到代理区块。
+主窗口顶栏（`App.tsx`）：拖曳区仅限两段 `.drag-spacer` 占位条（`data-tauri-drag-region`）——`.tabs` 页签栏带横向滚动条，整栏拖曳会劫持滚动条拖动；drag-spacer/顶栏空白双击切最大化，启动 800ms 内忽略双击（双击图标启动时第二击可能落在顶栏的保护）；右上自绘最小化/最大化/关闭三键（macOS 保留交通灯不渲染自绘键，浏览器 dev 模式整组隐藏）。「代理离线」状态徽章可点击 → 跳设置页滚动到代理区块。
 
 悬浮卡片（`widget/WidgetApp.tsx`）：轮询 `/api/overview`（2.5s，比主界面 5s 更密），显示今日 Token/成本/请求数/模型 Top5，显示字段由设置页 `widgetFields` 控制；窗口位置拖拽后持久化到 sidecar settings（`widget_pos`）重启恢复。浏览器 dev 模式下「悬浮统计」按钮退化为 `window.open` 小窗预览。
 

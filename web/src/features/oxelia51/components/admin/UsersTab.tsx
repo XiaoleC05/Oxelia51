@@ -46,7 +46,6 @@ import {
   useIsSuperAdmin,
   type UserItem,
 } from "@/src/features/oxelia51/components/admin/shared";
-import { OrphanedDataSection } from "@/src/features/oxelia51/components/admin/OrphanedDataSection";
 import { showSuccessToast } from "@/src/features/notifications/showSuccessToast";
 
 const PAGE_SIZE = 20;
@@ -121,15 +120,9 @@ export function UsersTab() {
       setDeleteConfirmEmail("");
       setDeleteError("");
       void utils.oxelia51Admin.usersList.invalidate();
-      void utils.oxelia51Admin.listOrphanedOrgs.invalidate();
-      void utils.oxelia51Admin.listEmptyProjects.invalidate();
-      const cascaded = data.deletedOrganizations ?? [];
       showSuccessToast({
         title: "用户已删除",
-        description:
-          cascaded.length > 0
-            ? `${data.email ?? "该用户"} 已删除，并级联删除 ${cascaded.length} 个空组织：${cascaded.join("、")}。`
-            : `${data.email ?? "该用户"} 及其关联数据已删除。`,
+        description: `${data.email ?? "该用户"} 及其关联数据已删除。`,
       });
     },
     onError: (e) => setDeleteError(e.message),
@@ -374,9 +367,6 @@ export function UsersTab() {
           </>
         )}
       </AdminCard>
-
-      {/* 废弃数据清理：废弃组织 + 空项目（清单确认后逐项删除） */}
-      <OrphanedDataSection />
 
       {/* 重置密码：二次确认 */}
       <AlertDialog

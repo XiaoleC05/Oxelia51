@@ -12,7 +12,9 @@ import {
   type OrganizationScope,
 } from "@/src/features/rbac/constants/organizationAccessRights";
 import { projectRoleAccessRights } from "@/src/features/rbac/constants/projectAccessRights";
-import { createProjectRoute } from "@/src/features/setup/setupRoutes";
+
+/** Oxelia51：组织/项目模块已删除，onboarding 完成后静默直跳个人工作台。 */
+const WORKSPACE_HOME = "/app";
 
 const DEFAULT_STARTER_PROJECT_NAME = "My Project";
 const STARTER_ORGANIZATION_METADATA = {
@@ -20,24 +22,6 @@ const STARTER_ORGANIZATION_METADATA = {
     starterOrganization: true,
   },
 } as const;
-
-const isStarterOrganizationMetadata = (metadata: Prisma.JsonValue) => {
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-    return false;
-  }
-
-  const onboardingMetadata = (metadata as Record<string, unknown>)[
-    "langfuseOnboarding"
-  ];
-
-  return (
-    typeof onboardingMetadata === "object" &&
-    onboardingMetadata !== null &&
-    !Array.isArray(onboardingMetadata) &&
-    (onboardingMetadata as Record<string, unknown>)["starterOrganization"] ===
-      true
-  );
-};
 
 const getStarterOrganizationName = (userName?: string | null) => {
   const firstName = userName?.trim().split(/\s+/)[0];
@@ -138,97 +122,20 @@ const getFirstOrganizationWithProjectCreationAccess = (
     ),
   );
 
-export const resolveOnboardingRedirectTarget = async ({
-  prisma,
-  userId,
-}: {
-  prisma: Pick<PrismaClient, "organizationMembership">;
-  userId: string;
-}): Promise<OnboardingRedirectTarget | null> => {
-  const organizationMemberships = await getRealOrganizationMemberships({
-    prisma,
-    userId,
-  });
-
-  const starterOrganizationMembership = organizationMemberships.find(
-    (membership) =>
-      membership.role === Role.OWNER &&
-      isStarterOrganizationMetadata(membership.organization.metadata) &&
-      membership.organization.projects.length === 1,
-  );
-
-  if (starterOrganizationMembership) {
-    const starterProject =
-      starterOrganizationMembership.organization.projects[0];
-    const starterProjectRole = resolveProjectRole({
-      projectId: starterProject.id,
-      projectMemberships: starterOrganizationMembership.ProjectMemberships,
-      orgMembershipRole: starterOrganizationMembership.role,
-    });
-
-    if (projectRoleAccessRights[starterProjectRole].includes("project:read")) {
-      return {
-        redirectTo: `/project/${starterProject.id}/traces`,
-        orgId: starterOrganizationMembership.organization.id,
-      };
-    }
-  }
-
-  const accessibleProjects = getAccessibleProjects(organizationMemberships);
-
-  const firstProject = accessibleProjects[0];
-
-  if (firstProject) {
-    return {
-      redirectTo: `/project/${firstProject.projectId}`,
-    };
-  }
-
-  const firstOrganizationWithProjectCreationAccess =
-    getFirstOrganizationWithProjectCreationAccess(organizationMemberships);
-
-  if (firstOrganizationWithProjectCreationAccess) {
-    return {
-      redirectTo: createProjectRoute(
-        firstOrganizationWithProjectCreationAccess.organization.id,
-      ),
-      orgId: firstOrganizationWithProjectCreationAccess.organization.id,
-    };
-  }
-
-  const firstOrganization = organizationMemberships[0];
-
-  if (firstOrganization) {
-    return {
-      redirectTo: `/organization/${firstOrganization.organization.id}`,
-      orgId: firstOrganization.organization.id,
-    };
-  }
-
-  return null;
-};
-
-export const resolveOnboardingRedirectTargetWithFallback = async ({
-  prisma,
-  userId,
-  canCreateOrganizations,
-}: {
-  prisma: Pick<PrismaClient, "organizationMembership">;
-  userId: string;
-  canCreateOrganizations: boolean;
-}): Promise<OnboardingRedirectTarget> =>
-  (await resolveOnboardingRedirectTarget({ prisma, userId })) ?? {
-    redirectTo: canCreateOrganizations ? "/setup" : "/",
-  };
+/**
+ * onboarding 完成后的落地地址：组织/项目页面已随模块删除，
+ * 恒为个人工作台 /app。保留 async 签名以兼容既有调用方。
+ */
+export const resolveOnboardingRedirectTargetWithFallback = async (): Promise<OnboardingRedirectTarget> => ({
+  redirectTo: WORKSPACE_HOME,
+});
 
 export const getCloudSignupOnboardingStatus = async ({
   prisma,
   userId,
-  canCreateOrganizations,
 }: {
-  prisma: Pick<PrismaClient, "organizationMembership" | "survey">;
+  prisma: Pick<PrismaClient, "survey">;
   userId: string;
-  canCreateOrganizations: boolean;
 }) => {
   const completedSurvey = await prisma.survey.findFirst({
     where: {
@@ -246,11 +153,7 @@ export const getCloudSignupOnboardingStatus = async ({
     };
   }
 
-  const redirectTarget = await resolveOnboardingRedirectTargetWithFallback({
-    prisma,
-    userId,
-    canCreateOrganizations,
-  });
+  const redirectTarget = await resolveOnboardingRedirectTargetWithFallback();
 
   return {
     completed: true as const,
@@ -262,13 +165,11 @@ export const completeCloudSignupOnboarding = async ({
   prisma,
   userId,
   userEmail,
-  canCreateOrganizations,
   referralSource,
 }: {
   prisma: PrismaClient;
   userId: string;
   userEmail?: string | null;
-  canCreateOrganizations: boolean;
   referralSource?: string;
 }) =>
   prisma.$transaction(async (tx) => {
@@ -289,11 +190,7 @@ export const completeCloudSignupOnboarding = async ({
       },
     });
 
-    const redirectTarget = await resolveOnboardingRedirectTargetWithFallback({
-      prisma: tx,
-      userId,
-      canCreateOrganizations,
-    });
+    const redirectTarget = await resolveOnboardingRedirectTargetWithFallback();
 
     if (!existingSurvey) {
       const normalizedReferralSource = referralSource?.trim();
@@ -308,7 +205,6 @@ export const completeCloudSignupOnboarding = async ({
             : {},
           userId,
           userEmail: userEmail ?? undefined,
-          orgId: redirectTarget.orgId,
         },
       });
     }

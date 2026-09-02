@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -44,11 +45,35 @@ var detectSpecs = []detectSpec{
 
 var semverRe = regexp.MustCompile(`\d+\.\d+\.\d+`)
 
+// toolHit 一个探测命中的 Agent 工具。
+type toolHit struct {
+	ID      string `json:"id"`
+	Label   string `json:"label"`
+	Version string `json:"version"` // 空串 = 无法确定（GUI 应用等）
+}
+
+// 探测结果缓存（60s TTL）：CLI 版本探测要 spawn 子进程（每个最多 2s），
+// 前端每次切入「接入」tab 都会调一次，缓存避免重复跑 12 项探测。
+const detectTTL = 60 * time.Second
+
+var (
+	detectMu    sync.Mutex
+	detectCache []toolHit // nil = 尚未探测
+	detectAt    time.Time
+)
+
 // handleDetectTools GET /api/detect-tools：扫描本地已安装的 AI Agent 工具（只读，不改任何配置）。
 // 返回已命中的工具清单（含版本号，CLI 用 --version、VS Code 插件从目录名解析），供接入页展示。
+// 结果缓存 60s（detectTTL），TTL 内重复请求直接返回缓存。
 func (a *API) handleDetectTools(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+	detectMu.Lock()
+	defer detectMu.Unlock()
+	if detectCache != nil && time.Since(detectAt) < detectTTL {
+		writeJSON(w, http.StatusOK, map[string]any{"detected": detectCache})
 		return
 	}
 	home, err := os.UserHomeDir()
@@ -56,17 +81,13 @@ func (a *API) handleDetectTools(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	type toolHit struct {
-		ID      string `json:"id"`
-		Label   string `json:"label"`
-		Version string `json:"version"` // 空串 = 无法确定（GUI 应用等）
-	}
 	hits := []toolHit{}
 	for _, s := range detectSpecs {
 		if toolInstalled(home, s) {
 			hits = append(hits, toolHit{ID: s.id, Label: s.label, Version: toolVersion(home, s)})
 		}
 	}
+	detectCache, detectAt = hits, time.Now()
 	writeJSON(w, http.StatusOK, map[string]any{"detected": hits})
 }
 
@@ -105,10 +126,13 @@ func toolVersion(home string, s detectSpec) string {
 }
 
 // cliVersion 运行 <bin> --version 并提取首个 semver 版本号（2s 超时，避免个别工具卡住）。
+// hideConsole：Windows 下不给 .cmd 包装器分配新控制台，否则桌面端会弹一闪而过的终端窗口。
 func cliVersion(bin string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, bin, "--version").CombinedOutput()
+	cmd := exec.CommandContext(ctx, bin, "--version")
+	hideConsole(cmd)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return ""
 	}

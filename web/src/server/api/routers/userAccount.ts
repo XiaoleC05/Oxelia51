@@ -3,10 +3,7 @@ import {
   createTRPCRouter,
   authenticatedProcedure,
 } from "@/src/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { StringNoHTML } from "@oxelia51/shared";
-import { Role, Prisma } from "@oxelia51/shared/src/db";
-import type { PrismaClient } from "@oxelia51/shared/src/db";
 
 const updateDisplayNameSchema = z.object({
   name: StringNoHTML.min(1, "Name cannot be empty").max(
@@ -15,67 +12,7 @@ const updateDisplayNameSchema = z.object({
   ),
 });
 
-/**
- * Helper function to check if a user can be deleted.
- * A user can only be deleted if they are not the last owner of any organization.
- * Also reused by the oxelia51 admin console (adminDeleteUser).
- */
-export async function checkUserCanBeDeleted(
-  userId: string,
-  prisma:
-    | Omit<
-        PrismaClient,
-        | "$connect"
-        | "$disconnect"
-        | "$on"
-        | "$transaction"
-        | "$use"
-        | "$extends"
-      >
-    | Prisma.TransactionClient,
-) {
-  // Find all organizations where user is an owner
-  const organizationMemberships = await prisma.organizationMembership.findMany({
-    where: {
-      userId,
-      role: Role.OWNER,
-    },
-    include: {
-      organization: {
-        include: {
-          organizationMemberships: {
-            where: {
-              role: Role.OWNER,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  // Filter to find organizations where user is the ONLY owner
-  const organizationsWhereLastOwner = organizationMemberships
-    .filter((membership) => {
-      const ownerCount = membership.organization.organizationMemberships.length;
-      return ownerCount === 1; // User is the only owner
-    })
-    .map((membership) => ({
-      id: membership.organization.id,
-      name: membership.organization.name,
-    }));
-
-  return {
-    canDelete: organizationsWhereLastOwner.length === 0,
-    blockingOrganizations: organizationsWhereLastOwner,
-  };
-}
-
 export const userAccountRouter = createTRPCRouter({
-  checkCanDelete: authenticatedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
-    return checkUserCanBeDeleted(userId, ctx.prisma);
-  }),
-
   updateDisplayName: authenticatedProcedure
     .input(updateDisplayNameSchema)
     .mutation(async ({ input, ctx }) => {
@@ -94,33 +31,17 @@ export const userAccountRouter = createTRPCRouter({
       };
     }),
 
+  /**
+   * 删除当前登录用户：仅删用户本体，memberships / 会话 / 账户等关联数据由
+   * schema onDelete: Cascade 处理。Oxelia51 组织/项目模块已删除，
+   * 不再做「组织最后所有者」校验。
+   */
   delete: authenticatedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    // Wrap check and delete in a serializable transaction to prevent race conditions
-    // when organization owners are removed concurrently
-    await ctx.prisma.$transaction(
-      async (tx) => {
-        // Verify user can be deleted
-        const { canDelete } = await checkUserCanBeDeleted(userId, tx);
-
-        if (!canDelete) {
-          throw new TRPCError({
-            code: "PRECONDITION_FAILED",
-            message:
-              "Cannot delete account. You are the last owner of one or more organizations. Please add another owner or delete the organizations first.",
-          });
-        }
-
-        // Delete the user (cascade will handle related records)
-        await tx.user.delete({
-          where: { id: userId },
-        });
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-      },
-    );
+    await ctx.prisma.user.delete({
+      where: { id: userId },
+    });
 
     return {
       success: true,

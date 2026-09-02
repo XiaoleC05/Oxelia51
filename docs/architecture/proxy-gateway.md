@@ -24,7 +24,7 @@ proxy-gateway/
 ├── internal/
 │   ├── adapter/                 ← 供应商适配层
 │   │   ├── adapter.go           ← Adapter 接口、TokenUsage / TokenRecord / Route 类型
-│   │   ├── registry.go          ← 路由注册表：77 条 providerSpecs + Anthropic 变体合成
+│   │   ├── registry.go          ← 路由注册表：13 条 providerSpecs（11 家厂商 + deepseek-anthropic 兼容行）+ Anthropic 变体合成
 │   │   ├── openai.go            ← OpenAI 兼容协议 usage 提取（含 Response API）
 │   │   ├── anthropic.go         ← Anthropic 协议 usage 提取（含 prompt caching 字段）
 │   │   └── custom.go            ← 用户自定义供应商：校验（SSRF 防护）+ 动态路由
@@ -45,7 +45,8 @@ proxy-gateway/
 │   │   ├── settings.go          ← 设置读写、定价表、预算、costOf 成本计算
 │   │   ├── custom.go            ← 自定义供应商管理端点（带 5s 缓存）
 │   │   ├── rate.go              ← USD→CNY 汇率（每日拉取，离线回退 7.2）
-│   │   ├── detect.go            ← 本机已装 AI 工具探测（CLI/配置目录/VS Code 插件）
+│   │   ├── detect.go            ← 本机已装 AI 工具探测（CLI/配置目录/VS Code 插件，结果 60s 缓存）
+│   │   ├── exec_windows.go / exec_other.go  ← 子进程隐藏控制台（Windows CREATE_NO_WINDOW，防探测时终端一闪）
 │   │   └── sync.go              ← 云同步客户端（upload/download、游标、去重合并）
 │   ├── limiter/limiter.go       ← 按 project 维度的 token bucket 限流
 │   ├── stats/stats.go           ← 网关实时统计（5 分钟滑动窗口）
@@ -101,8 +102,8 @@ ClickHouseWriter.WriteBatch / SQLiteWriter.WriteBatch
 
 ### 4.1 路由注册表（`adapter/registry.go`）
 
-- 77 条 `providerSpecs` 静态行（slug / 上游 host / pathPrefix / 协议），分四组：国内直连、聚合网关、国际直连、第三方中转平台。新增供应商 = 加一行数据。
-- `anthropicEndpoints`（deepseek、zhipu）自动合成 `/api/proxy/<slug>/anthropic/` 变体路由，供 Claude Code 等 Anthropic 协议客户端使用 → 合计 **79 条路由**。
+- 13 条 `providerSpecs` 静态行（slug / 上游 host / pathPrefix / 协议）：11 家厂商 + 1 条 `deepseek-anthropic` 兼容行，分两组（国内可直接访问 / 国际直连）；其余平台一律走**自定义供应商**接入，不再内置。新增供应商 = 加一行数据。
+- `anthropicEndpoints`（deepseek、zhipu）自动合成 `/api/proxy/<slug>/anthropic/` 变体路由，供 Claude Code 等 Anthropic 协议客户端使用 → 合计 **15 条路由**。
 - `Match` 为最长前缀匹配；静态表未命中时回退**自定义供应商**（`matchCustom`，数据源是 localapi 的设置缓存，仅本地模式接线）。
 - `Route.XAPIKeyAuth` 决定上行鉴权头形态：Anthropic 协议行用 `x-api-key`，唯一例外 `kimi-for-coding`（上游要求 Bearer）。
 - `ResolveTarget` 处理客户端重复携带路径前缀的幂等去重（如 OpenAI SDK 习惯自带 `/v1`，而 qwen 的 pathPrefix 是 `/compatible-mode/v1`）：先剥完整 pathPrefix，再对多段前缀的末尾版本段（`v1`/`v3` 形态）去重，非版本段（如 gemini 的 `/openai`）不动。
@@ -151,7 +152,7 @@ ClickHouseWriter.WriteBatch / SQLiteWriter.WriteBatch
 横切机制：
 
 - **CORS 白名单**（`localapi.go`）：仅放行 Tauri webview（`tauri.localhost`）、Vite dev（`:5173`）与同源自兜底；无 Origin 头（curl 等非浏览器）放行，未知 Origin 403。
-- **成本计算**（`settings.go costOf`）：用户保存的定价优先，缺失回退内置参考价 `defaultPricing`（模型名带 `[1M]` 等上下文后缀时先剥离再查），未收录按 0（不虚构）。定价缓存 5s TTL，保存时主动失效。`defaultPricing` 与云端 `analytics/deploy/migrations/003_model_pricing_seed.sql` 的共有模型价格有测试防漂移。
+- **成本计算**（`settings.go costOf`）：用户保存的定价优先，缺失回退内置参考价 `defaultPricing`（模型名带 `[1M]` 等上下文后缀时先剥离再查），未收录按 0（不虚构）。定价缓存 5s TTL，保存时主动失效。`defaultPricing` 与云端最新定价迁移（`analytics/deploy/migrations/009_pricing_refactor_202609.sql`）的共有模型价格有测试防漂移。
 - **汇率**（`rate.go`）：USD→CNY 每日拉取一次持久化到 settings；失败回退上次成功值，再回退 7.2（与云端 `exchange_rates` 兜底口径一致）。
 - **云同步**（`sync.go`）：`POST /api/sync {action: upload|download}`，端点默认 `https://oxelia51.com/api/sync`（`OXELIA_SYNC_BASE` 可覆盖）。双游标：`sync_up_ts`（上传，本地事件时间戳）与 `sync_dl_seq`（下载，云端单调序号）互不影响；上传按游标后 2000 条/批，下载最多 5 轮分页；合并按 `event_id` `INSERT OR IGNORE` 去重，被跳过的行做内容比对计 `conflicts`（正常恒 0）。设备 ID `dev-<8字节hex>` 首用生成并持久化。详见 [data-flow.md](data-flow.md)。
 

@@ -13,7 +13,6 @@ export const onboardingRouter = createTRPCRouter({
     return getCloudSignupOnboardingStatus({
       prisma: ctx.prisma,
       userId: ctx.session.user.id,
-      canCreateOrganizations: ctx.session.user.canCreateOrganizations,
     });
   }),
 
@@ -30,7 +29,6 @@ export const onboardingRouter = createTRPCRouter({
         prisma: ctx.prisma,
         userId: ctx.session.user.id,
         userEmail: ctx.session.user.email,
-        canCreateOrganizations: ctx.session.user.canCreateOrganizations,
         referralSource: input?.referralSource,
       });
     }),

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   fetchHealth,
@@ -148,6 +148,8 @@ export default function App() {
   const [update, setUpdate] = useState<UpdateInfo>({ available: false });
   // 悬浮统计卡片是否显示（窗口在 tauri.conf 的 app.windows 中声明，初始隐藏）
   const [widgetOn, setWidgetOn] = useState(false);
+  // 启动保护：双击图标启动时第二击可能落在顶栏拖曳区，800ms 内忽略双击最大化
+  const mountAt = useRef(Date.now());
 
   // 启动时检查一次新版本
   useEffect(() => {
@@ -225,13 +227,14 @@ export default function App() {
 
   return (
     <div className="app" data-platform={isMac ? "mac" : "win"}>
-      {/* 无边框标题栏：整条顶栏为拖曳区（deep：子元素空白也可拖，按钮仍点击），
-          空白处双击切换最大化；右上为自绘窗口三键（macOS 保留原生交通灯，不渲染）。 */}
+      {/* 无边框标题栏：拖曳区仅限 .drag-spacer 占位条（.tabs 有横向滚动条，
+          整栏拖曳会劫持滚动条拖动）；drag-spacer / 空白处双击切换最大化；
+          右上为自绘窗口三键（macOS 保留原生交通灯，不渲染）。 */}
       <header
         className="topbar"
-        data-tauri-drag-region="deep"
         onDoubleClick={(e) => {
           if (!isTauri) return;
+          if (Date.now() - mountAt.current < 800) return;
           const t = e.target as HTMLElement;
           if (t.closest(".tab, .win-btn, .theme-toggle, .status")) return;
           void getCurrentWindow().toggleMaximize();
@@ -252,6 +255,8 @@ export default function App() {
           />
         </div>
 
+        <div className="drag-spacer" data-tauri-drag-region />
+
         <nav className="tabs" role="tablist">
           {TABS.map((t) => (
             <button
@@ -266,6 +271,8 @@ export default function App() {
             </button>
           ))}
         </nav>
+
+        <div className="drag-spacer" data-tauri-drag-region />
 
         <div className="topbar-right">
           {online ? (

@@ -18,8 +18,8 @@ import { FilingInfo } from "@/src/components/FilingInfo";
 import {
   getAvailableCloudRegionOptions,
   getCloudRegionAuthUrl,
-} from "@/src/features/organizations/cloudRegions";
-import { useLangfuseCloudRegion } from "@/src/features/organizations/hooks";
+} from "@/src/utils/cloudRegions";
+import { useLangfuseCloudRegion } from "@/src/hooks/useLangfuseCloudRegion";
 import type { Session } from "next-auth";
 import type { NavigationItem } from "@/src/components/layouts/utilities/routes";
 import type { RouteGroup } from "@/src/components/layouts/routes";

@@ -26,7 +26,6 @@ import Link from "next/link";
 import { ErrorPage } from "@/src/components/error-page";
 import { usePostHogClientCapture } from "@/src/features/posthog-analytics/usePostHogClientCapture";
 import { passwordSchema } from "@/src/features/auth/lib/signupSchema";
-import { useLangfuseCloudRegion } from "@/src/features/organizations/hooks";
 import { OXELIA_DOCS_URL } from "@/src/features/oxelia51/constants";
 
 const resetPasswordSchema = z
@@ -47,7 +46,6 @@ export function ResetPasswordPage({
 }) {
   const session = useSession();
   const router = useRouter();
-  const { isLangfuseCloud, region } = useLangfuseCloudRegion();
   const [formError, setFormError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showResetPasswordEmailButton, setShowResetPasswordEmailButton] =
@@ -86,10 +84,8 @@ export function ResetPasswordPage({
       .then(() => {
         setIsSuccess(true);
         setTimeout(() => {
-          const target =
-            isSetMode && isLangfuseCloud && region !== "DEV"
-              ? "/onboarding"
-              : "/";
+          // Oxelia51：onboarding 页已删除，设置密码后直跳个人工作台
+          const target = isSetMode ? "/app" : "/";
           router.push(target);
           setIsSuccess(false);
         }, 2000);

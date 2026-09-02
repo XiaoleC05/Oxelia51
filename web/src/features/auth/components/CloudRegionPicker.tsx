@@ -13,7 +13,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/src/components/ui/select";
-import type { CloudRegion } from "@/src/features/organizations/cloudRegions";
+import type { CloudRegion } from "@/src/utils/cloudRegions";
 import { OXELIA_DOCS_URL } from "@/src/features/oxelia51/constants";
 
 export function CloudRegionPicker({

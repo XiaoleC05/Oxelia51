@@ -25,13 +25,16 @@ EE/cloud/billing 代码已在波 1-4 删除，只保留 Oxelia51 自有功能与
   SSO（check-sso / add-sso-config）
 - `src/pages/api/public/health.ts`：生产健康检查（唯一保留的 public REST）
 - `src/pages/api/trpc/[trpc].ts`：tRPC 入口
-- 其余 `src/features/*`：保留的基础能力（auth、rbac、organizations、projects、
-  entitlements、filters、dashboard 等）
+- 其余 `src/features/*`：保留的基础能力（auth、rbac、entitlements、filters、
+  dashboard 等）。组织/项目模块（页面、CRUD、tRPC router、切换组件）已删除；
+  底层单默认组织/项目机制（session、RBAC、entitlements、prisma schema、
+  注册时自动加入）保留不动。`useLangfuseCloudRegion` 移至 `src/hooks/`，
+  cloud region 常量移至 `src/utils/cloudRegions.ts`。
 
 tRPC router 注册表 `src/server/api/root.ts`，当前 router 清单：
 
-- 基础：`organizations`、`organizationApiKeys`、`projects`、`userAccount`、
-  `projectApiKeys`、`members`、`credentials`、`onboarding`
+- 基础：`organizationApiKeys`、`userAccount`、`projectApiKeys`、`members`、
+  `credentials`、`onboarding`
 - Oxelia51 定制：`oxelia51`、`workspace`、`sync`、`oxelia51Admin`、
   `proxyKey`、`siteContent`、`siteStats`
 

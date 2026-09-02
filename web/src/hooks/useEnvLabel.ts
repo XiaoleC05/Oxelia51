@@ -1,4 +1,4 @@
-import { useLangfuseCloudRegion } from "@/src/features/organizations/hooks";
+import { useLangfuseCloudRegion } from "@/src/hooks/useLangfuseCloudRegion";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 
