@@ -128,14 +128,18 @@ func TestProviderFormats(t *testing.T) {
 	f := ProviderFormats()
 
 	want := map[string][]string{
-		"deepseek":        {"chat", "messages"},
-		"zhipu":           {"chat", "messages"},
+		"deepseek":        {"chat", "messages", "responses"},
+		"zhipu":           {"chat", "messages", "responses"},
+		"qwen":            {"chat", "messages", "responses"},
+		"moonshot":        {"chat", "messages", "responses"},
+		"doubao":          {"chat", "messages", "responses"},
+		"minimax":         {"chat", "messages", "responses"},
+		"hunyuan":         {"chat", "messages"},
 		"openai":          {"chat", "responses"},
 		"xai":             {"chat", "responses"},
 		"anthropic":       {"messages"},
 		"kimi-for-coding": {"messages"},
 		"gemini":          {"chat"},
-		"qwen":            {"chat"},
 	}
 	for slug, wf := range want {
 		got := f[slug]

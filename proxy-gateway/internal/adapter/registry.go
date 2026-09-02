@@ -53,8 +53,13 @@ type CustomSource func() []CustomProvider
 var anthropicEndpoints = map[string]struct {
 	host, pathPrefix string
 }{
-	"deepseek": {"api.deepseek.com", "/anthropic"},     // 官方 Anthropic 兼容端点（官方文档确认）
-	"zhipu":    {"open.bigmodel.cn", "/api/anthropic"}, // 智谱 GLM Claude Code 兼容端点（官方文档确认）
+	"deepseek": {"api.deepseek.com", "/anthropic"},               // 官方 Anthropic 兼容端点（官方文档确认）
+	"zhipu":    {"open.bigmodel.cn", "/api/anthropic"},           // 智谱 GLM Claude Code 兼容端点（官方文档确认）
+	"qwen":     {"dashscope.aliyuncs.com", "/apps/anthropic"},    // 百炼 Anthropic 兼容端点（官方文档确认）
+	"moonshot": {"api.moonshot.cn", "/anthropic"},                // Kimi Anthropic 兼容端点（官方文档确认）
+	"doubao":   {"ark.cn-beijing.volces.com", "/api/compatible"}, // 火山方舟 Anthropic 兼容端点（按量，官方文档确认）
+	"minimax":  {"api.minimaxi.com", "/anthropic"},               // MiniMax Anthropic 兼容端点（国内站，官方文档确认）
+	"hunyuan":  {"api.hunyuan.cloud.tencent.com", "/anthropic"},  // 混元 Anthropic 兼容端点（官方文档确认，仅 hunyuan-2.0 两款模型）
 }
 
 // Registry 管理路由映射表
@@ -225,10 +230,15 @@ func AnthropicVariantProviders() []string {
 	return slugs
 }
 
-// responsesCapable 声明上游官方支持 OpenAI Responses API（/v1/responses）的内置供应商。
-// OpenAI（platform.openai.com/docs）与 xAI（docs.x.ai）官方文档确认；其余供应商
-// 官方无此端点，前端按此禁用「响应」格式选项，避免给出上游 404 的地址。
-var responsesCapable = map[string]bool{"openai": true, "xai": true}
+// responsesCapable 声明上游官方支持 OpenAI Responses API（/responses）的内置供应商。
+// 均经各厂商官方文档确认（2026-09 核实，多数为 2025-2026 新增端点）；未列入的
+// （gemini / anthropic / hunyuan / kimi-for-coding）官方查无此端点，
+// 前端按此禁用「响应」格式选项，避免给出上游 404 的地址。
+var responsesCapable = map[string]bool{
+	"openai": true, "xai": true, // 原厂
+	"deepseek": true, "zhipu": true, "qwen": true,
+	"moonshot": true, "doubao": true, "minimax": true,
+}
 
 // 请求格式 ID（与前端 API_FORMATS 对齐）：chat = OpenAI Chat Completions，
 // responses = OpenAI Responses，messages = Anthropic Messages。

@@ -172,7 +172,7 @@ export const API_FORMATS: ApiFormatDef[] = [
     id: "responses",
     label: "OpenAI 响应",
     path: "/v1/responses",
-    note: "新一代接口，仅 OpenAI / xAI 提供",
+    note: "新一代接口，多数厂商已支持",
   },
   {
     id: "messages",
