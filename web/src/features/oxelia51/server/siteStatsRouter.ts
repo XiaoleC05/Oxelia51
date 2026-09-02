@@ -3,8 +3,9 @@ import { createTRPCRouter, publicProcedure } from "@/src/server/api/trpc";
 /**
  * 站点公开统计（下载量等外部数据源的服务端代理）。
  *
- * downloadStats：服务端拉取 GitHub Releases API（XiaoleC05/Oxelia51 最新语义化
- * 版本），汇总各资产下载量。客户端不直连 GitHub（匿名限额 60 次/小时/IP，
+ * downloadStats：服务端拉取 GitHub Releases API（XiaoleC05/Oxelia51）。
+ * 版本号/下载链接取最新语义化 release；下载量为全部 v* release 资产之和
+ * （累计口径，发新版不清零）。客户端不直连 GitHub（匿名限额 60 次/小时/IP，
  * 浏览器侧极易被限流）。
  *
  * 缓存：模块级内存缓存 1 小时——单机口径，仅当前 Next.js 进程内生效；
@@ -23,7 +24,7 @@ export type SiteDownloadStats = {
   version: string;
   /** release 发布时间（ISO），可能为 null */
   publishedAt: string | null;
-  /** 该 release 全部资产下载量之和 */
+  /** 累计下载量：全部语义化 release（v*）资产下载量之和，发新版不清零 */
   totalDownloads: number;
   assets: { name: string; downloads: number; url: string }[];
 };
@@ -60,10 +61,14 @@ async function fetchReleaseStats(): Promise<SiteDownloadStats | null> {
       browser_download_url: string;
     }[];
   }[];
-  // 只认语义化版本（v*），自动 release-* 是 CI commit 噪声（与前端口径一致）
-  const rel = releases.find(
-    (x) => !x.draft && /^v?\d+\.\d+\.\d+$/.test(x.tag_name),
+  // 只认语义化版本（v*）：release-* 是 CI 部署包噪声，不计入下载量。
+  // per_page=30 远小于历史 release 总数时会漏掉最老版本——本仓 release-* 自动清理
+  // 只留 2 个，v* 总量小，一页装得下；若未来 v* 超过 30 个需加分页。
+  const semverRe = /^v?\d+\.\d+\.\d+$/;
+  const desktopReleases = releases.filter(
+    (x) => !x.draft && semverRe.test(x.tag_name),
   );
+  const rel = desktopReleases[0];
   if (!rel) return null;
 
   const assets = rel.assets.map((a) => ({
@@ -71,10 +76,15 @@ async function fetchReleaseStats(): Promise<SiteDownloadStats | null> {
     downloads: a.download_count,
     url: a.browser_download_url,
   }));
+  // 累计口径：全部 v* release 的资产下载量加总，发新版不再清零
+  const totalDownloads = desktopReleases.reduce(
+    (sum, x) => sum + x.assets.reduce((s, a) => s + a.download_count, 0),
+    0,
+  );
   return {
     version: rel.tag_name,
     publishedAt: rel.published_at,
-    totalDownloads: assets.reduce((sum, a) => sum + a.downloads, 0),
+    totalDownloads,
     assets,
   };
 }
