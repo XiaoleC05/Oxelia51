@@ -374,7 +374,13 @@ export default function App() {
               </a>
             );
           })()}
-        {tab === "overview" && <OverviewTab data={data} online={online} />}
+        {tab === "overview" && (
+          <OverviewTab
+            data={data}
+            online={online}
+            onGoConnect={() => setTab("connect")}
+          />
+        )}
         {tab === "connect" && <ConnectTab />}
         {tab === "providers" && <ProvidersTab />}
         {tab === "agents" && <AgentsTab />}

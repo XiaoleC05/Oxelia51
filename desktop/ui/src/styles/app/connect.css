@@ -304,48 +304,21 @@
   color: var(--ox-accent);
 }
 
-/* 首次接入空态：供应商选择 + 复制命令 */
-.setup-card {
-  width: 100%;
-  max-width: 460px;
-  margin-top: 12px;
-  padding: 14px;
-  border: 1px solid var(--ox-border);
-  border-radius: 12px;
-  background: var(--ox-bg-alt);
+/* 首次接入空态：引导前往「接入」页（主行动按钮）。
+   注：.btn 在 forms.css（导入顺序晚于本文件），此处需双类选择器提权 */
+.setup-go {
+  margin-top: 14px;
 }
 
-.setup-card .form-row {
-  margin-bottom: 10px;
+.btn.setup-go-btn {
+  border-color: var(--ox-accent);
+  background: var(--ox-accent);
+  color: #fff;
+  font-weight: 600;
 }
 
-.setup-card .input {
-  flex: 1;
-  min-width: 0;
-}
-
-.setup-cmd-row {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.setup-cmd-row .setup-cmd {
-  flex: 1;
-  margin: 0;
-}
-
-.setup-cmd {
-  margin: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--ox-border);
-  border-radius: 8px;
-  background: var(--ox-bg);
-  font-size: 13px;
-  line-height: 1.6;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  color: var(--ox-text);
+.btn.setup-go-btn:hover {
+  background: var(--ox-accent-hover);
+  border-color: var(--ox-accent-hover);
+  color: #fff;
 }

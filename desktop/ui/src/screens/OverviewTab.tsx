@@ -14,15 +14,7 @@ import {
   type TrendPoint,
 } from "../api";
 import { EmptyState } from "../EmptyState";
-import { Dropdown } from "../components/Dropdown";
 import { DateRangePicker } from "./DateRangePicker";
-import {
-  copyText,
-  PROVIDER_COMMANDS,
-  PROVIDER_GROUPS,
-  providerCmd,
-  proxyUrl,
-} from "../clipboard";
 
 /** 排行显示模式：#总览——全部（token+成本）/ 仅 Token / 仅成本（美元·人民币切换）。 */
 type RankMode = "all" | "tokens" | "cost";
@@ -137,24 +129,14 @@ function Ranking({
   );
 }
 
-/** 首次接入空态：先选 LLM 供应商 → 复制对应代理地址。 */
-function SetupEmptyState({ online }: { online: boolean }) {
-  const [slug, setSlug] = useState(PROVIDER_COMMANDS[0].slug);
-  const [copied, setCopied] = useState<"url" | "cmd" | null>(null);
-  const sel =
-    PROVIDER_COMMANDS.find((p) => p.slug === slug) ?? PROVIDER_COMMANDS[0];
-
-  const copy = async (kind: "url" | "cmd") => {
-    const text =
-      kind === "url"
-        ? proxyUrl(sel.slug)
-        : providerCmd(sel.slug, sel.anthropic);
-    if (await copyText(text)) {
-      setCopied(kind);
-      setTimeout(() => setCopied(null), 2000);
-    }
-  };
-
+/** 首次接入空态：尚未配置时，引导用户前往「接入」页选择供应商。 */
+function SetupEmptyState({
+  online,
+  onGoConnect,
+}: {
+  online: boolean;
+  onGoConnect: () => void;
+}) {
   return (
     <div className="empty-state">
       <svg className="empty-icon" viewBox="0 0 512 512" aria-hidden="true">
@@ -170,60 +152,19 @@ function SetupEmptyState({ online }: { online: boolean }) {
       </svg>
       <p className="empty-title">还没有 Token 记录</p>
       <p className="empty-desc">
-        选择你使用的 LLM 供应商，把模型工具的 Base URL
-        指向本地代理即可开始记账。
+        三步开始记账：1. 到「接入」选择你使用的 LLM 供应商；2.
+        选请求格式并复制代理地址；3. 把模型工具的 Base URL 指向该地址。
       </p>
-      <div className="setup-card">
-        <div className="form-row">
-          <Dropdown
-            grow
-            groups={PROVIDER_GROUPS.map((g) => ({
-              group: g.group,
-              options: g.providers.map((p) => ({
-                value: p.slug,
-                label: p.label,
-              })),
-            }))}
-            value={slug}
-            onChange={setSlug}
-            ariaLabel="LLM 供应商"
-          />
-        </div>
-        {/* 代理地址：自定义 Base URL 的界面直接填这个 */}
-        <div className="setup-cmd-row">
-          <pre className="setup-cmd">
-            <code>{proxyUrl(sel.slug)}</code>
-          </pre>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => void copy("url")}
-            title="适用于在工具的自定义 Base URL 输入框直接填写"
-          >
-            {copied === "url" ? "已复制 ✓" : "复制地址"}
-          </button>
-        </div>
-        {/* export 命令：支持环境变量的工具用这个 */}
-        <div className="setup-cmd-row">
-          <pre className="setup-cmd">
-            <code>{providerCmd(sel.slug, sel.anthropic)}</code>
-          </pre>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => void copy("cmd")}
-            title="适用于通过 export 环境变量配置的工具"
-          >
-            {copied === "cmd" ? "已复制 ✓" : "复制命令"}
-          </button>
-        </div>
-        <p className="empty">
-          {sel.anthropic
-            ? "适用于使用 Anthropic 协议的工具。"
-            : "适用于使用 OpenAI 兼容协议的工具。"}
-          {!online && "（当前代理未运行，配置完成后请先启动）"}
-        </p>
+      <div className="setup-go">
+        <button
+          type="button"
+          className="btn setup-go-btn"
+          onClick={onGoConnect}
+        >
+          前往接入，选择供应商 →
+        </button>
       </div>
+      {!online && <p className="empty">（当前代理未运行，配置完成后请先启动）</p>}
     </div>
   );
 }
@@ -231,9 +172,12 @@ function SetupEmptyState({ online }: { online: boolean }) {
 export function OverviewTab({
   data,
   online,
+  onGoConnect,
 }: {
   data: Overview | null;
   online: boolean;
+  /** 空态「前往接入」导航（App 注入 tab 切换） */
+  onGoConnect: () => void;
 }) {
   const [days, setDays] = useState<number | undefined>(undefined);
   const [mode, setMode] = useState<RankMode>("all");
@@ -279,7 +223,7 @@ export function OverviewTab({
   const isEmpty = online && data != null && data.total.tokens === 0;
 
   if (isEmpty) {
-    return <SetupEmptyState online={online} />;
+    return <SetupEmptyState online={online} onGoConnect={onGoConnect} />;
   }
 
   return (
