@@ -115,6 +115,80 @@
   font-family: ui-monospace, "SF Mono", Consolas, monospace;
 }
 
+/* 请求格式三选一（OpenAI 补全 / OpenAI 响应 / Anthropic 消息），各自带区别说明 */
+.provider-cell-formats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 5px;
+}
+
+.fmt {
+  appearance: none;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: var(--ox-text-muted);
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    color var(--ox-speed),
+    border-color var(--ox-speed),
+    background-color var(--ox-speed);
+}
+
+.fmt:hover:not(:disabled) {
+  color: var(--ox-text-h);
+  background: var(--ox-bg);
+}
+
+.fmt.active {
+  color: var(--ox-accent);
+  border-color: var(--ox-accent-border);
+  background: var(--ox-bg);
+  font-weight: 600;
+}
+
+.fmt:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.fmt-label {
+  flex-shrink: 0;
+}
+
+.fmt-note {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ox-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 端点预览：Base URL + 客户端实际调用路径（复制按钮复制的是 Base URL） */
+.provider-cell-endpoint {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  color: var(--ox-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.provider-cell-endpoint .dim {
+  opacity: 0.65;
+}
+
 /* 卡片底部操作：复制地址（主操作，明显优先）+ 官网（次操作），窄卡可换行 */
 .provider-cell-actions {
   display: flex;

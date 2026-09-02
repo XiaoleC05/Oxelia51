@@ -224,3 +224,41 @@ func AnthropicVariantProviders() []string {
 	}
 	return slugs
 }
+
+// responsesCapable 声明上游官方支持 OpenAI Responses API（/v1/responses）的内置供应商。
+// OpenAI（platform.openai.com/docs）与 xAI（docs.x.ai）官方文档确认；其余供应商
+// 官方无此端点，前端按此禁用「响应」格式选项，避免给出上游 404 的地址。
+var responsesCapable = map[string]bool{"openai": true, "xai": true}
+
+// 请求格式 ID（与前端 API_FORMATS 对齐）：chat = OpenAI Chat Completions，
+// responses = OpenAI Responses，messages = Anthropic Messages。
+
+// ProviderFormats 返回每个内置供应商支持的请求格式列表（key = 基础 slug）。
+// 网关为透传代理、不做协议转换，格式可用性 = 上游官方端点支持：
+//
+//	anthropic=true（原生 Anthropic 协议）→ 仅 messages；
+//	其余 → chat 起步；anthropicEndpoints 命中 → 追加 messages（/anthropic 变体路由）；
+//	responsesCapable 命中 → 追加 responses。
+//
+// deepseek-anthropic 兼容行不单独列出（其能力经 deepseek 的 messages 体现）。
+func ProviderFormats() map[string][]string {
+	formats := make(map[string][]string, len(providerSpecs))
+	for _, p := range providerSpecs {
+		if _, dup := formats[p.name]; dup {
+			continue // deepseek-anthropic 等别名行（name 相同）：能力经基础 slug 体现
+		}
+		if p.anthropic {
+			formats[p.name] = []string{"messages"}
+			continue
+		}
+		f := []string{"chat"}
+		if _, ok := anthropicEndpoints[p.slug]; ok {
+			f = append(f, "messages")
+		}
+		if responsesCapable[p.slug] {
+			f = append(f, "responses")
+		}
+		formats[p.name] = f
+	}
+	return formats
+}

@@ -121,3 +121,34 @@ func TestAnthropicVariantRoutes(t *testing.T) {
 		t.Fatalf("zhipu matched prefix = %q", zp)
 	}
 }
+
+// TestProviderFormats 锁定格式推导口径：原生 anthropic 仅 messages；变体供应商
+// 追加 messages；responsesCapable 追加 responses；别名行不重复出现。
+func TestProviderFormats(t *testing.T) {
+	f := ProviderFormats()
+
+	want := map[string][]string{
+		"deepseek":        {"chat", "messages"},
+		"zhipu":           {"chat", "messages"},
+		"openai":          {"chat", "responses"},
+		"xai":             {"chat", "responses"},
+		"anthropic":       {"messages"},
+		"kimi-for-coding": {"messages"},
+		"gemini":          {"chat"},
+		"qwen":            {"chat"},
+	}
+	for slug, wf := range want {
+		got := f[slug]
+		if len(got) != len(wf) {
+			t.Fatalf("%s formats = %v, want %v", slug, got, wf)
+		}
+		for i := range wf {
+			if got[i] != wf[i] {
+				t.Fatalf("%s formats = %v, want %v", slug, got, wf)
+			}
+		}
+	}
+	if _, ok := f["deepseek-anthropic"]; ok {
+		t.Fatal("别名行 deepseek-anthropic 不应出现在 formats 中")
+	}
+}

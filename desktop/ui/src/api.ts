@@ -88,9 +88,12 @@ export const fetchHealth = async (): Promise<boolean> => {
   }
 };
 export const fetchProviders = (days?: number) =>
-  j<{ providers: DimStat[]; anthropicVariants?: string[] }>(
-    days ? `/api/providers?days=${days}` : "/api/providers",
-  );
+  j<{
+    providers: DimStat[];
+    anthropicVariants?: string[];
+    /** 各内置供应商支持的请求格式（chat/responses/messages），旧二进制无此字段 */
+    formats?: Record<string, string[]>;
+  }>(days ? `/api/providers?days=${days}` : "/api/providers");
 export const fetchAgents = (days?: number) =>
   j<{ agents: DimStat[] }>(days ? `/api/agents?days=${days}` : "/api/agents");
 export const fetchProviderDetail = (name: string, days?: number) =>

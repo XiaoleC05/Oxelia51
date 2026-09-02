@@ -22,6 +22,7 @@ export function ConnectTab() {
   const [routeSlugs, setRouteSlugs] = useState<Set<string> | null>(null);
   const [anthropicVariants, setAnthropicVariants] =
     useState<Set<string> | null>(null);
+  const [formats, setFormats] = useState<Record<string, string[]> | null>(null);
   const [detected, setDetected] = useState<DetectedTool[]>([]);
 
   const load = useCallback(async () => {
@@ -33,6 +34,7 @@ export function ConnectTab() {
       setCustom([]);
       setRouteSlugs(null);
       setAnthropicVariants(null);
+      setFormats(null);
       return;
     }
     try {
@@ -42,9 +44,11 @@ export function ConnectTab() {
       setRouteSlugs(slugs.size > 0 ? slugs : null);
       const variants = r.anthropicVariants ?? [];
       setAnthropicVariants(variants.length > 0 ? new Set(variants) : null);
+      setFormats(r.formats ?? null);
     } catch {
       setRouteSlugs(null);
       setAnthropicVariants(null);
+      setFormats(null);
     }
     try {
       const d = await fetchDetectedTools();
@@ -87,6 +91,7 @@ export function ConnectTab() {
           custom={custom}
           routeSlugs={routeSlugs}
           anthropicVariants={anthropicVariants}
+          formats={formats}
         />
       </div>
       <CustomProviders items={custom} onChanged={() => void load()} />

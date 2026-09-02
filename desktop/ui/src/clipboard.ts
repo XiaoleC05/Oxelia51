@@ -147,6 +147,54 @@ export function anthropicVariantUrl(slug: string): string {
   return `${proxyUrl(slug)}/anthropic`;
 }
 
+/** 请求格式 ID（与后端 registry.ProviderFormats 对齐）：
+ * OpenAI 占两个主流格式（chat 补全 / responses 响应），Anthropic 占一个（messages 消息）。 */
+export type ApiFormat = "chat" | "responses" | "messages";
+
+export type ApiFormatDef = {
+  id: ApiFormat;
+  label: string;
+  /** 该格式在上游的端点路径（SDK 按协议自动拼接，仅作展示与说明） */
+  path: string;
+  /** 格式区别的简要说明（接入页选项后展示） */
+  note: string;
+};
+
+/** 主流三种请求格式目录。 */
+export const API_FORMATS: ApiFormatDef[] = [
+  {
+    id: "chat",
+    label: "OpenAI 补全",
+    path: "/v1/chat/completions",
+    note: "最通用的对话接口，工具默认支持",
+  },
+  {
+    id: "responses",
+    label: "OpenAI 响应",
+    path: "/v1/responses",
+    note: "新一代接口，仅 OpenAI / xAI 提供",
+  },
+  {
+    id: "messages",
+    label: "Anthropic 消息",
+    path: "/v1/messages",
+    note: "Claude Code 专用协议",
+  },
+];
+
+/** 某格式对应的代理 base URL：messages 对走变体的供应商（deepseek/zhipu）带
+ * /anthropic 后缀；chat 与 responses 共用基础 slug 地址（同属 OpenAI /v1 命名空间，
+ * SDK 按调用方法自动拼 /chat/completions 或 /responses）。 */
+export function formatBaseUrl(
+  slug: string,
+  format: ApiFormat,
+  variant: boolean,
+): string {
+  return format === "messages" && variant
+    ? anthropicVariantUrl(slug)
+    : proxyUrl(slug);
+}
+
 /** 生成某供应商的 export 配置命令（Anthropic 协议 vs OpenAI 兼容协议）。
  * 原生 anthropic 协议的供应商（anthropic / kimi-for-coding）直接走基础 slug，
  * 无需 /anthropic 后缀；需要后缀的变体地址由接入页的「Anthropic」按钮单独提供。 */

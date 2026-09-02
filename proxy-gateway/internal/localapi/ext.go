@@ -155,6 +155,9 @@ func (a *API) handleProviders(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"providers":         stats,
 		"anthropicVariants": adapter.AnthropicVariantProviders(),
+		// 各内置供应商支持的请求格式（chat/responses/messages），前端格式选择器
+		// 以此为单一数据源禁用不支持的选项（网关透传，格式可用性 = 上游端点支持）。
+		"formats": adapter.ProviderFormats(),
 	})
 }
 

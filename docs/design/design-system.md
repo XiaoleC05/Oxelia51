@@ -297,14 +297,15 @@
 
 ### 4.11 供应商卡片 ProviderCard（独有）
 
-**解剖**：`.provider-cell > name + slug + actions(复制地址|官网)`
+**解剖**：`.provider-cell > name + slug + formats(补全|响应|消息 单选) + endpoint 预览 + actions(复制地址|官网)`
 
 **结构规则**
 
 - 网格 `auto-fill minmax(200px,1fr)`，gap 8px；动作区 `flex-wrap` 允许窄卡换行，防「官网」次钮溢出。
 - 卡片 12px 圆角，hover 浮起（`-2px` + 微阴影 + accent 描边）。
+- 格式选项为纵向单选列表：label + 区别说明（11px muted），激活项 accent 描边加粗；上游不支持的项置灰禁用。
 - 动作优先级：**复制地址（红 pill）> 官网（细边次钮）**，必须明显。
-- slug 用等宽字体 12px muted。
+- slug 与端点预览用等宽字体 muted。
 
 ### 4.12 日期范围选择器 DateRangePicker
 
