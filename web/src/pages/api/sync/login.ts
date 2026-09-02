@@ -36,6 +36,17 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
+  // 桌面端 Tauri webview 跨源直连本接口：放开 CORS 并响应 OPTIONS 预检，
+  // 否则 webview 在预检阶段即拦截（桌面端表现为 Failed to fetch）。
+  // 端点凭账号密码鉴权、不使用 Cookie，Allow-Origin: * 无凭证泄露面。
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
