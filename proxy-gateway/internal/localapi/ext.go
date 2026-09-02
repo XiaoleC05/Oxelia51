@@ -68,6 +68,7 @@ func (a *API) loadDimStats(dimCol string, since string, sinceArg any) []dimStat 
 		return nil
 	}
 	agg := map[string]*dimStat{}
+	modelSets := map[string]map[string]bool{}
 	order := []string{}
 	for rows.Next() {
 		var dim, model string
@@ -84,12 +85,18 @@ func (a *API) loadDimStats(dimCol string, since string, sinceArg any) []dimStat 
 		if st == nil {
 			st = &dimStat{Name: dim}
 			agg[dim] = st
+			modelSets[dim] = map[string]bool{}
 			order = append(order, dim)
 		}
 		st.Tokens += t
 		st.Requests += req
 		st.Cost += costOf(pricing, model, p, c)
-		st.Models++
+		// 涉及模型数按归一化模型名去重：同一模型的 [1M] 等上下文变体只算一个，
+		// 空模型名不计（错误/探测行无模型信息）。
+		if nm := normalizeModelName(model); nm != "" && !modelSets[dim][nm] {
+			modelSets[dim][nm] = true
+			st.Models++
+		}
 	}
 	rows.Close()
 

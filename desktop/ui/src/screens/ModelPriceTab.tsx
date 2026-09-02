@@ -178,8 +178,8 @@ export function ModelPriceTab() {
               onClick={toggleDir}
               title={
                 dir === "asc"
-                  ? "当前升序，点击切换降序"
-                  : "当前降序，点击切换升序"
+                  ? "升序，点击切换降序"
+                  : "降序，点击切换升序"
               }
             >
               {dir === "asc" ? "↑ 升序" : "↓ 降序"}
@@ -275,8 +275,7 @@ export function ModelPriceTab() {
         </div>
       )}
       <p className="price-note">
-        参考价 · 离线可用 · 按输入价 / 输出价排序 ·
-        点击模型条目可编辑并保存到「模型定价」
+        参考价 · 离线可用 · 点击条目编辑并保存到「模型定价」
         {currency === "cny" && rate
           ? ` · 汇率 1 USD = ¥${rate.usd_to_cny.toFixed(4)}（${rate.source}${rate.updated_at ? ` · ${rate.updated_at}` : ""}，每日更新）`
           : ""}

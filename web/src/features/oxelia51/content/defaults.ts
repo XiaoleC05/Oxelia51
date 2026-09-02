@@ -14,6 +14,18 @@ export type ChangelogVersion = {
 
 export const CHANGELOG_VERSIONS: ChangelogVersion[] = [
   {
+    tag: "v0.1.14",
+    date: "2026-09-03",
+    status: "released",
+    summary: "接入页三请求格式选择器 + 供应商列表去重 + 空态接入引导",
+    items: [
+      "接入页每个供应商可选手上客户端的协议：OpenAI 补全 / OpenAI 响应 / Anthropic 消息（各带说明），复制地址按格式给出对应 Base URL；不支持的格式置灰——支持情况以各厂商官方端点为准，9 家已三格式全支持",
+      "DeepSeek/智谱/通义/Kimi/豆包/MiniMax/混元选「消息」时地址自动带官方兼容端点后缀；新增端点预览行展示客户端实际调用路径",
+      "供应商列表不再出现 deepseek-anthropic 重复条目（旧地址仍可用，用量统一归 DeepSeek）；「涉及模型数」不再把 [1M] 变体重复计数",
+      "总览无数据时新增「前往接入，选择供应商」引导按钮；全端文案精简",
+    ],
+  },
+  {
     tag: "v0.1.13",
     date: "2026-09-02",
     status: "released",
@@ -189,7 +201,7 @@ export const LANDING_FAQ: FaqItem[] = [
   },
   {
     q: "支持哪些模型？",
-    a: "内置 13 条供应商路由，覆盖 11 家主流厂商——国内（DeepSeek、智谱、通义、Kimi、Kimi For Coding、豆包、混元、MiniMax）与国外（Anthropic、OpenAI、Gemini、xAI）；预设之外的平台可添加自定义供应商接入。内置 71 个模型参考价，支持美元/人民币切换。改代理地址里的供应商 slug 即可切换，如 /api/proxy/deepseek、/api/proxy/zhipu。",
+    a: "内置 12 条供应商路由，覆盖 11 家主流厂商——国内（DeepSeek、智谱、通义、Kimi、Kimi For Coding、豆包、混元、MiniMax）与国外（Anthropic、OpenAI、Gemini、xAI）；预设之外的平台可添加自定义供应商接入。内置 71 个模型参考价，支持美元/人民币切换。改代理地址里的供应商 slug 即可切换，如 /api/proxy/deepseek、/api/proxy/zhipu。",
   },
   {
     q: "桌面应用什么时候发布？",

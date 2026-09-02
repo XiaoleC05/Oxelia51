@@ -20,9 +20,6 @@ type providerSpec struct {
 var providerSpecs = []providerSpec{
 	// ---- 国内可直接访问 ----
 	{"deepseek", "deepseek", "api.deepseek.com", "/v1", false},
-	// DeepSeek 官方 Anthropic 兼容端点（/anthropic/v1/messages）：供 Claude Code 等
-	// Anthropic 协议客户端经本地代理记账使用（纯透传，上游协议与客户端一致）。
-	{"deepseek-anthropic", "deepseek", "api.deepseek.com", "/anthropic", true},
 	{"moonshot", "moonshot", "api.moonshot.cn", "/v1", false},
 	{"zhipu", "zhipu", "open.bigmodel.cn", "/api/paas/v4", false},
 	{"qwen", "qwen", "dashscope.aliyuncs.com", "/compatible-mode/v1", false},
@@ -46,8 +43,8 @@ type CustomSource func() []CustomProvider
 // anthropicEndpoints 声明内置供应商的 Anthropic 协议端点（供 Claude Code 等客户端）。
 // key = 基础 slug（如 deepseek）；value 为 Anthropic 端点的 (host, pathPrefix)。
 // NewRegistry 会为每个条目自动合成一条 "/api/proxy/<slug>/anthropic/" 路由——
-// Claude Code 只需把 base URL 指到该后缀即可，无需另建独立 slug（原 deepseek-anthropic
-// 独立行保留向后兼容，后续可收敛为通用后缀）。
+// Claude Code 只需把 base URL 指到该后缀即可，无需另建独立 slug（旧独立 slug
+// deepseek-anthropic 已收敛为 NewRegistry 里的路由别名，见该函数尾部）。
 // 注意：上游为「Anthropic 协议根域」的供应商（如 anthropic）
 // 已按 anthropic=true 注册，直接走基础 slug，无需此处声明。
 var anthropicEndpoints = map[string]struct {
@@ -96,6 +93,10 @@ func NewRegistry() *Registry {
 			XAPIKeyAuth: true, // Anthropic 协议 → 上游用 x-api-key
 		}
 	}
+	// 向后兼容别名：旧客户端可能把 base URL 指到独立 slug deepseek-anthropic，
+	// 路由保留（与 deepseek 的 anthropic 变体同目标、用量同归 deepseek），
+	// 但它不是独立供应商——不出现在供应商列表与格式目录里。
+	routes["/api/proxy/deepseek-anthropic/"] = routes["/api/proxy/deepseek/anthropic/"]
 	return &Registry{routes: routes}
 }
 
@@ -250,12 +251,13 @@ var responsesCapable = map[string]bool{
 //	其余 → chat 起步；anthropicEndpoints 命中 → 追加 messages（/anthropic 变体路由）；
 //	responsesCapable 命中 → 追加 responses。
 //
-// deepseek-anthropic 兼容行不单独列出（其能力经 deepseek 的 messages 体现）。
+// deepseek-anthropic 等旧独立 slug 不在此列出（其能力经基础 slug 的 messages 体现，
+// 路由别名见 NewRegistry 尾部）。
 func ProviderFormats() map[string][]string {
 	formats := make(map[string][]string, len(providerSpecs))
 	for _, p := range providerSpecs {
 		if _, dup := formats[p.name]; dup {
-			continue // deepseek-anthropic 等别名行（name 相同）：能力经基础 slug 体现
+			continue // 别名行（name 相同）：能力经基础 slug 体现
 		}
 		if p.anthropic {
 			formats[p.name] = []string{"messages"}

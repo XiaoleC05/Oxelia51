@@ -370,7 +370,7 @@ export default function App() {
                 }}
               >
                 ⬆ 发现新版本 {update.latest}（当前 {APP_VERSION}
-                ）——点击下载安装包
+                ），点击下载安装包
               </a>
             );
           })()}

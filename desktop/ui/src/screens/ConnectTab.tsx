@@ -66,8 +66,8 @@ export function ConnectTab() {
     <>
       <h1 className="page-title">接入</h1>
       <p className="page-sub">
-        选择你使用的 LLM 供应商，复制代理地址；把模型工具的 Base URL
-        指向它即可开始记账。点击卡片打开官网。
+        选择你的 LLM 供应商和请求格式，复制代理地址；把模型工具的 Base URL
+        指向它开始记账。点击卡片打开官网。
       </p>
       {detected.length > 0 && (
         <div className="card">
@@ -82,7 +82,7 @@ export function ConnectTab() {
           </div>
           <p className="empty">
             在本机检测到以上 AI Agent
-            工具。选择一个供应商，复制代理地址配置到对应工具即可开始记账。
+            工具。选择供应商并复制代理地址，配置到对应工具开始记账。
           </p>
         </div>
       )}

@@ -8,7 +8,7 @@ order: 2
 
 ## 安装与系统要求
 
-按平台提供以下下载方式（以实际发布为准，下载页只显示已构建验证的安装包）。下载页显示来自 GitHub Releases 的真实累计下载量；拉取失败时可点「重试」重新获取：
+按平台提供以下下载方式（以实际发布为准，下载页只显示已构建验证的安装包）。下载页显示来自 GitHub Releases 的真实累计下载量（全部版本合计，发新版不清零）；拉取失败时可点「重试」重新获取：
 
 | 平台 | 下载方式 | 适用场景 |
 | --- | --- | --- |
@@ -61,7 +61,7 @@ export OPENAI_BASE_URL="http://localhost:17800/api/proxy/openai"
 export OPENAI_BASE_URL="http://localhost:17800/api/proxy/zhipu"
 ```
 
-> **供应商 = 提供大模型的平台**，路径里的 slug 决定请求转发给谁。内置 **13 条供应商路由**，覆盖 11 家主流厂商，按两组分类：
+> **供应商 = 提供大模型的平台**，路径里的 slug 决定请求转发给谁。内置 **12 条供应商路由**，覆盖 11 家主流厂商，按两组分类：
 >
 > - **国外主流**：Claude (Anthropic)、OpenAI、Google Gemini、xAI (Grok)
 > - **国内主流**：DeepSeek、智谱 GLM、通义千问、Moonshot (Kimi)、Kimi For Coding、豆包、腾讯混元、MiniMax

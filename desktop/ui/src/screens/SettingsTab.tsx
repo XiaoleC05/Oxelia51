@@ -263,15 +263,15 @@ export function SettingsTab({
         <h2 className="card-title">本地代理</h2>
         <p className="empty">
           监听地址固定为 <code>127.0.0.1:17800</code>（本地优先，无需修改）。
-          全部预设供应商的代理地址请在<b>首页「快速接入」</b>中搜索并复制。
+          全部预设供应商的代理地址在<b>「接入」页</b>搜索复制。
         </p>
         <p className="empty">
-          例如使用 DeepSeek：
+          例如 DeepSeek：
           <code>
             export OPENAI_BASE_URL="http://127.0.0.1:17800/api/proxy/deepseek"
           </code>
-          。 你实际使用的客户端（Claude Code / Cursor / CC Switch / Trae
-          等）即为“Agent”，记录会自动按工具识别。
+          。你的客户端（Claude Code / Cursor / CC Switch / Trae
+          等）即为“Agent”，记录按工具自动识别。
         </p>
         <div className="form-row" style={{ marginTop: 8 }}>
           <button
@@ -293,8 +293,8 @@ export function SettingsTab({
           </span>
         </div>
         <p className="empty">
-          开启后代理将<b>开机自启</b>，关闭应用也继续运行（AI
-          工具无需常开应用）。 关闭开关后恢复「随应用运行」，应用退出即停止。
+          开启后代理<b>开机自启</b>，关闭应用也继续运行（AI
+          工具无需常开应用）。关闭后恢复「随应用运行」，应用退出即停止。
         </p>
       </div>
 
@@ -320,9 +320,7 @@ export function SettingsTab({
 
       <div className="card">
         <h2 className="card-title">悬浮卡片显示内容</h2>
-        <p className="empty">
-          悬浮统计卡片（顶栏「悬浮统计」按钮）上显示哪些数据，勾选即时生效。
-        </p>
+        <p className="empty">悬浮统计卡片显示哪些数据，勾选即时生效。</p>
         <div className="form-row">
           {WIDGET_FIELDS.map((f) => (
             <button
@@ -398,8 +396,7 @@ export function SettingsTab({
           </button>
         </div>
         <p className="empty">
-          空表起步：未填定价的模型成本按 0
-          计，不虚构。可一键填入常见模型参考价再保存。
+          空表起步：未填定价的模型成本按 0 计。可一键填入常见模型参考价再保存。
         </p>
       </div>
 
@@ -476,7 +473,7 @@ export function SettingsTab({
           <p className="ok-note">{syncStatus.label}</p>
         )}
         <p className="empty">
-          同步后本地账本与云端账户关联，多设备共用；按事件去重合并，隐私仅在你主动同步时上行。
+          同步后本地账本与云端账户关联，多设备共用；按事件去重合并，仅主动同步时上传数据。
         </p>
       </div>
 
@@ -502,8 +499,8 @@ export function SettingsTab({
           </button>
         </div>
         <p className="empty">
-          清空本地账本中的 Token 用量与成本统计（主题 / 定价 / 预算 /
-          自定义供应商等设置会保留）。
+          清空本地 Token 用量与成本统计，并重置下载游标、更换设备 ID
+          （已同步数据可从云端全量恢复）；主题 / 定价 / 预算 / 自定义供应商等设置保留。
         </p>
         {clearMsg && <p className="empty">{clearMsg}</p>}
       </div>
@@ -526,7 +523,7 @@ export function SettingsTab({
           </ExternalLink>
         </div>
         <p className="empty about-note">
-          悬浮统计卡片可在顶栏「悬浮统计」按钮开关，实时显示今日 Token 与成本。
+          顶栏「悬浮统计」按钮可开关悬浮卡片，实时显示今日 Token 与成本。
         </p>
       </div>
     </>

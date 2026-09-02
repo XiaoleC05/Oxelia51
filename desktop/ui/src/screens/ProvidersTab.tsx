@@ -19,8 +19,8 @@ export function ProvidersTab() {
   return (
     <DimTab
       title="供应商消耗"
-      subtitle="按提供大模型的平台聚合 Token 用量与成本。点击可查看被哪些 Agent 使用、各模型明细。"
-      emptyHint="代理落账后按 provider 自动聚合。先配置模型工具指向本地代理。"
+      subtitle="按提供大模型的平台聚合 Token 用量与成本。点击查看被哪些 Agent 使用及各模型明细。"
+      emptyHint="代理落账后按 provider 聚合。先把模型工具指向本地代理。"
       fetcher={fetcher}
       detailFetcher={detailFetcher}
       detailLabel="Agent"

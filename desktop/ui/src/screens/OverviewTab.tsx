@@ -51,8 +51,8 @@ function TrendChart({ trend }: { trend: TrendPoint[] }) {
       {trend.length === 0 ? (
         <EmptyState
           compact
-          title="趋势待有数据后展示"
-          desc="代理落账后按天自动聚合。"
+          title="暂无趋势数据"
+          desc="代理落账后按天聚合。"
         />
       ) : (
         <div className="trend">
@@ -104,7 +104,7 @@ function Ranking({
         <EmptyState
           compact
           title="暂无排行数据"
-          desc="落账后按维度自动聚合。"
+          desc="落账后按维度聚合。"
         />
       ) : (
         <div className="rank">

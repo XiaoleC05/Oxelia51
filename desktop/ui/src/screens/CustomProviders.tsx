@@ -30,7 +30,7 @@ function validate(
   if (existing.some((p) => p.slug === form.slug))
     return "slug 与已有自定义供应商重复";
   if (!BASE_URL_RE.test(form.baseUrl.trim()))
-    return "API 地址无效（填域名即可，如 api.example.com；自动补全 https://）";
+    return "API 地址无效（填域名，如 api.example.com；自动补全 https://）";
   return null;
 }
 
@@ -130,7 +130,7 @@ export function CustomProviders({
         <EmptyState
           compact
           title="还没有自定义供应商"
-          desc="预设目录里没有的平台，可以按官方 API 文档自行添加"
+          desc="预设目录没有的平台，按官方 API 文档添加"
           action={{
             label: "添加自定义供应商",
             onClick: () => setShowForm(true),

@@ -60,8 +60,8 @@ export function AgentsTab() {
   return (
     <DimTab
       title="Agent 消耗"
-      subtitle="按你使用的客户端软件聚合 Token 用量与成本。点击可查看该 Agent 接入的供应商与模型明细，进入后可为 Agent 重命名。"
-      emptyHint="代理落账后按 agent 自动聚合。先配置模型工具指向本地代理。"
+      subtitle="按你使用的客户端软件聚合 Token 用量与成本。点击查看接入的供应商与模型明细，可重命名。"
+      emptyHint="代理落账后按 agent 聚合。先把模型工具指向本地代理。"
       fetcher={fetcher}
       detailFetcher={detailFetcher}
       detailLabel="供应商"

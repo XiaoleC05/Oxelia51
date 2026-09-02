@@ -97,7 +97,7 @@ function ProviderCell({ p, off, isCustom, supported, copied, onCopy }: CellProps
               disabled={off || !ok}
               title={
                 !ok
-                  ? `${p.label} 上游暂无 ${f.label} 端点（网关透传，不做协议转换）`
+                  ? `${p.label} 暂不支持 ${f.label}`
                   : `${f.label}（${f.path}）：${f.note}`
               }
               onClick={() => setPicked(f.id)}
@@ -110,7 +110,7 @@ function ProviderCell({ p, off, isCustom, supported, copied, onCopy }: CellProps
       </div>
       <span
         className="provider-cell-endpoint"
-        title={`客户端按此端点调用：${url}${meta.path}（「复制地址」复制的是 Base URL，SDK 自动拼路径）`}
+        title={`客户端调用端点：${url}${meta.path}（复制的是 Base URL，SDK 自动拼路径）`}
       >
         {url}
         <span className="dim">{meta.path}</span>
@@ -126,7 +126,7 @@ function ProviderCell({ p, off, isCustom, supported, copied, onCopy }: CellProps
           }}
           title={
             off
-              ? "该平台暂未接入，可用自定义供应商自行添加"
+              ? "该平台暂未接入，可用自定义供应商添加"
               : `复制 ${meta.label} 协议 Base URL：${url}`
           }
         >

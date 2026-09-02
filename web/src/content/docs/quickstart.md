@@ -6,7 +6,7 @@ order: 1
 
 ## Oxelia51 是什么
 
-Oxelia51 是一个**本地优先的个人 Token 记账本**：只需要改一行环境变量，让模型工具（Claude Code、Cursor、ChatGPT 等）的 API 请求经过一个代理，自动记录每一次调用的 Token、成本与异常，然后在仪表盘上多维度查看。
+Oxelia51 是一个**本地优先的个人 Token 记账本**：只需要改一行环境变量，让模型工具（Claude Code、Cursor、ChatGPT 等）的 API 请求经过一个代理，自动记录每一次调用的 Token、成本与异常，在仪表盘上多维度查看。
 
 - **零侵入**：不装 SDK、不改代码，只改环境变量
 - **多维统计**：按时间、供应商、Agent 拆解用量与成本

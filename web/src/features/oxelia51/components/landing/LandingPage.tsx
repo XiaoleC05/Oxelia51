@@ -229,7 +229,7 @@ function HowItWorksSection() {
               </p>
               <CopyCodeBlock code={LOCAL_PROXY_CMD_OPENAI} />
               <p className="mt-2 text-xs text-(--ox-text-muted)">
-                内置 13
+                内置 12
                 条供应商路由，覆盖 11
                 家主流厂商（国外：Anthropic、OpenAI、Gemini、xAI；国内：DeepSeek、智谱、通义、Kimi、豆包、混元、MiniMax
                 等），slug

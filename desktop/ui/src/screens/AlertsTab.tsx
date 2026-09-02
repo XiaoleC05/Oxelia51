@@ -155,7 +155,7 @@ export function AlertsTab() {
     }
     const t = dimension === "global" ? "" : target.trim();
     if (dimension !== "global" && !t) {
-      setFormError("请先选择目标（供应商 / Agent / 模型）");
+      setFormError("请选择目标（供应商 / Agent / 模型）");
       return;
     }
     setFormError("");
@@ -184,7 +184,7 @@ export function AlertsTab() {
           <EmptyState
             compact
             title="还没有预算"
-            desc="可为全局、某个供应商、某个 Agent 或某个模型分别设置每日预算，超限时本地通知你。"
+            desc="为全局、供应商、Agent 或模型分别设置每日预算，超限时本地通知。"
             action={{
               label: "添加预算",
               onClick: () =>

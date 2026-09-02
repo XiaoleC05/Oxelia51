@@ -460,3 +460,28 @@ func TestAlertsSkipsNonPositiveBudgets(t *testing.T) {
 		t.Fatalf("zero usage against 100 budget must not trigger: %+v", al)
 	}
 }
+
+// TestProviderModelsCountNormalized 锁住口径：供应商「涉及模型数」按归一化模型名
+// 去重——同一模型的 [1M] 上下文变体只算一个，空模型名不计。
+func TestProviderModelsCountNormalized(t *testing.T) {
+	a := newTestAPI(t)
+	createTokenEvents(t, a)
+	if _, err := a.db.Exec(`INSERT INTO token_events
+		(event_id, project_id, provider, agent, model, prompt_tokens, completion_tokens, total_tokens, timestamp)
+		VALUES ('m1', 'p1', 'deepseek', 'claude-code', 'deepseek-v4-pro', 100, 50, 150, '2026-08-10 10:00:00.000'),
+		       ('m2', 'p1', 'deepseek', 'claude-code', 'deepseek-v4-pro[1M]', 100, 50, 150, '2026-08-10 10:01:00.000'),
+		       ('m3', 'p1', 'deepseek', 'claude-code', 'deepseek-v4-flash', 100, 50, 150, '2026-08-10 10:02:00.000'),
+		       ('m4', 'p1', 'deepseek', 'claude-code', '', 0, 0, 0, '2026-08-10 10:03:00.000')`); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, st := range getProviders(t, a) {
+		if st.Name == "deepseek" {
+			if st.Models != 2 {
+				t.Fatalf("deepseek models = %d, want 2（[1M] 变体合并、空名不计）", st.Models)
+			}
+			return
+		}
+	}
+	t.Fatal("providers 中无 deepseek")
+}

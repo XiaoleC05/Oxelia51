@@ -24,7 +24,7 @@ proxy-gateway/
 ├── internal/
 │   ├── adapter/                 ← 供应商适配层
 │   │   ├── adapter.go           ← Adapter 接口、TokenUsage / TokenRecord / Route 类型
-│   │   ├── registry.go          ← 路由注册表：13 条 providerSpecs（11 家厂商 + deepseek-anthropic 兼容行）+ Anthropic 变体合成
+│   │   ├── registry.go          ← 路由注册表：12 条 providerSpecs（11 家厂商）+ Anthropic 变体合成
 │   │   ├── openai.go            ← OpenAI 兼容协议 usage 提取（含 Response API）
 │   │   ├── anthropic.go         ← Anthropic 协议 usage 提取（含 prompt caching 字段）
 │   │   └── custom.go            ← 用户自定义供应商：校验（SSRF 防护）+ 动态路由
@@ -102,7 +102,7 @@ ClickHouseWriter.WriteBatch / SQLiteWriter.WriteBatch
 
 ### 4.1 路由注册表（`adapter/registry.go`）
 
-- 13 条 `providerSpecs` 静态行（slug / 上游 host / pathPrefix / 协议）：11 家厂商 + 1 条 `deepseek-anthropic` 兼容行，分两组（国内可直接访问 / 国际直连）；其余平台一律走**自定义供应商**接入，不再内置。新增供应商 = 加一行数据。
+- 12 条 `providerSpecs` 静态行（slug / 上游 host / pathPrefix / 协议）：11 家厂商，分两组（旧独立 slug `deepseek-anthropic` 已收敛为路由别名，不再是独立供应商）；（国内可直接访问 / 国际直连）；其余平台一律走**自定义供应商**接入，不再内置。新增供应商 = 加一行数据。
 - `anthropicEndpoints`（deepseek、zhipu）自动合成 `/api/proxy/<slug>/anthropic/` 变体路由，供 Claude Code 等 Anthropic 协议客户端使用 → 合计 **15 条路由**。
 - `Match` 为最长前缀匹配；静态表未命中时回退**自定义供应商**（`matchCustom`，数据源是 localapi 的设置缓存，仅本地模式接线）。
 - `Route.XAPIKeyAuth` 决定上行鉴权头形态：Anthropic 协议行用 `x-api-key`，唯一例外 `kimi-for-coding`（上游要求 Bearer）。
