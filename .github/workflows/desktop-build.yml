@@ -81,6 +81,20 @@ jobs:
         run: npm ci
         working-directory: ${{ env.UI_DIR }}
 
+      # npm 可选依赖 bug（npm/cli#4828）：偶发漏装 tauri CLI 平台原生绑定，
+      # Build 步骤报 Cannot find native binding 整单失败（v0.1.14 ubuntu 首跑命中）。
+      # 缺则显式补装（已装则秒过），三平台全覆盖。
+      - name: Ensure tauri CLI native binding
+        shell: bash
+        working-directory: ${{ env.UI_DIR }}
+        run: |
+          case "${{ matrix.platform }}" in
+            ubuntu-latest)   PKG=@tauri-apps/cli-linux-x64-gnu ;;
+            windows-latest)  PKG=@tauri-apps/cli-win32-x64-msvc ;;
+            macos-14)        PKG=@tauri-apps/cli-darwin-arm64 ;;
+          esac
+          test -d "node_modules/${PKG}" || npm install --no-save "$PKG"
+
       - name: Build Tauri app
         working-directory: desktop
         # tauri CLI 需在 src-tauri 父目录运行（它只向下找 tauri.conf.json）
