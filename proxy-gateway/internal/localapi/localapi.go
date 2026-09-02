@@ -45,6 +45,9 @@ func New(db *sql.DB) *API {
 
 // handleClearData POST /api/clear-data：清空本地账本（token_events 用量/成本统计）。
 // 供设置页「清除本地数据」用——全新开始；保留 settings（主题/定价/预算/自定义供应商等配置）。
+// 同步状态例外：下载游标 sync_dl_seq 必须归零、设备 ID sync_device 必须重新生成——
+// 否则清除后无法从云端恢复账本：下载按 seq > 游标增量拉取且排除本设备上传的事件，
+// 旧游标 + 旧设备 ID 会让云端已有数据永远拉不回来（表现为「下载 0 条」）。
 func (a *API) handleClearData(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
@@ -52,6 +55,16 @@ func (a *API) handleClearData(w http.ResponseWriter, r *http.Request) {
 	}
 	res, err := a.db.Exec("DELETE FROM token_events")
 	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	// 同步重置：sync_device 置空后下次同步自动生成新设备 ID，
+	// 旧设备上传的事件对本机即「其他设备」，配合游标归零可全量恢复。
+	if err := a.setSetting("sync_dl_seq", "0"); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if err := a.setSetting("sync_device", ""); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}

@@ -14,6 +14,16 @@ export type ChangelogVersion = {
 
 export const CHANGELOG_VERSIONS: ChangelogVersion[] = [
   {
+    tag: "v0.1.13",
+    date: "2026-09-02",
+    status: "released",
+    summary: "多设备同步修复：清除本地数据后无法从云端恢复 + 登录 Failed to fetch",
+    items: [
+      "修复「清除本地数据后从云端下载 0 条」：清除时现在会同时重置下载游标并重新生成设备 ID，清除后可全量恢复云端账本（此前旧游标 + 旧设备 ID 让云端数据永远拉不回来）",
+      "修复「登录多设备同步 Failed to fetch」：登录接口补 CORS 预检响应（服务端修复，旧版本软件登录同时恢复）",
+    ],
+  },
+  {
     tag: "v0.1.12",
     date: "2026-09-02",
     status: "released",
