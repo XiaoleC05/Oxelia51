@@ -173,7 +173,8 @@
   text-overflow: ellipsis;
 }
 
-/* 端点预览：Base URL + 客户端实际调用路径（复制按钮复制的是 Base URL） */
+/* 端点预览：Base URL + 客户端实际调用路径（复制按钮复制的是 Base URL）。
+   右端对齐截断：左省略，保住区分格式的 slug 与路径部分 */
 .provider-cell-endpoint {
   display: block;
   margin-top: 3px;
@@ -183,6 +184,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
 }
 
 .provider-cell-endpoint .dim {
