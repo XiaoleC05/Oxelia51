@@ -103,7 +103,7 @@ run()
 - **双主题**：`styles/oxelia51-theme.css`（复制自 web 端主题变量，桌面自包含避免依赖 web 构建），`<html data-theme="cozy|cosmos">` 驱动，默认 cosmos；切换即写 sidecar settings（`theme`）持久化。
 - **zoom 缩放**：`global.css` 对 body 用 `zoom: var(--ox-font-scale, 1.3)` 整页等比放大（WebView2/Chromium 完整支持），一处调全局。
 - **CSS 组织**：`app.css` 只做 12 个模块的 `@import` 聚合（titlebar/layout/overview/lists/alerts/page-head/connect/forms/pricing/banner/motion/price-table），原单文件按分节纯剪切拆分，级联行为不变。
-- **辅助模块**：`openExternal.ts`（Tauri opener 插件打开外链，浏览器 dev 回退 `window.open`）、`clipboard.ts`（剪贴板）、`EmptyState.tsx`（空态组件）、`components/Dropdown.tsx`（共享下拉）。`screens/DateRangePicker.tsx`、`ProviderCatalog.tsx`、`CustomProviders.tsx` 为页签内复用的子组件。
+- **辅助模块**：`openExternal.ts`（Tauri opener 插件打开外链，浏览器 dev 回退 `window.open`）、`clipboard.ts`（剪贴板 + 接入页三请求格式定义 `API_FORMATS`/`formatBaseUrl`）、`EmptyState.tsx`（空态组件）、`components/Dropdown.tsx`（共享下拉）。`screens/DateRangePicker.tsx`、`ProviderCatalog.tsx`、`CustomProviders.tsx` 为页签内复用的子组件。
 
 ## 6. 更新检查与云同步
 
@@ -131,7 +131,7 @@ matrix: windows-latest (nsis) / macos-14 (dmg) / ubuntu-latest (deb,rpm,appimage
 3. `desktop/ui/package.json` `version`
 4. `desktop/ui/src/version.ts` `APP_VERSION`
 
-当前四处均为 `0.1.11`（sidecar 版本号独立，由 CI 从 tag 注入）。
+当前四处均为 `0.1.14`（sidecar 版本号独立，由 CI 从 tag 注入）。
 
 ## 8. 关键设计决策
 

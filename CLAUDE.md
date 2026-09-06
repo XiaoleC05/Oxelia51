@@ -116,7 +116,7 @@ Oxelia51/                    ← 平台主仓库（v4）
 
 1. **exec 后台任务必须 `setsid`**：`setsid bash -c '...' </dev/null >/dev/null 2>&1 &`，直接 `nohup &` 会被 kill（exec 进程树问题）。
 2. **ssh 远端命令单引号包裹**，避免 `|` `&&` `{{}}` 被两层 bash 展开。
-3. **打桌面 release tag 前统一版本号**：`tauri.conf.json` / `ui/package.json` / `ui/src/version.ts` 三处一致，否则安装包显示旧版本号。
+3. **打桌面 release tag 前统一版本号**：`Cargo.toml` / `tauri.conf.json` / `ui/package.json` / `ui/src/version.ts` 四处一致，否则安装包显示旧版本号。
 4. **macOS 编译错误 Windows 本地发现不了**（`cfg(target_os="macos")` 排除），桌面改动必须 CI 验证三平台。
 5. **仓库文档不得写服务器密码**（公开仓库）。密码仅在本地记忆，操作时用占位符。
 

@@ -46,8 +46,8 @@ After:   Claude Code ────→ http://127.0.0.1:17800/api/proxy/anthropic 
 - 🔌 **One-line env var to connect** — zero-invasion proxy; API keys are forwarded, never stored
 - 📊 **Two dimensions** — aggregate tokens, requests & cost by **provider** (Claude / DeepSeek / OpenAI / Zhipu …) and **agent** (Claude Code / Cursor / CC Switch / Trae …), drill down to per-model detail
 - 🪟 **Floating glass widget** — a desktop-pinned, always-on-top card showing today's tokens & cost in real time
-- 🗂️ **80+ preset providers (79 built-in routes)** — grouped as Global / China / Third-party, with search, one-click copy of the proxy address, and direct links to each official site
-- 💰 **Model price reference** — sort by input price or blended cost to compare models (reference prices, offline)
+- 🗂️ **12 built-in routes covering 11 mainstream providers** — grouped Global / China; each card offers **OpenAI Chat Completions / OpenAI Responses / Anthropic Messages** format choices with a matching proxy address and a link to the official site; anything else plugs in via custom providers
+- 💰 **Model price reference** — 71 models, official list prices from those 11 providers only (verified 2026-09), sort by input price or blended cost, works offline
 - 🚨 **Four-dimension alerts** — per-global / provider / agent / model budgets with system notifications
 - 🎨 **Dual themes** — Cozy (warm) / Cosmos (dark), toggle anytime
 - ☁️ **Cross-device sync** — sign in with your cloud platform account to upload/download the local ledger; multiple devices merge with per-event dedup, and data only uploads when you sync manually
@@ -78,11 +78,12 @@ Every call is recorded from then on. View usage and cost by provider / agent / m
 
 ## Providers
 
-79 provider routes ship with the app (proxy-gateway/internal/adapter/registry.go), in three groups:
+12 provider routes ship with the app (proxy-gateway/internal/adapter/registry.go), covering 11 mainstream providers in two groups:
 
-- **Global**: Anthropic / OpenAI / Gemini / Mistral / Grok / Groq / Cerebras / Cohere / Perplexity / SambaNova / NVIDIA …
-- **China**: DeepSeek / Zhipu GLM / Qwen / Moonshot (Kimi) / Kimi For Coding / Doubao / Tencent Hunyuan / iFlytek Spark / MiniMax / Baichuan / Yi / SenseNova / StepFun / SiliconFlow / Gitee AI / ModelScope / Baidu Qianfan …
-- **Third-party / aggregators**: OpenRouter / Together AI / Fireworks / DeepInfra / Novita / PPIO / and various API resellers …
+- **Global**: Anthropic (Claude) / OpenAI / Google Gemini / xAI (Grok)
+- **China**: DeepSeek / Zhipu GLM / Qwen / Moonshot (Kimi) / Kimi For Coding / Doubao / Tencent Hunyuan / MiniMax
+
+Anything outside the preset list (relays, self-hosted gateways) can be added as a **custom provider** in the Connect tab. Each card offers three request formats (OpenAI Completions / Responses, Anthropic Messages); formats the upstream doesn't support are greyed out.
 
 > Provider = the LLM platform; **Agent = the software you use**. The agent is auto-detected from the User-Agent (or overridable via the `X-Oxelia51-Agent` header).
 
@@ -94,7 +95,7 @@ Your AI tool (Claude Code / Cursor / …)
   ▼
 ┌─────────────────────────────────────┐
 │ Local proxy gateway (Go, :17800)      │ forward + record (LOCAL_MODE)
-│ proxy-gateway/                       │ 79 provider routes
+│ proxy-gateway/                       │ 12 provider routes
 └──────────────┬──────────────────────┘
                │ INSERT
                ▼
@@ -119,7 +120,7 @@ The product formerly spanned two repositories; langfuse-token has been merged in
 
 ```
 Oxelia51/
-├── proxy-gateway/        # Go proxy gateway (cloud + local sidecar), 79 provider routes
+├── proxy-gateway/        # Go proxy gateway (cloud + local sidecar), 12 provider routes
 ├── backend/              # Go backend (auth / admin / cross-device sync)
 ├── desktop/              # Desktop app (Tauri 2 + Vite React + sidecar)
 │   ├── ui/               #   UI (main window + floating glass widget)

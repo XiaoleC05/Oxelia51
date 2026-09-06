@@ -195,7 +195,7 @@
 
 **解剖**：`form-row > label + input(.grow) + helper`
 
-**变体**：`.input`（普通输入）、`select.input`（原生选择）、`.dropdown`（自绘下拉，见 4.4）、`.setup-cmd`（只读命令块）。
+**变体**：`.input`（普通输入）、`select.input`（原生选择）、`.dropdown`（自绘下拉，见 4.4）。
 
 **结构规则**
 
@@ -305,7 +305,7 @@
 - 卡片 12px 圆角，hover 浮起（`-2px` + 微阴影 + accent 描边）。
 - 格式选项为纵向单选列表：label + 区别说明（11px muted），激活项 accent 描边加粗；上游不支持的项置灰禁用。
 - 动作优先级：**复制地址（红 pill）> 官网（细边次钮）**，必须明显。
-- slug 与端点预览用等宽字体 muted。
+- slug 与端点预览用等宽字体 muted；端点预览单行右端对齐截断（`direction: rtl`），保住区分格式的 slug 与路径段。
 
 ### 4.12 日期范围选择器 DateRangePicker
 

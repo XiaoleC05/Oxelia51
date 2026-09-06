@@ -127,7 +127,7 @@ Oxelia51 定制（均在 `features/oxelia51/server/`）：
 | `oxelia51Admin` | 管理台总入口：`whoami` + IP 白名单 CRUD + 组合 adminUser/adminStats/adminFeedback 三个子模块（adminOrg 的废弃组织/空项目清理已随组织/项目模块删除），均经 `goClient` 转发 Go 后台 |
 | `proxyKey` | 代理网关项目密钥的生成/列表/删除（明文仅创建时返回一次） |
 | `siteContent` | 站点内容读写：`oxelia51.site_content`（key→JSONB）；读公开、写仅超级管理员 |
-| `siteStats` | 公开站点统计：服务端拉 GitHub Releases 下载量，模块级内存缓存 1 小时 |
+| `siteStats` | 公开站点统计：服务端拉 GitHub Releases 下载量（累计口径：全部 v* release 资产加总，发新版不清零），模块级内存缓存 1 小时 |
 
 procedure 分层（`src/server/api/trpc.ts`）：`publicProcedure` →
 `authenticatedProcedure`（登录）→ `protectedProjectProcedure`（项目成员），
@@ -140,7 +140,7 @@ Oxelia51 管理另有 `adminProcedure`/`superAdminProcedure`（§5.2）。
 | `auth/[...nextauth].ts` | NextAuth 主入口 |
 | `auth/signup.ts` / `signup-verify.ts` | 邮箱注册 + OTP 验证 |
 | `auth/check-sso.ts` / `add-sso-config.ts` | SSO 域名检查 / 配置 |
-| `sync/login.ts` / `sync/upload.ts` / `sync/download.ts` | 桌面端云同步（§6） |
+| `sync/login.ts` / `sync/upload.ts` / `sync/download.ts` | 桌面端云同步（§6）；login 放开 CORS 并响应 OPTIONS 预检（桌面 Tauri webview 跨源直连） |
 | `public/health.ts` | 生产健康检查（唯一保留的 public REST） |
 | `trpc/[trpc].ts` | tRPC 入口 |
 

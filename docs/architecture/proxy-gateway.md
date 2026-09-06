@@ -103,7 +103,8 @@ ClickHouseWriter.WriteBatch / SQLiteWriter.WriteBatch
 ### 4.1 路由注册表（`adapter/registry.go`）
 
 - 12 条 `providerSpecs` 静态行（slug / 上游 host / pathPrefix / 协议）：11 家厂商，分两组（旧独立 slug `deepseek-anthropic` 已收敛为路由别名，不再是独立供应商）；（国内可直接访问 / 国际直连）；其余平台一律走**自定义供应商**接入，不再内置。新增供应商 = 加一行数据。
-- `anthropicEndpoints`（deepseek、zhipu）自动合成 `/api/proxy/<slug>/anthropic/` 变体路由，供 Claude Code 等 Anthropic 协议客户端使用 → 合计 **15 条路由**。
+- `anthropicEndpoints`（deepseek、zhipu、qwen、moonshot、doubao、minimax、hunyuan 七家，均经官方文档核实）自动合成 `/api/proxy/<slug>/anthropic/` 变体路由，供 Claude Code 等 Anthropic 协议客户端使用 → 合计 **19 条路由**，另有 `deepseek-anthropic` 兼容别名（指向 `deepseek/anthropic/`，旧客户端地址不受影响）。
+- `ProviderFormats()` 汇总每个内置供应商支持的请求格式（chat / responses / messages）：原生 Anthropic 协议行仅 messages；其余 chat 起步，`anthropicEndpoints` 命中追加 messages，`responsesCapable`（openai/xai/deepseek/zhipu/qwen/moonshot/doubao/minimax 八家）追加 responses。经 `/api/providers` 的 `formats` 字段下发给桌面端，前端不再硬编码名单。
 - `Match` 为最长前缀匹配；静态表未命中时回退**自定义供应商**（`matchCustom`，数据源是 localapi 的设置缓存，仅本地模式接线）。
 - `Route.XAPIKeyAuth` 决定上行鉴权头形态：Anthropic 协议行用 `x-api-key`，唯一例外 `kimi-for-coding`（上游要求 Bearer）。
 - `ResolveTarget` 处理客户端重复携带路径前缀的幂等去重（如 OpenAI SDK 习惯自带 `/v1`，而 qwen 的 pathPrefix 是 `/compatible-mode/v1`）：先剥完整 pathPrefix，再对多段前缀的末尾版本段（`v1`/`v3` 形态）去重，非版本段（如 gemini 的 `/openai`）不动。
@@ -145,8 +146,8 @@ ClickHouseWriter.WriteBatch / SQLiteWriter.WriteBatch
 
 路由见 `localapi.go Handler()`，全部挂在 `/api/` 下：
 
-- **统计**：`/api/overview`（今日/7日/30日/累计 + 模型/供应商/Agent 排行 + 14 天趋势）、`/api/providers[/<slug>]`、`/api/agents[/<id>]`、`/api/models`、`/api/alerts`；
-- **设置**：`/api/settings`（主题/定价/预算/悬浮卡片字段）、`/api/pricing[/defaults|/catalog|/rate]`、`/api/custom-providers[/delete]`、`/api/clear-data`（清账本保留设置）；
+- **统计**：`/api/overview`（今日/7日/30日/累计 + 模型/供应商/Agent 排行 + 14 天趋势）、`/api/providers[/<slug>]`（含 `formats` 请求格式支持列表；涉及模型数按归一化模型名去重，剥离 `[1M]` 等上下文后缀、空名不计）、`/api/agents[/<id>]`、`/api/models`、`/api/alerts`；
+- **设置**：`/api/settings`（主题/定价/预算/悬浮卡片字段）、`/api/pricing[/defaults|/catalog|/rate]`、`/api/custom-providers[/delete]`、`/api/clear-data`（清账本保留设置；同时重置同步下载游标 `sync_dl_seq` 并清空 `sync_device`，下次同步重新注册设备全量拉取）；
 - **工具与同步**：`/api/detect-tools`（本机 AI 工具探测，`detect.go`）、`/api/sync`（云同步，`sync.go`）、`/api/health`。
 
 横切机制：

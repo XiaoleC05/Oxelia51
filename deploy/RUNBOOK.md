@@ -87,11 +87,11 @@ curl -s http://127.0.0.1:9090/api/proxy/status   # 验证返回完整 providers
 ### 3.4 analytics（C++ alerter，腾讯云）
 - 二进制从 release tarball `analytics/token-analytics` 经 ssh 管道传腾讯云 → install → `systemctl restart token-analytics`
 - **GitHub 资产限速绕行**（三地都可能卡 S3）：本地 Docker 构建（`analytics/Dockerfile`）→ `docker create` + `docker cp` 提取二进制 → `gzip -c | base64 -w0` → 按 ≤3600 字符 `fold -w 3600` 分块，每块 `printf %s '<chunk>' >> /tmp/x.b64.gz` 走 exec 上传 → 解码后比对字节数 → cat | ssh 传腾讯云 install
-- **CH 系统日志表膨胀**：trace_log/text_log/part_log 无 TTL 会吃掉十几 GB。清理顺序：**先 TRUNCATE 再 MODIFY TTL**（大表直接 ALTER 会 MEMORY_LIMIT_EXCEEDED，且产生未完成 mutation 需 KILL MUTATION）
+- **CH 系统日志表膨胀**：trace_log/text_log/part_log 无 TTL 会吃掉十几 GB。清理顺序：**先 TRUNCATE 再 MODIFY TTL**（大表直接 ALTER 会 MEMORY_LIMIT_EXCEEDED，且产生未完成 mutation 需 KILL MUTATION）。已处置：2026-09-02 全部系统日志表设 7 天 TTL，持续观察回收效果。
 - **验证**：`journalctl -u token-analytics -n 8` 应显示分块聚合（chunk #N）或 No new events + `Deactivated successfully`（oneshot 正常终态是 inactive）。
 
 ### 3.5 桌面 release（v* tag）
-1. 统一版本号后再打 tag：`desktop/src-tauri/tauri.conf.json`、`desktop/ui/package.json`、`desktop/ui/src/version.ts` 三处一致，否则安装包显示旧版本号。
+1. 统一版本号后再打 tag：`desktop/src-tauri/Cargo.toml`、`desktop/src-tauri/tauri.conf.json`、`desktop/ui/package.json`、`desktop/ui/src/version.ts` 四处一致，否则安装包显示旧版本号。
 2. `git tag vX.Y.Z && git push origin vX.Y.Z` → CI desktop-build 三平台 → GitHub Release。
 3. **验证**：release 资产名含正确版本号（如 `Oxelia51_0.1.2_x64-setup.exe`）。
 
@@ -100,7 +100,7 @@ curl -s http://127.0.0.1:9090/api/proxy/status   # 验证返回完整 providers
 | 坑 | 症状 | 规避 |
 |---|---|---|
 | macOS 编译失败 | `E0599: no method named set_hidden_title` | `cfg(target_os="macos")` 代码 Windows 本地编译不暴露，**必须 CI 验证**；`TitleBarStyle::Overlay` 已隐藏标题，别调不存在的 setter |
-| 版本号错位 | 安装包显示 0.1.0 而 tag 是 v0.1.1 | tag 前统一 tauri.conf / package.json / version.ts 三处 |
+| 版本号错位 | 安装包显示 0.1.0 而 tag 是 v0.1.1 | tag 前统一 Cargo.toml / tauri.conf / package.json / version.ts 四处 |
 | exec 后台被 kill | `signal: killed` | 用 `setsid bash -c '...' </dev/null >/dev/null 2>&1 &` + done 标记轮询 |
 | 远端命令错乱 | `command not found`、`{{.Names}}: command not found` | ssh 远端命令单引号包裹，避免特殊字符 |
 | GitHub 日志 403 | `Must have admin rights` | 匿名无法下载 workflow logs；请有权限者贴日志或提供 PAT |

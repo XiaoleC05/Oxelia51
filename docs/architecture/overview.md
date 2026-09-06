@@ -30,7 +30,7 @@ langfuse 命名残留（如镜像名 `langfuse-token-web`、容器名 `langfuse-
 
 关键版本锚点：
 
-- `desktop/src-tauri/Cargo.toml`：`tauri = "2"`，应用名 `oxelia51-desktop`（v0.1.11）
+- `desktop/src-tauri/Cargo.toml`：`tauri = "2"`，应用名 `oxelia51-desktop`（v0.1.14）
 - `web/package.json`：`next: 16.2.11`，包名 `web`（v0.1.10）
 - `backend/go.mod`：module `github.com/XiaoleC05/oxelia51-backend`，go 1.26
 - `proxy-gateway/go.mod`：module `github.com/XiaoleC05/Oxelia51/proxy-gateway`
