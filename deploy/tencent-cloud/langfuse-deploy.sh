@@ -38,9 +38,6 @@ POSTGRES_PASSWORD=$(openssl rand -hex 16)
 POSTGRES_DB=postgres
 CLICKHOUSE_USER=clickhouse
 CLICKHOUSE_PASSWORD=$(openssl rand -hex 16)
-REDIS_AUTH=$(openssl rand -hex 16)
-MINIO_ROOT_USER=minio
-MINIO_ROOT_PASSWORD=$(openssl rand -hex 16)
 SALT=$(openssl rand -hex 16)
 ENCRYPTION_KEY=$(openssl rand -hex 32)
 NEXTAUTH_SECRET=$(openssl rand -hex 32)
@@ -116,10 +113,7 @@ EOF
   stats)
     docker stats --no-stream \
       langfuse-postgres \
-      langfuse-redis \
       langfuse-clickhouse \
-      langfuse-minio \
-      langfuse-worker \
       langfuse-web 2>/dev/null || info "容器未全部运行"
     ;;
 

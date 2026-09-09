@@ -1,6 +1,6 @@
 # 待办队列（按优先级）
 
-> 更新：2026-09-02
+> 更新：2026-09-09
 
 ## P0（紧急）
 
@@ -36,6 +36,10 @@
 - [x] 告警 alerter 部署（token-analytics + 5min timer）——2026-08-06 上线，端到端邮件验证通过
 - [x] Git 仓库瘦身 + 服务器冗余清理——2026-08-06
 - [x] 面向用户的使用文档站（接入教程、FAQ、定价页）——已上线（web/src/content/docs/ 10 篇）
+
+## 已完成（2026-09-09 归档）
+
+- [x] langfuse 残余清理 + 服务器瘦身——腾讯云删除 langfuse-minio / langfuse-redis 容器与数据卷、langfuse-worker / minio / redis 镜像（约 1.9GB）、compose .bak×3、.env 死变量（REDIS_AUTH / MINIO_ROOT_*）；compose 收敛为 3 容器（postgres / clickhouse / web），web 重建后健康检查、ClickHouse、分析引擎、外网访问全部验证通过；阿里云侧无 langfuse 残余（镜像全部在用）
 
 ## 已完成（2026-08-21 归档）
 

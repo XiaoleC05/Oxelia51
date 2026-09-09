@@ -1,6 +1,7 @@
 # =============================================
 #  Oxelia51 v3.0 — Langfuse 数据层
 #  服务器：腾讯云 118.25.138.177 (4C4G, Ubuntu 24.04)
+#  当前 3 容器：postgres / clickhouse / web
 #  注意：SmartKB PostgreSQL 已占 5433，
 #        所以 Langfuse PostgreSQL 用 5434
 #  Docker 镜像：腾讯云原生加速器 mirror.ccs.tencentyun.com
@@ -34,34 +35,6 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 3s
       timeout: 3s
-      retries: 10
-
-  langfuse-redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-    container_name: langfuse-redis
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    command: >
-      --requirepass ${REDIS_AUTH:?set REDIS_AUTH in .env}
-      --maxmemory-policy noeviction
-      --maxmemory 128mb
-    ports:
-      - "127.0.0.1:6379:6379"
-    volumes:
-      - langfuse_redis:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_AUTH}", "ping"]
-      interval: 3s
-      timeout: 10s
       retries: 10
 
   langfuse-clickhouse:
@@ -103,36 +76,8 @@ services:
         soft: 262144
         hard: 262144
 
-  langfuse-minio:
-    image: cgr.dev/chainguard/minio
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "50m"
-        max-file: "3"
-
-    container_name: langfuse-minio
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    entrypoint: sh
-    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
-    ports:
-      - "127.0.0.1:9090:9000"
-      - "127.0.0.1:9091:9001"
-    volumes:
-      - langfuse_minio:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 1s
-      timeout: 5s
-      retries: 5
-      start_period: 1s
+  # langfuse-minio / langfuse-redis 已移除（2026-09-09）：仅服务已删的 tracing 功能
+  # （S3 事件/媒体上传、BullMQ 队列），生产容器与数据卷已清理
 
   # langfuse-worker 已移除（2026-08-21）：仅服务已删的 tracing 功能，生产容器已停跑
 
@@ -155,10 +100,6 @@ services:
     depends_on:
       langfuse-postgres:
         condition: service_healthy
-      langfuse-minio:
-        condition: service_healthy
-      langfuse-redis:
-        condition: service_healthy
       langfuse-clickhouse:
         condition: service_healthy
     ports:
@@ -175,36 +116,6 @@ services:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
       CLICKHOUSE_CLUSTER_ENABLED: "false"
-      LANGFUSE_USE_AZURE_BLOB: "false"
-      LANGFUSE_USE_OCI_NATIVE_OBJECT_STORAGE: "false"
-      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
-      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
-      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minio}
-      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
-      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
-      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
-      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
-      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
-      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
-      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minio}
-      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
-      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://langfuse-minio:9000
-      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
-      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
-      LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
-      LANGFUSE_S3_BATCH_EXPORT_BUCKET: langfuse
-      LANGFUSE_S3_BATCH_EXPORT_PREFIX: exports/
-      LANGFUSE_S3_BATCH_EXPORT_REGION: auto
-      LANGFUSE_S3_BATCH_EXPORT_ENDPOINT: http://langfuse-minio:9000
-      LANGFUSE_S3_BATCH_EXPORT_EXTERNAL_ENDPOINT: http://localhost:9090
-      LANGFUSE_S3_BATCH_EXPORT_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minio}
-      LANGFUSE_S3_BATCH_EXPORT_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
-      LANGFUSE_S3_BATCH_EXPORT_FORCE_PATH_STYLE: "true"
-      REDIS_HOST: langfuse-redis
-      REDIS_PORT: "6379"
-      REDIS_AUTH: ${REDIS_AUTH}
-      LANGFUSE_BULLMQ_SKIP_REDIS_VERSION_CHECK: "false"
-      REDIS_TLS_ENABLED: "false"
       EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-}
       SMTP_CONNECTION_URL: ${SMTP_CONNECTION_URL:-}
       # 开放注册：邮箱验证防滥用（true 启用 OTP 注册流程）
@@ -232,11 +143,7 @@ services:
 volumes:
   langfuse_pgdata:
     driver: local
-  langfuse_redis:
-    driver: local
   langfuse_ch_data:
     driver: local
   langfuse_ch_logs:
-    driver: local
-  langfuse_minio:
     driver: local

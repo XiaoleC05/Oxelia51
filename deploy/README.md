@@ -25,12 +25,11 @@
 
 腾讯云 (118.25.138.177, 4C4G, Ubuntu 24.04)
   ├─ Nginx :80         → Langfuse Web :3000
-  ├─ Langfuse (Docker Compose, 5 容器)
-  │   ├─ langfuse-web      :3000
-  │   ├─ langfuse-postgres :5434 (SmartKB 占 5433)
-  │   ├─ langfuse-clickhouse :8123/9000
-  │   ├─ langfuse-redis    :6379
-  │   └─ langfuse-minio    :9090/9091
+  ├─ Langfuse (Docker Compose, 3 容器)
+  │   ├─ langfuse-web        :3000
+  │   ├─ langfuse-postgres   :5434 (SmartKB 占 5433)
+  │   └─ langfuse-clickhouse :8123/9000
+  │   （minio/redis/worker 已于 2026-09-09 清理：仅服务已删的 tracing 功能）
   └─ C++ 分析引擎 (systemd timer)
 ```
 
@@ -39,7 +38,7 @@
 | 服务器 | IP | 配置 | 角色 |
 |--------|-----|------|------|
 | 阿里云 | 47.108.202.199 | 2C2G | 主入口 + Nginx + 管理后台 + Go 代理 + Webhook |
-| 腾讯云 | 118.25.138.177 | 4C4G | Langfuse 数据层 + ClickHouse + SmartKB + C++ 引擎 |
+| 腾讯云 | 118.25.138.177 | 4C4G | Web 数据层 + ClickHouse + SmartKB + C++ 引擎 |
 
 ## 部署文件一览
 
@@ -66,7 +65,7 @@ deploy/
 │   └── token-tunnel.service     ← SSH 隧道（阿里云 127.0.0.1:3000 → 腾讯云 web:3000）
 ├── tencent-cloud/
 │   ├── init-server.sh           ← 腾讯云完整初始化
-│   ├── docker-compose.langfuse.yml ← Langfuse 5 容器编排        v3.0
+│   ├── docker-compose.langfuse.yml ← Langfuse 3 容器编排        v3.0
 │   ├── .env.langfuse.example    ← Langfuse 环境变量模板          v3.0
 │   ├── langfuse-deploy.sh       ← Langfuse 部署管理脚本          v3.0
 │   ├── health-server.go         ← 健康检查服务源码（Go）
@@ -104,7 +103,7 @@ bash langfuse-deploy.sh start
 
 # 验证
 bash langfuse-deploy.sh status
-# 预期：5 个容器全部 healthy，健康检查 ✅
+# 预期：3 个容器全部 healthy，健康检查 ✅
 ```
 
 ### 2. 阿里云 — Go 代理网关

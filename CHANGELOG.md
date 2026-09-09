@@ -4,6 +4,13 @@
 
 ---
 
+## Unreleased
+
+### 运维
+- **腾讯云 langfuse 残余清理**：删除 langfuse-minio、langfuse-redis 容器与数据卷，及 langfuse-worker / minio / redis 镜像（约 1.9GB）；compose 收敛为 3 容器（postgres / clickhouse / web），deploy 脚本、环境变量模板、部署文档同步更新
+
+---
+
 ## v0.1.14 — 2026-09-03（已发布）
 
 ### 架构
