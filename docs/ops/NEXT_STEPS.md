@@ -40,6 +40,7 @@
 ## 已完成（2026-09-09 归档）
 
 - [x] langfuse 残余清理 + 服务器瘦身——腾讯云删除 langfuse-minio / langfuse-redis 容器与数据卷、langfuse-worker / minio / redis 镜像（约 1.9GB）、compose .bak×3、.env 死变量（REDIS_AUTH / MINIO_ROOT_*）；compose 收敛为 3 容器（postgres / clickhouse / web），web 重建后健康检查、ClickHouse、分析引擎、外网访问全部验证通过；阿里云侧无 langfuse 残余（镜像全部在用）
+- [x] 两台服务器 ollama 完全删除——SmartKB 试验期遗留，生产无任何连接/调用；停用并删除服务、二进制、systemd unit、ollama 用户/组；腾讯云删 /root/.ollama（含 qwen2.5:1.5b，释放约 3GB 磁盘），阿里云删 /usr/share/ollama；11434 端口已释放，外网 200 验证通过
 
 ## 已完成（2026-08-21 归档）
 
